@@ -1,5 +1,9 @@
 from education_system.systems.university.infrastructure.database.db import sqlite3, DatabaseManager
-from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+# Tests redirect these modules to a temp database by patching this module-level
+# name (see tests/.../parent_portal/test_parent_portal.py). They bypass
+# get_connection(), so the autouse _isolate_db fixture does not cover them —
+# keep the alias, and keep connect() reading it at call time.
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH as DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608
 import datetime
 
@@ -21,7 +25,7 @@ class NotificationsMixin:
 
         conn = None
         try:
-            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
             conn.execute("PRAGMA busy_timeout = 30000")
             cursor = conn.cursor()
 
@@ -130,7 +134,7 @@ class NotificationsMixin:
 
         conn = None
         try:
-            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
             conn.execute("PRAGMA busy_timeout = 30000")
             cursor = conn.cursor()
 
@@ -228,7 +232,7 @@ class NotificationsMixin:
         """Get count of unread notifications for dashboard"""
         conn = None
         try:
-            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
             conn.execute("PRAGMA busy_timeout = 30000")
             cursor = conn.cursor()
 
@@ -262,7 +266,7 @@ class NotificationsMixin:
 
         conn = None
         try:
-            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
             conn.execute("PRAGMA busy_timeout = 30000")
             cursor = conn.cursor()
 

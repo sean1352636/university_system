@@ -570,6 +570,11 @@ class TestParentPortalEdgeCases:
             mock_conn = Mock()
             mock_cursor = Mock()
             mock_conn.cursor.return_value = mock_cursor
+            # db.connect() applies PRAGMAs and then verifies foreign-key
+            # enforcement with `conn.execute("PRAGMA foreign_keys").fetchone()[0]`.
+            # A bare Mock is not subscriptable, so return a realistic row —
+            # (1,) meaning foreign keys are on.
+            mock_conn.execute.return_value.fetchone.return_value = (1,)
             mock_connect.return_value = mock_conn
 
             # Call multiple times

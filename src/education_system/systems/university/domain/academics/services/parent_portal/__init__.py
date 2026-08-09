@@ -5,7 +5,6 @@ from education_system.systems.university.domain.academics.services.parent_portal
     get_student_parent_relationships,
     send_parent_notification,
     add_teacher_report,
-    DEFAULT_DB_PATH,
 )
 from education_system.systems.university.domain.academics.services.parent_portal.menu import (
     display_parent_portal_menu,

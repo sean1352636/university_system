@@ -1,12 +1,16 @@
 from education_system.systems.university.infrastructure.database.db import sqlite3, DatabaseManager
-from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+# Tests redirect these modules to a temp database by patching this module-level
+# name (see tests/.../parent_portal/test_parent_portal.py). They bypass
+# get_connection(), so the autouse _isolate_db fixture does not cover them —
+# keep the alias, and keep connect() reading it at call time.
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH as DEFAULT_DB_PATH
 import datetime
 
 
 def initialize_parent_portal():
     conn = None
     try:
-        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
+        conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
         conn.execute("PRAGMA busy_timeout = 30000")  # Set a longer timeout
         cursor = conn.cursor()
 
@@ -482,7 +486,7 @@ def initialize_parent_portal():
 def integrate_parent_portal_with_main():
     """Add needed functions to integrate parent portal with main system"""
     try:
-        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
+        conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
         conn.execute("PRAGMA busy_timeout = 30000")
         cursor = conn.cursor()
 
@@ -679,7 +683,7 @@ def get_student_parent_relationships(student_id):
     """Get parent information for a student - utility for other modules"""
     conn = None
     try:
-        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
+        conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
         conn.execute("PRAGMA busy_timeout = 30000")
         cursor = conn.cursor()
 
@@ -705,7 +709,7 @@ def send_parent_notification(student_id, notification_type, content):
     """Send a notification to all parents of a student - utility for other modules"""
     conn = None
     try:
-        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
+        conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
         conn.execute("PRAGMA busy_timeout = 30000")
         cursor = conn.cursor()
 
@@ -782,7 +786,7 @@ def add_teacher_report(student_id, teacher_id, module_code, report_type, content
     """Add a teacher report for a student - utility for other modules"""
     conn = None
     try:
-        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
+        conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
         conn.execute("PRAGMA busy_timeout = 30000")
         cursor = conn.cursor()
 
