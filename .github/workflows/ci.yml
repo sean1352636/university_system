@@ -79,12 +79,12 @@ jobs:
       - name: API, migration, plugin and accessibility contracts
         run: >-
           CI_STRICT_SKIPS=1 pytest
-          tests/systems/university/contracts
-          tests/migrations/test_university_canonical_migration.py
-          tests/migrations/test_university_transactional_outbox_migration.py
-          tests/migrations/test_admissions_policy_consumer_migration.py
-          tests/systems/university/application/test_institutional_operations.py
-          tests/migrations/test_institutional_operations_migration.py
+          tests/unit/systems/university/contracts
+          tests/integration/migrations/test_university_canonical_migration.py
+          tests/integration/migrations/test_university_transactional_outbox_migration.py
+          tests/integration/migrations/test_admissions_policy_consumer_migration.py
+          tests/unit/systems/university/application/test_institutional_operations.py
+          tests/integration/migrations/test_institutional_operations_migration.py
           -n 0 --timeout=120
 
   profile-supply-chain:
@@ -142,7 +142,7 @@ jobs:
           python -m pip install -e ".[test]" pytest-playwright axe-playwright-python
           playwright install --with-deps chromium
       - name: Run browser and WCAG checks
-        run: pytest tests/systems/university/browser -n 0 --browser chromium
+        run: pytest tests/unit/systems/university/browser -n 0 --browser chromium
 
   # ── Security scanning ─────────────────────────────────────────────────────
   security:
@@ -173,8 +173,8 @@ jobs:
         run: pip-audit --requirement requirements.lock --strict --progress-spinner off
       - name: Security and authentication tests
         run: >-
-          pytest tests/systems/university/infrastructure/security
-          tests/systems/university/infrastructure/auth
+          pytest tests/unit/systems/university/infrastructure/security
+          tests/unit/systems/university/infrastructure/auth
           -n 0 --timeout=120
       # Independent, cross-cutting security suite (authz/tenant/CSRF/SSRF/
       # upload/backup/audit/secret-leakage). Also the release gate in
@@ -320,10 +320,10 @@ jobs:
       - name: Run cross-platform filesystem, subprocess and localization tests
         run: >-
           pytest
-          tests/systems/university/infrastructure/core
-          tests/systems/university/infrastructure/database
-          tests/systems/university/infrastructure/utils
-          tests/systems/university/integration
+          tests/unit/systems/university/infrastructure/core
+          tests/unit/systems/university/infrastructure/database
+          tests/unit/systems/university/infrastructure/utils
+          tests/unit/systems/university/integration
           -m "not gui and not slow" -n 0 --timeout=120
 
   # GUI tests need a display and must run serially: parallel Tk workers sharing
@@ -352,7 +352,7 @@ jobs:
       - name: Run all university GUI tests
         run: >-
           xvfb-run -a
-          pytest tests/systems/university
+          pytest tests/unit/systems/university
           -o addopts=''
           -m gui -n 0 --timeout=180
           --strict-markers --strict-config
@@ -404,12 +404,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { system: platform,   path: tests/platform }
-          - { system: nursery,    path: tests/systems/nursery }
-          - { system: primary,    path: tests/systems/primary }
-          - { system: secondary,  path: tests/systems/secondary }
-          - { system: sixth-form, path: tests/systems/sixth_form }
-          - { system: university, path: tests/systems/university }
+          - { system: platform,   path: tests/unit/platform }
+          - { system: nursery,    path: tests/unit/systems/nursery }
+          - { system: primary,    path: tests/unit/systems/primary }
+          - { system: secondary,  path: tests/unit/systems/secondary }
+          - { system: sixth-form, path: tests/unit/systems/sixth_form }
+          - { system: university, path: tests/unit/systems/university }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -499,12 +499,12 @@ jobs:
       - name: Run slow + integration tests
         run: >-
           xvfb-run -a
-          pytest tests/platform tests/systems/university
+          pytest tests/unit/platform tests/unit/systems/university
           -m "slow or integration" -n 0 --timeout=180
       - name: Enforce performance regression budgets
         run: >-
           xvfb-run -a
-          pytest tests/systems/university/integration/test_performance_benchmarks.py
+          pytest tests/unit/systems/university/integration/test_performance_benchmarks.py
           -m performance -n 0 --timeout=180
 
   # ── Single required gate: green only if every required job passes ─────────

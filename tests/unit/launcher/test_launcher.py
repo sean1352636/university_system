@@ -34,11 +34,11 @@ class TestDispatchTable:
 
 class TestSystemTestLaunchers:
     @pytest.mark.parametrize(("function_name", "test_path"), [
-        ("run_university_tests", "tests/systems/university"),
-        ("run_sixthform_tests", "tests/systems/sixth_form"),
-        ("run_secondarysch_tests", "tests/systems/secondary"),
-        ("run_primarysch_tests", "tests/systems/primary"),
-        ("run_nursery_tests", "tests/systems/nursery"),
+        ("run_university_tests", "tests/unit/systems/university"),
+        ("run_sixthform_tests", "tests/unit/systems/sixth_form"),
+        ("run_secondarysch_tests", "tests/unit/systems/secondary"),
+        ("run_primarysch_tests", "tests/unit/systems/primary"),
+        ("run_nursery_tests", "tests/unit/systems/nursery"),
     ])
     def test_system_runner_uses_consolidated_test_path(self, function_name, test_path):
         from education_system.launcher import systems
@@ -58,10 +58,10 @@ class TestSystemTestLaunchers:
         with patch("education_system.launcher.systems.subprocess.run", return_value=completed) as run:
             assert systems.run_all_system_tests() is True
 
-        assert "tests/systems" in run.call_args.args[0]
+        assert "tests/unit/systems" in run.call_args.args[0]
 
     def test_university_support_runner_points_at_suite_root(self):
-        from tests.systems.university._support import run_all_tests
+        from tests.unit.systems.university._support import run_all_tests
 
         assert run_all_tests.TESTS_DIR.name == "university"
         assert (run_all_tests.TESTS_DIR / "domain").is_dir()

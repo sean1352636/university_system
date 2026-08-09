@@ -40,8 +40,8 @@ A source directory may appear on more than one row when its files split across d
 | `education_system/<system>/api/**` | `education_system/systems/<system>/interfaces/api/**` |
 | `education_system/<system>/{cli_main,gui_main,main_gui,menu}.py` | `education_system/systems/<system>/app.py` |
 | `education_system/<system>/{templates,web}/**` | `education_system/systems/<system>/assets/**` |
-| `education_system/<system>/tests/**` | `tests/systems/<system>/**` — mirroring the *new* code tree, not the old test tree |
-| `education_system/shared/tests/**` | `tests/platform/**` |
+| `education_system/<system>/tests/**` | `tests/unit/systems/<system>/**` — mirroring the *new* code tree, not the old test tree |
+| `education_system/shared/tests/**` | `tests/unit/platform/**` |
 | `education_system/post_18/university_system/scripts/**` | `tools/university/**` |
 | `**/{data,logs,backups,.benchmarks}/**` | `var/**` (gitignored) |
 | `**/README.md` | `docs/**` |
@@ -231,7 +231,7 @@ describing a structure the code no longer has — `tests/domain/academics/gradin
 `domain/assessment/grading/`, and 27 top-level `tests/domain/` children against 11 code areas.
 
 **The rule is: the test tree mirrors the code tree, one level for one level.** A module at
-`domain/<area>/<feature>/` has its tests at `tests/systems/university/domain/<area>/<feature>/`.
+`domain/<area>/<feature>/` has its tests at `tests/unit/systems/university/domain/<area>/<feature>/`.
 Cross-cutting suites (`integration/`, `smoke/`, `_support/`) stay as top-level siblings because they
 belong to no single module. GUI and CLI tests follow the code into `interfaces/`, which is what
 keeps the ADR 0007 split honest on the test side too.
@@ -262,7 +262,7 @@ by reading what each imports: `virtual` → `virtual_classroom`, `exam_portal` �
 `interfaces/cli/academics/` (all three test `domain/academics/cli`).
 
 Two items leave the system tree entirely: `tests/logs/app.log` → `var/` (gitignored), and the 13
-tests covering `scripts/` → `tests/tools/university/`, following the code they exercise.
+tests covering `scripts/` → `tests/unit/tools/university/`, following the code they exercise.
 
 ### Known wrinkles
 
@@ -301,7 +301,7 @@ against the code skeleton: `academics/{academic_year, library, timetable_optimis
 **Nursery, Primary and Secondary stay flat.** Four to seven files each, and for Primary and
 Secondary none of them is a domain test — `test_cli_main`, `test_gui_viewmodel`, `test_paths`,
 `test_smoke` are interface and infrastructure smoke checks. Splitting 4 files across 11 areas would
-produce empty scaffolding, so the map keeps them flat at `tests/systems/<system>/`.
+produce empty scaffolding, so the map keeps them flat at `tests/unit/systems/<system>/`.
 
 **Target rule for all five systems:** tests mirror the code tree. A system adopts subdirectories
 once its suite justifies them — roughly when domain tests start appearing. Nursery is closest: its
@@ -312,7 +312,7 @@ moving them twice.
 
 ## `shared/tests/` → `platform/`
 
-Fifty-four files that mapped flat to `tests/platform/`, now grouped to match the eight platform
+Fifty-four files that mapped flat to `tests/unit/platform/`, now grouped to match the eight platform
 groups — the same defect that affected university, at a scale that already justifies the fix:
 
 | Group | Files | Notes |
@@ -325,10 +325,10 @@ groups — the same defect that affected university, at a scale that already jus
 | `services/` | 3 | `kernel/` 2, `integrations/email` 1, `identity/student_id` 1 |
 
 Two files leave `platform/` entirely, because their subjects do not move in this migration:
-`test_launcher.py` → `tests/launcher/` and `test_migrations.py` → `tests/migrations/`, mirroring
+`test_launcher.py` → `tests/unit/launcher/` and `test_migrations.py` → `tests/integration/migrations/`, mirroring
 `education_system/launcher/` and `education_system/migrations/` staying put.
 
-`test_shared_services.py` stays at the `tests/platform/` root — it spans `analytics` and `audit`
+`test_shared_services.py` stays at the `tests/unit/platform/` root — it spans `analytics` and `audit`
 and has no single home.
 
 ---

@@ -161,7 +161,7 @@ def display_interface_menu():
             return "gui"
         elif choice == "3":
             try:
-                from tests.systems.university._support.run_all_tests import main as run_tests_main
+                from tests.unit.systems.university._support.run_all_tests import main as run_tests_main
                 run_tests_main()
             except Exception:
                 pass

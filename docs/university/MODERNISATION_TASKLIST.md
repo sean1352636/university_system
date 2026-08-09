@@ -240,7 +240,7 @@ student-record system.
 
 ```bash
 python -m alembic -c src/education_system/alembic.ini upgrade head
-python -m pytest tests/systems/university -m "not slow and not gui"
+python -m pytest tests/unit/systems/university -m "not slow and not gui"
 make lint
 make type-check
 make coverage-university-core

@@ -398,31 +398,31 @@ def run_unified_api():
 
 
 def run_university_tests():
-    return _run_pytest("tests/systems/university")
+    return _run_pytest("tests/unit/systems/university")
 
 
 def run_sixthform_tests():
-    return _run_pytest("tests/systems/sixth_form")
+    return _run_pytest("tests/unit/systems/sixth_form")
 
 
 def run_secondarysch_tests():
-    return _run_pytest("tests/systems/secondary")
+    return _run_pytest("tests/unit/systems/secondary")
 
 
 def run_primarysch_tests():
-    return _run_pytest("tests/systems/primary")
+    return _run_pytest("tests/unit/systems/primary")
 
 
 def run_nursery_tests():
-    return _run_pytest("tests/systems/nursery")
+    return _run_pytest("tests/unit/systems/nursery")
 
 
 def run_fecollege_tests():
-    return _run_pytest("tests/systems/fe_college")
+    return _run_pytest("tests/unit/systems/fe_college")
 
 
 def run_apprenticeships_tests():
-    return _run_pytest("tests/systems/apprenticeships")
+    return _run_pytest("tests/unit/systems/apprenticeships")
 
 
 def _run_pytest(test_dir):
@@ -441,7 +441,7 @@ def _repo_root():
 
 def run_all_system_tests():
     """Run every system test suite from the consolidated tests tree."""
-    test_dirs = ["tests/systems"]
+    test_dirs = ["tests/unit/systems"]
     print()
     print("=" * 60)
     print("  RUNNING ALL SYSTEM TESTS")

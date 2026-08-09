@@ -68,19 +68,19 @@ test-cov: ## Run tests with coverage
 	$(PYTEST) $(TESTS) -v --cov=$(SRC) --cov-report=term-missing --cov-report=html:htmlcov -m "not slow and not gui" --timeout=60
 
 test-shared: ## Run shared module tests
-	$(PYTEST) tests/platform/ -v --timeout=60
+	$(PYTEST) tests/unit/platform/ -v --timeout=60
 
 test-university: ## Run the default fast, non-GUI university suite
-	$(PYTEST) tests/systems/university/ -v -m "not slow and not gui" --timeout=60
+	$(PYTEST) tests/unit/systems/university/ -v -m "not slow and not gui" --timeout=60
 
 test-security: ## Run university security and authentication tests (including legacy unmarked files)
-	$(PYTEST) tests/systems/university/infrastructure/security tests/systems/university/infrastructure/auth -n 0 -v --timeout=60
+	$(PYTEST) tests/unit/systems/university/infrastructure/security tests/unit/systems/university/infrastructure/auth -n 0 -v --timeout=60
 
 test-gui: ## Run all GUI tests serially (use xvfb-run on headless Linux)
 	$(PYTEST) $(TESTS) -m gui -n 0 -v --timeout=120
 
 test-auth: ## Run shared auth infrastructure tests
-	$(PYTEST) tests/platform/identity/auth/ -v --timeout=60
+	$(PYTEST) tests/unit/platform/identity/auth/ -v --timeout=60
 
 test-coverage: ## Run tests with full coverage report (HTML + term-missing)
 	$(PYTEST) $(TESTS) -v --cov=$(SRC) --cov-report=html:htmlcov --cov-report=term-missing -m "not slow and not gui" --timeout=60
@@ -93,12 +93,12 @@ coverage-percent: ## Print the real total coverage % (for CI to publish, not jus
 	$(PYTHON) -m coverage report --format=total
 
 coverage-shared: ## Enforce the higher coverage bar on shared/core code (fail under 70%)
-	$(PYTEST) tests/platform \
+	$(PYTEST) tests/unit/platform \
 		--cov=$(SRC)/platform --cov=$(SRC)/systems/university/infrastructure \
 		--cov-report=term-missing --cov-fail-under=70 -m "not slow and not gui" --timeout=60
 
 coverage-university: ## Measure the whole university tree and block coverage regressions
-	$(PYTEST) tests/systems/university/ \
+	$(PYTEST) tests/unit/systems/university/ \
 		-m "not slow and not gui" --timeout=60 \
 		--cov=$(UNIVERSITY_SRC) --cov-branch \
 		--cov-report=xml:coverage-university.xml \
@@ -106,13 +106,13 @@ coverage-university: ## Measure the whole university tree and block coverage reg
 
 coverage-university-core: ## Enforce coverage for modernised university core (fail under 60%)
 	$(PYTEST) \
-		tests/systems/university/domain/admissions/test_admissions_lifecycle.py \
-		tests/systems/university/domain/learners/test_student_lifecycle.py \
-		tests/systems/university/domain/assessment/test_assessment_boards.py \
-		tests/systems/university/domain/academics/test_programme_governance.py \
-		tests/systems/university/domain/academics/research/test_pgr_service.py \
-		tests/systems/university/services/test_in_process_events.py \
-		tests/systems/university/services/test_operations.py \
+		tests/unit/systems/university/domain/admissions/test_admissions_lifecycle.py \
+		tests/unit/systems/university/domain/learners/test_student_lifecycle.py \
+		tests/unit/systems/university/domain/assessment/test_assessment_boards.py \
+		tests/unit/systems/university/domain/academics/test_programme_governance.py \
+		tests/unit/systems/university/domain/academics/research/test_pgr_service.py \
+		tests/unit/systems/university/services/test_in_process_events.py \
+		tests/unit/systems/university/services/test_operations.py \
 		--cov=$(SRC)/systems/university/domain/admissions/services/admissions_lifecycle.py \
 		--cov=$(SRC)/systems/university/domain/learners/student_lifecycle.py \
 		--cov=$(SRC)/systems/university/domain/assessment/boards \
@@ -232,13 +232,13 @@ ci: clean lint test-cov security-scan supply-chain-check ## Simulate full CI pip
 # ==========================================
 
 load-test: ## Run headless Locust load test (50 users, 60 s) — server must be running
-	$(PYTHON) -m locust -f tests/platform/performance/locustfile.py --headless -u 50 -r 5 --run-time 60s --host http://localhost:5000
+	$(PYTHON) -m locust -f tests/performance/locustfile.py --headless -u 50 -r 5 --run-time 60s --host http://localhost:5000
 
 load-test-ui: ## Open Locust web UI for interactive load testing — server must be running
-	$(PYTHON) -m locust -f tests/platform/performance/locustfile.py --host http://localhost:5000
+	$(PYTHON) -m locust -f tests/performance/locustfile.py --host http://localhost:5000
 
 perf-test: ## Run standalone SQLite benchmark (no server required)
-	$(PYTHON) tests/platform/performance/benchmark_db.py
+	$(PYTHON) tests/performance/benchmark_db.py
 
 mutation-test: ## Run focused mutation testing against the email boundary
-	mutmut run --paths-to-mutate src/education_system/systems/university/infrastructure/email/smtp.py --tests-dir tests/systems/university/infrastructure/email
+	mutmut run --paths-to-mutate src/education_system/systems/university/infrastructure/email/smtp.py --tests-dir tests/unit/systems/university/infrastructure/email

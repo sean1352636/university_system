@@ -37,7 +37,7 @@ university/
 
 Cross-cutting infrastructure shared with the other four systems (auth, unified
 API, GDPR, audit, backups) lives under `src/education_system/platform/`.
-Tests live at `tests/systems/university/`.
+Tests live at `tests/unit/systems/university/`.
 
 API route names do not always match top-level domain folders. The route-to-domain
 ownership map is documented in

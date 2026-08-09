@@ -370,7 +370,7 @@ All 12 ADRs are listed in [docs/adr/README.md](docs/adr/README.md).
 
 | Document | Description |
 |----------|-------------|
-| [Performance Testing](tests/platform/performance/README.md) | Load testing with Locust, SQLite benchmarks |
+| [Performance Testing](tests/performance/README.md) | Load testing with Locust, SQLite benchmarks |
 
 ---
 

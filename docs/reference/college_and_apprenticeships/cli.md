@@ -25,7 +25,7 @@ interfaces/cli/
 anything the user can fix, so it is logged with a traceback and reported
 as a single line.
 
-`tests/systems/apprenticeships/test_interfaces.py` parametrises over
+`tests/unit/systems/apprenticeships/test_interfaces.py` parametrises over
 every entry in `MENUS` and asserts the target resolves — otherwise a
 typo stays invisible until somebody picks it.
 

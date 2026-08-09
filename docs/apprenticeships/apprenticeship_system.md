@@ -227,7 +227,7 @@ thousands of times per screen and have no actor to hand.
 ## Testing
 
 ```bash
-/home/seancatchpole989/venv/bin/pytest tests/systems/apprenticeships -v --timeout=60
+/home/seancatchpole989/venv/bin/pytest tests/unit/systems/apprenticeships -v --timeout=60
 ```
 
 `test_services.py` concentrates on the two things most damaging to get
