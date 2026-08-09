@@ -1,7 +1,8 @@
 # Dependabot configuration — Education System monorepo
 #
-# Dependabot version-update PRs are limited to the root requirements.txt
-# (the actual project dependency manifest). The repository contains
+# Dependabot version-update PRs are limited to the root pyproject.toml and the
+# two resolved locks (requirements.lock, requirements-dev.lock), which are the
+# actual project dependency manifests. The repository contains
 # `*_requirements.txt` artefacts under
 # `education_system/university_system/data/submissions/...` that are
 # student-submission seed data — they were historically picked up by

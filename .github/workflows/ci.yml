@@ -27,8 +27,8 @@ jobs:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: |
-            requirements.txt
-            requirements-dev.txt
+            requirements.lock
+            requirements-dev.lock
       - name: Install dev tooling
         run: python -m pip install ruff mypy
       # Ruff and mypy are reported but non-blocking: the codebase carries known
@@ -55,7 +55,7 @@ jobs:
           cache: pip
       - name: Install test and quality dependencies
         run: |
-          python -m pip install -r requirements.txt -r requirements-dev.txt
+          python -m pip install -r requirements-dev.lock
           python -m pip install -e . --no-deps
       - name: Architecture and complexity
         run: python tools/university/check_architecture.py
@@ -157,7 +157,7 @@ jobs:
       - name: Install scanners
         run: |
           python -m pip install "bandit[toml]" pip-audit pytest pytest-xdist pytest-timeout
-          python -m pip install -r requirements.txt
+          python -m pip install -r requirements.lock
       - name: Bandit (high severity, project config)
         run: bandit -r src/education_system/ -c pyproject.toml -lll
       # Medium-severity findings are reported as annotations so they are
@@ -278,14 +278,14 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
           cache-dependency-path: |
-            requirements.txt
-            requirements-dev.txt
+            requirements.lock
+            requirements-dev.lock
       - name: System packages (Tkinter for GUI-import tests)
         run: sudo apt-get update && sudo apt-get install -y python3-tk
       - name: Install runtime + dev dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt -r requirements-dev.txt
+          python -m pip install -r requirements-dev.lock
           python -m pip install -e . --no-deps
       # No explicit paths: pyproject's testpaths = ["tests"] covers the
       # single post-migration tree, which also picks up launcher/, migrations/
@@ -310,12 +310,12 @@ jobs:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: |
-            requirements.txt
-            requirements-dev.txt
+            requirements.lock
+            requirements-dev.lock
       - name: Install runtime and test dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt -r requirements-dev.txt
+          python -m pip install -r requirements-dev.lock
           python -m pip install -e . --no-deps
       - name: Run cross-platform filesystem, subprocess and localization tests
         run: >-
@@ -340,14 +340,14 @@ jobs:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: |
-            requirements.txt
-            requirements-dev.txt
+            requirements.lock
+            requirements-dev.lock
       - name: Install Tkinter and virtual display
         run: sudo apt-get update && sudo apt-get install -y python3-tk xvfb
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt -r requirements-dev.txt
+          python -m pip install -r requirements-dev.lock
           python -m pip install -e . --no-deps
       - name: Run all university GUI tests
         run: >-
@@ -379,13 +379,13 @@ jobs:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: |
-            requirements.txt
-            requirements-dev.txt
+            requirements.lock
+            requirements-dev.lock
       - name: Install test dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y python3-tk
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt -r requirements-dev.txt
+          python -m pip install -r requirements-dev.lock
           python -m pip install -e . --no-deps
       - name: Enforce whole-university coverage floor
         run: make coverage-university
@@ -417,14 +417,14 @@ jobs:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: |
-            requirements.txt
-            requirements-dev.txt
+            requirements.lock
+            requirements-dev.lock
       - name: System packages (Tkinter)
         run: sudo apt-get update && sudo apt-get install -y python3-tk
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt -r requirements-dev.txt
+          python -m pip install -r requirements-dev.lock
           python -m pip install -e . --no-deps
       - name: Fail if this system collects zero tests
         run: |
@@ -487,14 +487,14 @@ jobs:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: |
-            requirements.txt
-            requirements-dev.txt
+            requirements.lock
+            requirements-dev.lock
       - name: Install Tkinter and virtual display
         run: sudo apt-get update && sudo apt-get install -y python3-tk xvfb
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt -r requirements-dev.txt
+          python -m pip install -r requirements-dev.lock
           python -m pip install -e . --no-deps
       - name: Run slow + integration tests
         run: >-

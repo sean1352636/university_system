@@ -130,8 +130,8 @@ university_system/infrastructure/database/migrations/
 # Using pip
 pip install pyotp qrcode[pil] pillow
 
-# Or using requirements.txt
-pip install -r requirements.txt
+# Or using requirements.lock
+pip install -r requirements.lock
 ```
 
 **Required packages:**
@@ -819,7 +819,7 @@ self.device_trust_days = 30       # Device trust duration
 ```bash
 pip install pyotp qrcode[pil] pillow
 # or
-pip install -r requirements.txt
+pip install -r requirements.lock
 ```
 
 #### 2. "QR Code not displaying"

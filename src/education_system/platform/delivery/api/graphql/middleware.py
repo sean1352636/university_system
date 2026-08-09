@@ -104,7 +104,7 @@ class AuthMiddleware(SchemaExtension):
 
     def _decode_token(self, token: str) -> Optional[dict]:
         try:
-            import jwt  # PyJWT — already in requirements.txt
+            import jwt  # PyJWT — already in requirements.lock
             return jwt.decode(
                 token,
                 self._secret,

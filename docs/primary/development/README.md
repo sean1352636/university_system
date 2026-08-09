@@ -18,7 +18,7 @@ The Primary School Management System is one of four subsystems in the Education 
 ### Install Dependencies
 
 ```bash
-./venv/bin/pip install -r requirements.txt
+./venv/bin/pip install -r requirements.lock
 ```
 
 Key dependencies: `tkinter` (stdlib), `sqlite3` (stdlib), `flask`, `bcrypt`, `pyotp`, `pytest`, `black`, `ruff`.

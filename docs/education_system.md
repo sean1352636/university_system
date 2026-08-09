@@ -24,7 +24,7 @@ Each subsystem ships its own CLI and GUI (Tkinter). All four share a single `aut
 
 ```bash
 # Install dependencies (Python 3.11+)
-pip install -r ../requirements.txt
+pip install -r ../requirements.lock
 
 # Interactive launcher
 python ../run.py

@@ -778,7 +778,7 @@ The following groups represent the minimum permissions required for common opera
 
 ## APPENDIX D — INSTALLER AND SETUP REFERENCE
 
-### Requirements (requirements.txt — as of v2.5.0)
+### Requirements (requirements.lock — as of v2.5.0)
 
 **Required (core):**
 ```

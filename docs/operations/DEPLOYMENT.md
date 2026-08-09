@@ -32,7 +32,7 @@ export APP_ENV=production
 export DEBUG=False
 
 # 2. Install production dependencies
-pip install -r requirements.txt
+pip install -r requirements.lock
 
 # 3. Configure production database (PostgreSQL/MySQL recommended)
 # Edit .env with production database credentials

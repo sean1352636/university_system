@@ -111,7 +111,7 @@ If not set, random 16-char passwords generated on startup.
 
 | File | Purpose |
 |------|---------|
-| `requirements.txt` | Python dependencies |
+| `requirements.lock` | Python dependencies |
 | `pyproject.toml` | Project metadata & dependencies |
 | `chatbot_config.json` | Chatbot settings (session_timeout: 3600) |
 | `log_config.json` | Logging configuration |

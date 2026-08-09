@@ -35,8 +35,8 @@ Thank you for your interest in contributing to the Education System project. Thi
 
 4. **Install dependencies**:
    ```bash
-   pip install -r requirements.txt
-   pip install -r requirements-dev.txt   # linters, formatters, test tools
+   pip install -r requirements.lock
+   pip install -r requirements-dev.lock   # linters, formatters, test tools
    ```
 
 5. **Copy the environment template** and fill in local values:

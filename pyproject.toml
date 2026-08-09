@@ -30,9 +30,12 @@ classifiers = [
 #     pip install education-system[cloud-aws]
 #     pip install education-system[dev]
 #
-# These are the *minimum compatible ranges*. For an exact, reproducible
-# runtime install see requirements.txt (the pinned lock file); dev/CI tooling
-# is pinned separately in requirements-dev.txt.
+# These are the *minimum compatible ranges* and the only place a direct
+# dependency is declared. Both resolved environments are generated from this
+# file by `make lock`:
+#     requirements.lock       production   (core + server-side feature extras)
+#     requirements-dev.lock   development  (production + dev/security/perf)
+# Install with `make install` / `make install-dev`; never hand-edit a lock.
 #
 # The default is the supported web/API student-record core. Desktop, analytics,
 # document and campus capabilities are explicit profiles below.

@@ -27,7 +27,7 @@ source venv/bin/activate    # Linux / macOS
 ### 2. Install Dependencies
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.lock
 ```
 
 Key dependencies include Flask, Flask-CORS, bcrypt, pyotp, and the standard library modules (tkinter, sqlite3, logging).

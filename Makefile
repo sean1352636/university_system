@@ -26,11 +26,11 @@ help: ## Show this help
 # Setup
 # ==========================================
 
-install: ## Install production dependencies
-	$(PIP) install -r requirements.txt
+install: ## Install the resolved production environment
+	$(PIP) install -r requirements.lock
 
-install-dev: ## Install runtime + development/CI dependencies
-	$(PIP) install -r requirements-dev.txt
+install-dev: ## Install the resolved development environment (includes production)
+	$(PIP) install -r requirements-dev.lock
 
 # ==========================================
 # Running
@@ -148,11 +148,26 @@ security-scan: ## Run bandit security scan
 # Supply chain
 # ==========================================
 
-lock: ## Regenerate the hash-pinned requirements.lock from requirements.txt
+# Both locks resolve from pyproject.toml, which is the only place a direct
+# dependency is declared. PROD_EXTRAS is the server-side feature set that ships
+# in the container: the desktop (Tkinter) and deep-learning `ai` extras are
+# deliberately excluded — install those explicitly where they are needed.
+PROD_EXTRAS := --extra analytics --extra documents --extra commerce \
+	--extra campus-services --extra integrations
+DEV_EXTRAS := --extra dev --extra security --extra perf
+PIPTOOLS := $(PYTHON) -m piptools compile --generate-hashes --allow-unsafe --strip-extras
+
+lock: lock-prod lock-dev ## Regenerate both hash-pinned locks from pyproject.toml
+
+lock-prod: ## Resolve the production environment -> requirements.lock
 	$(PIP) install --quiet pip-tools
-	$(PYTHON) -m piptools compile --generate-hashes --allow-unsafe --strip-extras \
-		--output-file=requirements.lock requirements.txt
-	@echo "requirements.lock regenerated — commit it with the requirements.txt change."
+	$(PIPTOOLS) $(PROD_EXTRAS) --output-file=requirements.lock pyproject.toml
+	@echo "requirements.lock regenerated — commit it with the pyproject.toml change."
+
+lock-dev: ## Resolve the development environment -> requirements-dev.lock
+	$(PIP) install --quiet pip-tools
+	$(PIPTOOLS) $(PROD_EXTRAS) $(DEV_EXTRAS) --output-file=requirements-dev.lock pyproject.toml
+	@echo "requirements-dev.lock regenerated — commit it with the pyproject.toml change."
 
 supply-chain-check: ## Offline checks: declarative build, pinned runtime, hashed lock
 	$(PYTHON) tools/supply_chain_check.py

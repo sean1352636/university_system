@@ -37,7 +37,7 @@ The Education System runs four subsystems from a single codebase:
 ### 1. Install Dependencies
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.lock
 ```
 
 ### 2. Initialise Databases
@@ -297,7 +297,7 @@ See [WEBHOOKS.md](../reference/WEBHOOKS.md) for webhook configuration and manage
 - Rotate admin passwords
 - Review user account list for inactive accounts
 - Test backup restore procedure
-- Update dependencies (`pip install -r requirements.txt --upgrade`)
+- Update dependencies (`pip install -r requirements.lock --upgrade`)
 
 ### On Upgrade
 
@@ -309,7 +309,7 @@ make db-backup
 git pull
 
 # 3. Install dependencies
-pip install -r requirements.txt
+pip install -r requirements.lock
 
 # 4. Run database migrations (auto-applied on startup)
 python run.py --cli  # Start and stop to trigger migrations

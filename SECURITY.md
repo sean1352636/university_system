@@ -719,7 +719,7 @@ if __name__ == '__main__':
    ```bash
    # Check for updates regularly
    git pull origin main
-   pip install -r requirements.txt --upgrade
+   pip install -r requirements.lock --upgrade
    ```
 
 ### For Developers

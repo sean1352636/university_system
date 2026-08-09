@@ -34,7 +34,7 @@ A comprehensive, feature-rich education management platform spanning five distin
 # Clone and install
 git clone https://github.com/sean1352636/university_system.git
 cd university_system
-pip install -r requirements.txt
+pip install -r requirements.lock
 
 # Run the unified launcher (interactive system & mode selection)
 python -m education_system
@@ -178,7 +178,7 @@ git clone https://github.com/sean1352636/university_system.git
 cd university_system
 
 # Smallest supported install — everything the shipped core features need
-pip install -r requirements.txt      # pinned/reproducible
+pip install -r requirements.lock      # pinned/reproducible
 #   or:  pip install -e .            # minimum-range install from pyproject.toml
 ```
 
@@ -191,7 +191,7 @@ part of it because core academics and finance features depend on it.
 Install only what you need — none of these are required to run the app:
 
 ```bash
-pip install -e ".[dev]"          # tests, ruff, mypy, black  (or: -r requirements-dev.txt)
+pip install -e ".[dev]"          # tests, ruff, mypy, black  (or: -r requirements-dev.lock)
 pip install -e ".[security]"     # bandit, safety, pip-audit, semgrep
 pip install -e ".[perf]"         # locust load testing
 pip install -e ".[ai]"           # torch / transformers / spaCy / OpenCV
@@ -202,8 +202,8 @@ pip install -e ".[integrations]" # Google Classroom LMS, Twilio SMS
 pip install -e ".[remote]"       # SSH/SFTP (paramiko)
 ```
 
-> Development/CI tooling is **not** in `requirements.txt`; it lives in
-> `requirements-dev.txt` (equivalently the `dev`/`security`/`perf` extras) so
+> Development/CI tooling is **not** in `requirements.lock`; it lives in
+> `requirements-dev.lock` (equivalently the `dev`/`security`/`perf` extras) so
 > ordinary users don't install pytest, locust, semgrep or bandit.
 
 ### Environment Configuration

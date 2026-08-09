@@ -441,7 +441,7 @@ def part_1(g, counts):
     g.code([
         "git clone https://github.com/sean1352636/university_system.git",
         "cd university_system",
-        "pip install -r requirements.txt",
+        "pip install -r requirements.lock",
     ])
     g.p(
         "That single installation covers all five systems and every interface. Optional extras "
@@ -1610,7 +1610,7 @@ def part_5_admin(g):
                         "tooling (§2.10)"],
             ["Apply database migrations", "Handled automatically at startup; Alembic manages "
                                           "the schema"],
-            ["Update dependencies", "pip install -r requirements.txt after pulling changes"],
+            ["Update dependencies", "pip install -r requirements.lock after pulling changes"],
             ["Check health", "/api/v1/health when the API is running"],
             ["Review the audit log", "§2.11 — worth doing on a schedule, not only after an "
                                      "incident"],

@@ -32,7 +32,7 @@ The project uses a shared virtual environment located at the repository root:
 python
 
 # Always use the full path -- there is no bare `python` on the system
-python -m pip install -r requirements.txt
+python -m pip install -r requirements.lock
 ```
 
 ### Dependencies
@@ -40,7 +40,7 @@ python -m pip install -r requirements.txt
 Install from the project root:
 
 ```bash
-python -m pip install -r requirements.txt
+python -m pip install -r requirements.lock
 ```
 
 Key dependencies include:

@@ -17,7 +17,7 @@ docs/nursery/
 
 ```bash
 # Install
-pip install -r requirements.txt
+pip install -r requirements.lock
 
 # Launch directly
 python run.py --nursery --gui      # Nursery GUI

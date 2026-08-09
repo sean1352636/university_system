@@ -208,7 +208,10 @@ for path in paths:
 
 ### Required Dependencies
 
-Basic NLP (included in requirements.txt):
+Basic NLP (**not** in requirements.lock — nltk lives in the `ai` extra, which is
+excluded from the production resolution because it also pulls torch/transformers.
+Every nltk import in the codebase is guarded, so the feature degrades rather than
+crashing when it is absent):
 ```bash
 pip install nltk
 python -m nltk.downloader punkt stopwords

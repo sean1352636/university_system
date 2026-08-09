@@ -49,7 +49,7 @@ never corrupts existing data.
 ## Consequences
 
 ### Positive
-- No external database server — `pip install -r requirements.txt` is all that is needed
+- No external database server — `pip install -r requirements.lock` is all that is needed
 - Each system's database can be backed up independently with a file copy
 - Corruption or schema issue in one system does not affect others
 - `sqlite3` is in the Python standard library; no additional driver dependencies

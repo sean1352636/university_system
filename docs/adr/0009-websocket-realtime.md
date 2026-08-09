@@ -59,7 +59,7 @@ configuration would need corresponding updates (WebSocket proxy headers).
   for concurrent WebSocket connections, not just request rate
 - Horizontal scaling requires a message broker (Redis Pub/Sub) so events emitted on one
   worker process are broadcast to clients connected to other workers
-- Adds `flask-socketio` and `eventlet` to `requirements.txt` — non-trivial dependencies
+- Adds `flask-socketio` and `eventlet` to `requirements.lock` — non-trivial dependencies
 
 ### Neutral
 - Socket.IO is a superset of WebSockets; using it rather than raw `websockets` gives automatic

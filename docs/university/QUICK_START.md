@@ -17,7 +17,7 @@ Get the University Management System running in 5 minutes.
 cd university_system
 
 # Install required packages
-pip install -r requirements.txt
+pip install -r requirements.lock
 ```
 
 ### 2. Configure Environment

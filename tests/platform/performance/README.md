@@ -7,7 +7,7 @@ Education Management System's Flask APIs and SQLite data layer.
 
 ## Prerequisites
 
-1. **Install Locust** (included in `requirements.txt`):
+1. **Install Locust** (included in `requirements.lock`):
    ```bash
    pip install locust>=2.20.0
    # or via the project venv:
