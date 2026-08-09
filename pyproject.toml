@@ -229,9 +229,10 @@ docs = [
 where = ["src"]
 include = ["education_system*"]
 
-# The launcher now lives inside the package as education_system/__main__.py, so
+# The launcher lives inside the package at education_system/launcher/main.py, so
 # there is no top-level module to declare here: the console script below targets
-# the package directly. The root run.py is an uninstalled compatibility shim.
+# it directly, and education_system/__main__.py forwards to the same function for
+# `python -m education_system`. The root run.py is an uninstalled, deprecated shim.
 [tool.setuptools]
 package-dir = {"" = "src"}
 include-package-data = true
@@ -248,7 +249,7 @@ include-package-data = true
 ]
 
 [project.scripts]
-education-system = "education_system.__main__:main"
+education-system = "education_system.launcher.main:main"
 education-system-core = "education_system.platform.delivery.api.university.core_api:main"
 
 [project.urls]

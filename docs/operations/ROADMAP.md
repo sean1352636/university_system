@@ -22,7 +22,7 @@ The following limitations should be considered when deploying this system:
 
 ### Multi-System Education Platform (August 2026) — CURRENT (v9.7.x)
 - [x] **Canonical ADR 0018 layout** (`src/`): Shared capabilities live under `education_system/platform/`, the five systems live under `education_system/systems/`, tests live under `tests/`, and runtime state lives under `var/`
-- [x] **Unified Launcher** (`src/education_system/__main__.py`): Single entry point for University, Sixth Form College, Secondary School, Primary School, and Nursery / Early Years systems with CLI & GUI system selection and runtime switching
+- [x] **Unified Launcher** (`src/education_system/launcher/main.py`): Single entry point for University, Sixth Form College, Secondary School, Primary School, and Nursery / Early Years systems with CLI & GUI system selection and runtime switching
 - [x] **Shared Authentication** (`education_system/platform/identity/auth/`): Unified auth across all 5 systems with bcrypt hashing, MFA, sessions, WebAuthn, SSO and cross-system identity
 - [x] **Cross-System CLI Switching** (v7.5.0): All 5 CLI systems support switching to any other system without re-authenticating
 - [x] **Unified REST API**: All 5 systems are served from `education_system/platform/delivery/api/unified_server.py`, with university APIs and web delivery under `platform/delivery/api/university/`

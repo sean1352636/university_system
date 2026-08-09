@@ -49,7 +49,7 @@ Counts were generated from the working tree on 2026-08-02 and exclude
 │   ├── data/
 │   ├── logs/
 │   └── secrets/
-└── run.py                         # Compatibility shim -> education_system.__main__
+└── run.py                         # Deprecated shim -> education_system.launcher.main
 ```
 
 The tree currently contains 12,454 non-cache files,
@@ -339,10 +339,13 @@ relevant `ensure_*_directories()` at startup, or `ensure_all_directories()`.
 
 ## Primary entry points
 
-The repository root also carries a thin `run.py` shim that delegates to
-`src/education_system/__main__.py`, so `python run.py` keeps working from the root checkout.
+`main()` and argument parsing live in `education_system/launcher/main.py`.
+`education_system/__main__.py` forwards to it so `python -m education_system`
+works, and the repository root carries a deprecated `run.py` shim that imports
+the same function, so `python run.py` keeps working from a source checkout.
 
 ```text
+src/education_system/launcher/main.py
 src/education_system/__main__.py
 education_system/launcher/systems.py
 education_system/platform/delivery/api/unified_server.py

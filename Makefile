@@ -37,22 +37,22 @@ install-dev: ## Install runtime + development/CI dependencies
 # ==========================================
 
 run: ## Run interactive launcher
-	$(PYTHON) run.py
+	$(PYTHON) -m education_system
 
 run-cli: ## Run CLI mode
-	$(PYTHON) run.py --cli
+	$(PYTHON) -m education_system --cli
 
 run-gui: ## Run GUI mode
-	$(PYTHON) run.py --gui
+	$(PYTHON) -m education_system --gui
 
 run-api: ## Run unified API server
 	$(PYTHON) -m education_system.platform.delivery.api.unified_server
 
 portal: ## Run self-service web portal
-	$(PYTHON) run.py --portal
+	$(PYTHON) -m education_system --portal
 
 seed: ## Seed databases with demo data
-	$(PYTHON) run.py --seed
+	$(PYTHON) -m education_system --seed
 
 # ==========================================
 # Testing

@@ -37,15 +37,18 @@ cd university_system
 pip install -r requirements.txt
 
 # Run the unified launcher (interactive system & mode selection)
-python run.py
+python -m education_system
 
 # Or specify system and mode directly
-python run.py --university --gui           # University GUI
-python run.py --college --gui              # Sixth Form College GUI (--sixthform alias)
-python run.py --school --gui               # Secondary School GUI (--secondary alias)
-python run.py --primary --gui              # Primary School GUI
-python run.py --nursery --gui              # Nursery / Early Years GUI
-python run.py --university --api           # Unified REST API server
+python -m education_system --university --gui   # University GUI
+python -m education_system --college --gui      # Sixth Form College GUI (--sixthform alias)
+python -m education_system --school --gui       # Secondary School GUI (--secondary alias)
+python -m education_system --primary --gui      # Primary School GUI
+python -m education_system --nursery --gui      # Nursery / Early Years GUI
+python -m education_system --university --api   # Unified REST API server
+
+# Installing the project also provides an `education-system` console script.
+# `python run.py` still works but is deprecated and will be removed.
 
 # Common operations
 make test                  # Run all tests
@@ -71,7 +74,7 @@ make lint                  # Check code quality
 **Combined:** 5,600+ Python files across the five systems plus shared infrastructure. The University domain directory was reorganised into top-level categories (academics, admissions, analytics, campus, commerce, finance, health, operations, student_affairs) in the 9.0.0 release; the Nursery system was added in 9.0.0.
 
 All five systems share:
-- **Unified launcher** (`run.py`) with CLI & GUI system selection
+- **Unified launcher** (`education_system/launcher/main.py`, run via `python -m education_system`) with CLI & GUI system selection
 - **Shared authentication** (`shared/auth/`) — bcrypt, MFA (TOTP), sessions, central `auth.db`
 - **Unified REST API** (`shared/api/unified_server.py`) — all systems on one server
 - **Web Portal** — browser-based SPA with superadmin dashboard, per-system dashboards, live session monitoring
@@ -151,7 +154,7 @@ docs/                        # Centralised documentation (150+ files)
 tools/
 var/                         # Runtime data, logs, backups, secrets (never committed)
 
-run.py                       # Compatibility shim -> education_system.__main__
+run.py                       # Deprecated shim -> education_system.launcher.main
 Makefile                     # Development commands (30+ targets)
 ```
 

@@ -1,32 +1,33 @@
 #!/usr/bin/env python3
-"""Root entry point — delegates to src/education_system/__main__.py.
+"""Deprecated compatibility shim for ``python run.py``.
 
-The application tree lives under src/ so the repository root stays legible.
-This shim keeps the documented `python run.py` working from the root; the real
-launcher, and the `education-system` console script, both resolve to
-education_system.__main__. Prefer `python -m education_system`; this shim is a
-compatibility layer and is scheduled for removal.
+The launcher is package-native: use ``python -m education_system`` or the
+``education-system`` console script instead. Both resolve to
+:func:`education_system.launcher.main.main`, which this module simply
+re-exports so existing scripts and documentation keep working.
+
+This file is scheduled for removal after a compatibility period.
 """
-import runpy
+
 import sys
+import warnings
 from pathlib import Path
 
-_SRC = Path(__file__).resolve().parent / "src"
-sys.path.insert(0, str(_SRC))
+# Support running from a source checkout without installing the project first.
+# Insert src/, never src/education_system/ — the latter would put the package's
+# platform/ directory on sys.path and shadow the stdlib `platform` module.
+sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
-# Load the real launcher without executing its ``if __name__ == '__main__'``
-# block.  Pytest imports this compatibility module while collecting
-# ``test_run.py``; eagerly running the launcher there would pass pytest's own
-# command-line arguments to argparse and abort collection.
-_run_name = "run" if __name__ != "__main__" else "_education_system_program_run"
-_namespace = runpy.run_path(
-    str(_SRC / "education_system" / "__main__.py"), run_name=_run_name
+from education_system.launcher.main import main  # noqa: E402
+
+warnings.warn(
+    "run.py is deprecated; use `python -m education_system` or the "
+    "`education-system` console script instead.",
+    DeprecationWarning,
+    stacklevel=2,
 )
-globals().update({
-    name: value for name, value in _namespace.items()
-    if name not in {"__name__", "__file__", "__package__", "__spec__"}
-})
-main = _namespace["main"]
+
+__all__ = ["main"]
 
 if __name__ == "__main__":
     main()

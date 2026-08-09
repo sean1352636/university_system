@@ -1,6 +1,10 @@
 """
-Comprehensive test suite for run.py
-Tests all functions, command-line arguments, error handling, and interactive menu
+Comprehensive test suite for the unified launcher.
+
+Targets education_system.launcher.main, which is the single implementation
+behind `python -m education_system`, the `education-system` console script and
+the deprecated root run.py shim. It is imported as `run` here so the assertions
+below read against the historical name.
 """
 
 import sys
@@ -9,11 +13,9 @@ import pytest
 from unittest.mock import Mock, patch, MagicMock, call
 from io import StringIO
 
-# Add project root to path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-
-# Import the module to test
-import run
+# The module under test. Patch targets use the full dotted path so that
+# unittest.mock resolves them to this same module object.
+from education_system.launcher import main as run
 
 
 class TestDisplayInterfaceMenu:
@@ -93,7 +95,7 @@ class TestDisplayInterfaceMenu:
 class TestRunCliMode:
     """Test suite for run_cli_mode() function"""
 
-    @patch('run.log_error')
+    @patch('education_system.launcher.main.log_error')
     @patch('education_system.systems.university.interfaces.cli.shell.cli_main.main')
     @patch('sys.stdout', new_callable=StringIO)
     def test_successful_cli_execution(self, mock_stdout, mock_cli_main, mock_log_error):
@@ -106,7 +108,7 @@ class TestRunCliMode:
         output = mock_stdout.getvalue()
         assert "Starting Command Line Interface" in output
 
-    @patch('run.log_error')
+    @patch('education_system.launcher.main.log_error')
     @patch('education_system.systems.university.interfaces.cli.shell.cli_main.main', side_effect=ImportError("Module not found"))
     @patch('sys.stdout', new_callable=StringIO)
     def test_import_error(self, mock_stdout, mock_cli_main, mock_log_error):
@@ -118,7 +120,7 @@ class TestRunCliMode:
         assert "CLI Import Error" in output
         assert "Module not found" in output
 
-    @patch('run.log_error')
+    @patch('education_system.launcher.main.log_error')
     @patch('education_system.systems.university.interfaces.cli.shell.cli_main.main', side_effect=OSError("File system error"))
     @patch('sys.stdout', new_callable=StringIO)
     def test_os_error(self, mock_stdout, mock_cli_main, mock_log_error):
@@ -129,7 +131,7 @@ class TestRunCliMode:
         output = mock_stdout.getvalue()
         assert "CLI Application Error" in output
 
-    @patch('run.log_error')
+    @patch('education_system.launcher.main.log_error')
     @patch('education_system.systems.university.interfaces.cli.shell.cli_main.main', side_effect=RuntimeError("Runtime issue"))
     @patch('sys.stdout', new_callable=StringIO)
     def test_runtime_error(self, mock_stdout, mock_cli_main, mock_log_error):
@@ -138,7 +140,7 @@ class TestRunCliMode:
         assert result is False
         mock_log_error.assert_called_once()
 
-    @patch('run.log_error')
+    @patch('education_system.launcher.main.log_error')
     @patch('education_system.systems.university.interfaces.cli.shell.cli_main.main', side_effect=ValueError("Invalid value"))
     @patch('sys.stdout', new_callable=StringIO)
     def test_value_error(self, mock_stdout, mock_cli_main, mock_log_error):
@@ -147,7 +149,7 @@ class TestRunCliMode:
         assert result is False
         mock_log_error.assert_called_once()
 
-    @patch('run.log_error')
+    @patch('education_system.launcher.main.log_error')
     @patch('education_system.systems.university.interfaces.cli.shell.cli_main.main', side_effect=Exception("Unexpected error"))
     @patch('sys.stdout', new_callable=StringIO)
     def test_general_exception(self, mock_stdout, mock_cli_main, mock_log_error):
@@ -169,7 +171,7 @@ def _make_fake_main_gui_module(mock_func):
 class TestRunGuiMode:
     """Test suite for run_gui_mode() function"""
 
-    @patch('run.log_error')
+    @patch('education_system.launcher.main.log_error')
     @patch('sys.stdout', new_callable=StringIO)
     def test_successful_gui_execution(self, mock_stdout, mock_log_error):
         """Test successful GUI mode execution"""
@@ -183,8 +185,8 @@ class TestRunGuiMode:
         output = mock_stdout.getvalue()
         assert "Starting Graphical User Interface" in output
 
-    @patch('run.run_cli_mode')
-    @patch('run.log_error')
+    @patch('education_system.launcher.main.run_cli_mode')
+    @patch('education_system.launcher.main.log_error')
     @patch('sys.stdout', new_callable=StringIO)
     def test_import_error_fallback_to_cli(self, mock_stdout, mock_log_error, mock_cli):
         """Test ImportError with fallback to CLI"""
@@ -200,8 +202,8 @@ class TestRunGuiMode:
         assert "GUI Import Error" in output
         assert "Falling back to CLI mode" in output
 
-    @patch('run.run_cli_mode')
-    @patch('run.log_error')
+    @patch('education_system.launcher.main.run_cli_mode')
+    @patch('education_system.launcher.main.log_error')
     @patch('sys.stdout', new_callable=StringIO)
     def test_os_error_fallback_to_cli(self, mock_stdout, mock_log_error, mock_cli):
         """Test OSError with fallback to CLI"""
@@ -212,8 +214,8 @@ class TestRunGuiMode:
             result = run.run_gui_mode()
         mock_cli.assert_called_once()
 
-    @patch('run.run_cli_mode')
-    @patch('run.log_error')
+    @patch('education_system.launcher.main.run_cli_mode')
+    @patch('education_system.launcher.main.log_error')
     @patch('sys.stdout', new_callable=StringIO)
     def test_runtime_error_fallback_to_cli(self, mock_stdout, mock_log_error, mock_cli):
         """Test RuntimeError with fallback to CLI"""
@@ -224,8 +226,8 @@ class TestRunGuiMode:
             result = run.run_gui_mode()
         mock_cli.assert_called_once()
 
-    @patch('run.run_cli_mode')
-    @patch('run.log_error')
+    @patch('education_system.launcher.main.run_cli_mode')
+    @patch('education_system.launcher.main.log_error')
     @patch('sys.stdout', new_callable=StringIO)
     def test_value_error_fallback_to_cli(self, mock_stdout, mock_log_error, mock_cli):
         """Test ValueError with fallback to CLI"""
@@ -236,8 +238,8 @@ class TestRunGuiMode:
             result = run.run_gui_mode()
         mock_cli.assert_called_once()
 
-    @patch('run.run_cli_mode')
-    @patch('run.log_error')
+    @patch('education_system.launcher.main.run_cli_mode')
+    @patch('education_system.launcher.main.log_error')
     @patch('sys.stdout', new_callable=StringIO)
     def test_attribute_error_fallback_to_cli(self, mock_stdout, mock_log_error, mock_cli):
         """Test AttributeError with fallback to CLI"""
@@ -248,8 +250,8 @@ class TestRunGuiMode:
             result = run.run_gui_mode()
         mock_cli.assert_called_once()
 
-    @patch('run.run_cli_mode')
-    @patch('run.log_error')
+    @patch('education_system.launcher.main.run_cli_mode')
+    @patch('education_system.launcher.main.log_error')
     @patch('sys.stdout', new_callable=StringIO)
     def test_general_exception_fallback_to_cli(self, mock_stdout, mock_log_error, mock_cli):
         """Test general Exception with fallback to CLI"""
@@ -524,7 +526,7 @@ class TestMain:
 class TestMainEntryPoint:
     """Test suite for __main__ entry point"""
 
-    @patch('run.main')
+    @patch('education_system.launcher.main.main')
     @patch('sys.stdout', new_callable=StringIO)
     def test_successful_execution(self, mock_stdout, mock_main):
         """Test successful execution via __main__"""
@@ -535,7 +537,7 @@ class TestMainEntryPoint:
         result = mock_main()
         assert result is None
 
-    @patch('run.main')
+    @patch('education_system.launcher.main.main')
     @patch('sys.stdout', new_callable=StringIO)
     def test_unsuccessful_execution(self, mock_stdout, mock_main):
         """Test unsuccessful execution via __main__ (main returns None)"""
@@ -545,7 +547,7 @@ class TestMainEntryPoint:
         result = mock_main()
         assert result is None
 
-    @patch('run.main')
+    @patch('education_system.launcher.main.main')
     @patch('sys.stdout', new_callable=StringIO)
     def test_system_error_handling(self, mock_stdout, mock_main):
         """Test SystemError handling in __main__"""
@@ -554,7 +556,7 @@ class TestMainEntryPoint:
         with pytest.raises(SystemError):
             mock_main()
 
-    @patch('run.main')
+    @patch('education_system.launcher.main.main')
     @patch('sys.stdout', new_callable=StringIO)
     def test_memory_error_handling(self, mock_stdout, mock_main):
         """Test MemoryError handling in __main__"""
@@ -563,7 +565,7 @@ class TestMainEntryPoint:
         with pytest.raises(MemoryError):
             mock_main()
 
-    @patch('run.main')
+    @patch('education_system.launcher.main.main')
     @patch('sys.stdout', new_callable=StringIO)
     def test_keyboard_interrupt_at_entry(self, mock_stdout, mock_main):
         """Test KeyboardInterrupt handling at entry point"""
@@ -572,7 +574,7 @@ class TestMainEntryPoint:
         with pytest.raises(KeyboardInterrupt):
             mock_main()
 
-    @patch('run.main')
+    @patch('education_system.launcher.main.main')
     @patch('sys.stdout', new_callable=StringIO)
     def test_unexpected_critical_error(self, mock_stdout, mock_main):
         """Test unexpected Exception handling at entry point"""
@@ -615,7 +617,7 @@ class TestSystemPathConfiguration:
 class TestErrorLoggingIntegration:
     """Test suite for error logging integration"""
 
-    @patch('run.log_error')
+    @patch('education_system.launcher.main.log_error')
     @patch('education_system.systems.university.interfaces.cli.shell.cli_main.main', side_effect=ImportError("Test error"))
     @patch('sys.stdout', new_callable=StringIO)
     def test_log_error_called_with_context(self, mock_stdout, mock_cli_main, mock_log_error):
@@ -633,8 +635,8 @@ class TestErrorLoggingIntegration:
         assert isinstance(message_arg, str)
         assert isinstance(error_arg, ImportError)
 
-    @patch('run.log_error')
-    @patch('run.run_cli_mode')
+    @patch('education_system.launcher.main.log_error')
+    @patch('education_system.launcher.main.run_cli_mode')
     @patch('sys.stdout', new_callable=StringIO)
     def test_log_error_includes_fallback_context(self, mock_stdout, mock_cli, mock_log_error):
         """Test that log_error is called when GUI fails and falls back to CLI"""
