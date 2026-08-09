@@ -308,7 +308,7 @@ def create_unified_app() -> Flask:
 
     # These HTML-only routes must not disappear when domain API registration
     # is blocked by a pending university database migration.
-    from education_system.platform.delivery.api.university.routes.web_routes import (
+    from education_system.systems.university.interfaces.api.routes.web_routes import (
         web_bp as university_web_bp,
     )
     app.register_blueprint(university_web_bp, name="university_web")
@@ -367,7 +367,7 @@ def create_unified_app() -> Flask:
         require_university_schema()
 
         # Import all university blueprints and register them under /api/v1/university/
-        from education_system.platform.delivery.api.university.routes import (
+        from education_system.systems.university.interfaces.api.routes import (
             system_bp, auth_bp as uni_auth_bp, student_bp, module_bp,
             enrollment_bp, grade_bp, finance_bp, attendance_bp, assignment_bp,
             timetable_bp, course_bp, user_bp, dashboard_bp, housing_bp,
@@ -419,7 +419,7 @@ def create_unified_app() -> Flask:
 
     # ── Sixth-form (college) routes under /api/v1/sixthform/ ─────────
     try:
-        from education_system.platform.delivery.api.sixthform.routes import (
+        from education_system.systems.sixth_form.interfaces.api.routes import (
             academic_year_bp, students_bp, academics_bp, assessment_bp,
             finance_bp, governance_bp, pastoral_bp, progression_bp,
             reports_bp, staff_comms_bp, student_services_bp,
@@ -441,7 +441,7 @@ def create_unified_app() -> Flask:
 
     # ── Nursery (early years) routes under /api/v1/nursery/ ──────────
     try:
-        from education_system.platform.delivery.api.nursery.routes import ALL_BLUEPRINTS as _nursery_bps
+        from education_system.systems.nursery.interfaces.api.routes import ALL_BLUEPRINTS as _nursery_bps
         for bp in _nursery_bps:
             new_prefix = _reprefix(bp.url_prefix, "nursery")
             new_name = f"nursery_{bp.name}"
@@ -453,7 +453,7 @@ def create_unified_app() -> Flask:
 
     # ── Primary-school routes under /api/v1/primary/ ─────────────────
     try:
-        from education_system.platform.delivery.api.primary.routes import ALL_BLUEPRINTS as _primary_bps
+        from education_system.systems.primary.interfaces.api.routes import ALL_BLUEPRINTS as _primary_bps
         for bp in _primary_bps:
             new_prefix = _reprefix(bp.url_prefix, "primary")
             new_name = f"primary_{bp.name}"
@@ -465,7 +465,7 @@ def create_unified_app() -> Flask:
 
     # ── Secondary-school routes under /api/v1/school/ ────────────────
     try:
-        from education_system.platform.delivery.api.school.routes import ALL_BLUEPRINTS as _school_bps
+        from education_system.systems.secondary.interfaces.api.routes import ALL_BLUEPRINTS as _school_bps
         for bp in _school_bps:
             new_prefix = _reprefix(bp.url_prefix, "school")
             new_name = f"school_{bp.name}"

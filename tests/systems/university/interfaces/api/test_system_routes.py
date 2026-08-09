@@ -5,7 +5,7 @@ import json
 import pytest
 from flask import Flask
 
-from education_system.platform.delivery.api.university.routes.system_routes import system_bp
+from education_system.systems.university.interfaces.api.routes.system_routes import system_bp
 
 
 @pytest.fixture()

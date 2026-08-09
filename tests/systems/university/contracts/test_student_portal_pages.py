@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from flask import Flask
 
-from education_system.platform.delivery.api.university.routes.web_routes import (
+from education_system.systems.university.interfaces.api.routes.web_routes import (
     web_bp,
 )
 

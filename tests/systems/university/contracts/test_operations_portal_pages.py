@@ -5,7 +5,7 @@ import pytest
 from flask import Flask
 
 from education_system.platform.delivery.api.web.routes import web_bp as main_web_bp
-from education_system.platform.delivery.api.university.routes.web_routes import web_bp
+from education_system.systems.university.interfaces.api.routes.web_routes import web_bp
 
 STATIC = (
     Path(__file__).resolve().parents[4]

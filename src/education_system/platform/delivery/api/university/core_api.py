@@ -50,19 +50,19 @@ def create_core_app(*, validate_schema: bool = True) -> Flask:
 
     # Direct submodule imports remain lightweight because routes/__init__.py is
     # now lazy and no longer imports every optional capability.
-    from education_system.platform.delivery.api.university.routes.admission_routes import (
+    from education_system.systems.university.interfaces.api.routes.admission_routes import (
         admission_bp,
     )
-    from education_system.platform.delivery.api.university.routes.admissions_crm_routes import (
+    from education_system.systems.university.interfaces.api.routes.admissions_crm_routes import (
         admissions_crm_bp,
     )
-    from education_system.platform.delivery.api.university.routes.operations_routes import (
+    from education_system.systems.university.interfaces.api.routes.operations_routes import (
         operations_bp,
     )
-    from education_system.platform.delivery.api.university.routes.student_lifecycle_routes import (
+    from education_system.systems.university.interfaces.api.routes.student_lifecycle_routes import (
         student_lifecycle_bp,
     )
-    from education_system.platform.delivery.api.university.routes.web_routes import web_bp
+    from education_system.systems.university.interfaces.api.routes.web_routes import web_bp
 
     for blueprint in (
         admission_bp,

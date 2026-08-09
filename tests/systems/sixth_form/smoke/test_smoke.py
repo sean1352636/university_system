@@ -11,7 +11,7 @@ from flask import Flask
 # The sixth-form routes module exports individual blueprints (no ALL_BLUEPRINTS
 # tuple); this mirrors how unified_server mounts them under /api/v1/sixthform/.
 def _blueprints():
-    from education_system.platform.delivery.api.sixthform.routes import (
+    from education_system.systems.sixth_form.interfaces.api.routes import (
         academic_year_bp, students_bp, academics_bp, assessment_bp, finance_bp,
         governance_bp, pastoral_bp, progression_bp, reports_bp, staff_comms_bp,
         student_services_bp, advanced_search_bp,

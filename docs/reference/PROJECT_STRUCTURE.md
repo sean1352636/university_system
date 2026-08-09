@@ -90,10 +90,13 @@ education_system/platform/
 └── testing/                       # Shared test support
 ```
 
-The unified REST and web delivery for individual systems lives under
-`platform/delivery/api/`. For example, university routes and static pages are
-in `platform/delivery/api/university/`; they are not inside the university
-domain package.
+`platform/delivery/api/` owns the shared API machinery — hosting, middleware,
+router registration and common protocol support — and is system-agnostic. Each
+system's own route blueprints live with that system, under
+`systems/<system>/interfaces/api/routes/`, and `unified_server.py` registers
+them. University API hosting (`api_server.py`, `core_api.py`, `auth.py`,
+`pagination.py`, `validators.py`) and its static pages remain under
+`platform/delivery/api/university/`.
 
 ## System layout
 

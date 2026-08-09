@@ -28,7 +28,7 @@ def test_data_paths_redirect_to_temp_dir(tmp_path, monkeypatch):
 
 
 def test_api_blueprints_register():
-    from education_system.platform.delivery.api.school.routes import ALL_BLUEPRINTS
+    from education_system.systems.secondary.interfaces.api.routes import ALL_BLUEPRINTS
 
     app = Flask(__name__)
     for bp in ALL_BLUEPRINTS:
@@ -41,7 +41,7 @@ def test_api_blueprints_register():
 
 
 def test_protected_endpoint_requires_auth():
-    from education_system.platform.delivery.api.school.routes import ALL_BLUEPRINTS
+    from education_system.systems.secondary.interfaces.api.routes import ALL_BLUEPRINTS
 
     app = Flask(__name__)
     for bp in ALL_BLUEPRINTS:

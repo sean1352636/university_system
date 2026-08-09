@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 def __getattr__(name: str) -> Any:
     module = import_module(
-        "education_system.platform.delivery.api.university.routes.all_routes"
+        "education_system.systems.university.interfaces.api.routes.all_routes"
     )
     try:
         return getattr(module, name)
@@ -26,7 +26,7 @@ def __getattr__(name: str) -> Any:
 
 def register_routes(app: "Flask") -> None:
     module = import_module(
-        "education_system.platform.delivery.api.university.routes.all_routes"
+        "education_system.systems.university.interfaces.api.routes.all_routes"
     )
     module.register_routes(app)
 

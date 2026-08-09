@@ -14,7 +14,7 @@ import pytest
 from flask import Flask
 
 from education_system.platform.delivery.api.university.errors import register_error_handlers
-from education_system.platform.delivery.api.university.routes.institutional_analytics_routes import (
+from education_system.systems.university.interfaces.api.routes.institutional_analytics_routes import (
     institutional_analytics_bp,
 )
 from education_system.systems.university.infrastructure.database import db as db_module

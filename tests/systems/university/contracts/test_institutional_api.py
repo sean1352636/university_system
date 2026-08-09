@@ -2,7 +2,7 @@ from flask import Flask
 import pytest
 
 from education_system.platform.delivery.api import auth as shared_auth
-from education_system.platform.delivery.api.university.routes import institutional_routes
+from education_system.systems.university.interfaces.api.routes import institutional_routes
 
 
 @pytest.fixture

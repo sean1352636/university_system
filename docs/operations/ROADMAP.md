@@ -25,7 +25,7 @@ The following limitations should be considered when deploying this system:
 - [x] **Unified Launcher** (`src/education_system/launcher/main.py`): Single entry point for University, Sixth Form College, Secondary School, Primary School, and Nursery / Early Years systems with CLI & GUI system selection and runtime switching
 - [x] **Shared Authentication** (`education_system/platform/identity/auth/`): Unified auth across all 5 systems with bcrypt hashing, MFA, sessions, WebAuthn, SSO and cross-system identity
 - [x] **Cross-System CLI Switching** (v7.5.0): All 5 CLI systems support switching to any other system without re-authenticating
-- [x] **Unified REST API**: All 5 systems are served from `education_system/platform/delivery/api/unified_server.py`, with university APIs and web delivery under `platform/delivery/api/university/`
+- [x] **Unified REST API**: All 5 systems are served from `education_system/platform/delivery/api/unified_server.py`; each system's route blueprints live under `systems/<system>/interfaces/api/routes/`, with university API hosting and web delivery under `platform/delivery/api/university/`
 - [x] **GraphQL API alongside REST**: Strawberry schema, authenticated queries, role-gated mutations, depth/rate controls and `/api/v1/graphql` production mounting ship in the default API installation
 - [x] **Progressive Web App foundation**: University mobile web assets include a manifest, service worker, offline-capable application shell and responsive styling
 - [x] **University System**: 4,539 Python modules across application, domain, infrastructure, CLI, GUI and cross-domain service layers

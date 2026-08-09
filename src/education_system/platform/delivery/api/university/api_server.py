@@ -61,7 +61,7 @@ def create_app(config_path: str | None = None) -> Flask:
     require_supported_schema()
 
     # Register all university route blueprints
-    from education_system.platform.delivery.api.university.routes import (
+    from education_system.systems.university.interfaces.api.routes import (
         system_bp, student_bp, module_bp, enrollment_bp, grade_bp,
         finance_bp, attendance_bp, assignment_bp, timetable_bp, course_bp,
         user_bp, dashboard_bp, housing_bp, library_bp, health_bp,
