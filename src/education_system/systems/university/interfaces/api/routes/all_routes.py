@@ -36,7 +36,7 @@ from education_system.systems.university.interfaces.api.routes.docs_routes impor
 from education_system.systems.university.interfaces.api.routes.document_routes import document_bp
 from education_system.systems.university.domains.pastoral.interfaces.api.early_warning_routes import early_warning_bp
 from education_system.systems.university.domains.pastoral.interfaces.api.election_routes import election_bp
-from education_system.systems.university.interfaces.api.routes.emergency_routes import emergency_bp
+from education_system.systems.university.domains.pastoral.interfaces.api.emergency_routes import emergency_bp
 from education_system.systems.university.domains.learners.interfaces.api.enrollment_routes import enrollment_bp
 from education_system.systems.university.interfaces.api.routes.equipment_routes import equipment_bp
 from education_system.systems.university.domains.academics.interfaces.api.evaluation_routes import evaluation_bp
@@ -86,7 +86,7 @@ from education_system.systems.university.domains.academics.interfaces.api.ai_stu
 from education_system.systems.university.domains.academics.interfaces.api.ai_features_routes import ai_features_bp
 from education_system.systems.university.interfaces.api.routes.barber_routes import barber_bp
 from education_system.systems.university.interfaces.api.routes.betting_routes import betting_bp
-from education_system.systems.university.interfaces.api.routes.blockchain_routes import blockchain_bp
+from education_system.systems.university.domains.finance.interfaces.api.blockchain_routes import blockchain_bp
 from education_system.systems.university.domains.finance.interfaces.api.budget_routes import budget_bp
 from education_system.systems.university.interfaces.api.routes.butcher_routes import butcher_bp
 from education_system.systems.university.interfaces.api.routes.campus_navigation_routes import campus_navigation_bp
