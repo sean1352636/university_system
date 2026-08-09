@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 # --- Existing routes ---
 from education_system.systems.university.interfaces.api.routes.absence_routes import absence_bp
-from education_system.systems.university.interfaces.api.routes.accommodation_routes import accommodation_bp
+from education_system.systems.university.domains.pastoral.interfaces.api.accommodation_routes import accommodation_bp
 from education_system.systems.university.interfaces.api.routes.account_routes import account_bp
 from education_system.systems.university.domains.admissions.interfaces.api.admission_routes import admission_bp
 from education_system.systems.university.domains.pastoral.interfaces.api.advising_routes import advising_bp
@@ -34,8 +34,8 @@ from education_system.systems.university.interfaces.api.routes.degree_routes imp
 from education_system.systems.university.interfaces.api.routes.dining_routes import dining_bp
 from education_system.systems.university.interfaces.api.routes.docs_routes import docs_bp
 from education_system.systems.university.interfaces.api.routes.document_routes import document_bp
-from education_system.systems.university.interfaces.api.routes.early_warning_routes import early_warning_bp
-from education_system.systems.university.interfaces.api.routes.election_routes import election_bp
+from education_system.systems.university.domains.pastoral.interfaces.api.early_warning_routes import early_warning_bp
+from education_system.systems.university.domains.pastoral.interfaces.api.election_routes import election_bp
 from education_system.systems.university.interfaces.api.routes.emergency_routes import emergency_bp
 from education_system.systems.university.domains.learners.interfaces.api.enrollment_routes import enrollment_bp
 from education_system.systems.university.interfaces.api.routes.equipment_routes import equipment_bp
@@ -94,7 +94,7 @@ from education_system.systems.university.interfaces.api.routes.carrental_routes 
 from education_system.systems.university.interfaces.api.routes.cinema_routes import cinema_bp
 from education_system.systems.university.interfaces.api.routes.commerce_routes import commerce_bp
 from education_system.systems.university.interfaces.api.routes.course_planning_routes import course_planning_bp
-from education_system.systems.university.interfaces.api.routes.dentist_routes import dentist_bp
+from education_system.systems.university.domains.pastoral.interfaces.api.dentist_routes import dentist_bp
 from education_system.systems.university.interfaces.api.routes.events_discovery_routes import events_discovery_bp
 from education_system.systems.university.interfaces.api.routes.facilities_mgmt_routes import facilities_mgmt_bp
 from education_system.systems.university.interfaces.api.routes.feedback_system_routes import feedback_system_bp
@@ -119,7 +119,7 @@ from education_system.systems.university.domains.pastoral.interfaces.api.student
 from education_system.systems.university.interfaces.api.routes.study_matching_routes import study_matching_bp
 from education_system.systems.university.interfaces.api.routes.study_rooms_routes import study_rooms_bp
 from education_system.systems.university.interfaces.api.routes.textbooks_routes import textbooks_bp
-from education_system.systems.university.interfaces.api.routes.wellness_routes import wellness_bp
+from education_system.systems.university.domains.pastoral.interfaces.api.wellness_routes import wellness_bp
 
 # --- Missing GUI-to-API coverage ---
 from education_system.systems.university.domains.pastoral.interfaces.api.achievement_badge_routes import achievement_badge_bp
