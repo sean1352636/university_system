@@ -4,10 +4,17 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-from datetime import datetime, timedelta
 
-from education_system.systems.university.infrastructure.database.db import get_connection
 from education_system.systems.university.infrastructure.i18n import get_text as _
+from education_system.systems.university.domains.finance.domain.billing.payment_plan_service import (
+    FREQUENCIES,
+    PLAN_STATUSES,
+    create_scheduled_plan,
+    delete_payment_plan,
+    get_payment_plan,
+    list_payment_plans,
+    update_payment_plan,
+)
 
 
 class PaymentPlansMixin:
@@ -89,7 +96,7 @@ class PaymentPlansMixin:
         tk.Label(form_frame, text=_("finance_gui.labels.frequency") + ":").grid(row=3, column=0, sticky='w', pady=5)
         frequency_var = tk.StringVar(value=_t('gui.finance.finance.layout.payment_plans.values.monthly', default="monthly"))
         frequency_combo = ttk.Combobox(form_frame, textvariable=frequency_var,
-                                      values=['weekly', 'biweekly', 'monthly', 'quarterly'],
+                                      values=list(FREQUENCIES),
                                       state='readonly', width=27)
         frequency_combo.grid(row=3, column=1, pady=5)
 
@@ -100,51 +107,9 @@ class PaymentPlansMixin:
                 installments = int(installments_entry.get())
                 frequency = frequency_var.get()
 
-                if installments < 1:
-                    raise ValueError("Number of installments must be at least 1")
-
-                # Map the form's frequency to a per-installment timedelta.
-                step = {
-                    'weekly': timedelta(weeks=1),
-                    'biweekly': timedelta(weeks=2),
-                    'monthly': timedelta(days=30),
-                    'quarterly': timedelta(days=90),
-                }.get(frequency, timedelta(days=30))
-
-                now = datetime.now()
-                ts = now.strftime('%Y-%m-%d %H:%M:%S')
-                start_date = now.strftime('%Y-%m-%d')
-                next_due = now + step
-                installment_amount = total_amount / installments
-
-                conn = get_connection()
-                cursor = conn.cursor()
-
-                # student_payment_plans has no installments/frequency columns;
-                # the schedule lives in payment_plan_installments. See the
-                # canonical billing.payment_plans.create_payment_plan().
-                cursor.execute('''
-                    INSERT INTO student_payment_plans
-                    (student_id, total_amount, remaining_amount, status, start_date,
-                     next_due_date, created_at, updated_at)
-                    VALUES (?, ?, ?, 'active', ?, ?, ?, ?)
-                ''', (student_id, total_amount, total_amount, start_date,
-                      next_due.strftime('%Y-%m-%d'), ts, ts))
-
-                payment_plan_id = cursor.lastrowid
-
-                current_due_date = next_due
-                for i in range(installments):
-                    cursor.execute('''
-                        INSERT INTO payment_plan_installments
-                        (payment_plan_id, installment_number, amount, due_date, created_at, updated_at)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                    ''', (payment_plan_id, i + 1, installment_amount,
-                          current_due_date.strftime('%Y-%m-%d'), ts, ts))
-                    current_due_date += step
-
-                conn.commit()
-                conn.close()
+                # Shared with the Finance CLI: validates the student, writes the
+                # plan and its equal-installment schedule in one transaction.
+                create_scheduled_plan(student_id, total_amount, installments, frequency)
 
                 messagebox.showinfo(_("common.success"), _("finance_gui.messages.payment_plan_created"))
                 dialog.destroy()
@@ -165,7 +130,60 @@ class PaymentPlansMixin:
         if not selection:
             messagebox.showwarning(_("finance_gui.messages.no_selection"), _("finance_gui.messages.select_payment_plan_edit"))
             return
-        messagebox.showinfo(_("finance_gui.dialogs.edit_plan"), _("finance_gui.messages.edit_functionality_placeholder"))
+        plan_id = self.payment_plans_tree.item(selection[0])['values'][0]
+        plan = get_payment_plan(plan_id)
+        if plan is None:
+            messagebox.showerror(_("common.error"), _t('gui.finance.finance.layout.payment_plans.dialogs.plan_not_found', default="Payment plan not found."))
+            return
+
+        dialog = tk.Toplevel(self.root)
+        dialog.title(_("finance_gui.dialogs.edit_plan"))
+        dialog.geometry("500x380")
+        dialog.transient(self.root)
+
+        tk.Label(dialog, text=f"{_('finance_gui.dialogs.edit_plan')} #{plan_id}", font=('Arial', 14, 'bold')).pack(pady=10)
+
+        form_frame = tk.Frame(dialog)
+        form_frame.pack(padx=20, pady=10, fill='both', expand=True)
+
+        tk.Label(form_frame, text=_("finance_gui.labels.total_amount") + ":").grid(row=0, column=0, sticky='w', pady=5)
+        amount_var = tk.StringVar(value=f"{float(plan['total_amount'] or 0):.2f}")
+        tk.Entry(form_frame, textvariable=amount_var, width=30).grid(row=0, column=1, pady=5)
+
+        tk.Label(form_frame, text=_t('gui.finance.finance.layout.payment_plans.labels.next_due_date', default="Next Due Date:")).grid(row=1, column=0, sticky='w', pady=5)
+        due_var = tk.StringVar(value=plan['next_due_date'] or '')
+        tk.Entry(form_frame, textvariable=due_var, width=30).grid(row=1, column=1, pady=5)
+
+        tk.Label(form_frame, text=_t('gui.finance.finance.layout.payment_plans.labels.status', default="Status:")).grid(row=2, column=0, sticky='w', pady=5)
+        status_var = tk.StringVar(value=plan['status'] or 'active')
+        ttk.Combobox(form_frame, textvariable=status_var, values=list(PLAN_STATUSES),
+                     state='readonly', width=27).grid(row=2, column=1, pady=5)
+
+        tk.Label(form_frame, text=_t('gui.finance.finance.layout.payment_plans.labels.add_note', default="Add Note:")).grid(row=3, column=0, sticky='w', pady=5)
+        notes_entry = tk.Entry(form_frame, width=30)
+        notes_entry.grid(row=3, column=1, pady=5)
+
+        def save_changes():
+            try:
+                total_amount = float(amount_var.get())
+                # Shared with the Finance CLI: re-bases the remaining balance
+                # and validates the date/status.
+                update_payment_plan(plan_id, total_amount=total_amount,
+                                    next_due_date=due_var.get().strip() or None,
+                                    status=status_var.get(),
+                                    notes=notes_entry.get().strip() or None)
+                messagebox.showinfo(_("common.success"), _t('gui.finance.finance.layout.payment_plans.dialogs.plan_updated', default="Payment plan updated."))
+                dialog.destroy()
+                self._refresh_payment_plans()
+            except Exception as e:
+                messagebox.showerror(_("common.error"), str(e))
+
+        btn_frame = tk.Frame(dialog)
+        btn_frame.pack(pady=20)
+        tk.Button(btn_frame, text=_("finance_gui.buttons.save"), command=save_changes, bg=self.colors['success'],
+                 fg='white', padx=20, pady=5).pack(side='left', padx=5)
+        tk.Button(btn_frame, text=_("finance_gui.buttons.cancel"), command=dialog.destroy, bg=self.colors['danger'],
+                 fg='white', padx=20, pady=5).pack(side='left', padx=5)
 
     def _delete_payment_plan(self):
         """Delete selected payment plan"""
@@ -177,11 +195,9 @@ class PaymentPlansMixin:
         if messagebox.askyesno(_("finance_gui.dialogs.confirm_delete"), _("finance_gui.messages.confirm_delete_payment_plan")):
             try:
                 plan_id = self.payment_plans_tree.item(selection[0])['values'][0]
-                conn = get_connection()
-                cursor = conn.cursor()
-                cursor.execute("DELETE FROM student_payment_plans WHERE id = ?", (plan_id,))
-                conn.commit()
-                conn.close()
+                # Shared with the Finance CLI: removes the schedule too, and
+                # refuses once an installment has been paid.
+                delete_payment_plan(plan_id)
                 messagebox.showinfo(_("common.success"), _("finance_gui.messages.payment_plan_deleted"))
                 self._refresh_payment_plans()
             except Exception as e:
@@ -194,21 +210,10 @@ class PaymentPlansMixin:
             for item in self.payment_plans_tree.get_children():
                 self.payment_plans_tree.delete(item)
 
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute('''
-                SELECT spp.payment_plan_id as plan_id, spp.student_id, spp.total_amount,
-                       ppt.number_of_installments as installments,
-                       ppt.installment_frequency as frequency,
-                       spp.status, spp.start_date
-                FROM student_payment_plans spp
-                LEFT JOIN payment_plan_templates ppt ON spp.template_id = ppt.template_id
-                ORDER BY spp.created_at DESC
-            ''')
-
-            for row in cursor.fetchall():
-                self.payment_plans_tree.insert('', 'end', values=tuple(row))
-
-            conn.close()
+            for plan in list_payment_plans(limit=500):
+                self.payment_plans_tree.insert('', 'end', values=(
+                    plan['plan_id'], plan['student_id'], plan['total_amount'],
+                    plan['installments'], plan['frequency'], plan['status'], plan['start_date'],
+                ))
         except Exception as e:
             print(f"Error refreshing payment plans: {e}")

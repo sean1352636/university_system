@@ -367,16 +367,12 @@ def clear_frame(frame):
 
 # Academic year utilities
 def get_current_academic_year() -> str:
-    """Get current academic year string"""
-    today = date.today()
-    year = today.year
-    month = today.month
+    """Get current academic year string (shared with the financial aid reports)."""
+    from education_system.systems.university.domains.finance.domain.services.financial_aid.reports import (
+        get_current_academic_year as _domain_academic_year,
+    )
 
-    # Academic year starts in August
-    if month >= 8:
-        return f"{year}-{year + 1}"
-    else:
-        return f"{year - 1}-{year}"
+    return _domain_academic_year()
 
 
 def get_academic_year_list(count: int = 5) -> List[str]:

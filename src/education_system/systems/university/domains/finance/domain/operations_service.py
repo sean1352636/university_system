@@ -115,6 +115,10 @@ PURCHASE_ORDER_STATUSES = {
     "cancelled",
 }
 
+APPROVAL_DECISIONS = ("approved", "rejected")
+
+FRAUD_CASE_DECISIONS = ("confirmed", "false_positive", "escalated")
+
 READABLE_TABLES = {
     "finance_purchase_orders",
     "finance_ap_invoices",
@@ -282,6 +286,15 @@ class FinanceOperationsService:
             # db-audit: ignore[DBW001] - statement builds SQL without splicing a value
             return [dict(r) for r in c.execute(f"SELECT * FROM {table} ORDER BY id DESC LIMIT 500")]
 
+    def row(self, table, row_id):
+        """One record from a readable table, or ``None`` when it does not exist."""
+        if table not in READABLE_TABLES:
+            raise ValueError("Invalid table")
+        with self.connect() as c:
+            # db-audit: ignore[DBW001] - statement builds SQL without splicing a value
+            r = c.execute(f"SELECT * FROM {table} WHERE id=?", (row_id,)).fetchone()
+            return dict(r) if r else None
+
     def cash_summary(self):
         with self.connect() as c:
             r = c.execute(
@@ -339,7 +352,7 @@ class FinanceOperationsService:
             ).lastrowid
 
     def decide_approval(self, item_id, decision, user, notes=""):
-        if decision not in {"approved", "rejected"}:
+        if decision not in APPROVAL_DECISIONS:
             raise ValueError("Invalid decision")
         with self.connect() as c:
             current = c.execute("SELECT status FROM finance_approval_items WHERE id=?", (item_id,)).fetchone()
@@ -363,6 +376,8 @@ class FinanceOperationsService:
             ).lastrowid
 
     def decide_fraud_case(self, case_id, decision, user):
+        if decision not in FRAUD_CASE_DECISIONS:
+            raise ValueError("Invalid fraud case decision")
         with self.connect() as c:
             c.execute(
                 "UPDATE finance_fraud_cases SET status='closed',decision=?,assigned_to=? WHERE id=?",

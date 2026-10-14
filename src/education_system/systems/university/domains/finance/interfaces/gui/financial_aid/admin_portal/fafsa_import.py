@@ -42,7 +42,7 @@ class FAFSAImportMixin:
                   command=lambda: file_var.set(filedialog.askopenfilename(
                       filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]))).pack(side='left')
 
-        ttk.Label(import_frame, text=get_text("financial_aid.admin_portal.fafsa.file_format_hint", "\nFile should contain columns: student_id, efc, sai, household_income, etc."),
+        ttk.Label(import_frame, text=get_text("financial_aid.admin_portal.fafsa.file_format_hint", "\nFile should contain columns: student_id, academic_year, efc (plus optional submission_date, sai, dependency_status, pell_eligible, pell_amount)."),
                  foreground='blue').pack(anchor='w')
 
         btn_frame = ttk.Frame(import_frame)
@@ -60,9 +60,26 @@ class FAFSAImportMixin:
             return
 
         try:
-            # This would use the FAFSA manager
-            show_success(get_text("financial_aid.admin_portal.dialogs.import_started", "Import Started"), get_text("financial_aid.admin_portal.messages.fafsa_import_queued", "FAFSA data import has been queued for processing"))
-            log_activity('import', 'fafsa_data', filepath, {'file': filepath})
+            from education_system.systems.university.domains.finance.domain.services.financial_aid.fafsa_import import (
+                import_fafsa_file,
+            )
+
+            summary = import_fafsa_file(filepath)
+            log_activity('import', 'fafsa_data', filepath, {'file': filepath, **{k: summary[k] for k in ('imported', 'failed')}})
+            detail = get_text(
+                "financial_aid.admin_portal.messages.fafsa_import_summary",
+                "Imported {imported} record(s); {failed} failed.",
+                imported=summary['imported'], failed=summary['failed'],
+            )
+            errors = summary.get('errors') or []
+            if errors:
+                detail += "\n\n" + "\n".join(errors[:10])
+                if len(errors) > 10:
+                    detail += f"\n... {len(errors) - 10} more"
+            if summary['imported'] and not errors:
+                show_success(get_text("financial_aid.admin_portal.dialogs.import_complete", "Import Complete"), detail)
+            else:
+                show_warning(get_text("financial_aid.admin_portal.dialogs.import_complete", "Import Complete"), detail)
 
         except Exception as e:
             logger.error(f"Error importing FAFSA data: {e}")

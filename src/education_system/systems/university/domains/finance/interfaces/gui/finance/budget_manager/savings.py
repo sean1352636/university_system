@@ -4,6 +4,7 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
+from datetime import datetime
 
 from education_system.systems.university.domains.finance.interfaces.gui.finance.budget_manager.constants import logger
 
@@ -37,8 +38,20 @@ class SavingsGoalsMixin:
         self.goal_priority_combo.current(1)
         self.goal_priority_combo.grid(row=1, column=1, padx=5, pady=5)
 
+        ttk.Label(fields, text=_t('gui.finance.finance.budget_manager.savings.labels.target_date', default="Target Date (YYYY-MM-DD):")).grid(row=1, column=2, sticky=tk.W, padx=5, pady=5)
+        self.goal_date_entry = ttk.Entry(fields, width=15)
+        self.goal_date_entry.grid(row=1, column=3, padx=5, pady=5)
+
+        ttk.Label(fields, text=_t('gui.finance.finance.budget_manager.savings.labels.category', default="Category:")).grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
+        self.goal_category_entry = ttk.Entry(fields, width=30)
+        self.goal_category_entry.grid(row=2, column=1, padx=5, pady=5)
+
+        ttk.Label(fields, text=_t('gui.finance.finance.budget_manager.savings.labels.description', default="Description:")).grid(row=2, column=2, sticky=tk.W, padx=5, pady=5)
+        self.goal_description_entry = ttk.Entry(fields, width=30)
+        self.goal_description_entry.grid(row=2, column=3, padx=5, pady=5)
+
         ttk.Button(fields, text=_t('gui.finance.finance.budget_manager.savings.buttons.create_goal', default="Create Goal"), command=self.create_savings_goal).grid(
-            row=1, column=3, padx=5, pady=5)
+            row=3, column=3, padx=5, pady=5, sticky=tk.E)
 
         # Goals list
         list_frame = ttk.LabelFrame(tab, text=_t('gui.finance.finance.budget_manager.savings.labels.my_savings_goals', default="My Savings Goals"), padding="10")
@@ -64,6 +77,9 @@ class SavingsGoalsMixin:
         btn_frame.pack(fill=tk.X, pady=5)
         ttk.Button(btn_frame, text=_t('gui.finance.finance.budget_manager.savings.buttons.add_funds', default="Add Funds"), command=self.update_goal_progress).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text=_t('gui.finance.finance.budget_manager.savings.buttons.refresh', default="Refresh"), command=self.refresh_savings_goals).pack(side=tk.LEFT, padx=5)
+        self.goals_show_all_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(btn_frame, text=_t('gui.finance.finance.budget_manager.savings.labels.show_completed', default="Include completed/inactive goals"),
+                        variable=self.goals_show_all_var, command=self.refresh_savings_goals).pack(side=tk.LEFT, padx=10)
 
     def create_savings_goal(self):
         """Create a new savings goal"""
@@ -75,6 +91,9 @@ class SavingsGoalsMixin:
             if not name or amount <= 0:
                 messagebox.showerror(_t('gui.finance.finance.budget_manager.savings.dialogs.error', default="Error"), _t('gui.finance.finance.budget_manager.savings.dialogs.please_enter_valid_goal_name_and_amount', default="Please enter valid goal name and amount."))
                 return
+            target_date = self.goal_date_entry.get().strip() or None
+            if target_date:
+                datetime.strptime(target_date, '%Y-%m-%d')
 
             # Get current user
             current_user = self.gui.auth.get_current_user() if self.gui.auth else None
@@ -87,17 +106,20 @@ class SavingsGoalsMixin:
                 student_id=student_id,
                 goal_name=name,
                 target_amount=amount,
-                target_date=None,
-                priority=priority
+                target_date=target_date,
+                priority=priority,
+                category=self.goal_category_entry.get().strip(),
+                description=self.goal_description_entry.get().strip(),
             )
 
             messagebox.showinfo(_t('gui.finance.finance.budget_manager.savings.dialogs.success', default="Success"), f"Savings goal '{name}' created successfully!")
-            self.goal_name_entry.delete(0, tk.END)
-            self.goal_amount_entry.delete(0, tk.END)
+            for entry in (self.goal_name_entry, self.goal_amount_entry, self.goal_date_entry,
+                          self.goal_category_entry, self.goal_description_entry):
+                entry.delete(0, tk.END)
             self.refresh_savings_goals()
 
         except ValueError:
-            messagebox.showerror(_t('gui.finance.finance.budget_manager.savings.dialogs.error', default="Error"), _t('gui.finance.finance.budget_manager.savings.dialogs.invalid_amount_please_enter_a_number', default="Invalid amount. Please enter a number."))
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.savings.dialogs.error', default="Error"), _t('gui.finance.finance.budget_manager.savings.dialogs.invalid_amount_or_date', default="Amount must be a number and the target date YYYY-MM-DD."))
         except Exception as e:
             messagebox.showerror(_t('gui.finance.finance.budget_manager.savings.dialogs.error', default="Error"), f"Failed to create savings goal: {e}")
 
@@ -132,7 +154,9 @@ class SavingsGoalsMixin:
             student_id = current_user.get('username') if current_user else 'guest'
 
             from education_system.systems.university.domains.finance.domain.budget.services.budget_service import SavingsGoalManager
-            goals = SavingsGoalManager.get_student_goals(student_id, active_only=False)
+            show_all = getattr(self, 'goals_show_all_var', None)
+            active_only = not (show_all.get() if show_all is not None else True)
+            goals = SavingsGoalManager.get_student_goals(student_id, active_only=active_only)
 
             for goal in goals:
                 self.goals_tree.insert('', 'end', values=(

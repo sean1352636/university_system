@@ -3,9 +3,12 @@ from tkinter import ttk, simpledialog, messagebox
 from education_system.systems.university.domains.finance.domain.operations_service import (
     FinanceOperationsService,
 )
+from education_system.systems.university.domains.finance.interfaces.gui.finance.layout._fraud_scan import (
+    FraudScanMixin,
+)
 
 
-class FinanceOperationsMixin:
+class FinanceOperationsMixin(FraudScanMixin):
     def _ops(self):
         if not hasattr(self, "_ops_service"):
             self._ops_service = FinanceOperationsService()
@@ -310,6 +313,10 @@ class FinanceOperationsMixin:
             ttk.Button(
                 frame, text=text, command=lambda d=decision: self._fraud_decide(tree, refresh, d)
             ).pack(side="left", padx=4, pady=4)
+        # CLI core menu option 20: one-shot ML scan of recent payments.
+        ttk.Button(
+            frame, text="Run fraud scan", command=lambda: self._fraud_run_scan(refresh)
+        ).pack(side="right", padx=4, pady=4)
 
     def _fraud_decide(self, tree, refresh, decision):
         item = self._selected_id(tree)

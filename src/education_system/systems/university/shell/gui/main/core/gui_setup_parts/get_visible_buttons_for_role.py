@@ -49,7 +49,8 @@ def get_visible_buttons_for_role(self, role=None):
         # Student features (v5.40+)
         'advising_portal', 'student_id_card', 'study_room_booking',
         'printing_services',
-        # Note: budget_tracker, scholarship_finder moved to Finance GUI
+        # budget_tracker lives in the Finance GUI; scholarship_finder is its own window again (2026-10-14).
+        'scholarship_finder',
         # Note: notifications_hub moved to Email GUI
         # Shared modules available to all (including parents)
         'cross_system_calendar', 'digital_transcript', 'certificates',

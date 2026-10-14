@@ -1343,6 +1343,14 @@ class CollectionsManager:
 
         ttk.Button(filter_frame, text=_("finance_gui.compliance.btn_load_logs"), command=load_audit_logs).grid(row=0, column=4, padx=10, pady=5)
 
+        def open_audit_report():
+            # CLI core menu option 21: same text report + CSV export, by date range.
+            from education_system.systems.university.domains.finance.interfaces.gui.finance.audit_report_dialog import open_audit_report_dialog
+            open_audit_report_dialog(dialog, start_date_var.get(), end_date_var.get())
+
+        ttk.Button(filter_frame, text=_("finance_gui.compliance.btn_audit_report", default="Audit report…"),
+                   command=open_audit_report).grid(row=0, column=5, padx=5, pady=5)
+
         # Audit logs display
         logs_frame = ttk.LabelFrame(dialog, text=_("finance_gui.compliance.audit_entries_frame"), padding=15)
         logs_frame.pack(fill='both', expand=True, padx=20, pady=10)

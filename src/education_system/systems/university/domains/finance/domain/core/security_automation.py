@@ -395,6 +395,159 @@ def enhanced_notification_system():
         else:
             print("Invalid choice. Please try again.")
 
+def _fetch_recent_completed_payments(cursor):
+    """Completed payments from the last 30 days, joined to the student row."""
+    cursor.execute('''
+    SELECT p.payment_id, p.student_id, p.amount, p.payment_method,
+           p.payment_date, p.created_at, p.gateway_transaction_id,
+           julianday(p.created_at) - julianday(p.payment_date) as processing_delay,
+           s.course, s.enrollment_date
+    FROM payments p
+    JOIN students s ON p.student_id = s.student_id
+    WHERE p.status = 'completed'
+    AND p.created_at >= date('now', '-30 days')
+    ''')
+    return cursor.fetchall()
+
+
+def _fraud_features(payments):
+    """Feature vectors (and the matching payment ids) for the anomaly model."""
+    features = []
+    payment_ids = []
+    for payment in payments:
+        (payment_id, _student_id, amount, method, _payment_date, _created_at,
+         transaction_id, processing_delay, _course, _enrollment_date) = payment
+        features.append([
+            amount,
+            processing_delay or 0,
+            1 if method == 'Card' else 0,  # Online payment flag
+            1 if amount > 5000 else 0,     # Large amount flag
+            len(transaction_id) if transaction_id else 0,  # Transaction ID length
+        ])
+        payment_ids.append(payment_id)
+    return features, payment_ids
+
+
+def _isolation_forest_anomalies(features):
+    """-1 for each feature row the isolation forest calls an outlier, else 1."""
+    # Lazy: scikit-learn and numpy cost ~10s to import and this is the
+    # only caller in the finance domain, so the finance GUI must not pay
+    # for them at open time.
+    import numpy as np
+    from sklearn.ensemble import IsolationForest
+    from sklearn.preprocessing import StandardScaler
+
+    X = np.array(features)
+    X_scaled = StandardScaler().fit_transform(X)
+    return IsolationForest(contamination=0.05, random_state=42).fit_predict(X_scaled)
+
+
+def _fraud_score(feature_set, is_anomaly):
+    amount, delay, _online_flag, _large_flag, tx_len = feature_set
+    fraud_score = 0.0
+    # Amount-based scoring
+    if amount > 10000:
+        fraud_score += 0.3
+    elif amount > 5000:
+        fraud_score += 0.1
+    # Processing delay scoring
+    if delay > 1:  # More than 1 day delay
+        fraud_score += 0.2
+    # Transaction ID scoring
+    if tx_len < 10:  # Short transaction ID
+        fraud_score += 0.1
+    # Anomaly scoring
+    if is_anomaly:
+        fraud_score += 0.4
+    return min(fraud_score, 1.0)
+
+
+def _store_fraud_scores(cursor, payment_ids, fraud_scores):
+    """Write the scores back and audit each flagged payment; returns the count flagged."""
+    suspicious_payments = 0
+    for payment_id, fraud_score in zip(payment_ids, fraud_scores):
+        is_suspicious = fraud_score >= 0.5
+        cursor.execute('''
+        UPDATE payments
+        SET fraud_score = ?, is_suspicious = ?
+        WHERE payment_id = ?
+        ''', (fraud_score, is_suspicious, payment_id))
+        if not is_suspicious:
+            continue
+        suspicious_payments += 1
+        cursor.execute('''
+        SELECT student_id, amount, payment_method, payment_date
+        FROM payments WHERE payment_id = ?
+        ''', (payment_id,))
+        payment_details = cursor.fetchone()
+        log_audit_action('fraud_detection', 'payments', str(payment_id), {
+            'fraud_score': fraud_score,
+            'student_id': payment_details[0],
+            'amount': payment_details[1],
+            'flagged_for_review': True
+        })
+    return suspicious_payments
+
+
+def _suspicious_payment_rows(cursor):
+    """Every payment currently flagged for review, highest risk first."""
+    cursor.execute('''
+    SELECT p.payment_id, p.student_id, p.amount, p.payment_method,
+           p.payment_date, p.fraud_score,
+           s.first_name, s.last_name
+    FROM payments p
+    JOIN students s ON p.student_id = s.student_id
+    WHERE p.is_suspicious = 1
+    ORDER BY p.fraud_score DESC
+    ''')
+    return [
+        {
+            'payment_id': r[0], 'student_id': r[1], 'amount': r[2],
+            'payment_method': r[3], 'payment_date': r[4], 'fraud_score': r[5],
+            'first_name': r[6], 'last_name': r[7],
+        }
+        for r in cursor.fetchall()
+    ]
+
+
+def scan_payments_for_fraud():
+    """Score the last 30 days of completed payments and flag the suspicious ones.
+
+    This is the data half of :func:`detect_payment_fraud` (the CLI menu's
+    "detect payment fraud" option) so the finance GUI can run the same scan
+    without the printing. Scores are written back to ``payments.fraud_score``
+    / ``payments.is_suspicious`` and every flagged payment gets an audit row.
+
+    Returns a dict::
+
+        {'analyzed': int,          # payments scored (0 when insufficient)
+         'flagged': int,           # payments flagged *by this run*
+         'insufficient': bool,     # fewer than 10 payments, nothing scored
+         'suspicious': [dict...]}  # all payments currently flagged, risk desc
+
+    Permission checks are the caller's job; errors propagate.
+    """
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        payments = _fetch_recent_completed_payments(cursor)
+        if len(payments) < 10:
+            return {'analyzed': len(payments), 'flagged': 0,
+                    'insufficient': True, 'suspicious': []}
+
+        features, payment_ids = _fraud_features(payments)
+        anomalies = _isolation_forest_anomalies(features)
+        fraud_scores = [_fraud_score(f, anomalies[i] == -1)
+                        for i, f in enumerate(features)]
+        flagged = _store_fraud_scores(cursor, payment_ids, fraud_scores)
+        conn.commit()
+        suspicious = _suspicious_payment_rows(cursor) if flagged > 0 else []
+        return {'analyzed': len(payments), 'flagged': flagged,
+                'insufficient': False, 'suspicious': suspicious}
+    finally:
+        conn.close()
+
+
 def detect_payment_fraud():
     """Detect potentially fraudulent payments using machine learning"""
     global auth
@@ -408,149 +561,24 @@ def detect_payment_fraud():
         return
 
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
-
         print("Running fraud detection analysis...")
+        result = scan_payments_for_fraud()
 
-        # Get payment data for analysis
-        cursor.execute('''
-        SELECT p.payment_id, p.student_id, p.amount, p.payment_method,
-               p.payment_date, p.created_at, p.gateway_transaction_id,
-               julianday(p.created_at) - julianday(p.payment_date) as processing_delay,
-               s.course, s.enrollment_date
-        FROM payments p
-        JOIN students s ON p.student_id = s.student_id
-        WHERE p.status = 'completed'
-        AND p.created_at >= date('now', '-30 days')
-        ''')
-
-        payments = cursor.fetchall()
-
-        if len(payments) < 10:
+        if result['insufficient']:
             print("Insufficient payment data for fraud detection.")
-            conn.close()
             return
 
-        # Prepare features for fraud detection
-        features = []
-        payment_ids = []
-
-        for payment in payments:
-            (payment_id, student_id, amount, method, payment_date, created_at,
-             transaction_id, processing_delay, course, enrollment_date) = payment
-
-            # Calculate features
-            features.append([
-                amount,
-                processing_delay or 0,
-                1 if method == 'Card' else 0,  # Online payment flag
-                1 if amount > 5000 else 0,     # Large amount flag
-                len(transaction_id) if transaction_id else 0,  # Transaction ID length
-            ])
-            payment_ids.append(payment_id)
-
-        # Run isolation forest for anomaly detection
-        # Lazy: scikit-learn and numpy cost ~10s to import and this is the
-        # only caller in the finance domain, so the finance GUI must not pay
-        # for them at open time.
-        import numpy as np
-        from sklearn.ensemble import IsolationForest
-        from sklearn.preprocessing import StandardScaler
-
-        X = np.array(features)
-        scaler = StandardScaler()
-        X_scaled = scaler.fit_transform(X)
-
-        isolation_forest = IsolationForest(contamination=0.05, random_state=42)
-        anomalies = isolation_forest.fit_predict(X_scaled)
-
-        # Calculate fraud scores
-        fraud_scores = []
-        for i, feature_set in enumerate(features):
-            amount, delay, online_flag, large_flag, tx_len = feature_set
-
-            fraud_score = 0.0
-
-            # Amount-based scoring
-            if amount > 10000:
-                fraud_score += 0.3
-            elif amount > 5000:
-                fraud_score += 0.1
-
-            # Processing delay scoring
-            if delay > 1:  # More than 1 day delay
-                fraud_score += 0.2
-
-            # Transaction ID scoring
-            if tx_len < 10:  # Short transaction ID
-                fraud_score += 0.1
-
-            # Anomaly scoring
-            if anomalies[i] == -1:
-                fraud_score += 0.4
-
-            fraud_scores.append(min(fraud_score, 1.0))
-
-        # Update fraud scores in database
-        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        suspicious_payments = 0
-
-        for i, payment_id in enumerate(payment_ids):
-            fraud_score = fraud_scores[i]
-            is_suspicious = fraud_score >= 0.5
-
-            cursor.execute('''
-            UPDATE payments
-            SET fraud_score = ?, is_suspicious = ?
-            WHERE payment_id = ?
-            ''', (fraud_score, is_suspicious, payment_id))
-
-            if is_suspicious:
-                suspicious_payments += 1
-
-                # Log suspicious payment
-                cursor.execute('''
-                SELECT student_id, amount, payment_method, payment_date
-                FROM payments WHERE payment_id = ?
-                ''', (payment_id,))
-
-                payment_details = cursor.fetchone()
-
-                log_audit_action('fraud_detection', 'payments', str(payment_id), {
-                    'fraud_score': fraud_score,
-                    'student_id': payment_details[0],
-                    'amount': payment_details[1],
-                    'flagged_for_review': True
-                })
-
-        conn.commit()
-
         print("Fraud detection completed!")
-        print(f"Payments analyzed: {len(payments)}")
-        print(f"Suspicious payments flagged: {suspicious_payments}")
+        print(f"Payments analyzed: {result['analyzed']}")
+        print(f"Suspicious payments flagged: {result['flagged']}")
 
-        if suspicious_payments > 0:
+        if result['flagged'] > 0:
             print("\nSuspicious payments require manual review:")
-
-            cursor.execute('''
-            SELECT p.payment_id, p.student_id, p.amount, p.payment_method,
-                   p.payment_date, p.fraud_score,
-                   s.first_name, s.last_name
-            FROM payments p
-            JOIN students s ON p.student_id = s.student_id
-            WHERE p.is_suspicious = 1
-            ORDER BY p.fraud_score DESC
-            ''')
-
-            suspicious = cursor.fetchall()
-
-            for payment in suspicious:
-                payment_id, student_id, amount, method, date, score, first_name, last_name = payment
-                print(f"  Payment {payment_id}: £{amount:.2f} by {first_name} {last_name} "
-                      f"({method}) on {date} - Risk: {score*100:.1f}%")
-
-        conn.close()
+            for p in result['suspicious']:
+                print(f"  Payment {p['payment_id']}: £{p['amount']:.2f} by "
+                      f"{p['first_name']} {p['last_name']} "
+                      f"({p['payment_method']}) on {p['payment_date']} - "
+                      f"Risk: {p['fraud_score']*100:.1f}%")
 
     except Exception as e:
         print(f"Error in fraud detection: {e}")

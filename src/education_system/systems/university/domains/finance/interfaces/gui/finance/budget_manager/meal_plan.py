@@ -6,9 +6,12 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
 
+from education_system.platform.delivery.gui.form_dialog import Field, ask_form
 from education_system.systems.university.infrastructure.database.db import get_connection
 
 from education_system.systems.university.domains.finance.interfaces.gui.finance.budget_manager.constants import logger
+
+MEAL_PLAN_TYPES = ['unlimited', 'block', 'declining-balance', 'hybrid']
 
 
 class MealPlanMixin:
@@ -31,9 +34,12 @@ class MealPlanMixin:
             self.meal_plan_labels[label] = ttk.Label(status_frame, text=_t('gui.finance.finance.budget_manager.meal_plan.labels.n_a', default="N/A"))
             self.meal_plan_labels[label].grid(row=i//2, column=(i%2)*2+1, sticky=tk.W, padx=10, pady=5)
 
-        ttk.Button(status_frame, text=_t('gui.finance.finance.budget_manager.meal_plan.buttons.refresh_status', default="Refresh Status"),
-                  command=self.load_meal_plan_status).grid(
-            row=(len(labels)//2)+1, column=0, columnspan=4, pady=10)
+        status_buttons = ttk.Frame(status_frame)
+        status_buttons.grid(row=(len(labels)//2)+1, column=0, columnspan=4, pady=10)
+        ttk.Button(status_buttons, text=_t('gui.finance.finance.budget_manager.meal_plan.buttons.refresh_status', default="Refresh Status"),
+                  command=self.load_meal_plan_status).pack(side=tk.LEFT, padx=5)
+        ttk.Button(status_buttons, text=_t('gui.finance.finance.budget_manager.meal_plan.buttons.setup_meal_plan', default="Setup Meal Plan"),
+                  command=self.setup_meal_plan).pack(side=tk.LEFT, padx=5)
 
         # Log transaction frame
         log_frame = ttk.LabelFrame(tab, text=_t('gui.finance.finance.budget_manager.meal_plan.labels.log_meal_transaction', default="Log Meal Transaction"), padding="10")
@@ -70,6 +76,15 @@ class MealPlanMixin:
         history_frame = ttk.LabelFrame(tab, text=_t('gui.finance.finance.budget_manager.meal_plan.labels.recent_meal_transactions', default="Recent Meal Transactions"), padding="10")
         history_frame.pack(fill=tk.BOTH, expand=True)
 
+        history_bar = ttk.Frame(history_frame)
+        history_bar.pack(fill=tk.X, pady=(0, 5))
+        ttk.Label(history_bar, text=_t('gui.finance.finance.budget_manager.meal_plan.labels.history_days', default="Show last (days):")).pack(side=tk.LEFT, padx=5)
+        self.meal_history_days_entry = ttk.Entry(history_bar, width=6)
+        self.meal_history_days_entry.insert(0, "14")
+        self.meal_history_days_entry.pack(side=tk.LEFT)
+        ttk.Button(history_bar, text=_t('gui.finance.finance.budget_manager.meal_plan.buttons.load_history', default="Load History"),
+                  command=self.load_meal_history).pack(side=tk.LEFT, padx=5)
+
         self.meal_history_tree = ttk.Treeview(history_frame,
             columns=('Date', 'Time', 'Location', 'Type', 'Meals', 'Dollars'),
             show='headings', height=10)
@@ -85,6 +100,69 @@ class MealPlanMixin:
 
         self.meal_history_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+    def _meal_student_id(self):
+        current_user = self.gui.auth.get_current_user() if self.gui.auth else None
+        return current_user.get('username') if current_user else 'guest'
+
+    def setup_meal_plan(self):
+        """Create meal plan tracking (CLI: Setup Meal Plan Tracking)."""
+        today = datetime.now().strftime('%Y-%m-%d')
+        values = ask_form(self.root, _t('gui.finance.finance.budget_manager.meal_plan.windows.setup_meal_plan', default="Setup Meal Plan Tracking"), [
+            Field('plan_name', 'Plan name'),
+            Field('plan_type', 'Plan type', kind='choice', options=MEAL_PLAN_TYPES, default='block'),
+            Field('academic_term', 'Academic term', optional=True),
+            Field('start_date', 'Start date (YYYY-MM-DD)', default=today),
+            Field('end_date', 'End date (YYYY-MM-DD)'),
+            Field('total_meals', 'Total meals (0 if unlimited)', kind='int', default='0', optional=True),
+            Field('total_dollars', 'Total dollars', kind='float', default='0', optional=True),
+        ])
+        if values is None:
+            return
+        try:
+            for key in ('start_date', 'end_date'):
+                datetime.strptime(values[key], '%Y-%m-%d')
+            from education_system.systems.university.domains.finance.domain.budget.services.budget_service import MealPlanManager
+            tracking_id = MealPlanManager.create_meal_plan_tracking(
+                student_id=self._meal_student_id(),
+                plan_name=values['plan_name'],
+                plan_type=values['plan_type'],
+                academic_term=values.get('academic_term') or '',
+                start_date=values['start_date'],
+                end_date=values['end_date'],
+                total_meals=values.get('total_meals') or 0,
+                total_dollars=values.get('total_dollars') or 0.0,
+            )
+            messagebox.showinfo(_t('gui.finance.finance.budget_manager.meal_plan.dialogs.success', default="Success"),
+                                f"Meal plan tracking created (ID {tracking_id}).")
+            self.load_meal_plan_status()
+        except ValueError:
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.meal_plan.dialogs.error', default="Error"),
+                                 _t('gui.finance.finance.budget_manager.meal_plan.dialogs.dates_format', default="Dates must be YYYY-MM-DD."))
+        except Exception as e:
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.meal_plan.dialogs.error', default="Error"), f"Failed to set up meal plan: {e}")
+
+    def load_meal_history(self):
+        """Load meal transactions for the last N days (CLI: View Meal History)."""
+        try:
+            days = int(self.meal_history_days_entry.get().strip() or 14)
+        except (ValueError, AttributeError):
+            days = 14
+        try:
+            from education_system.systems.university.domains.finance.domain.budget.services.budget_service import MealPlanManager
+            history = MealPlanManager.get_meal_history(self._meal_student_id(), days=days)
+            self.meal_history_tree.delete(*self.meal_history_tree.get_children())
+            for txn in history:
+                self.meal_history_tree.insert('', 'end', values=(
+                    txn['transaction_date'],
+                    txn['transaction_time'],
+                    txn['location'],
+                    txn['meal_type'],
+                    txn['meals_used'],
+                    f"\u00a3{txn['dollars_used']:.2f}"
+                ))
+        except Exception as e:
+            logger.error(f"Error loading meal history: {e}")
 
     def log_meal_transaction(self):
         """Log a meal plan transaction"""
@@ -159,17 +237,9 @@ class MealPlanMixin:
                 self.meal_plan_labels['Days Remaining'].config(
                     text=str(status.get('days_remaining', 'N/A')))
 
-                # Load recent transactions
-                self.meal_history_tree.delete(*self.meal_history_tree.get_children())
-                history = MealPlanManager.get_meal_history(student_id, days=14)
-                for txn in history:
-                    self.meal_history_tree.insert('', 'end', values=(
-                        txn['transaction_date'],
-                        txn['transaction_time'],
-                        txn['location'],
-                        txn['meal_type'],
-                        txn['meals_used'],
-                        f"\u00a3{txn['dollars_used']:.2f}"
-                    ))
+            else:
+                for label in self.meal_plan_labels.values():
+                    label.config(text=_t('gui.finance.finance.budget_manager.meal_plan.labels.n_a', default="N/A"))
+            self.load_meal_history()
         except Exception as e:
             logger.error(f"Error loading meal plan status: {e}")

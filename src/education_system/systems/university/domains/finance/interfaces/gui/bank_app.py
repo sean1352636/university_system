@@ -315,30 +315,10 @@ class BankApp:
             return []
 
         try:
-            conn = sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-
-            # Get transactions from transactions table
-            cursor.execute('''
-                SELECT created_at, transaction_type, amount, balance_after, description
-                FROM transactions
-                WHERE source_type = 'student_finance' AND student_id = ?
-                ORDER BY created_at DESC
-                LIMIT 50
-            ''', (self.student_id,))
-
-            transactions = []
-            for row in cursor.fetchall():
-                transactions.append({
-                    'timestamp': row[0],
-                    'type': row[1],
-                    'amount': float(row[2]),
-                    'balance_after': float(row[3]) if row[3] else 0.0,
-                    'description': row[4] or ''
-                })
-
-            conn.close()
-            return transactions
+            from education_system.systems.university.domains.finance.domain.student_account import (
+                list_account_transactions,
+            )
+            return list_account_transactions(self.student_id, limit=50)
 
         except Exception as e:
             print(f"Error getting student transactions: {e}")

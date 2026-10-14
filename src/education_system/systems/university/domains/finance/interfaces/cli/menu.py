@@ -84,6 +84,21 @@ def _blockchain_credentials(auth: Any) -> None:
     display_blockchain_credentials_menu(auth)
 
 
+def _lazy(module: str, func: str) -> Callable[[Any], None]:
+    """Resolve ``func`` from ``module`` on first use so one broken area cannot
+    take the whole finance menu down (same reason the areas above import
+    inside their wrappers)."""
+    def _run(auth: Any) -> None:
+        import importlib
+
+        getattr(importlib.import_module(module), func)(auth)
+
+    _run.__name__ = func
+    return _run
+
+
+_CLI = "education_system.systems.university.domains.finance.interfaces.cli."
+
 FINANCE_AREAS: tuple[tuple[str, str, Callable[[Any], None]], ...] = (
     ("1", "Core Finance Operations (29 options)", _core_finance),
     ("2", "General Ledger", _ledger),
@@ -93,6 +108,23 @@ FINANCE_AREAS: tuple[tuple[str, str, Callable[[Any], None]], ...] = (
     ("6", "Bursary Management", _bursaries),
     ("7", "Scholarship Finder", _scholarships),
     ("8", "Blockchain Credentials", _blockchain_credentials),
+    # Parity with the Finance GUI (added 2026-10-14): every GUI section
+    # below was previously GUI-only or far thinner on the command line.
+    ("9", "Finance Operations (AP, purchasing, suppliers, cash, VAT, assets, approvals, fraud, close)",
+     _lazy(_CLI + "operations", "run_operations_menu")),
+    ("10", "Collections Management", _lazy(_CLI + "collections", "run_collections_menu")),
+    ("11", "Payment Plans", _lazy(_CLI + "payment_plans", "run_payment_plans_menu")),
+    ("12", "Late Fees", _lazy(_CLI + "late_fees", "run_late_fees_menu")),
+    ("13", "Refunds", _lazy(_CLI + "refunds", "run_refunds_menu")),
+    ("14", "Multi-Currency Rates", _lazy(_CLI + "currency", "run_currency_menu")),
+    ("15", "Revenue Sources", _lazy(_CLI + "revenue", "run_revenue_menu")),
+    ("16", "Forecasting & Analytics", _lazy(_CLI + "forecasting", "run_forecasting_menu")),
+    ("17", "Finance Administration (admin)", _lazy(_CLI + "admin", "run_finance_admin_menu")),
+    ("18", "Club Payments", _lazy(_CLI + "club_payments", "run_club_payments_menu")),
+    ("19", "Library Finance", _lazy(_CLI + "library_finance", "run_library_finance_menu")),
+    # Student-facing (any logged-in user, own account only).
+    ("20", "Student Bank App", _lazy(_CLI + "bank_app", "run_bank_app_menu")),
+    ("21", "My Finances", _lazy(_CLI + "my_finances", "run_my_finances_menu")),
 )
 
 

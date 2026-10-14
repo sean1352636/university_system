@@ -1,5 +1,8 @@
 """
 Report export and email mixin for AdminPortal.
+
+File writing is done by ``finance.domain.services.financial_aid.report_export``
+(shared with the financial aid CLI); this mixin only asks where to save.
 """
 
 from education_system.systems.university.domains.finance.interfaces.gui.financial_aid.admin_portal._imports import (
@@ -10,59 +13,54 @@ from education_system.systems.university.domains.finance.interfaces.gui.financia
     show_error, show_success, show_warning,
     get_text, render_template,
 )
+from education_system.systems.university.domains.finance.domain.services.financial_aid.report_export import (
+    default_report_filename,
+    write_report_file,
+)
 
 logger = logging.getLogger(__name__)
+
+_FILETYPES = {
+    "csv": [("CSV files", "*.csv"), ("All files", "*.*")],
+    "txt": [("Text files", "*.txt"), ("All files", "*.*")],
+    "pdf": [("PDF files", "*.pdf"), ("All files", "*.*")],
+}
 
 
 class ReportExportMixin:
     """Methods for exporting and emailing reports."""
 
+    def _export_report(self, report_text: str, filename_base: str, fmt: str):
+        """Ask for a destination, then write the report in ``fmt``."""
+        try:
+            filepath = filedialog.asksaveasfilename(
+                defaultextension=f".{fmt}",
+                filetypes=_FILETYPES[fmt],
+                initialfile=default_report_filename(filename_base, fmt),
+            )
+            if not filepath:
+                return
+            written = write_report_file(report_text, filepath, fmt)
+            show_success(get_text("financial_aid.admin_portal.dialogs.export_successful", "Export Successful"),
+                         get_text("financial_aid.admin_portal.messages.report_exported", "Report exported to:\n{filepath}").format(filepath=written))
+            log_activity('export', 'financial_aid_report', str(written), {'report_type': filename_base, 'format': fmt})
+        except ImportError:
+            show_error(
+                get_text("financial_aid.admin_portal.dialogs.pdf_library_missing", "PDF Library Missing"),
+                get_text("financial_aid.admin_portal.messages.install_reportlab", "Please install reportlab to export to PDF:\npip install reportlab")
+            )
+        except Exception as e:
+            logger.error(f"Error exporting report to {fmt}: {e}")
+            show_error(get_text("financial_aid.admin_portal.dialogs.export_error", "Export Error"),
+                       get_text("financial_aid.admin_portal.errors.failed_export_report", "Failed to export report: {error}").format(error=str(e)))
+
     def _export_report_to_csv(self, report_text: str, filename_base: str):
         """Export report to CSV file"""
-        try:
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            filepath = filedialog.asksaveasfilename(
-                defaultextension=".csv",
-                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
-                initialfile=f"{filename_base}_{timestamp}.csv"
-            )
-
-            if filepath:
-                # Convert report text to CSV format
-                lines = report_text.split('\n')
-                with open(filepath, 'w', newline='', encoding='utf-8') as f:
-                    writer = csv.writer(f)
-                    for line in lines:
-                        # Write each line as a single CSV row
-                        writer.writerow([line])
-
-                show_success(get_text("financial_aid.admin_portal.dialogs.export_successful", "Export Successful"), get_text("financial_aid.admin_portal.messages.report_exported", "Report exported to:\n{filepath}").format(filepath=filepath))
-                log_activity('export', 'financial_aid_report', filepath, {'report_type': filename_base, 'format': 'csv'})
-
-        except Exception as e:
-            logger.error(f"Error exporting report to CSV: {e}")
-            show_error(get_text("financial_aid.admin_portal.dialogs.export_error", "Export Error"), get_text("financial_aid.admin_portal.errors.failed_export_report", "Failed to export report: {error}").format(error=str(e)))
+        self._export_report(report_text, filename_base, "csv")
 
     def _export_report_to_txt(self, report_text: str, filename_base: str):
         """Export report to text file"""
-        try:
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            filepath = filedialog.asksaveasfilename(
-                defaultextension=".txt",
-                filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
-                initialfile=f"{filename_base}_{timestamp}.txt"
-            )
-
-            if filepath:
-                with open(filepath, 'w', encoding='utf-8') as f:
-                    f.write(report_text)
-
-                show_success(get_text("financial_aid.admin_portal.dialogs.export_successful", "Export Successful"), get_text("financial_aid.admin_portal.messages.report_exported", "Report exported to:\n{filepath}").format(filepath=filepath))
-                log_activity('export', 'financial_aid_report', filepath, {'report_type': filename_base, 'format': 'txt'})
-
-        except Exception as e:
-            logger.error(f"Error exporting report to text: {e}")
-            show_error(get_text("financial_aid.admin_portal.dialogs.export_error", "Export Error"), get_text("financial_aid.admin_portal.errors.failed_export_report", "Failed to export report: {error}").format(error=str(e)))
+        self._export_report(report_text, filename_base, "txt")
 
     def _export_report_text(self, report_text: str, filename_base: str):
         """Alias for _export_report_to_txt for backward compatibility"""
@@ -70,73 +68,7 @@ class ReportExportMixin:
 
     def _export_report_to_pdf(self, report_text: str, filename_base: str):
         """Export report to PDF file"""
-        try:
-            from reportlab.lib.pagesizes import letter
-            from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-            from reportlab.lib.units import inch
-            from reportlab.lib.enums import TA_LEFT
-
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            filepath = messagebox.asksaveasfilename(
-                defaultextension=".pdf",
-                filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")],
-                initialfile=f"{filename_base}_{timestamp}.pdf"
-            )
-
-            if filepath:
-                # Create PDF document
-                doc = SimpleDocTemplate(filepath, pagesize=letter,
-                                       rightMargin=72, leftMargin=72,
-                                       topMargin=72, bottomMargin=18)
-
-                # Container for PDF elements
-                story = []
-
-                # Get default styles
-                styles = getSampleStyleSheet()
-
-                # Create custom style for report text
-                report_style = ParagraphStyle(
-                    'ReportStyle',
-                    parent=styles['Normal'],
-                    fontName='Courier',
-                    fontSize=9,
-                    leading=12,
-                    alignment=TA_LEFT,
-                    spaceAfter=6
-                )
-
-                # Split report into lines and add to story
-                for line in report_text.split('\n'):
-                    if line.strip():
-                        # Replace special characters that might cause issues
-                        line = line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
-                        p = Paragraph(line, report_style)
-                        story.append(p)
-                    else:
-                        story.append(Spacer(1, 0.1 * inch))
-
-                # Build PDF
-                doc.build(story)
-
-                show_success(
-                    get_text("financial_aid.admin_portal.dialogs.export_successful", "Export Successful"),
-                    get_text("financial_aid.admin_portal.messages.report_exported", "Report exported to:\n{filepath}").format(filepath=filepath)
-                )
-                log_activity('export', 'financial_aid_report', filepath, {'report_type': filename_base, 'format': 'pdf'})
-
-        except ImportError:
-            show_error(
-                get_text("financial_aid.admin_portal.dialogs.pdf_library_missing", "PDF Library Missing"),
-                get_text("financial_aid.admin_portal.messages.install_reportlab", "Please install reportlab to export to PDF:\npip install reportlab")
-            )
-        except Exception as e:
-            logger.error(f"Error exporting report to PDF: {e}")
-            show_error(
-                get_text("financial_aid.admin_portal.dialogs.export_error", "Export Error"),
-                get_text("financial_aid.admin_portal.errors.failed_export_report", "Failed to export report: {error}").format(error=str(e))
-            )
+        self._export_report(report_text, filename_base, "pdf")
 
     def _email_report(self, report_text: str, report_name: str):
         """Email report to admin"""

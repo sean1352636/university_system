@@ -125,6 +125,7 @@ class PersonalBudgetMixin:
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, pady=5)
         ttk.Button(btn_frame, text=_t('gui.finance.finance.budget_manager.personal.buttons.view_details', default="View Details"), command=self.view_budget_details).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.finance.finance.budget_manager.personal.buttons.add_category', default="Add Category"), command=self.add_budget_category).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text=_t('gui.finance.finance.budget_manager.personal.buttons.refresh', default="Refresh"), command=self.refresh_my_budgets).pack(side=tk.LEFT, padx=5)
 
         # Initial load

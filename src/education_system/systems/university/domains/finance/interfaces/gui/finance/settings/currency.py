@@ -5,10 +5,14 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 import threading
 import tkinter as tk
 from tkinter import ttk, messagebox
-from datetime import datetime
 
 from education_system.systems.university.infrastructure.i18n import get_text as _
 from education_system.systems.university.infrastructure.database.db import get_connection, sqlite3
+from education_system.systems.university.domains.finance.domain.billing.exchange_rates import (
+    latest_rate,
+    list_exchange_rates,
+    refresh_sample_rates,
+)
 
 SUPPORTED_CURRENCIES = ['GBP', 'USD', 'EUR', 'CAD', 'AUD']
 
@@ -125,42 +129,9 @@ class CurrencyMixin:
                 self.update_status(_("finance_gui.settings.updating_rates"))
 
                 def update_rates():
-                    # Simulate API call with sample rates
-                    sample_rates = {
-                        'USD': 1.27,
-                        'EUR': 1.17,
-                        'CAD': 1.71,
-                        'AUD': 1.91,
-                        'JPY': 188.50,
-                        'CHF': 1.14
-                    }
-
-                    conn = get_connection()
-                    cursor = conn.cursor()
-
-                    current_date = datetime.now().strftime('%Y-%m-%d')
-                    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    base_currency = 'GBP'
-
-                    rates_updated = 0
-
-                    for currency, rate in sample_rates.items():
-                        if currency != base_currency:
-                            cursor.execute('''
-                            INSERT OR REPLACE INTO exchange_rates
-                            (from_currency, to_currency, exchange_rate, rate_date, source, created_at)
-                            VALUES (?, ?, ?, ?, ?, ?)
-                            ''', (base_currency, currency, rate, current_date, 'api', current_time))
-                            rates_updated += 1
-
-                    # Update last update time
-                    cursor.execute('''
-                    UPDATE currency_settings
-                    SET last_rate_update = ?, updated_at = ?
-                    ''', (current_time, current_time))
-
-                    conn.commit()
-                    conn.close()
+                    # Shared with the Finance CLI: today's row per pair is
+                    # updated in place, otherwise inserted.
+                    rates_updated = refresh_sample_rates()['updated']
 
                     messagebox.showinfo(_("finance_gui.settings.success_title"), _("finance_gui.settings.rates_updated", count=rates_updated))
                     self.refresh_exchange_rates()
@@ -230,42 +201,14 @@ class CurrencyMixin:
                     result_var.set(f"{amount:.2f} {from_currency}")
                     return
 
-                # Get exchange rate
-                conn = get_connection()
-                cursor = conn.cursor()
-
-                cursor.execute('''
-                SELECT exchange_rate FROM exchange_rates
-                WHERE from_currency = ? AND to_currency = ?
-                ORDER BY rate_date DESC, created_at DESC
-                LIMIT 1
-                ''', (from_currency, to_currency))
-
-                result = cursor.fetchone()
-
-                if result:
-                    rate = result[0]
+                # Shared with the Finance CLI: falls back to the inverted pair.
+                found = latest_rate(from_currency, to_currency)
+                if found:
+                    rate, _inverted = found
                     converted_amount = amount * rate
                     result_var.set(f"{amount:.2f} {from_currency} = {converted_amount:.2f} {to_currency}\nRate: 1 {from_currency} = {rate:.4f} {to_currency}")
                 else:
-                    # Try reverse conversion
-                    cursor.execute('''
-                    SELECT exchange_rate FROM exchange_rates
-                    WHERE from_currency = ? AND to_currency = ?
-                    ORDER BY rate_date DESC, created_at DESC
-                    LIMIT 1
-                    ''', (to_currency, from_currency))
-
-                    result = cursor.fetchone()
-
-                    if result:
-                        rate = 1 / result[0]
-                        converted_amount = amount * rate
-                        result_var.set(f"{amount:.2f} {from_currency} = {converted_amount:.2f} {to_currency}\nRate: 1 {from_currency} = {rate:.4f} {to_currency}")
-                    else:
-                        result_var.set(_("finance_gui.settings.rate_not_found", **{"from": from_currency, "to": to_currency}))
-
-                conn.close()
+                    result_var.set(_("finance_gui.settings.rate_not_found", **{"from": from_currency, "to": to_currency}))
 
             except ValueError:
                 messagebox.showerror(_("finance_gui.settings.error_title"), _("finance_gui.settings.please_enter_valid_amount"))
@@ -310,16 +253,10 @@ class CurrencyMixin:
             return
 
         try:
-            conn = get_connection()
-            cursor = conn.cursor()
-
-            cursor.execute('''
-            SELECT from_currency, to_currency, exchange_rate, rate_date, source
-            FROM exchange_rates
-            ORDER BY rate_date DESC, from_currency, to_currency
-            ''')
-
-            rates = cursor.fetchall()
+            rates = [
+                (r['from_currency'], r['to_currency'], r['exchange_rate'], r['rate_date'], r['source'])
+                for r in list_exchange_rates(limit=1000)
+            ]
 
             # Clear existing items
             for item in self.rates_tree.get_children():
@@ -331,8 +268,6 @@ class CurrencyMixin:
                 self.rates_tree.insert('', 'end', values=(
                     from_curr, to_curr, f"{rate_value:.4f}", rate_date, source
                 ))
-
-            conn.close()
 
         except Exception as e:
             messagebox.showerror(_("finance_gui.settings.error_title"), _("finance_gui.settings.failed_refresh_rates", error=str(e)))

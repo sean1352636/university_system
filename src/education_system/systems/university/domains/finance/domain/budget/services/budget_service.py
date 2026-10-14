@@ -279,6 +279,37 @@ class BudgetManager:
                 conn.close()
 
     @staticmethod
+    def add_budget_category(budget_id: int, category_name: str, category_type: str,
+                            allocated_amount: float) -> int:
+        """Add a category to a personal budget and grow its allocated total.
+
+        Shared by the budget CLI and the Finance GUI budget tab so the rule
+        (category row + allocated_amount bump) lives in one place.
+        """
+        if category_type not in ('essential', 'discretionary', 'savings', 'debt'):
+            raise ValidationError(f"Invalid category type: {category_type}")
+        if allocated_amount <= 0:
+            raise ValidationError("Allocated amount must be positive")
+        try:
+            with transaction() as conn:
+                cursor = conn.execute('''
+                    INSERT INTO student_budget_categories (
+                        budget_id, category_name, category_type, allocated_amount
+                    ) VALUES (?, ?, ?, ?)
+                ''', (budget_id, category_name, category_type, allocated_amount))
+                conn.execute('''
+                    UPDATE student_budgets
+                    SET allocated_amount = allocated_amount + ?
+                    WHERE budget_id = ?
+                ''', (allocated_amount, budget_id))
+                category_id = cursor.lastrowid
+                log_activity('create', 'student_budget_category',
+                           details={'budget_id': budget_id, 'category': category_name})
+                return category_id
+        except sqlite3.Error as e:
+            raise DatabaseError(f"Error adding budget category: {e}") from e
+
+    @staticmethod
     def get_student_budgets(student_id: str, active_only: bool = True) -> List[Dict[str, Any]]:
         """Get all budgets for a student"""
         with get_connection() as conn:
@@ -782,7 +813,18 @@ class MealPlanManager:
 
             query += " ORDER BY created_at DESC, transaction_time DESC"
             cursor = conn.execute(query, params)
-            return [dict(row) for row in cursor.fetchall()]
+            # ``transactions`` is the shared ledger: a meal swipe is stored as
+            # created_at / transaction_type / quantity_change / amount. Expose
+            # the meal-plan names the CLI and GUI read alongside the raw columns.
+            history = []
+            for row in cursor.fetchall():
+                txn = dict(row)
+                txn.setdefault('transaction_date', txn.get('created_at'))
+                txn.setdefault('meal_type', txn.get('transaction_type'))
+                txn.setdefault('meals_used', txn.get('quantity_change') or 0)
+                txn.setdefault('dollars_used', txn.get('amount') or 0.0)
+                history.append(txn)
+            return history
 
 class TextbookComparisonManager:
     """Manages textbook price comparison"""

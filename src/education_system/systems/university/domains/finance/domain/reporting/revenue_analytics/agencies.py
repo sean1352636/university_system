@@ -432,3 +432,184 @@ def run_collection_workflow(workflow_id):
                        body=f"Please contact Student Finance regarding collection case {case_id}.")
     return {"created": created, "assigned": assigned,
             "reminded": reminded, "escalated": escalated}
+
+
+# ---------------------------------------------------------------------------
+# Non-interactive agency API — shared by the Finance GUI and the Finance CLI.
+# The menu wrappers above prompt on stdin; these take arguments and return data.
+# ---------------------------------------------------------------------------
+
+_AGENCY_FIELDS = ('agency_name', 'contact_email', 'contact_phone',
+                  'commission_rate', 'minimum_amount')
+
+
+def _validate_agency_numbers(commission_rate, minimum_amount):
+    commission_rate = float(commission_rate or 0)
+    minimum_amount = float(minimum_amount or 0)
+    if not 0 <= commission_rate <= 100:
+        raise ValueError("Commission rate must be between 0 and 100")
+    if minimum_amount < 0:
+        raise ValueError("Minimum amount cannot be negative")
+    return commission_rate, minimum_amount
+
+
+def list_agencies(include_inactive=True):
+    """Collection agencies as dicts, active first then by name."""
+    sql = '''
+    SELECT agency_id, agency_name, contact_email, contact_phone,
+           commission_rate, minimum_amount, is_active, created_at, updated_at
+    FROM collection_agencies
+    '''
+    if not include_inactive:
+        sql += ' WHERE is_active = 1'
+    sql += ' ORDER BY is_active DESC, agency_name'
+    conn = get_connection()
+    try:
+        return [dict(r) for r in conn.execute(sql).fetchall()]
+    finally:
+        conn.close()
+
+
+def get_agency(agency_id):
+    """One agency as a dict, or ``None``."""
+    conn = get_connection()
+    try:
+        row = conn.execute('''
+        SELECT agency_id, agency_name, contact_email, contact_phone,
+               commission_rate, minimum_amount, is_active, created_at, updated_at
+        FROM collection_agencies WHERE agency_id = ?
+        ''', (agency_id,)).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def count_open_cases(agency_id):
+    """How many unresolved cases are assigned to ``agency_id``."""
+    conn = get_connection()
+    try:
+        return conn.execute('''
+        SELECT COUNT(*) FROM collection_cases
+        WHERE agency_id = ? AND case_status NOT IN ('resolved', 'closed')
+        ''', (agency_id,)).fetchone()[0]
+    finally:
+        conn.close()
+
+
+def create_agency(agency_name, contact_email='', contact_phone='',
+                  commission_rate=0.0, minimum_amount=0.0):
+    """Add an active agency and return its id. Raises ValueError on bad input."""
+    agency_name = (agency_name or '').strip()
+    if not agency_name:
+        raise ValueError("Agency name is required")
+    commission_rate, minimum_amount = _validate_agency_numbers(commission_rate, minimum_amount)
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    with transaction() as conn:
+        cursor = conn.execute('''
+        INSERT INTO collection_agencies
+        (agency_name, contact_email, contact_phone, commission_rate, minimum_amount,
+         is_active, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, 1, ?, ?)
+        ''', (agency_name, contact_email or '', contact_phone or '',
+              commission_rate, minimum_amount, now, now))
+        return cursor.lastrowid
+
+
+def update_agency(agency_id, **changes):
+    """Change any of name/email/phone/commission/minimum; returns the new row.
+
+    Unknown fields raise ValueError, as does a missing agency. Fields passed
+    as ``None`` are left untouched.
+    """
+    unknown = set(changes) - set(_AGENCY_FIELDS)
+    if unknown:
+        raise ValueError(f"Unknown agency field(s): {', '.join(sorted(unknown))}")
+    current = get_agency(agency_id)
+    if current is None:
+        raise ValueError(f"Collection agency {agency_id} not found")
+
+    merged = {field: current[field] for field in _AGENCY_FIELDS}
+    for field, value in changes.items():
+        if value is not None:
+            merged[field] = value
+    merged['agency_name'] = (merged['agency_name'] or '').strip()
+    if not merged['agency_name']:
+        raise ValueError("Agency name is required")
+    merged['commission_rate'], merged['minimum_amount'] = _validate_agency_numbers(
+        merged['commission_rate'], merged['minimum_amount'])
+
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    with transaction() as conn:
+        conn.execute('''
+        UPDATE collection_agencies
+        SET agency_name = ?, contact_email = ?, contact_phone = ?,
+            commission_rate = ?, minimum_amount = ?, updated_at = ?
+        WHERE agency_id = ?
+        ''', (merged['agency_name'], merged['contact_email'], merged['contact_phone'],
+              merged['commission_rate'], merged['minimum_amount'], now, agency_id))
+    return get_agency(agency_id)
+
+
+def set_agency_active(agency_id, active):
+    """Activate or deactivate an agency; returns ``{'agency', 'open_cases'}``.
+
+    Deactivating never reassigns cases — the count comes back so the caller
+    can warn. Raises ValueError for a missing agency.
+    """
+    agency = get_agency(agency_id)
+    if agency is None:
+        raise ValueError(f"Collection agency {agency_id} not found")
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    with transaction() as conn:
+        conn.execute('''
+        UPDATE collection_agencies SET is_active = ?, updated_at = ? WHERE agency_id = ?
+        ''', (1 if active else 0, now, agency_id))
+    return {'agency': get_agency(agency_id), 'open_cases': count_open_cases(agency_id)}
+
+
+def delete_agency(agency_id):
+    """Remove an agency that no collection case has ever referenced.
+
+    Cases keep a foreign key to their agency, so an agency with history can
+    only be deactivated (:func:`set_agency_active`). Raises ValueError.
+    """
+    agency = get_agency(agency_id)
+    if agency is None:
+        raise ValueError(f"Collection agency {agency_id} not found")
+    with transaction() as conn:
+        referenced = conn.execute(
+            'SELECT COUNT(*) FROM collection_cases WHERE agency_id = ?', (agency_id,)
+        ).fetchone()[0]
+        if referenced:
+            raise ValueError(
+                f"Agency '{agency['agency_name']}' is referenced by {referenced} case(s); "
+                "deactivate it instead")
+        conn.execute('DELETE FROM collection_agencies WHERE agency_id = ?', (agency_id,))
+    return agency
+
+
+def list_workflows():
+    """Saved collection workflows, newest first (empty until one is saved)."""
+    with transaction() as conn:
+        _ensure_workflow_table(conn)
+        rows = conn.execute('''
+        SELECT workflow_id, workflow_name, minimum_debt, reminder_days, escalation_days,
+               auto_assign, is_active, last_run_at, created_at
+        FROM collection_workflows
+        ORDER BY workflow_id DESC
+        ''').fetchall()
+        return [dict(r) for r in rows]
+
+
+def list_workflow_actions(workflow_id, limit=50):
+    """Most recent actions a workflow run recorded."""
+    with transaction() as conn:
+        _ensure_workflow_table(conn)
+        rows = conn.execute('''
+        SELECT action_id, case_id, action_type, status, details, created_at
+        FROM collection_workflow_actions
+        WHERE workflow_id = ?
+        ORDER BY action_id DESC
+        LIMIT ?
+        ''', (workflow_id, int(limit))).fetchall()
+        return [dict(r) for r in rows]

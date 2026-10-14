@@ -277,6 +277,68 @@ def generate_payment_collection_report():
     except Exception as e:
         print(f"Error generating payment collection report: {e}")
 
+AUDIT_REPORT_COLUMNS = ['Timestamp', 'User', 'Action', 'Table', 'Record ID', 'Details']
+
+
+def fetch_audit_entries(start_date, end_date):
+    """``audit_log`` rows with a timestamp between the two dates (inclusive).
+
+    Each row is ``(user_id, action, table_name, record_id, new_values,
+    timestamp)``, newest first — the shape the CLI audit report prints and
+    exports. No permission check here; that is the caller's job.
+    """
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute('''
+        SELECT user_id, action, table_name, record_id, new_values, timestamp
+        FROM audit_log
+        WHERE date(timestamp) BETWEEN ? AND ?
+        ORDER BY timestamp DESC
+        ''', (start_date, end_date))
+        return cursor.fetchall()
+    finally:
+        conn.close()
+
+
+def _audit_details_summary(details):
+    details_summary = json.loads(details) if details else {}
+    text = str(details_summary)
+    return text[:20] + "..." if len(text) > 20 else text
+
+
+def format_audit_report(start_date, end_date, audit_logs):
+    """The audit report as text, laid out exactly as the CLI prints it."""
+    if not audit_logs:
+        return f"No audit logs found between {start_date} and {end_date}"
+    lines = [
+        f"\nAudit Report: {start_date} to {end_date}",
+        "=" * 100,
+        f"{'Timestamp':<20} {'User':<15} {'Action':<20} {'Table':<15} {'Record ID':<10} {'Details':<20}",
+        "-" * 100,
+    ]
+    for user_id, action, table_name, record_id, details, timestamp in audit_logs:
+        details_str = _audit_details_summary(details)
+        # Columns are nullable; str() them so a NULL user/record id cannot
+        # abort the whole report (the old inline print did exactly that).
+        lines.append(f"{str(timestamp or ''):<20} {str(user_id or ''):<15} "
+                     f"{str(action or ''):<20} {str(table_name or ''):<15} "
+                     f"{str(record_id or ''):<10} {details_str:<20}")
+    lines.append("=" * 100)
+    lines.append(f"Total audit entries: {len(audit_logs)}")
+    return "\n".join(lines)
+
+
+def export_audit_report_csv(audit_logs, filename):
+    """Write the rows from :func:`fetch_audit_entries` to *filename* as CSV."""
+    with open(filename, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(AUDIT_REPORT_COLUMNS)
+        for log in audit_logs:
+            writer.writerow(log)
+    return filename
+
+
 def generate_audit_report(start_date, end_date):
     """Generate audit report for compliance"""
     global auth
@@ -290,54 +352,18 @@ def generate_audit_report(start_date, end_date):
         return
 
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
-
-        cursor.execute('''
-        SELECT user_id, action, table_name, record_id, new_values, timestamp
-        FROM audit_log
-        WHERE date(timestamp) BETWEEN ? AND ?
-        ORDER BY timestamp DESC
-        ''', (start_date, end_date))
-
-        audit_logs = cursor.fetchall()
-
+        audit_logs = fetch_audit_entries(start_date, end_date)
+        print(format_audit_report(start_date, end_date, audit_logs))
         if not audit_logs:
-            print(f"No audit logs found between {start_date} and {end_date}")
-            conn.close()
             return
-
-        print(f"\nAudit Report: {start_date} to {end_date}")
-        print("=" * 100)
-        print(f"{'Timestamp':<20} {'User':<15} {'Action':<20} {'Table':<15} {'Record ID':<10} {'Details':<20}")
-        print("-" * 100)
-
-        for log in audit_logs:
-            user_id, action, table_name, record_id, details, timestamp = log
-            details_summary = json.loads(details) if details else {}
-            details_str = str(details_summary)[:20] + "..." if len(str(details_summary)) > 20 else str(details_summary)
-
-            print(f"{timestamp:<20} {user_id:<15} {action:<20} {table_name:<15} {record_id:<10} {details_str:<20}")
-
-        print("=" * 100)
-        print(f"Total audit entries: {len(audit_logs)}")
 
         # Export option
         export = input("\nExport audit report? (y/n): ").strip().lower()
 
         if export == 'y':
             filename = f"audit_report_{start_date}_to_{end_date}.csv"
-
-            with open(filename, 'w', newline='') as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerow(['Timestamp', 'User', 'Action', 'Table', 'Record ID', 'Details'])
-
-                for log in audit_logs:
-                    writer.writerow(log)
-
+            export_audit_report_csv(audit_logs, filename)
             print(f"Audit report exported to {filename}")
-
-        conn.close()
 
     except sqlite3.Error as e:
         print(f"Database error: {e}")

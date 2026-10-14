@@ -621,19 +621,12 @@ class BudgetCategoriesMixin:
                         messagebox.showerror(_t('gui.finance.finance.budget_manager.categories.dialogs.error', default="Error"), _t('gui.finance.finance.budget_manager.categories.dialogs.please_fill_all_fields', default="Please fill all fields."), parent=dialog)
                         return
 
-                    from education_system.systems.university.infrastructure.database.db import transaction
-                    with transaction() as conn:
-                        conn.execute('''
-                            INSERT INTO budget_categories
-                            (budget_id, category_name, category_type, allocated_amount)
-                            VALUES (?, ?, ?, ?)
-                        ''', (budget_id, name, cat_type, amount))
-
-                        conn.execute('''
-                            UPDATE student_budgets
-                            SET allocated_amount = allocated_amount + ?
-                            WHERE budget_id = ?
-                        ''', (amount, budget_id))
+                    # Personal budgets: same service call the budget CLI makes
+                    # (student_budget_categories, not the institutional table).
+                    from education_system.systems.university.domains.finance.domain.budget.services.budget_service import (
+                        BudgetManager as PersonalBudgetService,
+                    )
+                    PersonalBudgetService.add_budget_category(budget_id, name, cat_type, amount)
 
                     messagebox.showinfo(_t('gui.finance.finance.budget_manager.categories.dialogs.success', default="Success"), _t('gui.finance.finance.budget_manager.categories.dialogs.category_added_successfully', default="Category added successfully!"), parent=dialog)
                     dialog.destroy()

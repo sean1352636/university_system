@@ -5,9 +5,15 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 
-from education_system.systems.university.infrastructure.database.db import get_connection
 from education_system.systems.university.infrastructure.auth import get_global_auth
 from education_system.systems.university.infrastructure.i18n import get_text as _
+from education_system.systems.university.domains.finance.domain.billing.late_fees import (
+    CALCULATION_METHODS,
+    apply_late_fee,
+    apply_overdue_late_fees,
+    list_late_fees,
+    waive_late_fee_by_id,
+)
 
 
 class LateFeesMixin:
@@ -86,7 +92,7 @@ class LateFeesMixin:
         tk.Label(form_frame, text=_("finance_gui.labels.calculation_method")).grid(row=2, column=0, sticky='w', pady=5)
         method_var = tk.StringVar(value=_t('gui.finance.finance.layout.late_fees.values.fixed', default="fixed"))
         method_combo = ttk.Combobox(form_frame, textvariable=method_var,
-                                    values=['fixed', 'percentage', 'daily'],
+                                    values=list(CALCULATION_METHODS),
                                     state='readonly', width=27)
         method_combo.grid(row=2, column=1, pady=5)
 
@@ -101,18 +107,8 @@ class LateFeesMixin:
                 method = method_var.get()
                 days_overdue = int(days_entry.get())
 
-                conn = get_connection()
-                cursor = conn.cursor()
-
-                cursor.execute('''
-                    INSERT INTO late_fees
-                    (student_fee_id, late_fee_amount, calculation_method, days_overdue,
-                     applied_date, waived, created_at)
-                    VALUES (?, ?, ?, ?, date('now'), 0, datetime('now'))
-                ''', (student_fee_id, amount, method, days_overdue))
-
-                conn.commit()
-                conn.close()
+                # Shared with the Finance CLI: validates the student fee and amount.
+                apply_late_fee(student_fee_id, amount, method, days_overdue)
 
                 messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.messages.late_fee_applied"))
                 dialog.destroy()
@@ -141,15 +137,12 @@ class LateFeesMixin:
         try:
             auth = get_global_auth()
             late_fee_id = self.late_fees_tree.item(selection[0])['values'][0]
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute('''
-                UPDATE late_fees
-                SET waived = 1, waiver_reason = ?, waived_date = date('now'), waived_by = ?
-                WHERE late_fee_id = ?
-            ''', (reason, auth.current_user.get('username', 'admin'), late_fee_id))
-            conn.commit()
-            conn.close()
+            username = 'admin'
+            if auth and getattr(auth, 'current_user', None):
+                username = auth.current_user.get('username', 'admin')
+            # Shared with the Finance CLI: refuses an already-waived fee and
+            # writes the audit row.
+            waive_late_fee_by_id(late_fee_id, reason, waived_by=username)
             messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.messages.late_fee_waived"))
             self._refresh_late_fees()
         except Exception as e:
@@ -161,39 +154,9 @@ class LateFeesMixin:
             return
 
         try:
-            conn = get_connection()
-            cursor = conn.cursor()
-
-            # Find overdue fees without late fees
-            cursor.execute('''
-                SELECT sf.student_fee_id, sf.amount,
-                       julianday('now') - julianday(sf.due_date) as days_overdue
-                FROM student_fees sf
-                WHERE sf.status = 'unpaid'
-                AND sf.due_date < date('now')
-                AND NOT EXISTS (
-                    SELECT 1 FROM late_fees lf
-                    WHERE lf.student_fee_id = sf.student_fee_id
-                )
-            ''')
-
-            overdue_fees = cursor.fetchall()
-            count = 0
-
-            for fee_id, amount, days_overdue in overdue_fees:
-                if days_overdue > 0:
-                    # Apply 5% late fee
-                    late_fee_amount = amount * 0.05
-                    cursor.execute('''
-                        INSERT INTO late_fees
-                        (student_fee_id, late_fee_amount, calculation_method, days_overdue,
-                         applied_date, waived, created_at)
-                        VALUES (?, ?, 'percentage', ?, date('now'), 0, datetime('now'))
-                    ''', (fee_id, late_fee_amount, int(days_overdue)))
-                    count += 1
-
-            conn.commit()
-            conn.close()
+            # Shared with the Finance CLI: 5% on every overdue fee that has no
+            # late fee yet.
+            count = apply_overdue_late_fees()['applied']
 
             messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.messages.late_fees_applied_count", count=count))
             self._refresh_late_fees()
@@ -207,19 +170,11 @@ class LateFeesMixin:
             for item in self.late_fees_tree.get_children():
                 self.late_fees_tree.delete(item)
 
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute('''
-                SELECT late_fee_id, student_fee_id, late_fee_amount, days_overdue,
-                       calculation_method, applied_date, waived, waiver_reason
-                FROM late_fees
-                ORDER BY applied_date DESC
-                LIMIT 500
-            ''')
-
-            for row in cursor.fetchall():
-                self.late_fees_tree.insert('', 'end', values=tuple(row))
-
-            conn.close()
+            for fee in list_late_fees(limit=500):
+                self.late_fees_tree.insert('', 'end', values=(
+                    fee['late_fee_id'], fee['student_fee_id'], fee['late_fee_amount'],
+                    fee['days_overdue'], fee['calculation_method'], fee['applied_date'],
+                    fee['waived'], fee['waiver_reason'],
+                ))
         except Exception as e:
             print(f"Error refreshing late fees: {e}")

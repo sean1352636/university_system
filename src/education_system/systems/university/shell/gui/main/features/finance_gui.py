@@ -66,11 +66,17 @@ def show_student_finance_account(self):
             ensure_student_finance_account_exists,
             top_up_student_finance_account
         )
-        from education_system.systems.university.infrastructure.database.db import get_connection
+        from education_system.systems.university.domains.finance.domain.student_account import (
+            export_account_transactions_csv,
+            get_account_overview,
+            list_account_transactions,
+            resolve_account_owner,
+            signed_amount,
+        )
 
         # Get current user's student ID
         current_user = self.auth.current_user
-        student_id = current_user.get('student_id') or current_user.get('username')
+        student_id = resolve_account_owner(current_user)
         first_name = current_user.get('first_name', '')
         last_name = current_user.get('last_name', '')
         student_name = f"{first_name} {last_name}".strip() or student_id
@@ -115,35 +121,14 @@ def show_student_finance_account(self):
         def refresh_all_data():
             """Refresh balance and statistics"""
             try:
-                conn = get_connection()
-                cursor = conn.cursor()
-
-                # Get balance
-                cursor.execute('SELECT balance FROM student_finance_accounts WHERE student_id = ?', (student_id,))
-                result = cursor.fetchone()
-                balance = result[0] if result else 0.0
-                balance_var.set(f"£{balance:,.2f}")
-
-                # Get statistics
-                cursor.execute('''
-                    SELECT
-                        COUNT(*) as total_transactions,
-                        COALESCE(SUM(CASE WHEN transaction_type IN ('top_up', 'deposit', 'refund') THEN amount ELSE 0 END), 0) as total_deposited,
-                        COALESCE(SUM(CASE WHEN transaction_type IN ('use', 'withdrawal', 'payment') THEN amount ELSE 0 END), 0) as total_spent
-                    FROM transactions
-                    WHERE source_type = 'student_finance' AND student_id = ?
-                ''', (student_id,))
-                stats = cursor.fetchone()
-
-                if stats:
-                    transaction_count_var.set(str(stats[0]))
-                    total_deposited_var.set(f"£{stats[1]:,.2f}")
-                    total_spent_var.set(f"£{stats[2]:,.2f}")
+                overview = get_account_overview(student_id)
+                balance_var.set(f"£{overview['balance']:,.2f}")
+                transaction_count_var.set(str(overview['transaction_count']))
+                total_deposited_var.set(f"£{overview['total_deposited']:,.2f}")
+                total_spent_var.set(f"£{overview['total_spent']:,.2f}")
 
                 # Refresh transaction list
                 load_transactions()
-
-                conn.close()
             except Exception as e:
                 balance_var.set(f"Error: {e}")
 
@@ -265,21 +250,7 @@ def show_student_finance_account(self):
                 if not filename:
                     return
 
-                conn = get_connection()
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT created_at, transaction_type, amount, balance_after, description
-                    FROM transactions
-                    WHERE source_type = 'student_finance' AND student_id = ?
-                    ORDER BY created_at DESC
-                ''', (student_id,))
-
-                with open(filename, 'w', newline='', encoding='utf-8') as f:
-                    writer = csv.writer(f)
-                    writer.writerow(['Date/Time', 'Type', 'Amount', 'Balance After', 'Description'])
-                    writer.writerows(cursor.fetchall())
-
-                conn.close()
+                export_account_transactions_csv(student_id, filename)
                 messagebox.showinfo(_t("common.success"), _t("finance_gui.account.export_success", filename=filename))
             except Exception as e:
                 messagebox.showerror(_t("common.error"), _t("finance_gui.account.export_failed", error=str(e)))
@@ -319,54 +290,25 @@ def show_student_finance_account(self):
                 trans_tree.delete(item)
 
             try:
-                conn = get_connection()
-                cursor = conn.cursor()
-
-                if filter_type == 'deposit':
-                    cursor.execute('''
-                        SELECT created_at, transaction_type, amount, balance_after, description
-                        FROM transactions
-                        WHERE source_type = 'student_finance' AND student_id = ? AND transaction_type IN ('top_up', 'deposit', 'refund')
-                        ORDER BY created_at DESC
-                        LIMIT 20
-                    ''', (student_id,))
-                elif filter_type == 'spend':
-                    cursor.execute('''
-                        SELECT created_at, transaction_type, amount, balance_after, description
-                        FROM transactions
-                        WHERE source_type = 'student_finance' AND student_id = ? AND transaction_type IN ('use', 'withdrawal', 'payment')
-                        ORDER BY created_at DESC
-                        LIMIT 20
-                    ''', (student_id,))
-                else:
-                    cursor.execute('''
-                        SELECT created_at, transaction_type, amount, balance_after, description
-                        FROM transactions
-                        WHERE source_type = 'student_finance' AND student_id = ?
-                        ORDER BY created_at DESC
-                        LIMIT 20
-                    ''', (student_id,))
-
-                for row in cursor.fetchall():
-                    trans_type = row[1].replace('_', ' ').title()
+                for txn in list_account_transactions(student_id, filter_type, limit=20):
+                    trans_type = txn['type'].replace('_', ' ').title()
+                    signed = signed_amount(txn['type'], txn['amount'])
 
                     # Format amount with +/- indicator
-                    if row[1] in ['use', 'withdrawal', 'payment']:
-                        amount_str = f"-£{row[2]:.2f}"
+                    if signed < 0:
+                        amount_str = f"-£{txn['amount']:.2f}"
                         tag = 'negative'
                     else:
-                        amount_str = f"+£{row[2]:.2f}"
+                        amount_str = f"+£{txn['amount']:.2f}"
                         tag = 'positive'
 
                     trans_tree.insert('', 'end', values=(
-                        row[0], trans_type, amount_str, f"£{row[3]:.2f}", row[4] or ''
+                        txn['timestamp'], trans_type, amount_str, f"£{txn['balance_after']:.2f}", txn['description']
                     ), tags=(tag,))
 
                 # Configure tag colors
                 trans_tree.tag_configure('positive', foreground='#27ae60')
                 trans_tree.tag_configure('negative', foreground='#e74c3c')
-
-                conn.close()
             except Exception as e:
                 print(f"Error loading transactions: {e}")
 

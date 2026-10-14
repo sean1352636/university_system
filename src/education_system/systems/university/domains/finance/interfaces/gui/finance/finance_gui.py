@@ -1021,14 +1021,8 @@ class FinanceGUI:
     def _ensure_student_account_exists(self, student_id):
         """Ensure a finance account exists for the student"""
         try:
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute('''
-                INSERT OR IGNORE INTO student_finance_accounts (student_id, balance)
-                VALUES (?, 0.00)
-            ''', (student_id,))
-            conn.commit()
-            conn.close()
+            from education_system.systems.university.domains.finance.domain.student_account import ensure_account
+            ensure_account(student_id)
         except Exception as e:
             print(f"Error creating student account: {e}")
 
@@ -1187,34 +1181,16 @@ class FinanceGUI:
                     messagebox.showerror(_("common.error"), _("finance.errors.insufficient_balance"), parent=use_dialog)
                     return
 
-                conn = get_connection()
-                cursor = conn.cursor()
-
-                cursor.execute('SELECT account_id, balance FROM student_finance_accounts WHERE student_id = ?',
-                             (student_id,))
-                result = cursor.fetchone()
-                account_id, balance = result
-                new_balance = balance - amount
-
-                # Update balance
-                cursor.execute('''
-                    UPDATE student_finance_accounts
-                    SET balance = ?, updated_at = datetime('now')
-                    WHERE student_id = ?
-                ''', (new_balance, student_id))
-
-                # Record transaction
+                from education_system.systems.university.domains.finance.domain.student_account import use_account_balance
                 processed_by = self.auth.current_user.get('username', 'Unknown') if self.auth.current_user else 'Unknown'
-                description = desc_entry.get() or f'{purpose_var.get().replace("_", " ").title()}'
-                cursor.execute('''
-                    INSERT INTO transactions
-                    (source_type, account_id, student_id, transaction_type, amount, balance_before, balance_after,
-                     description, processed_by)
-                    VALUES ('student_finance', ?, ?, 'use', ?, ?, ?, ?, ?)
-                ''', (account_id, student_id, amount, balance, new_balance, description, processed_by))
-
-                conn.commit()
-                conn.close()
+                outcome = use_account_balance(
+                    student_id, amount, purpose=purpose_var.get(),
+                    description=desc_entry.get(), processed_by=processed_by,
+                )
+                if not outcome['success']:
+                    messagebox.showerror(_("common.error"), outcome['message'], parent=use_dialog)
+                    return
+                new_balance = outcome['new_balance']
 
                 messagebox.showinfo(_("common.success"), _("finance.messages.use_balance_success").format(amount=amount, balance=new_balance),
                                    parent=use_dialog)
@@ -1287,34 +1263,16 @@ class FinanceGUI:
                                           parent=withdraw_dialog):
                     return
 
-                conn = get_connection()
-                cursor = conn.cursor()
-
-                cursor.execute('SELECT account_id, balance FROM student_finance_accounts WHERE student_id = ?',
-                             (student_id,))
-                result = cursor.fetchone()
-                account_id, balance = result
-                new_balance = balance - amount
-
-                # Update balance
-                cursor.execute('''
-                    UPDATE student_finance_accounts
-                    SET balance = ?, updated_at = datetime('now')
-                    WHERE student_id = ?
-                ''', (new_balance, student_id))
-
-                # Record transaction
+                from education_system.systems.university.domains.finance.domain.student_account import withdraw_from_account
                 processed_by = self.auth.current_user.get('username', 'Unknown') if self.auth.current_user else 'Unknown'
-                description = reason_entry.get() or f'Withdrawal via {method_var.get()}'
-                cursor.execute('''
-                    INSERT INTO transactions
-                    (source_type, account_id, student_id, transaction_type, amount, balance_before, balance_after,
-                     description, processed_by)
-                    VALUES ('student_finance', ?, ?, 'withdrawal', ?, ?, ?, ?, ?)
-                ''', (account_id, student_id, amount, balance, new_balance, description, processed_by))
-
-                conn.commit()
-                conn.close()
+                outcome = withdraw_from_account(
+                    student_id, amount, method=method_var.get(),
+                    reason=reason_entry.get(), processed_by=processed_by,
+                )
+                if not outcome['success']:
+                    messagebox.showerror(_("common.error"), outcome['message'], parent=withdraw_dialog)
+                    return
+                new_balance = outcome['new_balance']
 
                 messagebox.showinfo(_("common.success"), _("finance.messages.withdrawal_success").format(amount=amount, balance=new_balance),
                                    parent=withdraw_dialog)

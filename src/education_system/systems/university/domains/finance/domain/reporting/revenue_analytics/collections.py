@@ -285,6 +285,84 @@ def list_active_cases():
         conn.close()
 
 
+def list_cases(limit=500):
+    """Every collection case, newest first — the Collections table in the GUI."""
+    conn = get_connection()
+    try:
+        rows = conn.execute('''
+        SELECT cc.case_id, cc.student_id, s.first_name, s.last_name,
+               cc.total_debt, cc.case_status, cc.assigned_date,
+               cc.amount_collected, cc.resolution_date, cc.agency_id,
+               ca.agency_name, cc.created_at
+        FROM collection_cases cc
+        LEFT JOIN students s ON cc.student_id = s.student_id
+        LEFT JOIN collection_agencies ca ON cc.agency_id = ca.agency_id
+        ORDER BY cc.created_at DESC, cc.case_id DESC
+        LIMIT ?
+        ''', (int(limit),)).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def get_case(case_id):
+    """One collection case with the student's name and email, or ``None``."""
+    conn = get_connection()
+    try:
+        row = conn.execute('''
+        SELECT cc.case_id, cc.student_id, s.first_name, s.last_name, s.email_address,
+               cc.total_debt, cc.case_status, cc.assigned_date, cc.resolution_date,
+               cc.amount_collected, cc.agency_id, ca.agency_name, cc.notes,
+               cc.created_at, cc.updated_at
+        FROM collection_cases cc
+        LEFT JOIN students s ON cc.student_id = s.student_id
+        LEFT JOIN collection_agencies ca ON cc.agency_id = ca.agency_id
+        WHERE cc.case_id = ?
+        ''', (case_id,)).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def open_case(student_id, total_debt, notes='', created_by=None):
+    """Open a collection case for a stated debt (the GUI's Create Case form).
+
+    Unlike :func:`create_collection_case`, the debt is supplied rather than
+    derived from overdue fees. Raises ValueError for an unknown student, a
+    non-positive debt, or when the student already has an open case.
+    """
+    student_id = str(student_id).strip()
+    if not student_id or not student_exists(student_id):
+        raise ValueError(f"Student with ID {student_id!r} does not exist")
+    total_debt = float(total_debt)
+    if total_debt <= 0:
+        raise ValueError("Total debt must be greater than zero")
+
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    with transaction() as conn:
+        existing = conn.execute('''
+        SELECT case_id, case_status FROM collection_cases
+        WHERE student_id = ? AND case_status NOT IN ('resolved', 'closed')
+        ''', (student_id,)).fetchone()
+        if existing:
+            raise ValueError(
+                f"Student {student_id} already has an open case "
+                f"(Case ID {existing['case_id']}, status {existing['case_status']})")
+        cursor = conn.execute('''
+        INSERT INTO collection_cases
+        (student_id, total_debt, case_status, amount_collected, notes, created_at, updated_at)
+        VALUES (?, ?, 'new', 0, ?, ?, ?)
+        ''', (student_id, total_debt, notes or '', now, now))
+        case_id = cursor.lastrowid
+
+    log_audit_action('create_collection_case', 'collection_cases', str(case_id), {
+        'student_id': student_id,
+        'total_debt': total_debt,
+        'created_by': _current_username(created_by),
+    })
+    return case_id
+
+
 def assign_case(case_id, agency_id, assigned_by=None):
     """Assign one collection case to one agency.
 

@@ -1220,13 +1220,15 @@ def _dispatch_menu_option(option):
             print(f"\n  Student Wellbeing CLI is not available: {e}")
             input("Press Enter to continue...")
     elif option == "student_finance":
-        # Student Finance merged into the main Finance CLI/GUI.
+        # The logged-in user's own finances (overview, fees, payments,
+        # refunds, account history) — the CLI twin of "My Finances".
         try:
-            from education_system.systems.university.domains.finance.interfaces.gui.finance.finance_gui import FinanceGUI
-            import tkinter as tk
-            FinanceGUI(tk.Tk())
+            from education_system.systems.university.domains.finance.interfaces.cli.my_finances import (
+                run_my_finances_menu,
+            )
+            run_my_finances_menu(auth)
         except Exception as e:
-            print(f"\n  Finance GUI is not available: {e}")
+            print(f"\n  My Finances CLI is not available: {e}")
             input("Press Enter to continue...")
     elif option == "student_id_card":
         try:

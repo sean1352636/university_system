@@ -11,6 +11,15 @@ from datetime import datetime
 
 from education_system.systems.university.infrastructure.database.db import get_connection
 from education_system.systems.university.infrastructure.i18n import get_text as _
+from education_system.systems.university.domains.finance.domain.reporting.revenue_analytics.collections import (
+    list_cases,
+    open_case,
+)
+from education_system.systems.university.domains.finance.domain.reporting.revenue_analytics.collection_case_actions import (
+    resolve_case,
+    send_case_notice,
+    student_contact,
+)
 
 
 class CollectionsMixin:
@@ -130,27 +139,20 @@ class CollectionsMixin:
                 if not debt_str:
                     messagebox.showwarning(_("finance_gui.messages.warning"), _t('gui.finance.finance.layout.collections.dialogs.please_enter_a_debt_amount', default="Please enter a debt amount."))
                     return
-                total_debt = float(debt_str)
+                try:
+                    total_debt = float(debt_str)
+                except ValueError:
+                    messagebox.showerror(_("finance_gui.messages.error"), _t('gui.finance.finance.layout.collections.dialogs.please_enter_a_valid_number_for_the_debt_amount', default="Please enter a valid number for the debt amount."))
+                    return
                 notes = notes_entry.get()
 
-                conn = get_connection()
-                cursor = conn.cursor()
-
-                cursor.execute('''
-                    INSERT INTO collection_cases
-                    (student_id, total_debt, case_status, assigned_date, amount_collected,
-                     notes, created_at, updated_at)
-                    VALUES (?, ?, 'new', date('now'), 0, ?, datetime('now'), datetime('now'))
-                ''', (student_id, total_debt, notes))
-
-                conn.commit()
-                conn.close()
+                # Shared with the Finance CLI: validates the student and refuses
+                # a second open case for them.
+                open_case(student_id, total_debt, notes)
 
                 messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.collections_tab.case_created"))
                 dialog.destroy()
                 self._refresh_collections()
-            except ValueError:
-                messagebox.showerror(_("finance_gui.messages.error"), _t('gui.finance.finance.layout.collections.dialogs.please_enter_a_valid_number_for_the_debt_amount', default="Please enter a valid number for the debt amount."))
             except Exception as e:
                 messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.collections_tab.failed_create_case", error=str(e)))
 
@@ -163,20 +165,7 @@ class CollectionsMixin:
 
     def _get_student_email(self, student_id):
         """Look up student email and name from DB."""
-        try:
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute('''
-                SELECT first_name, last_name, email_address FROM students
-                WHERE student_id = ?
-            ''', (student_id,))
-            student = cursor.fetchone()
-            conn.close()
-            if student:
-                return f"{student[0]} {student[1]}", student[2]
-        except Exception:
-            logger.debug("Suppressed exception", exc_info=True)
-        return None, None
+        return student_contact(student_id)
 
     def _send_email_to_student(self, student_email, subject, body):
         """Send an email to a student via the university email system."""
@@ -302,55 +291,19 @@ class CollectionsMixin:
                     user = auth.get_current_user()
                     username = user.get('username', 'system') if user else 'system'
 
-                # Build HTML email
-                html_message = (
-                    '<html><body>'
-                    '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">'
-                    f'<h2 style="color: #d9534f;">{_("finance_gui.email_template.collection_notice_title")}</h2>'
-                    f'<p><strong>{_("finance_gui.email_template.case_id_label")}</strong> {case_id}</p>'
-                    f'<p><strong>{_("finance_gui.email_template.outstanding_amount_label")}</strong> \u00a3{total_debt:.2f}</p>'
-                    '<hr>'
-                    f'<div style="white-space: pre-wrap;">{message}</div>'
-                    '<hr>'
-                    f'<p style="font-size: 12px; color: #666;">{_("finance_gui.email_template.footer")}</p>'
-                    '</div></body></html>'
-                )
-
-                success = self._send_email_to_student(student_email, subject, html_message)
-
-                if success is not False:
-                    # Log the notice in database
-                    conn = get_connection()
-                    cursor = conn.cursor()
-                    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-                    cursor.execute('''
-                        SELECT name FROM sqlite_master
-                        WHERE type='table' AND name='collection_notices'
-                    ''')
-                    if cursor.fetchone():
-                        cursor.execute('''
-                            INSERT INTO collection_notices
-                            (case_id, student_id, notice_type, subject, message, sent_by, sent_at)
-                            VALUES (?, ?, ?, ?, ?, ?, ?)
-                        ''', (case_id, student_id, notice_type, subject, message, username, now))
-                        conn.commit()
-
-                    cursor.execute('''
-                        UPDATE collection_cases
-                        SET notes = COALESCE(notes, '') || ? , updated_at = ?
-                        WHERE case_id = ?
-                    ''', (f'\nNotice sent: {notice_type} on {now}', now, case_id))
-                    conn.commit()
-                    conn.close()
-
-                    messagebox.showinfo(_("finance_gui.messages.success"),
-                                      _("finance_gui.collections_tab.notice_sent", email=student_email, notice_type=notice_type.replace('_', ' ').title()))
-                    notice_dialog.destroy()
-                    self._refresh_collections()
-                else:
+                # Shared with the Finance CLI: builds the HTML notice, emails it,
+                # records it in collection_notices (when present) and on the case.
+                try:
+                    send_case_notice(case_id, notice_type, subject, message, sent_by=username)
+                except RuntimeError:
                     messagebox.showwarning(_("finance_gui.collections_tab.email_failed"),
                                          _("finance_gui.collections_tab.email_failed_message", email=student_email))
+                    return
+
+                messagebox.showinfo(_("finance_gui.messages.success"),
+                                  _("finance_gui.collections_tab.notice_sent", email=student_email, notice_type=notice_type.replace('_', ' ').title()))
+                notice_dialog.destroy()
+                self._refresh_collections()
 
             except Exception as e:
                 messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.collections_tab.failed_send_notice", error=str(e)))
@@ -420,36 +373,9 @@ class CollectionsMixin:
                 return
 
             try:
-                conn = get_connection()
-                cursor = conn.cursor()
-                cursor.execute('''
-                    UPDATE collection_cases
-                    SET case_status = 'resolved', amount_collected = ?,
-                        resolution_date = date('now'), updated_at = datetime('now')
-                    WHERE case_id = ?
-                ''', (amount_collected, case_id))
-                conn.commit()
-                conn.close()
-
-                # Email the student the outcome
-                if send_email_var.get() and student_email:
-                    display_name = student_name or student_id
-                    remaining = total_debt - amount_collected
-                    if remaining <= 0:
-                        status_text = "Your account balance has been fully settled."
-                    else:
-                        status_text = f"Remaining balance: \u00a3{remaining:.2f}. Please contact the finance department for any queries."
-
-                    email_body = (
-                        f"Dear {display_name},\n\n"
-                        f"This is to inform you that collection case #{case_id} has been resolved.\n\n"
-                        f"Original Debt: \u00a3{total_debt:.2f}\n"
-                        f"Amount Collected: \u00a3{amount_collected:.2f}\n"
-                        f"{status_text}\n\n"
-                        f"If you have any questions, please contact the Finance Department.\n\n"
-                        f"Best regards,\nFinance Department"
-                    )
-                    self._send_email_to_student(student_email, f"Collection Case #{case_id} - Resolved", email_body)
+                # Shared with the Finance CLI: records the amount, stamps the
+                # resolution date and emails the student the outcome.
+                resolve_case(case_id, amount_collected, notify=bool(send_email_var.get()))
 
                 messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.collections_tab.case_resolved"))
                 resolve_dialog.destroy()
@@ -471,30 +397,14 @@ class CollectionsMixin:
             for item in self.collections_tree.get_children():
                 self.collections_tree.delete(item)
 
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute('''
-                SELECT case_id, student_id, total_debt, case_status, assigned_date,
-                       amount_collected, resolution_date
-                FROM collection_cases
-                ORDER BY created_at DESC
-                LIMIT 500
-            ''')
-
-            for row in cursor.fetchall():
-                # Format monetary values for display
-                values = list(row)
-                # total_debt (index 2) and amount_collected (index 5)
-                try:
-                    values[2] = f"{float(values[2]):.2f}" if values[2] is not None else "0.00"
-                except (ValueError, TypeError):
-                    values[2] = "0.00"
-                try:
-                    values[5] = f"{float(values[5]):.2f}" if values[5] is not None else "0.00"
-                except (ValueError, TypeError):
-                    values[5] = "0.00"
+            for case in list_cases(limit=500):
+                values = [
+                    case['case_id'], case['student_id'],
+                    f"{float(case['total_debt'] or 0):.2f}",
+                    case['case_status'], case['assigned_date'],
+                    f"{float(case['amount_collected'] or 0):.2f}",
+                    case['resolution_date'],
+                ]
                 self.collections_tree.insert('', 'end', values=values)
-
-            conn.close()
         except Exception as e:
             print(f"Error refreshing collections: {e}")

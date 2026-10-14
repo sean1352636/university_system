@@ -19,6 +19,7 @@ from education_system.systems.university.domains.finance.interfaces.gui.financia
 from education_system.systems.university.domains.finance.interfaces.gui.financial_aid.student_portal.deadlines import DeadlinesMixin
 from education_system.systems.university.domains.finance.interfaces.gui.financial_aid.student_portal.documents import DocumentsMixin
 from education_system.systems.university.domains.finance.interfaces.gui.financial_aid.student_portal.profile import ProfileMixin
+from education_system.systems.university.domains.finance.interfaces.gui.financial_aid.student_portal.finder import ScholarshipFinderMixin
 
 
 class StudentPortal(
@@ -31,6 +32,7 @@ class StudentPortal(
     DeadlinesMixin,
     DocumentsMixin,
     ProfileMixin,
+    ScholarshipFinderMixin,
 ):
     """Student-facing portal for financial aid and scholarships"""
 

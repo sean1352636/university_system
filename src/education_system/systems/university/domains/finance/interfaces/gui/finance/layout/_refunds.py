@@ -13,6 +13,14 @@ from datetime import datetime
 
 from education_system.systems.university.infrastructure.database.db import get_connection
 from education_system.systems.university.infrastructure.i18n import get_text as _
+from education_system.systems.university.domains.finance.domain.core.refunds import (
+    EXPORT_COLUMNS,
+    export_row,
+    list_refunds,
+    refund_totals,
+    refunds_table_exists,
+    set_refund_status,
+)
 
 
 class RefundsMixin:
@@ -248,88 +256,26 @@ class RefundsMixin:
             for item in tree.get_children():
                 tree.delete(item)
 
-            conn = get_connection()
-            cursor = conn.cursor()
-
-            # Check if unified_refunds table exists
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='unified_refunds'")
-            if not cursor.fetchone():
+            if not refunds_table_exists():
                 tree.insert('', 'end', values=('No Data', 'unified_refunds table does not exist', '', '', '', '', '', '', '', '', ''))
-                conn.close()
                 return
 
-            base_select = '''
-                SELECT refund_id, refund_reference, source_type,
-                       COALESCE(department, source_type) as department,
-                       amount, refund_method, refund_date,
-                       reference_id,
-                       COALESCE(status, 'pending') as status,
-                       COALESCE(processed_by, approved_by, requested_by) as processed_by,
-                       notes
-                FROM unified_refunds
-            '''
-
-            where_clauses = []
-            params = []
-            if search_term:
-                where_clauses.append('''(
-                    LOWER(COALESCE(refund_reference, '')) LIKE ?
-                    OR LOWER(COALESCE(department, '')) LIKE ?
-                    OR LOWER(COALESCE(source_type, '')) LIKE ?
-                    OR LOWER(COALESCE(reference_id, '')) LIKE ?
-                    OR LOWER(COALESCE(processed_by, '')) LIKE ?
-                    OR LOWER(COALESCE(notes, '')) LIKE ?
-                )''')
-                params.extend([f'%{search_term}%'] * 6)
-            if status_filter and status_filter != 'all':
-                where_clauses.append("COALESCE(status, 'pending') = ?")
-                params.append(status_filter)
-
-            sql = base_select
-            if where_clauses:
-                sql += ' WHERE ' + ' AND '.join(where_clauses)
-            sql += ' ORDER BY refund_id DESC'
-            cursor.execute(sql, params)
-
-            refunds = cursor.fetchall()
-
-            # Calculate totals
-            total_count = len(refunds)
-            total_amount = 0.0
+            # Shared with the Finance CLI: same search fields and status filter.
+            refunds = list_refunds(search=search_term, status=status_filter)
+            total_count, total_amount = refund_totals(refunds)
 
             # Insert data
             for refund in refunds:
-                refund_id, ref, source_type, dept, amount, method, date, ref_id, status, processed_by, notes = refund
-
-                # Format amount
-                amount_val = float(amount) if amount else 0.0
-                total_amount += amount_val
-                amount_str = f"\u00a3{amount_val:.2f}"
-
-                # Color code by status (overrides method-based tinting)
-                status_lc = (status or 'pending').lower()
+                status_lc = (refund.get('status') or 'pending').lower()
                 if status_lc == 'pending':
                     tag = 'pending'
                 elif status_lc == 'rejected':
                     tag = 'rejected'
-                elif method == 'Student Account':
+                elif refund.get('refund_method') == 'Student Account':
                     tag = 'student_account'
                 else:
                     tag = 'normal'
-
-                tree.insert('', 'end', values=(
-                    refund_id or '',
-                    ref or '',
-                    source_type or '',
-                    dept or '',
-                    amount_str,
-                    method or '',
-                    date or '',
-                    ref_id or '',
-                    status or '',
-                    processed_by or '',
-                    notes or ''
-                ), tags=(tag,))
+                tree.insert('', 'end', values=export_row(refund), tags=(tag,))
 
             # Configure tags
             tree.tag_configure('student_account', background='#e3f2fd')
@@ -345,8 +291,6 @@ class RefundsMixin:
                     label = "Total Refunds"
                 summary_text = f"{label}: {total_count} | Total Amount: \u00a3{total_amount:,.2f}"
                 self.summary_label.config(text=summary_text)
-
-            conn.close()
 
         except Exception as e:
             tree.insert('', 'end', values=('Error', str(e), '', '', '', '', '', '', '', ''))
@@ -414,18 +358,11 @@ class RefundsMixin:
         except Exception:
             logger.debug("Suppressed exception", exc_info=True)
 
-        today = datetime.now().strftime('%Y-%m-%d')
         try:
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.executemany(
-                '''UPDATE unified_refunds
-                   SET status = ?, approved_by = ?, approval_date = ?
-                   WHERE refund_id = ? AND COALESCE(status, 'pending') = 'pending' ''',
-                [(new_status, username, today, rid) for rid in eligible],
-            )
-            conn.commit()
-            conn.close()
+            # Shared with the Finance CLI: stamps approver/processor and posts
+            # cash-out statuses to the ledger.
+            result = set_refund_status(eligible, new_status, username, only_pending=True)
+            eligible = result['updated']
         except Exception as e:
             messagebox.showerror(_("common.error", default="Error"), f"Failed to update: {e}")
             return
@@ -460,8 +397,7 @@ class RefundsMixin:
                 writer = csv.writer(f)
 
                 # Write headers
-                writer.writerow(['ID', 'Reference', 'Source Type', 'Department', 'Amount', 'Method', 'Date',
-                               'Reference ID', 'Status', 'Processed By', 'Notes'])
+                writer.writerow(EXPORT_COLUMNS)
 
                 # Write data
                 for item in tree.get_children():

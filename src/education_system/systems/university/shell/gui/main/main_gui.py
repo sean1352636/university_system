@@ -1512,6 +1512,28 @@ for _key in _SESSION_WINDOWS:
 del _key
 
 
+def show_scholarship_finder_gui(self):
+    """Open the Scholarship Finder in-process for any logged-in user.
+
+    Not in ``_SESSION_WINDOWS`` because that loop is staff-gated; the finder
+    is a student-facing window (staff may open it too).
+    """
+    import importlib
+    title = "Scholarship Finder"
+    module_dotted = ("education_system.systems.university.domains.finance."
+                     "interfaces.gui.scholarship_finder.scholarship_finder_gui")
+    try:
+        module = importlib.import_module(module_dotted)
+        return module.open_window(self.root, self.auth)
+    except Exception:
+        logger.exception("In-process %s failed; falling back to subprocess launch", title)
+        self._launch_new_feature_module(module_dotted, title)
+        return None
+
+
+UnifiedManagementGUI.show_scholarship_finder_gui = show_scholarship_finder_gui
+
+
 def _embed_or_subprocess(self, title, module_dotted, build_inproc):
     """Common embed-then-fallback dispatch shared by the new-feature
     overrides below. ``build_inproc(host)`` constructs the in-process

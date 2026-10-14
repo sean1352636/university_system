@@ -94,7 +94,7 @@ def view_overdue_accounts():
 
         # Get overdue accounts
         cursor.execute('''
-        SELECT sf.student_id, s.first_name, s.last_name, s.email_address, s.phone_number,
+        SELECT sf.student_id, s.first_name, s.last_name, s.email_address, s.phone,
                SUM(sf.amount) - COALESCE(SUM(pa.amount), 0) as total_overdue,
                MIN(sf.due_date) as earliest_due_date,
                COUNT(sf.student_fee_id) as overdue_fees_count,

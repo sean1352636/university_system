@@ -6,7 +6,19 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime, timedelta
 
+from education_system.platform.delivery.gui.form_dialog import Field, ask_form
 from education_system.systems.university.domains.finance.interfaces.gui.finance.budget_manager.constants import logger
+
+
+def _date_range(from_entry, to_entry):
+    """(start, end) from two optional YYYY-MM-DD entries; raises ValueError on bad input."""
+    bounds = []
+    for entry in (from_entry, to_entry):
+        text = entry.get().strip() if entry is not None else ''
+        if text:
+            datetime.strptime(text, '%Y-%m-%d')
+        bounds.append(text or None)
+    return bounds[0], bounds[1]
 
 
 class ExpensesIncomeMixin:
@@ -73,6 +85,9 @@ class ExpensesIncomeMixin:
         exp_btn_frame = ttk.Frame(expenses_tab)
         exp_btn_frame.pack(fill=tk.X, pady=5)
         ttk.Button(exp_btn_frame, text=_t('gui.finance.finance.budget_manager.expenses_income.buttons.refresh', default="Refresh"), command=self.refresh_expenses_list).pack(side=tk.LEFT, padx=5)
+        ttk.Button(exp_btn_frame, text=_t('gui.finance.finance.budget_manager.expenses_income.buttons.edit_expense', default="Edit Expense"), command=self.edit_expense).pack(side=tk.LEFT, padx=5)
+        ttk.Button(exp_btn_frame, text=_t('gui.finance.finance.budget_manager.expenses_income.buttons.delete_expense', default="Delete Expense"), command=self.delete_expense).pack(side=tk.LEFT, padx=5)
+        self.expense_from_entry, self.expense_to_entry = self._date_filter(exp_btn_frame, self.refresh_expenses_list)
 
         # Income sub-tab
         income_tab = ttk.Frame(sub_notebook, padding="10")
@@ -126,10 +141,34 @@ class ExpensesIncomeMixin:
         inc_btn_frame = ttk.Frame(income_tab)
         inc_btn_frame.pack(fill=tk.X, pady=5)
         ttk.Button(inc_btn_frame, text=_t('gui.finance.finance.budget_manager.expenses_income.buttons.refresh', default="Refresh"), command=self.refresh_income_list).pack(side=tk.LEFT, padx=5)
+        self.income_from_entry, self.income_to_entry = self._date_filter(inc_btn_frame, self.refresh_income_list)
 
         # Initial load
         self.root.after(200, self.refresh_expenses_list)
         self.root.after(300, self.refresh_income_list)
+
+    def _date_filter(self, bar, command):
+        """From/To date entries plus a Filter button on an action bar (CLI: view by date range)."""
+        ttk.Label(bar, text=_t('gui.finance.finance.budget_manager.expenses_income.labels.from_date', default="From:")).pack(side=tk.LEFT, padx=(15, 2))
+        from_entry = ttk.Entry(bar, width=11)
+        from_entry.pack(side=tk.LEFT)
+        ttk.Label(bar, text=_t('gui.finance.finance.budget_manager.expenses_income.labels.to_date', default="To:")).pack(side=tk.LEFT, padx=(8, 2))
+        to_entry = ttk.Entry(bar, width=11)
+        to_entry.pack(side=tk.LEFT)
+        ttk.Button(bar, text=_t('gui.finance.finance.budget_manager.expenses_income.buttons.filter', default="Filter"), command=command).pack(side=tk.LEFT, padx=5)
+        return from_entry, to_entry
+
+    def _budget_student_id(self):
+        current_user = self.gui.auth.get_current_user() if self.gui.auth else None
+        return current_user.get('username') if current_user else 'guest'
+
+    def _selected_expense(self):
+        """The expense dict behind the selected row, or None after a warning."""
+        selection = self.expenses_tree.selection() if hasattr(self, 'expenses_tree') else ()
+        if not selection:
+            messagebox.showwarning(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.warning', default="Warning"), _t('gui.finance.finance.budget_manager.expenses_income.dialogs.please_select_an_expense', default="Please select an expense."))
+            return None
+        return getattr(self, '_expense_rows', {}).get(selection[0])
 
     def add_personal_expense(self):
         """Add a new personal expense"""
@@ -231,20 +270,25 @@ class ExpensesIncomeMixin:
             return
 
         self.expenses_tree.delete(*self.expenses_tree.get_children())
+        self._expense_rows = {}
         try:
-            current_user = self.gui.auth.get_current_user() if self.gui.auth else None
-            student_id = current_user.get('username') if current_user else 'guest'
-
+            start_date, end_date = _date_range(getattr(self, 'expense_from_entry', None),
+                                               getattr(self, 'expense_to_entry', None))
+        except ValueError:
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.error', default="Error"), _t('gui.finance.finance.budget_manager.expenses_income.dialogs.date_format', default="Dates must be YYYY-MM-DD."))
+            return
+        try:
             from education_system.systems.university.domains.finance.domain.budget.services.budget_service import ExpenseManager
 
-            expenses = ExpenseManager.get_student_expenses(student_id)
+            expenses = ExpenseManager.get_student_expenses(self._budget_student_id(), start_date, end_date)
             for expense in expenses:
-                self.expenses_tree.insert('', 'end', values=(
+                iid = self.expenses_tree.insert('', 'end', values=(
                     expense.get('expense_date', ''),
                     (expense.get('description') or '')[:50],
                     expense.get('merchant_name') or expense.get('category_name') or 'N/A',
                     f"\u00a3{expense['amount']:.2f}"
                 ))
+                self._expense_rows[iid] = expense
         except Exception as e:
             logger.error(f"Error loading expenses: {e}")
 
@@ -255,12 +299,15 @@ class ExpensesIncomeMixin:
 
         self.income_tree.delete(*self.income_tree.get_children())
         try:
-            current_user = self.gui.auth.get_current_user() if self.gui.auth else None
-            student_id = current_user.get('username') if current_user else 'guest'
-
+            start_date, end_date = _date_range(getattr(self, 'income_from_entry', None),
+                                               getattr(self, 'income_to_entry', None))
+        except ValueError:
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.error', default="Error"), _t('gui.finance.finance.budget_manager.expenses_income.dialogs.date_format', default="Dates must be YYYY-MM-DD."))
+            return
+        try:
             from education_system.systems.university.domains.finance.domain.budget.services.budget_service import IncomeManager
 
-            income_list = IncomeManager.get_student_income(student_id)
+            income_list = IncomeManager.get_student_income(self._budget_student_id(), start_date, end_date)
             for income in income_list:
                 # Map DB type back to display name
                 type_display = {
@@ -279,25 +326,50 @@ class ExpensesIncomeMixin:
             logger.error(f"Error loading income: {e}")
 
     def delete_expense(self):
-        """Delete selected expense"""
-        if not hasattr(self, 'expenses_tree'):
-            messagebox.showwarning(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.warning', default="Warning"), _t('gui.finance.finance.budget_manager.expenses_income.dialogs.please_navigate_to_the_expenses_tab_first', default="Please navigate to the Expenses tab first."))
+        """Delete the selected expense (CLI: Delete Expense)."""
+        expense = self._selected_expense()
+        if expense is None:
             return
-
-        selection = self.expenses_tree.selection()
-        if not selection:
-            messagebox.showwarning(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.warning', default="Warning"), _t('gui.finance.finance.budget_manager.expenses_income.dialogs.please_select_an_expense_to_delete', default="Please select an expense to delete."))
+        expense_desc = expense.get('description') or 'this expense'
+        if not messagebox.askyesno(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.confirm', default="Confirm"), f"Delete {expense_desc}?"):
             return
-
         try:
-            item = self.expenses_tree.item(selection[0])
-            expense_desc = item['values'][1] if len(item['values']) > 1 else 'this expense'
-
-            if messagebox.askyesno(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.confirm', default="Confirm"), f"Delete {expense_desc}?"):
-                from education_system.systems.university.domains.finance.domain.budget.services.budget_service import ExpenseManager
+            from education_system.systems.university.domains.finance.domain.budget.services.budget_service import ExpenseManager
+            if ExpenseManager.delete_expense(expense['expense_id']):
                 messagebox.showinfo(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.success', default="Success"), _t('gui.finance.finance.budget_manager.expenses_income.dialogs.expense_deleted', default="Expense deleted!"))
-                self.refresh_expenses_list()
-                self.refresh_dashboard()
-
+            else:
+                messagebox.showwarning(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.warning', default="Warning"), _t('gui.finance.finance.budget_manager.expenses_income.dialogs.expense_not_found', default="Expense not found."))
+            self.refresh_expenses_list()
+            self.refresh_dashboard()
         except Exception as e:
             messagebox.showerror(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.error', default="Error"), f"Failed to delete expense: {e}")
+
+    def edit_expense(self):
+        """Update the selected expense (CLI: Update Expense)."""
+        expense = self._selected_expense()
+        if expense is None:
+            return
+        values = ask_form(self.root, _t('gui.finance.finance.budget_manager.expenses_income.windows.edit_expense', default="Edit Expense"), [
+            Field('amount', 'Amount', kind='float', default=str(expense.get('amount') or '')),
+            Field('description', 'Description', default=expense.get('description') or ''),
+            Field('expense_date', 'Date (YYYY-MM-DD)', default=expense.get('expense_date') or ''),
+            Field('merchant_name', 'Category / merchant', default=expense.get('merchant_name') or '', optional=True),
+        ])
+        if values is None:
+            return
+        try:
+            datetime.strptime(values['expense_date'], '%Y-%m-%d')
+            if values['amount'] <= 0:
+                raise ValueError('amount')
+            from education_system.systems.university.domains.finance.domain.budget.services.budget_service import ExpenseManager
+            ExpenseManager.update_expense(expense['expense_id'], amount=values['amount'],
+                                          description=values['description'],
+                                          expense_date=values['expense_date'],
+                                          merchant_name=values.get('merchant_name') or '')
+            messagebox.showinfo(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.success', default="Success"), _t('gui.finance.finance.budget_manager.expenses_income.dialogs.expense_updated', default="Expense updated!"))
+            self.refresh_expenses_list()
+            self.refresh_dashboard()
+        except ValueError:
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.error', default="Error"), _t('gui.finance.finance.budget_manager.expenses_income.dialogs.invalid_amount_or_date', default="Amount must be positive and the date YYYY-MM-DD."))
+        except Exception as e:
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.error', default="Error"), f"Failed to update expense: {e}")

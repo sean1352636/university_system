@@ -3,10 +3,17 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, simpledialog
 
-from education_system.systems.university.infrastructure.database.db import get_connection
 from education_system.systems.university.infrastructure.i18n import get_text as _
+from education_system.systems.university.domains.finance.domain.billing.exchange_rates import (
+    CURRENCIES,
+    RATE_SOURCES,
+    add_exchange_rate,
+    delete_exchange_rate,
+    list_exchange_rates,
+    update_exchange_rate,
+)
 
 
 class CurrencyMixin:
@@ -76,14 +83,14 @@ class CurrencyMixin:
         tk.Label(form_frame, text=_("finance_gui.labels.from_currency")).grid(row=0, column=0, sticky='w', pady=5)
         from_currency_var = tk.StringVar(value=_t('gui.finance.finance.layout.currency.values.gbp', default="GBP"))
         from_currency_combo = ttk.Combobox(form_frame, textvariable=from_currency_var,
-                                          values=['GBP', 'USD', 'EUR', 'CAD', 'AUD', 'JPY', 'CHF'],
+                                          values=list(CURRENCIES),
                                           state='readonly', width=27)
         from_currency_combo.grid(row=0, column=1, pady=5)
 
         tk.Label(form_frame, text=_("finance_gui.labels.to_currency")).grid(row=1, column=0, sticky='w', pady=5)
         to_currency_var = tk.StringVar(value=_t('gui.finance.finance.layout.currency.values.usd', default="USD"))
         to_currency_combo = ttk.Combobox(form_frame, textvariable=to_currency_var,
-                                        values=['GBP', 'USD', 'EUR', 'CAD', 'AUD', 'JPY', 'CHF'],
+                                        values=list(CURRENCIES),
                                         state='readonly', width=27)
         to_currency_combo.grid(row=1, column=1, pady=5)
 
@@ -94,7 +101,7 @@ class CurrencyMixin:
         tk.Label(form_frame, text=_("finance_gui.labels.source")).grid(row=3, column=0, sticky='w', pady=5)
         source_var = tk.StringVar(value=_t('gui.finance.finance.layout.currency.values.manual', default="manual"))
         source_combo = ttk.Combobox(form_frame, textvariable=source_var,
-                                   values=['manual', 'api', 'bank'],
+                                   values=list(RATE_SOURCES),
                                    state='readonly', width=27)
         source_combo.grid(row=3, column=1, pady=5)
 
@@ -109,17 +116,8 @@ class CurrencyMixin:
                     messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.messages.currencies_must_differ"))
                     return
 
-                conn = get_connection()
-                cursor = conn.cursor()
-
-                cursor.execute('''
-                    INSERT INTO exchange_rates
-                    (from_currency, to_currency, exchange_rate, rate_date, source, created_at)
-                    VALUES (?, ?, ?, date('now'), ?, datetime('now'))
-                ''', (from_currency, to_currency, exchange_rate, source))
-
-                conn.commit()
-                conn.close()
+                # Shared with the Finance CLI.
+                add_exchange_rate(from_currency, to_currency, exchange_rate, source)
 
                 messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.messages.exchange_rate_added"))
                 dialog.destroy()
@@ -140,7 +138,28 @@ class CurrencyMixin:
         if not selection:
             messagebox.showwarning(_("finance_gui.messages.no_selection"), _("finance_gui.messages.select_rate_edit"))
             return
-        messagebox.showinfo(_("finance_gui.dialogs.edit_rate"), _("finance_gui.messages.edit_functionality_coming"))
+        values = self.exchange_rates_tree.item(selection[0])['values']
+        rate_id = values[0]
+        try:
+            current = float(values[3])
+        except (ValueError, TypeError, IndexError):
+            current = 1.0
+        new_rate = simpledialog.askfloat(
+            _("finance_gui.dialogs.edit_rate"),
+            _t('gui.finance.finance.layout.currency.dialogs.enter_new_rate',
+               default="New rate for {pair}:").format(pair=f"{values[1]}/{values[2]}"),
+            initialvalue=current, minvalue=0.000001, parent=self.root,
+        )
+        if new_rate is None:
+            return
+        try:
+            # Shared with the Finance CLI.
+            update_exchange_rate(rate_id, rate=new_rate)
+            messagebox.showinfo(_("finance_gui.messages.success"),
+                                _t('gui.finance.finance.layout.currency.dialogs.rate_updated', default="Exchange rate updated."))
+            self._refresh_exchange_rates()
+        except Exception as e:
+            messagebox.showerror(_("finance_gui.messages.error"), str(e))
 
     def _delete_exchange_rate(self):
         """Delete selected exchange rate"""
@@ -152,11 +171,8 @@ class CurrencyMixin:
         if messagebox.askyesno(_("finance_gui.dialogs.confirm_delete"), _("finance_gui.messages.confirm_delete_rate")):
             try:
                 rate_id = self.exchange_rates_tree.item(selection[0])['values'][0]
-                conn = get_connection()
-                cursor = conn.cursor()
-                cursor.execute("DELETE FROM exchange_rates WHERE rate_id = ?", (rate_id,))
-                conn.commit()
-                conn.close()
+                # Shared with the Finance CLI.
+                delete_exchange_rate(rate_id)
                 messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.messages.exchange_rate_deleted"))
                 self._refresh_exchange_rates()
             except Exception as e:
@@ -169,20 +185,10 @@ class CurrencyMixin:
             for item in self.exchange_rates_tree.get_children():
                 self.exchange_rates_tree.delete(item)
 
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute('''
-                SELECT rate_id, from_currency, to_currency, exchange_rate, rate_date, source
-                FROM exchange_rates
-                ORDER BY rate_date DESC, from_currency, to_currency
-                LIMIT 500
-            ''')
-
-            for row in cursor.fetchall():
-                # sqlite3.Row is not a plain sequence; pass a tuple so the
-                # Treeview renders each column value instead of the Row repr.
-                self.exchange_rates_tree.insert('', 'end', values=tuple(row))
-
-            conn.close()
+            for rate in list_exchange_rates(limit=500):
+                self.exchange_rates_tree.insert('', 'end', values=(
+                    rate['rate_id'], rate['from_currency'], rate['to_currency'],
+                    rate['exchange_rate'], rate['rate_date'], rate['source'],
+                ))
         except Exception as e:
             print(f"Error refreshing exchange rates: {e}")

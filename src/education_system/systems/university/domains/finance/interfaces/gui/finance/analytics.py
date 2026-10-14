@@ -22,6 +22,9 @@ from io import BytesIO
 import base64
 from education_system.systems.university.domains.finance.interfaces.gui.finance_reporting import launch_financial_gui
 from education_system.systems.university.domains.finance.domain.reporting.revenue_analytics.forecasting import generate_revenue_forecast
+from education_system.systems.university.domains.finance.domain.reporting import (
+    forecast_projections as _fp,
+)
 
 # Import authentication - REQUIRED (no fallback for security)
 from education_system.systems.university.infrastructure.auth import UserAuth, get_global_auth
@@ -422,40 +425,21 @@ class AnalyticsManager:
             growth = float(self.growth_rate_var.get()) / 100.0
         except Exception:
             growth = 0.05
-        # Compute baseline monthly revenue from last 12 months if available
+        # Shared with the Finance CLI: domain/reporting/forecast_projections
         try:
-            conn = get_connection()
-            cur = conn.cursor()
-            cur.execute("""SELECT strftime('%Y-%m', payment_date) as ym, COALESCE(SUM(amount),0)
-                         FROM payments
-                         GROUP BY ym
-                         ORDER BY ym DESC
-                         LIMIT 12""")
-            rows = cur.fetchall()
-            conn.close()
-            if rows:
-                baseline = sum(r[1] for r in rows) / len(rows)
-            else:
-                baseline = 0.0
-        except Exception:
-            baseline = 0.0
-        projections = []
-        value = baseline
-        today = datetime.now().replace(day=1)
-        for i in range(1, months+1):
-            # compound growth monthly
-            value = value * (1 + growth)
-            dt = (today + timedelta(days=31*i)).replace(day=1)
-            projections.append((dt.strftime('%Y-%m'), round(value, 2)))
+            forecast = _fp.simple_growth_forecast(months, growth)
+        except Exception as e:
+            print(f"Warning: Could not compute forecast: {e}")
+            forecast = {"projections": [], "total": 0.0}
+        projections = forecast["projections"]
         # Display
         try:
             self.forecast_output.delete('1.0', tk.END)
             self.forecast_output.insert(tk.END, _("analytics_manager.forecast.title") + '\n')
             self.forecast_output.insert(tk.END, _("analytics_manager.forecast.separator") + '\n')
-            total = 0.0
             for ym, amt in projections:
                 self.forecast_output.insert(tk.END, f"{ym}\t£{amt:,.2f}\n")
-                total += amt
+            total = forecast["total"]
             self.forecast_output.insert(tk.END, f"\n{_('analytics_manager.forecast.projected_total', total=total)}\n")
             self.update_status(_("analytics_manager.messages.forecast_generated"))
         except Exception as e:
@@ -592,11 +576,7 @@ class AnalyticsManager:
 
             # Add to scenarios table if it exists
             try:
-                scenarios_data = [
-                    ("Conservative", "950", "£4.2M", "£3.8M", "£0.4M"),
-                    ("Baseline", "1,050", "£4.8M", "£4.2M", "£0.6M"),
-                    ("Optimistic", "1,200", "£5.6M", "£4.8M", "£0.8M")
-                ]
+                scenarios_data = list(_fp.SCENARIO_COMPARISON_ROWS)
 
                 for item in self.scenarios_tree.get_children():
                     self.scenarios_tree.delete(item)
@@ -616,90 +596,9 @@ class AnalyticsManager:
 
 
     def scenario_planning(self):
-        """Generate scenario planning"""
+        """Generate scenario planning (narrative shared with the Finance CLI)."""
         try:
-            # Generate realistic scenario data
-            scenarios_output = f"""Financial Scenario Planning Analysis
-    {'=' * 60}
-    Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-
-    SCENARIO ASSUMPTIONS:
-    {'=' * 60}
-
-    Conservative Scenario:
-    - Student enrollment: 950 (-9.5% from baseline)
-    - Tuition increase: 2%
-    - Operating cost increase: 4%
-    - Financial aid budget: Maintained at current level
-
-    Baseline Scenario:
-    - Student enrollment: 1,050 (current projection)
-    - Tuition increase: 3%
-    - Operating cost increase: 3%
-    - Financial aid budget: 5% increase
-
-    Optimistic Scenario:
-    - Student enrollment: 1,200 (+14.3% from baseline)
-    - Tuition increase: 4%
-    - Operating cost increase: 2.5%
-    - Financial aid budget: 10% increase
-
-    FINANCIAL PROJECTIONS:
-    {'=' * 60}
-
-    Conservative Scenario:
-    - Tuition Revenue: £4,200,000
-    - Total Revenue: £4,200,000
-    - Operating Expenses: £3,800,000
-    - Net Income: £400,000
-    - Cash Flow: Positive but tight
-
-    Baseline Scenario:
-    - Tuition Revenue: £4,800,000
-    - Total Revenue: £4,800,000
-    - Operating Expenses: £4,200,000
-    - Net Income: £600,000
-    - Cash Flow: Healthy growth
-
-    Optimistic Scenario:
-    - Tuition Revenue: £5,600,000
-    - Total Revenue: £5,600,000
-    - Operating Expenses: £4,800,000
-    - Net Income: £800,000
-    - Cash Flow: Strong growth potential
-
-    RISK FACTORS:
-    {'=' * 60}
-
-    Conservative Scenario Risks:
-    - Enrollment decline may continue
-    - Competition from other institutions
-    - Economic downturn affecting student ability to pay
-
-    Baseline Scenario Risks:
-    - Market saturation in target demographics
-    - Regulatory changes in education funding
-    - Technology disruption requiring additional investment
-
-    Optimistic Scenario Risks:
-    - Overextension of resources
-    - Quality maintenance with rapid growth
-    - Infrastructure capacity limitations
-
-    RECOMMENDATIONS:
-    {'=' * 60}
-
-    1. Diversify revenue streams beyond tuition
-    2. Implement flexible cost management strategies
-    3. Develop contingency plans for each scenario
-    4. Monitor key performance indicators monthly
-    5. Maintain strategic reserves for unexpected challenges
-
-    Next Review Date: {(datetime.now() + timedelta(days=90)).strftime('%Y-%m-%d')}
-    """
-
-            return scenarios_output
-
+            return _fp.scenario_planning_text()
         except Exception as e:
             return f"Error generating scenario planning: {str(e)}"
 
@@ -745,40 +644,70 @@ class AnalyticsManager:
                 output = _rv.TextReportView(forecast_window, font=('Courier', 10))
                 output.pack(fill='both', expand=True, padx=10, pady=10)
 
-                # Generate forecast data
-                conn = get_connection()
-                cursor = conn.cursor()
-                cursor.execute("""
-                    SELECT strftime('%Y-%m', payment_date) as ym, COALESCE(SUM(amount), 0)
-                    FROM payments
-                    GROUP BY ym
-                    ORDER BY ym DESC
-                    LIMIT 12
-                """)
-                rows = cursor.fetchall()
-                conn.close()
-
-                baseline = sum(r[1] for r in rows) / len(rows) if rows else 0
-                growth = 0.05
+                # Generate forecast data (shared with the Finance CLI)
+                forecast = _fp.simple_growth_forecast(12, 0.05)
+                baseline = forecast["baseline"]
 
                 output.insert(tk.END, _("analytics_manager.forecast.title") + "\n")
                 output.insert(tk.END, "=" * 40 + "\n\n")
                 output.insert(tk.END, _("analytics_manager.forecast.baseline_monthly", amount=baseline) + "\n")
                 output.insert(tk.END, _("analytics_manager.forecast.growth_rate") + "\n\n")
 
-                total = 0
-                from datetime import timedelta
-                today = datetime.now().replace(day=1)
-                for i in range(1, 13):
-                    baseline *= (1 + growth)
-                    dt = (today + timedelta(days=31*i)).replace(day=1)
-                    output.insert(tk.END, f"{dt.strftime('%Y-%m')}\t£{baseline:,.2f}\n")
-                    total += baseline
+                for ym, amt in forecast["projections"]:
+                    output.insert(tk.END, f"{ym}\t£{amt:,.2f}\n")
+                total = forecast["total"]
 
                 output.insert(tk.END, f"\n{_('analytics_manager.forecast.projected_annual', total=total)}\n")
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("analytics_manager.errors.failed_revenue_forecast", error=e))
+
+    def _draw_revenue_chart(self, monthly_data):
+        """Chart 1: Monthly Revenue Trend"""
+        self.ax1.set_title(_("analytics_manager.charts.monthly_revenue_trend"))
+        if not monthly_data:
+            self.ax1.text(0.5, 0.5, _("analytics_manager.charts.no_revenue_data"), ha='center', va='center', transform=self.ax1.transAxes)
+            return
+        months = [f"Month {m[0]}" for m in monthly_data]
+        revenues = [m[1] for m in monthly_data]
+        self.ax1.plot(months, revenues, marker='o', linewidth=2, markersize=6)
+        self.ax1.set_ylabel(_("analytics_manager.charts.revenue_label"))
+        self.ax1.tick_params(axis='x', rotation=45)
+
+    def _draw_methods_chart(self, payment_methods):
+        """Chart 2: Payment Method Distribution"""
+        if not payment_methods:
+            self.ax2.text(0.5, 0.5, _("analytics_manager.charts.no_payment_data"), ha='center', va='center', transform=self.ax2.transAxes)
+            self.ax2.set_title(_("analytics_manager.charts.payment_methods_distribution"))
+            return
+        methods = [p[0] for p in payment_methods]
+        amounts = [p[2] for p in payment_methods]
+        self.ax2.pie(amounts, labels=methods, autopct='%1.1f%%')
+        self.ax2.set_title(_("analytics_manager.charts.payment_methods_amount"))
+
+    def _draw_outstanding_chart(self, course_outstanding):
+        """Chart 3: Outstanding Fees by Course"""
+        self.ax3.set_title(_("analytics_manager.charts.outstanding_fees_course"))
+        if not course_outstanding:
+            self.ax3.text(0.5, 0.5, _("analytics_manager.charts.no_outstanding_fees"), ha='center', va='center', transform=self.ax3.transAxes)
+            return
+        courses = [c[0] for c in course_outstanding]
+        amounts = [c[1] for c in course_outstanding]
+        self.ax3.bar(courses, amounts, color='coral')
+        self.ax3.set_ylabel(_("analytics_manager.charts.amount_label"))
+        self.ax3.tick_params(axis='x', rotation=45)
+
+    def _draw_plan_status_chart(self, payment_plan_status):
+        """Chart 4: Payment Plan Status"""
+        self.ax4.set_title(_("analytics_manager.charts.payment_plan_status"))
+        if not payment_plan_status:
+            self.ax4.text(0.5, 0.5, _("analytics_manager.charts.no_payment_plans"), ha='center', va='center', transform=self.ax4.transAxes)
+            return
+        statuses = [p[0] for p in payment_plan_status]
+        counts = [p[1] for p in payment_plan_status]
+        colors = ['green' if s == 'completed' else 'orange' if s == 'active' else 'red' for s in statuses]
+        self.ax4.bar(statuses, counts, color=colors)
+        self.ax4.set_ylabel(_("analytics_manager.charts.number_of_plans"))
 
     def update_dashboard_charts(self):
         """Update all dashboard charts"""
@@ -793,108 +722,21 @@ class AnalyticsManager:
             if getattr(self, 'canvas', None) is None:
                 return
 
-            conn = get_connection()
-            cursor = conn.cursor()
+            data = _fp.dashboard_datasets(datetime.now().year)
 
             # Clear existing plots
             for ax in [self.ax1, self.ax2, self.ax3, self.ax4]:
                 ax.clear()
 
-            # Chart 1: Monthly Revenue Trend
-            current_year = datetime.now().year
-            cursor.execute('''
-            SELECT strftime('%m', payment_date) as month, SUM(amount) as revenue
-            FROM payments
-            WHERE strftime('%Y', payment_date) = ? AND status = 'completed'
-            GROUP BY month
-            ORDER BY month
-            ''', (str(current_year),))
-
-            monthly_data = cursor.fetchall()
-
-            if monthly_data:
-                months = [f"Month {m[0]}" for m in monthly_data]
-                revenues = [m[1] for m in monthly_data]
-                self.ax1.plot(months, revenues, marker='o', linewidth=2, markersize=6)
-                self.ax1.set_title(_("analytics_manager.charts.monthly_revenue_trend"))
-                self.ax1.set_ylabel(_("analytics_manager.charts.revenue_label"))
-                self.ax1.tick_params(axis='x', rotation=45)
-            else:
-                self.ax1.text(0.5, 0.5, _("analytics_manager.charts.no_revenue_data"), ha='center', va='center', transform=self.ax1.transAxes)
-                self.ax1.set_title(_("analytics_manager.charts.monthly_revenue_trend"))
-
-            # Chart 2: Payment Method Distribution
-            cursor.execute('''
-            SELECT payment_method, COUNT(*), SUM(amount)
-            FROM payments
-            WHERE strftime('%Y', payment_date) = ? AND status = 'completed'
-            GROUP BY payment_method
-            ORDER BY SUM(amount) DESC
-            ''', (str(current_year),))
-
-            payment_methods = cursor.fetchall()
-
-            if payment_methods:
-                methods = [p[0] for p in payment_methods]
-                amounts = [p[2] for p in payment_methods]
-                self.ax2.pie(amounts, labels=methods, autopct='%1.1f%%')
-                self.ax2.set_title(_("analytics_manager.charts.payment_methods_amount"))
-            else:
-                self.ax2.text(0.5, 0.5, _("analytics_manager.charts.no_payment_data"), ha='center', va='center', transform=self.ax2.transAxes)
-                self.ax2.set_title(_("analytics_manager.charts.payment_methods_distribution"))
-
-            # Chart 3: Outstanding Fees by Course
-            cursor.execute('''
-            SELECT s.course, SUM(sf.amount) - COALESCE(SUM(pa.amount), 0) as outstanding
-            FROM student_fees sf
-            JOIN students s ON sf.student_id = s.student_id
-            LEFT JOIN payment_allocations pa ON sf.student_fee_id = pa.student_fee_id
-            WHERE sf.status IN ('unpaid', 'partial')
-            GROUP BY s.course
-            HAVING outstanding > 0
-            ORDER BY outstanding DESC
-            LIMIT 10
-            ''')
-
-            course_outstanding = cursor.fetchall()
-
-            if course_outstanding:
-                courses = [c[0] for c in course_outstanding]
-                amounts = [c[1] for c in course_outstanding]
-                self.ax3.bar(courses, amounts, color='coral')
-                self.ax3.set_title(_("analytics_manager.charts.outstanding_fees_course"))
-                self.ax3.set_ylabel(_("analytics_manager.charts.amount_label"))
-                self.ax3.tick_params(axis='x', rotation=45)
-            else:
-                self.ax3.text(0.5, 0.5, _("analytics_manager.charts.no_outstanding_fees"), ha='center', va='center', transform=self.ax3.transAxes)
-                self.ax3.set_title(_("analytics_manager.charts.outstanding_fees_course"))
-
-            # Chart 4: Payment Plan Status
-            cursor.execute('''
-            SELECT status, COUNT(*), SUM(total_amount)
-            FROM student_payment_plans
-            GROUP BY status
-            ''')
-
-            payment_plan_status = cursor.fetchall()
-
-            if payment_plan_status:
-                statuses = [p[0] for p in payment_plan_status]
-                counts = [p[1] for p in payment_plan_status]
-                colors = ['green' if s == 'completed' else 'orange' if s == 'active' else 'red' for s in statuses]
-                self.ax4.bar(statuses, counts, color=colors)
-                self.ax4.set_title(_("analytics_manager.charts.payment_plan_status"))
-                self.ax4.set_ylabel(_("analytics_manager.charts.number_of_plans"))
-            else:
-                self.ax4.text(0.5, 0.5, _("analytics_manager.charts.no_payment_plans"), ha='center', va='center', transform=self.ax4.transAxes)
-                self.ax4.set_title(_("analytics_manager.charts.payment_plan_status"))
+            self._draw_revenue_chart(data["monthly_revenue"])
+            self._draw_methods_chart(data["payment_methods"])
+            self._draw_outstanding_chart(data["outstanding_by_course"])
+            self._draw_plan_status_chart(data["payment_plan_status"])
 
             # Refresh the canvas
             if getattr(self, 'fig', None) is not None:
                 self.fig.tight_layout()
             self._safe_draw()
-
-            conn.close()
 
         except Exception as e:
             print(f"Error updating dashboard charts: {e}")

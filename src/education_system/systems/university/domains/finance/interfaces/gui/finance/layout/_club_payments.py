@@ -1,38 +1,21 @@
-"""Club payment management tab mixin for LayoutManager."""
+"""Club payment management tab mixin for LayoutManager.
+
+Queries and writes live in ``domain/core/club_payments`` and are shared with
+the Finance CLI (``interfaces/cli/club_payments``); this mixin only draws the
+notebook and its form.
+"""
 
 from datetime import datetime
 
 import tkinter as tk
 from tkinter import ttk, messagebox
 
+from education_system.systems.university.domains.finance.domain.core import club_payments as _club
 from education_system.systems.university.infrastructure.i18n import get_text as _
 
-try:
-    from education_system.systems.university.infrastructure.database.db import get_db_connection
-    DB_AVAILABLE = True
-except ImportError:
-    DB_AVAILABLE = False
-    get_db_connection = None
-
-
 # Enumerations that match what already lives in the `payments` table.
-_PAYMENT_TYPES = (
-    "membership_fee",
-    "event_fee",
-    "sponsorship",
-    "fundraising",
-    "equipment",
-    "travel",
-    "other",
-)
-_PAYMENT_METHODS = (
-    "cash",
-    "card",
-    "bank_transfer",
-    "cheque",
-    "online",
-    "other",
-)
+_PAYMENT_TYPES = _club.PAYMENT_TYPES
+_PAYMENT_METHODS = _club.PAYMENT_METHODS
 
 
 class ClubPaymentsMixin:
@@ -88,57 +71,29 @@ class ClubPaymentsMixin:
     def _create_club_payment_overview(self, parent):
         """Create payment overview sub-tab for club payments"""
         try:
-            if not DB_AVAILABLE or not get_db_connection:
-                ttk.Label(parent, text=_("finance_gui.club_payments_tab.db_unavailable")).pack(pady=20)
-                return
-
-            conn = get_db_connection()
-            cursor = conn.cursor()
-
-            cursor.execute('''
-                SELECT
-                    COUNT(*) as total_payments,
-                    SUM(amount) as total_amount,
-                    COUNT(DISTINCT reference_id) as clubs_with_payments
-                FROM payments
-                WHERE source_type = 'club'
-                  AND payment_date >= date('now', '-30 days')
-            ''')
-            stats = cursor.fetchone()
+            stats = _club.club_payment_overview(days=30)
 
             stats_frame = ttk.LabelFrame(parent, text=_("finance_gui.club_payments_tab.stats_section"), padding="10")
             stats_frame.pack(fill=tk.X, pady=10)
 
-            if stats:
-                ttk.Label(stats_frame,
-                         text=_("finance_gui.club_payments_tab.total_payments", count=stats[0] or 0),
-                         font=('Arial', 12)).pack(anchor='w', pady=5)
-                ttk.Label(stats_frame,
-                         text=_("finance_gui.club_payments_tab.total_amount", amount=f"{stats[1] or 0:.2f}"),
-                         font=('Arial', 12)).pack(anchor='w', pady=5)
-                ttk.Label(stats_frame,
-                         text=_("finance_gui.club_payments_tab.clubs_with_payments", count=stats[2] or 0),
-                         font=('Arial', 12)).pack(anchor='w', pady=5)
-
-            conn.close()
+            ttk.Label(stats_frame,
+                     text=_("finance_gui.club_payments_tab.total_payments", count=stats['total_payments']),
+                     font=('Arial', 12)).pack(anchor='w', pady=5)
+            ttk.Label(stats_frame,
+                     text=_("finance_gui.club_payments_tab.total_amount", amount=f"{stats['total_amount']:.2f}"),
+                     font=('Arial', 12)).pack(anchor='w', pady=5)
+            ttk.Label(stats_frame,
+                     text=_("finance_gui.club_payments_tab.clubs_with_payments", count=stats['clubs_with_payments']),
+                     font=('Arial', 12)).pack(anchor='w', pady=5)
 
         except Exception as e:
             ttk.Label(parent, text=_("finance_gui.club_payments_tab.error_loading_stats", error=str(e))).pack()
 
     def _create_club_record_payment(self, parent):
         """Record a new club payment — form that writes to the `payments` table."""
-        if not DB_AVAILABLE or not get_db_connection:
-            ttk.Label(parent, text=_("finance_gui.club_payments_tab.db_unavailable")).pack(pady=20)
-            return
-
         # Pull club list (id + name) for the picker.
         try:
-            with get_db_connection() as conn:
-                rows = conn.execute(
-                    "SELECT club_id, club_name FROM student_clubs "
-                    "WHERE COALESCE(status,'active') != 'archived' ORDER BY club_name"
-                ).fetchall()
-            clubs = [(r[0], r[1]) for r in rows]
+            clubs = _club.list_clubs()
         except Exception as e:
             ttk.Label(parent, text=_("finance_gui.club_payments_tab.error_loading_history", error=str(e))).pack(pady=10)
             return
@@ -215,39 +170,14 @@ class ClubPaymentsMixin:
             if auth and getattr(auth, 'current_user', None):
                 processed_by = auth.current_user.get('username') or auth.current_user.get('id')
 
-            payment_row_id = None
             try:
-                with get_db_connection() as conn:
-                    cur = conn.execute(
-                        """
-                        INSERT INTO payments (
-                            amount, currency, payment_method, payment_date, status, notes,
-                            source_type, payment_type, reference_type, reference_id, processed_by,
-                            created_at
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        """,
-                        (
-                            amount, 'GBP', method_var.get(), date_str, 'completed',
-                            notes_text.get('1.0', 'end').strip() or None,
-                            'club', type_var.get(), 'club', str(club_id),
-                            processed_by,
-                            datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                        ),
-                    )
-                    payment_row_id = cur.lastrowid
-                    conn.commit()
+                _club.record_club_payment(
+                    club_id, amount, type_var.get(), method_var.get(), date_str,
+                    notes_text.get('1.0', 'end'), processed_by,
+                )
             except Exception as exc:
                 status_var.set(_("finance_gui.club_payments_tab.save_failed", error=str(exc)))
                 return
-
-            # Auto-post to GL (never raises)
-            if payment_row_id is not None:
-                try:
-                    from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-                    notify_ledger('payment', payment_row_id, posted_by=processed_by or 'club_payments')
-                except Exception as _e:
-                    import logging
-                    logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
             status_var.set(_(
                 "finance_gui.club_payments_tab.save_success",
@@ -268,10 +198,6 @@ class ClubPaymentsMixin:
 
     def _create_club_payment_history(self, parent):
         """Show recent club payments in a readable table."""
-        if not DB_AVAILABLE or not get_db_connection:
-            ttk.Label(parent, text=_("finance_gui.club_payments_tab.db_unavailable")).pack(pady=20)
-            return
-
         # Toolbar with a refresh button sits above the tree.
         toolbar = ttk.Frame(parent)
         toolbar.pack(fill=tk.X, pady=(0, 5))
@@ -304,40 +230,19 @@ class ClubPaymentsMixin:
             for iid in tree.get_children():
                 tree.delete(iid)
             try:
-                with get_db_connection() as conn:
-                    rows = conn.execute(
-                        """
-                        SELECT
-                            p.payment_date,
-                            COALESCE(c.club_name, 'Club #' || p.reference_id) AS club,
-                            p.amount,
-                            p.currency,
-                            p.payment_type,
-                            p.payment_method,
-                            p.status
-                        FROM payments p
-                        LEFT JOIN student_clubs c ON CAST(p.reference_id AS INTEGER) = c.club_id
-                        WHERE p.source_type = 'club'
-                        ORDER BY p.payment_date DESC
-                        LIMIT 200
-                        """
-                    ).fetchall()
+                rows = _club.club_payment_history(limit=200)
             except Exception as exc:
                 ttk.Label(parent, text=_("finance_gui.club_payments_tab.error_loading_history", error=str(exc))).pack(pady=10)
                 return
 
             for r in rows:
-                date_s = (r[0] or '').split('T')[0] if isinstance(r[0], str) else str(r[0] or '')
-                amt = f"{(r[2] or 0):.2f} {r[3] or 'GBP'}"
-                # Pass an explicit tuple of strings so Treeview doesn't call str()
-                # on the sqlite3.Row object and render "<sqlite3.Row ...>".
                 tree.insert('', 'end', values=(
-                    date_s,
-                    r[1] or '',
-                    amt,
-                    r[4] or '',
-                    r[5] or '',
-                    r[6] or '',
+                    r['payment_date'],
+                    r['club'],
+                    f"{r['amount']:.2f} {r['currency']}",
+                    r['payment_type'],
+                    r['payment_method'],
+                    r['status'],
                 ))
             count_var.set(_(
                 "finance_gui.club_payments_tab.history_count",

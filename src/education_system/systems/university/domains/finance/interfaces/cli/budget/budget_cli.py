@@ -392,19 +392,7 @@ class BudgetTrackerCLI:
                 print("Invalid amount.")
                 return
 
-            from education_system.systems.university.infrastructure.database.db import transaction
-            with transaction() as conn:
-                conn.execute('''
-                    INSERT INTO student_budget_categories (
-                        budget_id, category_name, category_type, allocated_amount
-                    ) VALUES (?, ?, ?, ?)
-                ''', (budget_id, cat_name, cat_type, cat_amount))
-
-                conn.execute('''
-                    UPDATE student_budgets
-                    SET allocated_amount = allocated_amount + ?
-                    WHERE budget_id = ?
-                ''', (cat_amount, budget_id))
+            BudgetManager.add_budget_category(budget_id, cat_name, cat_type, cat_amount)
 
             print(f"\n✓ Category '{cat_name}' added successfully!")
 

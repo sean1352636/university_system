@@ -288,6 +288,7 @@ def create_navigation_panel(self, parent):
         ('finance_reporting', 'Finance Reporting', self.show_finance_reporting_dashboard),
         ('club_payment', 'Club Payments', self.show_club_payment_management),
         ('new_feature_bursary', 'Bursaries', self.show_new_feature_bursary),
+        ('scholarship_finder', 'Scholarship Finder', self.show_scholarship_finder_gui),
     ]
 
     # ---------- Health & Wellness ----------

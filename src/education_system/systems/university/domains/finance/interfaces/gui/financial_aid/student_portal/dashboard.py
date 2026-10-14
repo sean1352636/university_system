@@ -69,13 +69,18 @@ class DashboardMixin:
             (get_text("financial_aid.student_portal.actions.documents", "Documents"), self.show_documents),
             (get_text("financial_aid.student_portal.actions.profile", "My Profile"), self.show_profile),
             (get_text("financial_aid.student_portal.actions.apply_financial_aid", "Apply for Financial Aid"), self.show_apply_aid),
-            (get_text("financial_aid.student_portal.actions.my_awards", "My Awards"), self.show_my_awards)
+            (get_text("financial_aid.student_portal.actions.my_awards", "My Awards"), self.show_my_awards),
+            # Scholarship Finder pages (finder.py) - the CLI features the portal lacked
+            (get_text("financial_aid.student_portal.actions.search_scholarships", "Search Scholarships"), self.show_scholarship_search),
+            (get_text("financial_aid.student_portal.actions.application_tracker", "Application Tracker"), self.show_application_tracker),
+            (get_text("financial_aid.student_portal.actions.award_history", "Award History"), self.show_award_history),
         ]
 
+        per_row = 6
         for i, (text, command) in enumerate(actions):
             ttk.Button(actions_frame, text=text, command=command, width=20).grid(
-                row=0, column=i, padx=5, pady=5, sticky='ew')
-            actions_frame.grid_columnconfigure(i, weight=1)
+                row=i // per_row, column=i % per_row, padx=5, pady=5, sticky='ew')
+            actions_frame.grid_columnconfigure(i % per_row, weight=1)
 
         # Recent activity
         self._show_recent_activity()
