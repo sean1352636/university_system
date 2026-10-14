@@ -1,12 +1,15 @@
 """Unified API server for all education systems.
 
-Single Flask app serving all four systems under versioned, prefixed routes:
+Single Flask app serving all seven systems under versioned, prefixed routes:
     /api/v1/auth/*         — shared authentication (login, refresh, etc.)
     /api/v1/health/*       — health checks
-    /api/v1/college/*      — Sixth Form College routes
+    /api/v1/university/*   — University routes
+    /api/v1/sixthform/*    — Sixth Form College routes
     /api/v1/school/*       — Secondary School routes
     /api/v1/primary/*      — Primary School routes
-    /api/v1/university/*   — University routes
+    /api/v1/nursery/*      — Nursery / Early Years routes
+    /api/v1/fecollege/*    — FE College routes
+    /api/v1/apprentice/*   — Apprenticeships routes
     /api/v1/docs           — Swagger UI / OpenAPI spec
 
 All systems share one login endpoint. The JWT contains the user's
@@ -82,6 +85,31 @@ def _register_system_blueprints(app: Flask, blueprints, init_funcs, db_path,
 
     logger.info("Registered %d %s routes under /api/%s/%s/",
                 len(blueprints), system_label, API_VERSION, system_prefix)
+
+
+def _mount_from_registry(app: Flask, key: str) -> int:
+    """Mount one system's blueprints via its registry entry.
+
+    Goes through the ``Mount`` so an import failure is recorded on it and
+    surfaced by ``/api/v1/systems`` rather than lost in a log line. Returns
+    the number of blueprints registered.
+    """
+    from education_system.platform.delivery.api import registry as _api_registry
+    mount = _api_registry.get_mount(key)
+    blueprints = mount.load() if mount else []
+    if mount is None or (mount.wired and not blueprints):
+        logger.error("%s mount contributed no blueprints: %s",
+                     key, mount.error if mount else "no registry entry")
+        return 0
+    for bp in blueprints:
+        app.register_blueprint(
+            bp,
+            url_prefix=_reprefix(bp.url_prefix, key),
+            name=f"{key}_{bp.name}",
+        )
+    logger.info("Registered %d %s blueprints under /api/%s/%s/",
+                len(blueprints), mount.label, API_VERSION, key)
+    return len(blueprints)
 
 
 def create_unified_app() -> Flask:
@@ -424,20 +452,7 @@ def create_unified_app() -> Flask:
     # Backup of the removed tree:
     #   var/backups/maintenance/api-removal-20260908_204628/api-trees.tar.gz
     try:
-        from education_system.platform.delivery.api import registry as _api_registry
-        _uni_mount = _api_registry.get_mount("university")
-        _uni_bps = _uni_mount.load() if _uni_mount else []
-        if _uni_mount is None or (_uni_mount.wired and not _uni_bps):
-            logger.error(
-                "University mount contributed no blueprints: %s",
-                _uni_mount.error if _uni_mount else "no registry entry",
-            )
-        for bp in _uni_bps:
-            new_prefix = _reprefix(bp.url_prefix, "university")
-            new_name = f"university_{bp.name}"
-            app.register_blueprint(bp, url_prefix=new_prefix, name=new_name)
-        logger.info("Registered %d university blueprints under /api/%s/university/",
-                    len(_uni_bps), API_VERSION)
+        _mount_from_registry(app, "university")
     except Exception as e:
         logger.error("Failed to load university system: %s", e)
 
@@ -499,6 +514,18 @@ def create_unified_app() -> Flask:
     except Exception as e:
         logger.error("Failed to load secondary system: %s", e)
 
+    # ── FE college routes under /api/v1/fecollege/ ───────────────────
+    try:
+        _mount_from_registry(app, "fecollege")
+    except Exception as e:
+        logger.error("Failed to load FE college system: %s", e)
+
+    # ── Apprenticeships routes under /api/v1/apprentice/ ─────────────
+    try:
+        _mount_from_registry(app, "apprentice")
+    except Exception as e:
+        logger.error("Failed to load apprenticeships system: %s", e)
+
     # ── Backward-compatibility redirects ─────────────────────────────
     @app.before_request
     def redirect_unversioned():
@@ -507,7 +534,8 @@ def create_unified_app() -> Flask:
         path = request.path
         # Only redirect /api/<known-prefix> that is NOT already versioned
         if path.startswith("/api/") and not path.startswith(f"/api/{API_VERSION}/"):
-            for prefix in ("sixthform", "school", "primary", "nursery", "university", "auth", "health"):
+            for prefix in ("sixthform", "school", "primary", "nursery", "university",
+                           "fecollege", "apprentice", "auth", "health"):
                 if path.startswith(f"/api/{prefix}"):
                     new_path = f"/api/{API_VERSION}" + path[4:]
                     return redirect(new_path, code=307)
