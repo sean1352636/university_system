@@ -412,18 +412,34 @@ def create_unified_app() -> Flask:
             raise RuntimeError("GraphQL API failed to initialize") from e
         logger.warning("Failed to load GraphQL API in development mode: %s", e)
 
-    # ── University system ───────────────────────────────────────────────
-    # REMOVED. The university API (systems/university/shell/api) was deleted
-    # deliberately so it can be rebuilt module by module. Re-register each
-    # blueprint here as it is rewritten; keep the /api/v1/university/ prefix
-    # so the existing frontend keeps working per module.
-    #
-    # The shared helpers those routes used — platform/delivery/api/university/
-    # {auth,pagination,validators} — are intentionally still present: 128
-    # domain modules import them, and they are a library, not an API surface.
+    # ── University routes under /api/v1/university/ ──────────────────
+    # The original university API was deleted on 2026-09-08 to be rebuilt
+    # module by module; the rebuilt surface is education_system.api.university
+    # (one DOMAIN_BLUEPRINTS list per domain, collected into ALL_BLUEPRINTS).
+    # It is mounted through the registry entry so an import failure is
+    # recorded on the Mount (see /api/v1/systems) instead of vanishing into
+    # one log line. Route modules still being rebuilt stay out of their
+    # domain's DOMAIN_BLUEPRINTS and are therefore not served.
     #
     # Backup of the removed tree:
     #   var/backups/maintenance/api-removal-20260908_204628/api-trees.tar.gz
+    try:
+        from education_system.platform.delivery.api import registry as _api_registry
+        _uni_mount = _api_registry.get_mount("university")
+        _uni_bps = _uni_mount.load() if _uni_mount else []
+        if _uni_mount is None or (_uni_mount.wired and not _uni_bps):
+            logger.error(
+                "University mount contributed no blueprints: %s",
+                _uni_mount.error if _uni_mount else "no registry entry",
+            )
+        for bp in _uni_bps:
+            new_prefix = _reprefix(bp.url_prefix, "university")
+            new_name = f"university_{bp.name}"
+            app.register_blueprint(bp, url_prefix=new_prefix, name=new_name)
+        logger.info("Registered %d university blueprints under /api/%s/university/",
+                    len(_uni_bps), API_VERSION)
+    except Exception as e:
+        logger.error("Failed to load university system: %s", e)
 
     # ── Sixth-form (college) routes under /api/v1/sixthform/ ─────────
     try:

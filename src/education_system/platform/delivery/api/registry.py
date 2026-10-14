@@ -97,9 +97,9 @@ SYSTEMS: list[Mount] = [
         key="university",
         prefix=f"{API_PREFIX}/university",
         module="education_system.api.university",
-        # The university route package was removed deliberately so it can be
-        # rebuilt module by module. ALL_BLUEPRINTS there grows one domain at
-        # a time; today it carries learners/students only.
+        # The university route package was removed on 2026-09-08 and is being
+        # rebuilt module by module. ALL_BLUEPRINTS there grows one blueprint
+        # at a time; the unified server mounts it through this entry.
         wired=True,
         label="University",
     ),
