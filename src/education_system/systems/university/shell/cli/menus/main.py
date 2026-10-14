@@ -308,6 +308,12 @@ def display_menu():
         ]
         print_row(items)
         items = [
+            add_option(get_text('cli.menu.programme_governance', default='Programme Governance'), "nf_programme_governance"),
+            add_option(get_text('cli.menu.pgr_admin', default='PGR Administration'), "nf_pgr_admin"),
+            add_option(get_text('cli.menu.assessment_boards', default='Assessment Boards'), "nf_assessment_boards"),
+        ]
+        print_row(items)
+        items = [
             add_option(get_text('cli.menu.lms', default='LMS'), "lms_system"),
             add_option(get_text('cli.menu.attendance', default='Attendance'), "advanced_attendance"),
             add_option(get_text('cli.menu.timetable', default='Timetable'), "timetable_optimizer"),
@@ -535,30 +541,25 @@ def display_menu():
         # 🔗 CROSS-SYSTEM TOOLS (admin only)
         if auth.current_user and auth.current_user.get('role', '').lower() in ('admin', 'administrator'):
             category(f"🔗 {get_text('cli.menu.cross_system_tools', default='CROSS-SYSTEM TOOLS')}")
+            # Outcome Tracking, Predictive Alerts, Bulk Transfer, Transfer
+            # Documents, Reverse Lookup and Parent Continuity were removed:
+            # their platform modules never existed and the entries only
+            # printed "module is not available".
             items = [
                 add_option("Analytics Dashboard", "cross_analytics"),
-                add_option("Outcome Tracking", "cross_outcomes"),
-                add_option("Predictive Alerts", "cross_predictive"),
-                add_option("Bulk Transfer", "cross_bulk_transfer"),
-            ]
-            print_row(items)
-            items = [
-                add_option("Transfer Documents", "cross_transfer_docs"),
-                add_option("Reverse Lookup", "cross_reverse_lookup"),
-                add_option("Parent Continuity", "cross_parent_continuity"),
                 add_option("Cross-System Calendar", "cross_calendar"),
-            ]
-            print_row(items)
-            items = [
                 add_option("Inter-System Messaging", "cross_messaging"),
                 add_option("Central Admin Portal", "cross_admin_portal"),
-                add_option("GDPR Compliance", "cross_gdpr"),
-                add_option("Shared Documents", "cross_documents"),
             ]
             print_row(items)
             items = [
+                add_option("GDPR Compliance", "cross_gdpr"),
+                add_option("Shared Documents", "cross_documents"),
                 add_option("Student Self-Service", "cross_student_portal"),
                 add_option("Digital Transcript", "cross_transcript"),
+            ]
+            print_row(items)
+            items = [
                 add_option("Apprenticeship Progression", "cross_apprenticeship"),
             ]
             print_row(items)
@@ -577,6 +578,15 @@ def display_menu():
             add_option("Peer Mentoring Matching", "nf_mentoring_matching"),
             add_option("Room Booking", "nf_room_booking"),
         ]
+        print_row(items)
+
+        items = [
+            add_option("Case Management", "nf_case_management"),
+            add_option("Timetabling", "nf_timetabling"),
+        ]
+        if auth.current_user and auth.current_user.get('role', '').lower() in ('admin', 'administrator'):
+            items.append(add_option("Identity Management", "nf_identity_management"))
+            items.append(add_option("SSO Providers", "nf_sso_providers"))
         print_row(items)
 
         # 📱 INFRASTRUCTURE & ⚙️ SYSTEM
@@ -689,6 +699,13 @@ def _dispatch_menu_option(option):
         else:
             print("\n❌ Enhanced Grade menu is not available")
             input("Press Enter to continue...")
+    elif option == "lms_system":
+        # The LMS menu key had no dispatch branch and printed "Invalid choice".
+        # The only LMS CLI is the attendance package's integration handler.
+        from education_system.systems.university.domains.academics.interfaces.cli.services.attendance.integrations_cli import (
+            handle_lms_integration,
+        )
+        handle_lms_integration()
     elif option == "advanced_attendance":
         display_advanced_attendance_menu()
     elif option == "timetable_optimizer":

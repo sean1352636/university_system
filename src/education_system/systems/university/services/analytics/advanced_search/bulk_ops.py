@@ -2,6 +2,7 @@
 import json
 from datetime import datetime
 
+from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
 from education_system.systems.university.services.analytics.advanced_search import _globals
 from education_system.systems.university.services.analytics.advanced_search.export import export_to_csv, export_to_json, export_to_excel, custom_format_export
 
@@ -145,19 +146,81 @@ def send_bulk_email(recipients, subject, message, batch_size=50):
                 failed.append(recipient)
     return {"sent": sent, "failed": failed}
 
+def _selected_student_ids():
+    """Student ids of the current search results (first column of each row)."""
+    return [str(student[0]) for student in _globals.last_search_results if student[0]]
+
+
+def _bulk_write(sql, rows):
+    """Run one parameterised write per row inside a single transaction.
+
+    Returns the number of rows actually changed, or None if the transaction
+    was rolled back because of a database error.
+    """
+    if not rows:
+        return 0
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.executemany(sql, rows)
+        affected = cursor.rowcount
+        conn.commit()
+        return affected
+    except sqlite3.Error as e:
+        conn.rollback()
+        print(f"❌ Database error, no changes made: {e}")
+        return None
+    finally:
+        conn.close()
+
+
+def _module_exists(module_code):
+    conn = get_connection()
+    try:
+        row = conn.execute(
+            "SELECT 1 FROM modules WHERE module_code = ?", (module_code,)
+        ).fetchone()
+        return row is not None
+    finally:
+        conn.close()
+
+
+def bulk_enroll_in_module(student_ids, module_code):
+    """Enrol students in a module (status 'enrolled'); skips existing enrolments.
+
+    Mirrors the student_modules insert used by the modules_reassign GUI.
+    Returns the number of new enrolment rows, or None on database error.
+    """
+    today = datetime.now().strftime('%Y-%m-%d')
+    return _bulk_write(
+        "INSERT OR IGNORE INTO student_modules (student_id, module_code, enrollment_date, status) "
+        "VALUES (?, ?, ?, ?)",
+        [(sid, module_code, today, 'enrolled') for sid in student_ids],
+    )
+
+
+def _report(affected, verb, total):
+    if affected is None:
+        return
+    skipped = total - affected
+    suffix = f" ({skipped} already in that state, skipped)" if skipped > 0 else ""
+    print(f"✅ {verb} {affected} of {total} selected students{suffix}")
+
+
 def batch_data_updates():
     """Perform batch updates on student data"""
     if not _globals.last_search_results:
         print("No search results available. Please perform a search first.")
         return
 
-    print(f"\n📝 BATCH DATA UPDATES ({len(_globals.last_search_results)} students)")
+    student_ids = _selected_student_ids()
+    print(f"\n📝 BATCH DATA UPDATES ({len(student_ids)} students)")
     print("="*60)
 
     print("Available update operations:")
     print("1. Update course")
     print("2. Update registration status")
-    print("3. Add note/flag")
+    print("3. Mark for follow-up")
     print("4. Bulk module enrollment")
 
     choice = input("Select operation (1-4): ").strip()
@@ -165,25 +228,37 @@ def batch_data_updates():
     if choice == '1':
         new_course = input("New course (CS/DS): ").strip().upper()
         if new_course in ['CS', 'DS']:
-            confirm = input(f"Update {len(_globals.last_search_results)} students to {new_course}? (y/n): ")
+            confirm = input(f"Update {len(student_ids)} students to {new_course}? (y/n): ")
             if confirm.lower() == 'y':
-                # Simulate batch update
-                print(f"✅ Updated {len(_globals.last_search_results)} students to course {new_course}")
+                affected = _bulk_write(
+                    "UPDATE students SET course = ? WHERE student_id = ? AND course IS NOT ?",
+                    [(new_course, sid, new_course) for sid in student_ids],
+                )
+                _report(affected, f"Updated course to {new_course} for", len(student_ids))
 
     elif choice == '2':
-        print("Registration status update simulation")
-        print(f"✅ Would update {len(_globals.last_search_results)} student records")
+        new_status = input("New registration status (e.g. Active/Completed/Withdrawn): ").strip()
+        if new_status:
+            confirm = input(f"Set status '{new_status}' on {len(student_ids)} students? (y/n): ")
+            if confirm.lower() == 'y':
+                affected = _bulk_write(
+                    "UPDATE students SET status = ? WHERE student_id = ? AND status IS NOT ?",
+                    [(new_status, sid, new_status) for sid in student_ids],
+                )
+                _report(affected, f"Set status '{new_status}' on", len(student_ids))
 
     elif choice == '3':
-        note = input("Enter note/flag to add: ").strip()
-        if note:
-            print(f"✅ Added note '{note}' to {len(_globals.last_search_results)} students")
+        # There is no student notes table; follow-up lists are written to a file.
+        mark_for_followup()
 
     elif choice == '4':
-        print("Bulk module enrollment simulation")
         module = input("Module code to enroll students in: ").strip()
         if module:
-            print(f"✅ Enrolled {len(_globals.last_search_results)} students in module {module}")
+            if not _module_exists(module):
+                print(f"❌ Module {module} not found.")
+                return
+            affected = bulk_enroll_in_module(student_ids, module)
+            _report(affected, f"Enrolled in {module}:", len(student_ids))
 
 def generate_email_list():
     """Generate email list from search results"""
@@ -404,7 +479,8 @@ def bulk_enrollment_management():
         print("No search results available.")
         return
 
-    print(f"\n🎓 BULK ENROLLMENT MANAGEMENT ({len(_globals.last_search_results)} students)")
+    student_ids = _selected_student_ids()
+    print(f"\n🎓 BULK ENROLLMENT MANAGEMENT ({len(student_ids)} students)")
     print("="*70)
 
     print("Operations:")
@@ -418,20 +494,52 @@ def bulk_enrollment_management():
     if choice == '1':
         module_code = input("Module code to enroll in: ").strip()
         if module_code:
-            print(f"✅ Simulation: Enrolled {len(_globals.last_search_results)} students in {module_code}")
+            if not _module_exists(module_code):
+                print(f"❌ Module {module_code} not found.")
+                return
+            affected = bulk_enroll_in_module(student_ids, module_code)
+            _report(affected, f"Enrolled in {module_code}:", len(student_ids))
 
     elif choice == '2':
         module_code = input("Module code to unenroll from: ").strip()
         if module_code:
-            print(f"✅ Simulation: Unenrolled {len(_globals.last_search_results)} students from {module_code}")
+            # Same vocabulary as student_lifecycle: an unenrolment is status 'Withdrawn'
+            affected = _bulk_write(
+                "UPDATE student_modules SET status = 'Withdrawn' "
+                "WHERE student_id = ? AND module_code = ? AND status <> 'Withdrawn'",
+                [(sid, module_code) for sid in student_ids],
+            )
+            _report(affected, f"Unenrolled from {module_code}:", len(student_ids))
 
     elif choice == '3':
         from_module = input("Transfer FROM module code: ").strip()
         to_module = input("Transfer TO module code: ").strip()
         if from_module and to_module:
-            print(f"✅ Simulation: Transferred {len(_globals.last_search_results)} students from {from_module} to {to_module}")
+            if not _module_exists(to_module):
+                print(f"❌ Module {to_module} not found.")
+                return
+            # OR IGNORE leaves students who already hold the target module untouched
+            affected = _bulk_write(
+                "UPDATE OR IGNORE student_modules SET module_code = ?, module_name = NULL "
+                "WHERE student_id = ? AND module_code = ?",
+                [(to_module, sid, from_module) for sid in student_ids],
+            )
+            _report(affected, f"Transferred {from_module} -> {to_module} for", len(student_ids))
 
     elif choice == '4':
+        module_code = input("Module code (blank = all of each student's modules): ").strip()
         new_status = input("New enrollment status: ").strip()
         if new_status:
-            print(f"✅ Simulation: Updated enrollment status to '{new_status}' for {len(_globals.last_search_results)} students")
+            if module_code:
+                affected = _bulk_write(
+                    "UPDATE student_modules SET status = ? "
+                    "WHERE student_id = ? AND module_code = ? AND status IS NOT ?",
+                    [(new_status, sid, module_code, new_status) for sid in student_ids],
+                )
+            else:
+                affected = _bulk_write(
+                    "UPDATE student_modules SET status = ? WHERE student_id = ? AND status IS NOT ?",
+                    [(new_status, sid, new_status) for sid in student_ids],
+                )
+            if affected is not None:
+                print(f"✅ Updated enrollment status to '{new_status}' on {affected} enrolment rows")

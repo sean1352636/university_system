@@ -643,6 +643,12 @@ def project_record(project_id: int) -> dict[str, Any]:
             ("training_needs", "pgr_training_needs"),
             ("reviews", "pgr_progress_reviews"),
             ("approvals", "pgr_approvals"),
+            ("upgrades", "pgr_upgrades"),
+            ("submissions", "pgr_thesis_submissions"),
+            ("examiners", "pgr_examiners"),
+            ("vivas", "pgr_vivas"),
+            ("corrections", "pgr_corrections"),
+            ("deposits", "pgr_final_deposits"),
             ("milestones", "pgr_milestones"),
             ("history", "pgr_history"),
         ):
@@ -655,6 +661,19 @@ def project_record(project_id: int) -> dict[str, Any]:
                 ).fetchall()
             ]
         return result
+
+
+def list_projects(status: str | None = None) -> list[dict[str, Any]]:
+    """Every PGR project, optionally filtered to one lifecycle state."""
+    ensure_schema()
+    with get_connection() as conn:
+        sql = "SELECT * FROM pgr_projects"
+        params: list[Any] = []
+        if status:
+            sql += " WHERE status = ?"
+            params.append(status)
+        rows = conn.execute(sql + " ORDER BY project_id DESC", params).fetchall()
+        return [dict(r) for r in rows]
 
 
 __all__ = [
@@ -680,5 +699,6 @@ __all__ = [
     "extend_milestone",
     "escalate_overdue",
     "project_record",
+    "list_projects",
     "ensure_schema",
 ]

@@ -37,6 +37,40 @@ _NEW_FEATURE_CLI_DISPATCH = {
         "campus.room_booking.room_booking_cli",
         "display_room_booking_menu",
     ),
+    "nf_programme_governance": (
+        "education_system.systems.university.domains.academics.interfaces.cli."
+        "programme_governance.programme_governance_cli",
+        "display_programme_governance_menu",
+    ),
+    "nf_pgr_admin": (
+        "education_system.systems.university.domains.academics.interfaces.cli."
+        "research.pgr.pgr_cli",
+        "display_pgr_menu",
+    ),
+    "nf_assessment_boards": (
+        "education_system.systems.university.domains.assessment.interfaces.cli."
+        "boards.assessment_boards_cli",
+        "display_assessment_boards_menu",
+    ),
+    "nf_case_management": (
+        "education_system.systems.university.domains.governance.interfaces.cli."
+        "case_management.case_management_cli",
+        "display_case_management_menu",
+    ),
+    "nf_timetabling": (
+        "education_system.systems.university.domains.academics.interfaces.cli."
+        "timetabling.timetabling_cli",
+        "display_timetabling_menu",
+    ),
+    "nf_identity_management": (
+        "education_system.systems.university.domains.learners.interfaces.cli."
+        "identity_management.identity_management_cli",
+        "display_identity_management_menu",
+    ),
+    "nf_sso_providers": (
+        "education_system.systems.university.shell.cli.auth.sso_providers_cli",
+        "display_sso_providers_menu",
+    ),
 }
 
 def _dispatch_new_feature(option, auth):

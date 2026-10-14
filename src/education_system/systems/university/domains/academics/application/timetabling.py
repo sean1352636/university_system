@@ -104,4 +104,47 @@ def published_schedule() -> list[dict[str, Any]]:
         return json.loads(row[0]) if row else []
 
 
-__all__ = ["optimise", "publish", "published_schedule", "request_change"]
+def list_versions(limit: int = 100) -> list[dict[str, Any]]:
+    """Newest-first versions without the schedule payload."""
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT version_id, academic_year, status, input_hash, created_by, "
+            "created_at, published_at FROM timetable_versions "
+            "ORDER BY created_at DESC LIMIT ?",
+            (int(limit),),
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def version_record(version_id: str) -> dict[str, Any]:
+    """One version with its decoded schedule under ``schedule``."""
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT * FROM timetable_versions WHERE version_id=?", (version_id,)
+        ).fetchone()
+    if row is None:
+        raise ValueError("Timetable version does not exist")
+    result = dict(row)
+    result["schedule"] = json.loads(result.pop("schedule_json") or "[]")
+    return result
+
+
+def list_change_requests(version_id: str | None = None) -> list[dict[str, Any]]:
+    with get_connection() as conn:
+        if version_id:
+            rows = conn.execute(
+                "SELECT * FROM timetable_change_requests WHERE version_id=? "
+                "ORDER BY created_at DESC",
+                (version_id,),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT * FROM timetable_change_requests ORDER BY created_at DESC"
+            ).fetchall()
+    return [dict(row) for row in rows]
+
+
+__all__ = [
+    "list_change_requests", "list_versions", "optimise", "publish",
+    "published_schedule", "request_change", "version_record",
+]

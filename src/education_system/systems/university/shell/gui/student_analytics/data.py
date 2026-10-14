@@ -1,11 +1,22 @@
-"""Data access mixin for the Student Analytics GUI."""
+"""Data access mixin for the Student Analytics GUI.
+
+Students and module enrolments come from the services-layer DataAccessMixin,
+so the GUI sees the same derived columns as the CLI analytics (gpa,
+overall_grade, completion_status, engagement_score, module_grade,
+attendance_rate, difficulty_rating). Nothing is simulated: columns with no
+source are NaN and an empty table yields an empty frame.
+"""
 from education_system.systems.university.shell.gui.student_analytics._imports import (
-    pd, np, plt, DEFAULT_DB_PATH, datetime, CONFIG,
+    pd, plt, datetime,
+)
+from education_system.systems.university.infrastructure.database.db import get_connection
+from education_system.systems.university.services.analytics.student_analytics.data_access import (
+    DataAccessMixin,
 )
 
 
-class AnalyticsDataMixin:
-    """Mixin providing data loading, filtering, simulation, and plot utilities."""
+class AnalyticsDataMixin(DataAccessMixin):
+    """Mixin providing data loading, filtering, and plot utilities."""
 
     def create_directories(self):
         """Create necessary directories for outputs"""
@@ -15,97 +26,32 @@ class AnalyticsDataMixin:
 
     def get_connection(self):
         """Get database connection"""
-        from education_system.systems.university.infrastructure.database.db import sqlite3
-        return sqlite3.connect(str(DEFAULT_DB_PATH))
+        return get_connection()
+
+    def _merged_filters(self, filters):
+        return {**(filters or {}), **getattr(self, 'custom_filters', {})}
 
     def get_all_students(self, filters=None):
-        """Get all students data with optional filters"""
-        from education_system.systems.university.infrastructure.database.db import sqlite3
+        """All students with the derived analytics columns, filtered in pandas."""
         try:
-            conn = self.get_connection()
-            query = "SELECT * FROM students"
-            df = pd.read_sql_query(query, conn)
-            conn.close()
-
-            if df.empty:
-                return df
-
-            # Simulate additional data if needed
-            df = self.simulate_additional_data(df)
-
-            # Apply filters if provided
-            if filters or self.custom_filters:
-                all_filters = {**(filters or {}), **self.custom_filters}
-                df = self.apply_filters(df, all_filters)
-
-            return df
+            df = DataAccessMixin.get_all_students(self)
         except Exception as e:
             print(f"Error loading students: {e}")
             return pd.DataFrame()
+        if df.empty:
+            return df
+        return self.apply_filters(df, self._merged_filters(filters))
 
     def get_all_modules(self, filters=None):
-        """Get all modules data with optional filters"""
-        from education_system.systems.university.infrastructure.database.db import sqlite3
-
-        conn = None
+        """All module enrolments with marks/attendance joined, filtered in pandas."""
         try:
-            conn = self.get_connection()
-            query = "SELECT * FROM modules"
-            df = pd.read_sql_query(query, conn)
-        except sqlite3.Error as e:
-            # If modules table doesn't exist, create sample data
-            print(f"Database error loading modules: {e}")
-            df = pd.DataFrame()
+            df = DataAccessMixin.get_all_modules(self)
         except Exception as e:
-            # Other errors
             print(f"Error loading modules: {e}")
-            df = pd.DataFrame()
-        finally:
-            if conn:
-                conn.close()
-
+            return pd.DataFrame()
         if df.empty:
-            df = self.simulate_module_data(df)
-
-        if filters or self.custom_filters:
-            all_filters = {**(filters or {}), **self.custom_filters}
-            df = self.apply_filters(df, all_filters)
-
-        return df
-
-    def simulate_additional_data(self, df):
-        """Add only missing essential columns based on actual database data"""
-        # Try to derive from existing data rather than simulate
-
-        if 'gpa' not in df.columns and 'grade' in df.columns:
-            # Calculate GPA from grades if possible
-            grade_map = {'A': 4.0, 'B': 3.0, 'C': 2.0, 'D': 1.0, 'F': 0.0}
-            df['gpa'] = df['grade'].map(grade_map).fillna(3.0)
-
-        if 'completion_status' not in df.columns and 'status' in df.columns:
-            # Use existing status column
-            df['completion_status'] = df['status']
-        elif 'completion_status' not in df.columns:
-            # Default to Active if no status
-            df['completion_status'] = 'Active'
-
-        return df
-
-    def simulate_module_data(self, df):
-        """Simulate module data if not available"""
-        modules = ['Mathematics', 'Physics', 'Chemistry', 'Biology', 'Computer Science',
-                   'Literature', 'History', 'Economics', 'Psychology', 'Art']
-
-        data = {
-            'module_id': range(1, len(modules) + 1),
-            'module_name': modules,
-            'credits': np.random.choice([3, 4, 6], len(modules)),
-            'difficulty_level': np.random.choice(['Beginner', 'Intermediate', 'Advanced'], len(modules)),
-            'enrollment_count': np.random.randint(10, 200, len(modules)),
-            'pass_rate': np.random.uniform(0.6, 0.95, len(modules))
-        }
-
-        return pd.DataFrame(data)
+            return df
+        return self.apply_filters(df, self._merged_filters(filters))
 
     def apply_filters(self, df, filters):
         """Apply filters to dataframe"""

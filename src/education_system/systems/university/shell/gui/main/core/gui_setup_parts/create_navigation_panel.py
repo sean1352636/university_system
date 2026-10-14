@@ -227,6 +227,7 @@ def create_navigation_panel(self, parent):
     student_mgmt_buttons_data.extend([
         ('delete_student', _t("nav.buttons.delete_student"), self.delete_student_dialog),
         ('batch_operations', _t("nav.buttons.batch_operations"), self.show_batch_operations_gui),
+        ('new_feature_identity_management', 'Identity Management', self.show_new_feature_identity_management),
     ])
 
     # ---------- Academic Management ----------
@@ -240,6 +241,7 @@ def create_navigation_panel(self, parent):
         ('ai_study', _t("nav.buttons.ai_study"), self.show_ai_study_gui),
         ('study_matching_gui', _t("nav.buttons.study_matching"), self.show_study_matching_gui),
         ('office_hours', _t("nav.buttons.office_hours"), self.show_office_hours_gui),
+        ('absence_tracker', 'Absence Tracker', self.open_absence_tracker_gui),
         # "Graduation System" removed: it opened the Degree Audit GUI, which
         # is already a Course Management tab, and four of its five tabs are
         # advising rather than graduation. The graduation half now lives in
@@ -250,6 +252,9 @@ def create_navigation_panel(self, parent):
         ('new_feature_lecturer_evaluation', 'Lecturer Evaluation', self.show_new_feature_lecturer_evaluation),
         ('new_feature_university_research', 'Research Portal', self.show_new_feature_university_research),
         ('study_recommendations', 'Study Recommendations', self.show_study_recommendations_gui),
+        ('new_feature_programme_governance', 'Programme Governance', self.show_new_feature_programme_governance),
+        ('new_feature_pgr_admin', 'PGR Administration', self.show_new_feature_pgr_admin),
+        ('new_feature_assessment_boards', 'Assessment Boards', self.show_new_feature_assessment_boards),
     ]
     if VIRTUAL_CLASSROOM_AVAILABLE:
         academic_buttons_data.append(('virtual_classroom', _t("nav.buttons.virtual_classroom"), self.show_virtual_classroom_gui))
@@ -272,6 +277,7 @@ def create_navigation_panel(self, parent):
         # embeds the whole ExamSchedulerApp, so the two buttons opened the
         # same nine scheduler tabs, one of them nested a level deeper.
         ('exam_portal', "Exam Management", self.show_exam_portal),
+        ('new_feature_timetabling', 'Timetabling', self.show_new_feature_timetabling),
     ]
 
     # ---------- Finance ----------
@@ -279,6 +285,9 @@ def create_navigation_panel(self, parent):
         ('finance_management', _t("nav.buttons.finance_management"), self.show_finance_management),
         ('my_finance', _t("nav.buttons.my_finance"), self.show_student_finance_account),
         ('bank_app', _t("nav.buttons.bank_app", default="Student Bank"), self.show_bank_app_gui),
+        ('finance_reporting', 'Finance Reporting', self.show_finance_reporting_dashboard),
+        ('club_payment', 'Club Payments', self.show_club_payment_management),
+        ('new_feature_bursary', 'Bursaries', self.show_new_feature_bursary),
     ]
 
     # ---------- Health & Wellness ----------
@@ -298,6 +307,8 @@ def create_navigation_panel(self, parent):
     campus_buttons_data = [
         ('student_union_portal', _t("nav.buttons.student_union"), self.open_student_union_portal_gui),
         ('campus_events', _t("nav.buttons.campus_events"), self.show_campus_events_gui),
+        ('mail_post', 'Mail / Post', self.show_mail_post_gui),
+        ('new_feature_room_booking', 'Room Booking', self.show_new_feature_room_booking),
         ('events_discovery', _t("nav.buttons.events_discovery"), self.show_events_discovery_gui),
         # Single consolidated entry — opens the unified app with tabs for
         # Buildings / Rooms / Bookings / Utilities / Cleaning / Maintenance /
@@ -356,6 +367,8 @@ def create_navigation_panel(self, parent):
         ('advising_portal', _t('nav.buttons.advising_portal'), self.show_advising_portal_gui),
         ('visa_compliance', 'Visa Sponsorship (Tier-4)', self.show_visa_compliance_gui),
         ('enrolment_letters', 'Status Letters', self.show_enrolment_letters_gui),
+        ('student_app', 'Student App', self.show_student_app_gui),
+        ('mental_health', 'Mental Health & Wellness', self.show_mental_health_gui),
     ]
 
     # ---------- Career & Alumni ----------
@@ -376,6 +389,8 @@ def create_navigation_panel(self, parent):
         ('new_feature_disciplinary_portal', 'Disciplinary Portal', self.show_new_feature_disciplinary_portal),
         ('new_feature_fitness_to_practise', 'Fitness to Practise', self.show_new_feature_fitness_to_practise),
         ('new_feature_risk_management', 'Risk Management', self.show_new_feature_risk_management),
+        ('information_rights', 'SAR / FOI Requests', self.show_information_rights_gui),
+        ('new_feature_case_management', 'Case Management', self.show_new_feature_case_management),
     ]
 
     # ---------- Entertainment ----------
@@ -419,6 +434,7 @@ def create_navigation_panel(self, parent):
         ('blockchain_credentials', _t('nav.buttons.blockchain'), self.show_blockchain_credentials_gui),
         ('extras_launcher', _t('nav.buttons.extras'), self.show_extras_launcher),
         ('todo_app', _t('nav.buttons.todo_app'), self.show_todo_app_gui),
+        ('ai_detector', 'AI Detector', self.open_ai_detector_window),
     ]
 
     # ---------- Security & Safety ----------
@@ -477,6 +493,7 @@ def create_navigation_panel(self, parent):
         ('collaborative_provision', 'Partner Provision', self.show_collaborative_provision_gui),
         ('student_mobility', 'Study Abroad & Exchange', self.show_student_mobility_gui),
         ('curriculum_specification', 'Curriculum Spec.', self.show_curriculum_specification_gui),
+        ('new_feature_sso_providers', 'SSO Providers', self.show_new_feature_sso_providers),
     ]
 
     # ---------- Cross-System ----------
@@ -512,12 +529,12 @@ def create_navigation_panel(self, parent):
     academic_courses, academic_assessment, academic_study = _partition(
         academic_buttons_data,
         ['course_management', 'module_management', 'assignments', 'library',
-         'office_hours', 'virtual_classroom'],
+         'office_hours', 'virtual_classroom', 'new_feature_programme_governance'],
         ['grade_tracking_gui', 'student_registration',
          'new_feature_course_evaluation_system',
          'new_feature_module_evaluation_portal',
-         'new_feature_lecturer_evaluation'],
-        ['study_hub', 'new_feature_university_research',
+         'new_feature_lecturer_evaluation', 'new_feature_assessment_boards'],
+        ['study_hub', 'new_feature_university_research', 'new_feature_pgr_admin',
          'graduation_ceremony'],
     )
 
@@ -535,7 +552,7 @@ def create_navigation_panel(self, parent):
         administration_buttons_data,
         ['user_management', 'system_admin_gui', 'security_dashboard',
          'new_feature_health_safety_portal', 'new_feature_background_checker',
-         'integration_marketplace'],
+         'integration_marketplace', 'new_feature_sso_providers'],
         ['admissions_crm', 'university_progression', 'ucas_management',
          'clearing_adjustment', 'prior_learning',
          'mitigating_circumstances', 'curriculum_specification',

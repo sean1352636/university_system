@@ -1257,6 +1257,28 @@ _NEW_FEATURE_MODULES = [
      "education_system.systems.university.domains.progression.domain.placements.placement_tracker"),
     ("bakery_shop", "Bakery Shop",
      "education_system.systems.university.plugins.campus_commerce.domain.bakery_shop.app"),
+    # Institutional operations services surfaced 2026-10: case register,
+    # timetabling, identity control (admin) and SSO providers (admin).
+    ("case_management", "Case Management",
+     "education_system.systems.university.domains.governance.interfaces.gui.case_management.case_management_app"),
+    ("timetabling", "Timetabling",
+     "education_system.systems.university.domains.academics.interfaces.gui.timetabling.timetabling_app"),
+    ("identity_management", "Identity Management",
+     "education_system.systems.university.domains.learners.interfaces.gui.identity_management.identity_management_app"),
+    ("sso_providers", "SSO Providers",
+     "education_system.systems.university.shell.gui.main.admin.sso_providers_gui"),
+    # Governance / research / boards windows added 2026-10. Opened in-process
+    # below (they take the session auth); these entries are the subprocess
+    # fallback that ``_launch_new_feature_module`` runs if that fails.
+    ("programme_governance", "Programme Governance",
+     "education_system.systems.university.domains.academics.interfaces.gui."
+     "programme_governance.programme_governance_gui"),
+    ("pgr_admin", "PGR Administration",
+     "education_system.systems.university.domains.academics.interfaces.gui."
+     "research.pgr.pgr_admin_gui"),
+    ("assessment_boards", "Assessment Boards",
+     "education_system.systems.university.domains.assessment.interfaces.gui."
+     "boards.assessment_boards_gui"),
 ]
 
 
@@ -1435,6 +1457,59 @@ def _maximise(window):
 
 
 UnifiedManagementGUI.show_new_feature_university_research = show_new_feature_university_research
+
+
+# Programme Governance, PGR Administration and Assessment Boards open as
+# in-process Toplevels (1400x900, minsize 1200x800) so they share the session
+# auth and are gated to staff; the subprocess entry above is the fallback.
+_SESSION_WINDOWS = {
+    "programme_governance": (
+        "Programme Governance",
+        "education_system.systems.university.domains.academics.interfaces.gui."
+        "programme_governance.programme_governance_gui"),
+    "pgr_admin": (
+        "PGR Administration",
+        "education_system.systems.university.domains.academics.interfaces.gui."
+        "research.pgr.pgr_admin_gui"),
+    "assessment_boards": (
+        "Assessment Boards",
+        "education_system.systems.university.domains.assessment.interfaces.gui."
+        "boards.assessment_boards_gui"),
+}
+
+
+def _open_session_window(self, key: str):
+    """Open one of the staff-only service windows in-process with ``self.auth``."""
+    import importlib
+    title, module_dotted = _SESSION_WINDOWS[key]
+    user = (self.auth.current_user if getattr(self, "auth", None) else None) or {}
+    if str(user.get("role", "")).lower() not in ("admin", "staff"):
+        from tkinter import messagebox
+        messagebox.showwarning(title, f"{title} is restricted to staff.", parent=self.root)
+        return None
+    try:
+        module = importlib.import_module(module_dotted)
+        return module.open_window(self.root, self.auth)
+    except Exception:
+        logger.exception("In-process %s failed; falling back to subprocess launch", title)
+        self._launch_new_feature_module(module_dotted, title)
+        return None
+
+
+UnifiedManagementGUI._open_session_window = _open_session_window
+
+
+def _make_session_handler(_key):
+    def _handler(self):
+        return self._open_session_window(_key)
+    _handler.__name__ = f"show_new_feature_{_key}"
+    return _handler
+
+
+for _key in _SESSION_WINDOWS:
+    setattr(UnifiedManagementGUI, f"show_new_feature_{_key}", _make_session_handler(_key))
+
+del _key
 
 
 def _embed_or_subprocess(self, title, module_dotted, build_inproc):

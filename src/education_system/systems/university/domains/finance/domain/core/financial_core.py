@@ -255,6 +255,38 @@ from education_system.systems.university.domains.finance.domain.reporting.revenu
 from education_system.systems.university.domains.finance.domain.scholarships.scholarship_programs import manage_scholarships, view_available_scholarships, create_new_scholarship, award_scholarship_to_student, view_student_scholarships, scholarship_distribution_summary, scholarship_utilization_analysis, manage_financial_aid, view_financial_aid_applications, create_financial_aid_application, disburse_financial_aid
 from education_system.systems.university.domains.finance.domain.core.security_automation import detect_payment_fraud, create_approval_workflow, setup_automated_notifications, send_automated_notifications
 from education_system.systems.university.domains.finance.domain.reporting.budget_analysis import manage_budgets
+# Re-exports for the finance GUI (finance_gui / db_manager / invoice_manager
+# import these names from this module). The implementations live in the
+# per-area core modules; keep this list in sync when names move.
+from education_system.systems.university.domains.finance.domain.core.students import (  # noqa: E402,F401
+    view_student_credits, add_student_credit, apply_credit_to_fees, view_credit_history,
+)
+from education_system.systems.university.domains.finance.domain.core.aid import (  # noqa: E402,F401
+    manage_aid_types, view_aid_types, create_aid_type, edit_aid_type, deactivate_aid_type,
+    review_pending_aid_applications, track_loan_repayments, process_loan_payment,
+    aid_distribution_summary, aid_by_academic_year, aid_effectiveness_analysis,
+    view_aid_application_detail,
+)
+from education_system.systems.university.domains.finance.domain.core.analytics import (  # noqa: E402,F401
+    view_overdue_accounts, recovery_rate_analysis, update_actual_amounts,
+)
+from education_system.systems.university.domains.finance.domain.core.communications import (  # noqa: E402,F401
+    setup_email_config, setup_sms_config, test_email_service, test_sms_service,
+)
+from education_system.systems.university.domains.finance.domain.core.payments import (  # noqa: E402,F401
+    process_stripe_payment, generate_qr_payment_code,
+)
+from education_system.systems.university.domains.finance.domain.core.security_automation import (  # noqa: E402,F401
+    enhanced_notification_system,
+)
+from education_system.systems.university.domains.finance.domain.core.finance_db_operations import (  # noqa: E402,F401
+    complete_database_fix, quick_fix_database,
+)
+from education_system.systems.university.domains.finance.domain.reporting.budget_analysis import (  # noqa: E402,F401
+    create_budget_plan, budget_vs_actual_analysis, budget_performance_trends,
+    manage_budget_categories, view_budget_categories, create_budget_category,
+    edit_budget_category, deactivate_budget_category,
+)
 # Legacy ``finance_budgeting_collection`` was split across
 # ``reporting.budget_analysis`` and ``reporting.revenue_analytics``. GUI
 # compatibility imports are now provided by ``domain.finance.facade``; do not

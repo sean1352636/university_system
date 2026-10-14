@@ -34,17 +34,31 @@ def export_to_json(filename):
     except Exception as e:
         print(f"Export error: {e}")
 
-def export_to_excel(filename):
-    """Export results to Excel format (simulation)"""
-    print(f"📊 Excel export simulation - would export to {filename}")
-    print("Note: In production, would use libraries like openpyxl or xlswriter")
+EXPORT_HEADERS = [
+    'Student ID', 'Email', 'Title', 'First Name', 'Middle Name',
+    'Last Name', 'Gender', 'Date of Birth', 'Age', 'Course',
+    'Registration Datetime'
+]
 
-    # Simulate Excel export
+
+def export_to_excel(filename):
+    """Export results to a real .xlsx workbook via openpyxl"""
     try:
-        # Create CSV as Excel substitute
-        csv_filename = filename.replace('.xlsx', '.csv')
-        export_to_csv(csv_filename)
-        print(f"✅ Exported as CSV instead: {csv_filename}")
+        from openpyxl import Workbook
+
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.title = "Students"
+        sheet.append(EXPORT_HEADERS)
+        for student in _globals.last_search_results:
+            sheet.append([
+                value if isinstance(value, (int, float, str)) or value is None else str(value)
+                for value in student[:len(EXPORT_HEADERS)]
+            ])
+        workbook.save(filename)
+
+        print(f"✅ Data exported to {filename}")
+
     except Exception as e:
         print(f"Export error: {e}")
 
@@ -55,11 +69,7 @@ def export_to_csv(filename):
             writer = csv.writer(csvfile)
 
             # Write header
-            writer.writerow([
-                'Student ID', 'Email', 'Title', 'First Name', 'Middle Name',
-                'Last Name', 'Gender', 'Date of Birth', 'Age', 'Course',
-                'Registration Datetime'
-            ])
+            writer.writerow(EXPORT_HEADERS)
 
             # Write data
             for student in _globals.last_search_results:

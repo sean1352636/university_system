@@ -326,8 +326,10 @@ class SSOService:
             if IMMUTABLE_AUDIT_AVAILABLE:
                 safe_log_security_event(
                     AuditAction.CONFIG_CHANGE,
-                    f"SSO provider {action_detail}: {provider_id} ({provider_type})",
-                    username='system'
+                    user_id='system',
+                    resource_type='sso_provider',
+                    resource_id=provider_id,
+                    details={'message': f"SSO provider {action_detail}: {provider_id} ({provider_type})"},
                 )
 
             logger.info(f"SSO provider {action_detail}: {provider_id} ({provider_type})")
@@ -451,6 +453,68 @@ class SSOService:
             logger.error(f"Database error listing SSO providers: {e}")
             return []
 
+    def set_provider_enabled(self, provider_id, enabled):
+        """
+        Enable or disable a registered provider without touching its config.
+
+        Parameters
+        ----------
+        provider_id : str
+            Unique identifier of the provider.
+        enabled : bool
+            True to enable, False to disable.
+
+        Returns
+        -------
+        dict
+            ``{'success': bool, 'provider_id': str, 'message': str}``.
+
+        Raises
+        ------
+        ValidationError
+            If provider_id is empty or unknown.
+        DatabaseError
+            If a database operation fails.
+        """
+        if not provider_id or not isinstance(provider_id, str):
+            raise ValidationError("provider_id must be a non-empty string")
+        provider_id = provider_id.strip().lower()
+        flag = 1 if enabled else 0
+        now = datetime.now().isoformat()
+        try:
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "UPDATE sso_providers SET is_enabled = ?, updated_at = ? "
+                    "WHERE provider_id = ?",
+                    (flag, now, provider_id),
+                )
+                changed = cursor.rowcount
+                conn.commit()
+        except sqlite3.Error as e:
+            logger.error(f"Database error toggling SSO provider: {e}")
+            raise DatabaseError(f"Failed to update SSO provider: {e}")
+        if not changed:
+            raise ValidationError(f"SSO provider '{provider_id}' not found")
+
+        self._provider_cache.pop(provider_id, None)
+        state = "enabled" if enabled else "disabled"
+        self.activity_logger('system', f'SSO provider {state}: {provider_id}', '', None)
+        if IMMUTABLE_AUDIT_AVAILABLE:
+            safe_log_security_event(
+                AuditAction.CONFIG_CHANGE,
+                user_id='system',
+                resource_type='sso_provider',
+                resource_id=provider_id,
+                details={'message': f"SSO provider {state}: {provider_id}"},
+            )
+        logger.info(f"SSO provider {state}: {provider_id}")
+        return {
+            'success': True,
+            'provider_id': provider_id,
+            'message': f"Provider '{provider_id}' {state}",
+        }
+
     # ------------------------------------------------------------------
     # SSO login flow
     # ------------------------------------------------------------------
@@ -512,7 +576,8 @@ class SSOService:
         config = provider_data['config']
 
         try:
-            instance = provider_class(provider_id, config)
+            # Both provider classes take only the config dict.
+            instance = provider_class(config)
             self._provider_cache[provider_id] = instance
             return instance
         except Exception as e:
@@ -565,6 +630,14 @@ class SSOService:
 
         try:
             auth_url = provider_instance.get_authorization_url(state=state)
+            # OIDCProvider returns {'success', 'url', 'state', ...}; unwrap it
+            # so callers always receive a plain URL string.
+            if isinstance(auth_url, dict):
+                if not auth_url.get('success', True):
+                    raise ValueError(auth_url.get('error') or 'authorization URL not generated')
+                auth_url = auth_url.get('url') or auth_url.get('auth_url') or ''
+            if not auth_url:
+                raise ValueError('provider returned an empty authorization URL')
         except Exception as e:
             logger.error(
                 f"Failed to generate auth URL for provider '{provider_id}': {e}"
@@ -687,10 +760,12 @@ class SSOService:
 
         if IMMUTABLE_AUDIT_AVAILABLE:
             safe_log_security_event(
-                AuditAction.USER_LOGIN,
-                f"SSO callback success: provider={provider_id}, "
-                f"external_id={external_id[:50]}",
-                username='system'
+                AuditAction.LOGIN_SUCCESS,
+                user_id='system',
+                resource_type='sso_provider',
+                resource_id=provider_id,
+                details={'message': f"SSO callback success: provider={provider_id}, "
+                                    f"external_id={external_id[:50]}"},
             )
 
         logger.info(
@@ -927,8 +1002,10 @@ class SSOService:
                 if IMMUTABLE_AUDIT_AVAILABLE:
                     safe_log_security_event(
                         AuditAction.USER_CREATE,
-                        f"SSO user provisioned: {username} via {provider_id}",
-                        username='system'
+                        user_id='system',
+                        resource_type='sso_provider',
+                        resource_id=provider_id,
+                        details={'message': f"SSO user provisioned: {username} via {provider_id}"},
                     )
 
                 logger.info(
@@ -1130,8 +1207,10 @@ class SSOService:
             if IMMUTABLE_AUDIT_AVAILABLE:
                 safe_log_security_event(
                     AuditAction.CONFIG_CHANGE,
-                    f"SSO identity linked: user={username}, provider={provider_id}",
-                    username=username
+                    user_id=username,
+                    resource_type='sso_provider',
+                    resource_id=provider_id,
+                    details={'message': f"SSO identity linked: user={username}, provider={provider_id}"},
                 )
 
             logger.info(
@@ -1225,9 +1304,11 @@ class SSOService:
             if IMMUTABLE_AUDIT_AVAILABLE:
                 safe_log_security_event(
                     AuditAction.CONFIG_CHANGE,
-                    f"SSO identity unlinked: user={username}, "
-                    f"provider={provider_id}",
-                    username=username
+                    user_id=username,
+                    resource_type='sso_provider',
+                    resource_id=provider_id,
+                    details={'message': f"SSO identity unlinked: user={username}, "
+                                        f"provider={provider_id}"},
                 )
 
             logger.info(

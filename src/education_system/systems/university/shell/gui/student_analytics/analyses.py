@@ -327,7 +327,9 @@ class AnalysesMixin:
 
         # 4. GPA Distribution
         ax4 = fig.add_subplot(334)
-        ax4.hist(students_df['gpa'], bins=20, edgecolor='black', alpha=0.7)
+        gpa_values = students_df['gpa'].dropna()
+        if not gpa_values.empty:
+            ax4.hist(gpa_values, bins=20, edgecolor='black', alpha=0.7)
         ax4.axvline(students_df['gpa'].mean(), color='red', linestyle='--', label=f'Mean GPA: {students_df["gpa"].mean():.2f}')
         ax4.set_xlabel('GPA')
         ax4.set_ylabel('Number of Students')
@@ -360,7 +362,9 @@ class AnalysesMixin:
 
         # 8. Engagement Score Distribution
         ax8 = fig.add_subplot(338)
-        ax8.hist(students_df['engagement_score'], bins=20, edgecolor='black', alpha=0.7)
+        engagement_values = students_df['engagement_score'].dropna()
+        if not engagement_values.empty:
+            ax8.hist(engagement_values, bins=20, edgecolor='black', alpha=0.7)
         ax8.axvline(students_df['engagement_score'].mean(), color='red', linestyle='--',
                    label=f'Mean: {students_df["engagement_score"].mean():.1f}')
         ax8.set_xlabel('Engagement Score')

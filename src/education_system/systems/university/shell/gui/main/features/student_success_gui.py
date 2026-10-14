@@ -57,15 +57,15 @@ def show_ai_study_gui(self):
         messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="AI Study", error=str(e)))
 
 def show_budget_tracker_gui(self):
-    """Launch Budget Tracker GUI"""
+    """Open the budget tracker.
+
+    The standalone ``finance/interfaces/gui/budget/budget_gui`` module no
+    longer exists: budgeting moved into the Finance GUI as the
+    ``BudgetManager`` mixin (``budget_manager/manager.py``). Delegate there so
+    anything still calling this launcher lands on the real screen.
+    """
     try:
-        from education_system.systems.university.domains.finance.interfaces.gui.budget.budget_gui import BudgetTrackerGUI
-        from education_system.systems.university.infrastructure.shared_context import get_auth
-        auth = get_auth()
-        gui = BudgetTrackerGUI(parent=self.root, auth=auth)
-    except ImportError as e:
-        logger.error(f"Failed to import Budget Tracker GUI: {e}")
-        messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Budget Tracker", error=str(e)))
+        self.show_finance_management()
     except Exception as e:
         logger.error(f"Error launching Budget Tracker GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="Budget Tracker", error=str(e)))

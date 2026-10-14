@@ -464,7 +464,45 @@ def get_board(board_id: int) -> dict[str, Any]:
                 (board_id,),
             ).fetchall()
         ]
+        result["members"] = [
+            dict(r)
+            for r in conn.execute(
+                "SELECT * FROM assessment_board_members WHERE board_id = ? ORDER BY member_id",
+                (board_id,),
+            ).fetchall()
+        ]
+        result["rules"] = [
+            dict(r)
+            for r in conn.execute(
+                "SELECT * FROM assessment_board_rules WHERE board_id = ? ORDER BY rule_id",
+                (board_id,),
+            ).fetchall()
+        ]
+        minutes = conn.execute(
+            "SELECT * FROM assessment_board_minutes WHERE board_id = ?", (board_id,)
+        ).fetchone()
+        result["minutes"] = dict(minutes) if minutes else None
+        result["awards"] = [
+            dict(r)
+            for r in conn.execute(
+                "SELECT * FROM ratified_student_awards WHERE board_id = ? ORDER BY award_id",
+                (board_id,),
+            ).fetchall()
+        ]
         return result
+
+
+def list_boards(academic_year: str | None = None) -> list[dict[str, Any]]:
+    """Every assessment board, newest first, optionally for one academic year."""
+    ensure_schema()
+    with get_connection() as conn:
+        sql = "SELECT * FROM assessment_boards"
+        params: list[Any] = []
+        if academic_year:
+            sql += " WHERE academic_year = ?"
+            params.append(academic_year)
+        rows = conn.execute(sql + " ORDER BY board_id DESC", params).fetchall()
+        return [dict(r) for r in rows]
 
 
 __all__ = [
@@ -480,5 +518,6 @@ __all__ = [
     "reopen",
     "releasable_award",
     "get_board",
+    "list_boards",
     "ensure_schema",
 ]

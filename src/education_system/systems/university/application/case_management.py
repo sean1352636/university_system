@@ -91,4 +91,28 @@ def case_record(case_id: str) -> dict[str, Any]:
         return result
 
 
-__all__ = ["CASE_TYPES", "case_record", "open_case", "transition_case"]
+def list_cases(
+    *, case_type: str | None = None, status: str | None = None, limit: int = 200
+) -> list[dict[str, Any]]:
+    """Newest-first register view, optionally narrowed by type and status."""
+    clauses: list[str] = []
+    params: list[Any] = []
+    if case_type:
+        clauses.append("case_type=?")
+        params.append(case_type)
+    if status:
+        clauses.append("status=?")
+        params.append(status)
+    where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+    params.append(int(limit))
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT case_id, case_type, subject_id, status, summary, owner_id, "
+            "confidentiality, opened_by, opened_at, closed_at FROM institutional_cases "
+            f"{where} ORDER BY opened_at DESC LIMIT ?",  # noqa: S608 - fixed fragments
+            params,
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+__all__ = ["CASE_TYPES", "case_record", "list_cases", "open_case", "transition_case"]

@@ -158,7 +158,6 @@ class TestDataSimulation:
         assert 'gpa' in enriched_df.columns
         assert 'completion_status' in enriched_df.columns
         assert 'engagement_score' in enriched_df.columns
-        assert 'location' in enriched_df.columns
         assert 'previous_education' in enriched_df.columns
 
         assert len(enriched_df) == len(sample_students_df)

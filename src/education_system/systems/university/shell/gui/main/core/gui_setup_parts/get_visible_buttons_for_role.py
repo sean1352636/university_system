@@ -24,6 +24,8 @@ def get_visible_buttons_for_role(self, role=None):
 
     # Base buttons for all logged-in users
     visible = {
+            # Nav keys that existed in create_navigation_panel but were in no role set, so the buttons never rendered (2026-10-14).
+            'my_finance', 'ai_study', 'study_matching_gui', 'study_recommendations', 'new_feature_bursary',
         'change_password', 'mfa_setup', 'security_questions',
         # Student services available to all
         'assignments', 'academic_calendar', 'health_portal', 'student_union_portal',
@@ -100,6 +102,8 @@ def get_visible_buttons_for_role(self, role=None):
     # Instructor additions (includes students' features)
     if is_instructor:
         visible.update({
+            # Previously orphaned launchers, now on the sidebar (2026-10-14).
+            'absence_tracker', 'ai_detector',
             'student_records', 'course_management', 'module_management',
             'grade_tracking_gui', 'library', 'virtual_classroom',
             # 'timetable_manager' retired — the two timetable buttons merged
@@ -118,6 +122,8 @@ def get_visible_buttons_for_role(self, role=None):
     # Staff additions (includes instructors' features)
     if is_staff:
         visible.update({
+            # Nav keys that were in no role set, plus previously orphaned launchers (2026-10-14).
+            'prior_learning', 'mitigating_circumstances', 'apprenticeship_progression', 'club_payment', 'information_rights', 'mental_health',
             'create_student', 'search_students', 'advanced_search_gui',
             'batch_operations', 'housing_accommodations',
             'restaurant_management', 'cafe_system', 'takeaway_system', 'grocery_shop', 'parking_management', 'facilities_management',
@@ -149,11 +155,19 @@ def get_visible_buttons_for_role(self, role=None):
             # Outgoing/incoming exchange: coordinators are professional
             # services staff, not just admins.
             'student_mobility',
+            # Shared case register and institution-wide timetabling (staff)
+            'new_feature_case_management', 'new_feature_timetabling',
+            # Programme governance, PGR administration and assessment boards
+            # (staff-only service windows, 2026-10)
+            'new_feature_programme_governance', 'new_feature_pgr_admin',
+            'new_feature_assessment_boards',
         })
 
     # Admin-only additions (full access)
     if is_admin:
         visible.update({
+            # Nav keys that were in no role set (2026-10-14).
+            'university_progression', 'toggle_verification',
             'delete_student', 'finance_management', 'finance_reporting',
             'user_management', 'system_admin_gui', 'security_dashboard',
             'integration_marketplace', 'backup_gui',
@@ -169,6 +183,8 @@ def get_visible_buttons_for_role(self, role=None):
             # Partner agreements carry contractual and regulatory risk, so
             # the register is admin-only; mobility sits with staff above.
             'collaborative_provision',
+            # Dual-control identity changes and SSO provider config (admin)
+            'new_feature_identity_management', 'new_feature_sso_providers',
         })
 
     # Additional permission-based checks for edge cases

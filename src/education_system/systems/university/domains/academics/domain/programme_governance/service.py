@@ -605,6 +605,101 @@ def record_historical_degree_audit(
     return result
 
 
+def list_programmes() -> list[dict[str, Any]]:
+    """Every governed programme with its latest version number and status."""
+    ensure_schema()
+    with get_connection() as conn:
+        rows = conn.execute(
+            """SELECT p.*,
+                      (SELECT MAX(version_number) FROM programme_versions v
+                        WHERE v.programme_id = p.programme_id) AS latest_version
+                 FROM governed_programmes p
+                ORDER BY p.programme_code"""
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+
+def list_committees() -> list[dict[str, Any]]:
+    ensure_schema()
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT * FROM approval_committees ORDER BY name"
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+
+def programme_record(programme_id: int) -> dict[str, Any]:
+    """The programme plus every governance artefact attached to it."""
+    ensure_schema()
+    with get_connection() as conn:
+        result = dict(_programme(conn, programme_id))
+        result["proposals"] = [
+            dict(r)
+            for r in conn.execute(
+                "SELECT * FROM programme_proposals WHERE programme_id = ? ORDER BY proposal_id",
+                (programme_id,),
+            ).fetchall()
+        ]
+        result["business_cases"] = [
+            dict(r)
+            for r in conn.execute(
+                """SELECT bc.* FROM programme_business_cases bc
+                     JOIN programme_proposals pp ON pp.proposal_id = bc.proposal_id
+                    WHERE pp.programme_id = ? ORDER BY bc.business_case_id""",
+                (programme_id,),
+            ).fetchall()
+        ]
+        result["versions"] = [
+            dict(r)
+            for r in conn.execute(
+                "SELECT * FROM programme_versions WHERE programme_id = ? ORDER BY version_number",
+                (programme_id,),
+            ).fetchall()
+        ]
+        result["amendments"] = [
+            dict(r)
+            for r in conn.execute(
+                """SELECT a.* FROM programme_amendments a
+                     JOIN programme_versions v ON v.version_id = a.source_version_id
+                    WHERE v.programme_id = ? ORDER BY a.amendment_id""",
+                (programme_id,),
+            ).fetchall()
+        ]
+        result["validations"] = [
+            dict(r)
+            for r in conn.execute(
+                """SELECT pv.* FROM programme_validations pv
+                     JOIN programme_versions v ON v.version_id = pv.version_id
+                    WHERE v.programme_id = ? ORDER BY pv.validation_id""",
+                (programme_id,),
+            ).fetchall()
+        ]
+        result["accreditations"] = [
+            dict(r)
+            for r in conn.execute(
+                "SELECT * FROM programme_accreditations WHERE programme_id = ? "
+                "ORDER BY accreditation_id",
+                (programme_id,),
+            ).fetchall()
+        ]
+        result["teach_out_plans"] = [
+            dict(r)
+            for r in conn.execute(
+                "SELECT * FROM programme_teach_out_plans WHERE programme_id = ? ORDER BY plan_id",
+                (programme_id,),
+            ).fetchall()
+        ]
+        result["history"] = [
+            dict(r)
+            for r in conn.execute(
+                "SELECT * FROM programme_governance_history WHERE programme_id = ? "
+                "ORDER BY history_id",
+                (programme_id,),
+            ).fetchall()
+        ]
+        return result
+
+
 __all__ = [
     "create_proposal",
     "record_business_case",
@@ -623,5 +718,8 @@ __all__ = [
     "effective_version",
     "bind_registration",
     "record_historical_degree_audit",
+    "list_programmes",
+    "list_committees",
+    "programme_record",
     "ensure_schema",
 ]

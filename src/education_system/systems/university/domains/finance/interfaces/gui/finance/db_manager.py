@@ -161,7 +161,13 @@ try:
         view_collection_agencies, test_email_service, test_sms_service,
         generate_audit_report
     )
-except ImportError:
+except ImportError as _financial_core_err:
+    # Fall back to stubs so the GUI can still open, but say so loudly: a silent
+    # fallback here previously hid broken imports behind "not implemented" prints.
+    logging.getLogger(__name__).error(
+        "financial_core import failed; finance GUI actions are bound to stubs: %s",
+        _financial_core_err, exc_info=True,
+    )
     # Create stub functions for missing finance core features so the GUI can still load
     def _make_stub(name):
         def _stub(*args, **kwargs):

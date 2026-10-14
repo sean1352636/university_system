@@ -6,7 +6,7 @@ import json
 import uuid
 from typing import Any
 
-from education_system.systems.university.infrastructure.database.db import transaction
+from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 
 IDENTITY_FIELDS = frozenset({"first_name", "middle_name", "last_name", "dob", "gender", "email_address"})
 
@@ -98,4 +98,47 @@ def reverse_merge(merge_id: str, *, reversed_by: str, reason: str) -> None:
         )
 
 
-__all__ = ["correct_identity", "merge_students", "reverse_merge"]
+def student_identity(student_id: str) -> dict[str, Any]:
+    """The identity fields (plus status) held for one student."""
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT student_id, first_name, middle_name, last_name, dob, gender, "
+            "email_address, status FROM students WHERE student_id=?",
+            (student_id,),
+        ).fetchone()
+    if row is None:
+        raise ValueError(f"Student {student_id} does not exist")
+    return dict(row)
+
+
+def list_merges(limit: int = 100) -> list[dict[str, Any]]:
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT * FROM student_identity_merges ORDER BY created_at DESC LIMIT ?",
+            (int(limit),),
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def list_identity_changes(
+    student_id: str | None = None, limit: int = 100
+) -> list[dict[str, Any]]:
+    with get_connection() as conn:
+        if student_id:
+            rows = conn.execute(
+                "SELECT * FROM student_identity_changes WHERE student_id=? "
+                "ORDER BY created_at DESC LIMIT ?",
+                (student_id, int(limit)),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT * FROM student_identity_changes ORDER BY created_at DESC LIMIT ?",
+                (int(limit),),
+            ).fetchall()
+    return [dict(row) for row in rows]
+
+
+__all__ = [
+    "IDENTITY_FIELDS", "correct_identity", "list_identity_changes", "list_merges",
+    "merge_students", "reverse_merge", "student_identity",
+]

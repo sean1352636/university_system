@@ -173,7 +173,7 @@ class InstructorPortalGUI:
         # Analytics
         self._add_heading("Analytics")
         self._add_button("Analytics", self._launch('show_analytics_dashboard_gui'))
-        self._add_button("Export Data", self._launch('show_export_gui'))
+        self._add_button("Export Data", self._launch('export_data_dialog'))
 
         # Student Life
         self._add_heading("Student Life")

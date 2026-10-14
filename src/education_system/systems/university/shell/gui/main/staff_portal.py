@@ -166,8 +166,8 @@ class StaffPortalGUI(SidebarNavMixin):
         # HR & Staff
         self._add_heading("HR & Staff")
         self._add_button("Staff HR", self._launch('show_staff_hr_gui'))
-        self._add_button("View Staff", self._launch('show_view_staff'))
-        self._add_button("Create Staff", self._launch('show_create_staff'))
+        self._add_button("View Staff", self._launch('view_staff'))
+        self._add_button("Create Staff", self._launch('create_staff_dialog'))
         self._add_button("Office Hours", self._launch('show_office_hours_gui'))
 
 
@@ -193,7 +193,7 @@ class StaffPortalGUI(SidebarNavMixin):
         self._add_heading("Analytics & Reports")
         self._add_button("Analytics Dashboard", self._launch('show_analytics_dashboard_gui'))
         self._add_button("Early Warning System", self._launch('show_early_warning_gui'))
-        self._add_button("Export Data", self._launch('show_export_gui'))
+        self._add_button("Export Data", self._launch('export_data_dialog'))
 
         # Institutional
         self._add_heading("Institutional")

@@ -3,12 +3,6 @@ from __future__ import annotations
 
 _CROSS_SYSTEM_MODULES = {
     "cross_analytics": ("education_system.platform.features.analytics.analytics_cli", "Analytics Dashboard"),
-    "cross_outcomes": ("education_system.platform.outcomes.outcomes_cli", "Outcome Tracking"),
-    "cross_predictive": ("education_system.platform.predictive.predictive_cli", "Predictive Alerts"),
-    "cross_bulk_transfer": ("education_system.platform.bulk_transfer.bulk_transfer_cli", "Bulk Transfer"),
-    "cross_transfer_docs": ("education_system.platform.transfer_docs.transfer_docs_cli", "Transfer Documents"),
-    "cross_reverse_lookup": ("education_system.platform.reverse_lookup.reverse_lookup_cli", "Reverse Lookup"),
-    "cross_parent_continuity": ("education_system.platform.parent_continuity.parent_cli", "Parent Continuity"),
     "cross_calendar": ("education_system.platform.features.calendar.calendar_cli", "Cross-System Calendar"),
     "cross_messaging": ("education_system.platform.features.messaging.cross_system_cli", "Inter-System Messaging"),
     "cross_admin_portal": ("education_system.platform.delivery.portals.admin.admin_cli", "Central Admin Portal"),

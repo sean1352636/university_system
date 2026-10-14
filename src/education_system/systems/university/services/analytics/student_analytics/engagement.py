@@ -37,7 +37,9 @@ class EngagementMixin:
 
         # 1. Engagement Score Distribution
         ax1 = fig.add_subplot(331)
-        ax1.hist(students_df['engagement_score'], bins=20, edgecolor='black', alpha=0.7, color=CONFIG['colors'][0])
+        engagement_scores = students_df['engagement_score'].dropna()
+        if not engagement_scores.empty:
+            ax1.hist(engagement_scores, bins=20, edgecolor='black', alpha=0.7, color=CONFIG['colors'][0])
         ax1.axvline(students_df['engagement_score'].mean(), color='red', linestyle='--',
                    label=f'Mean: {students_df["engagement_score"].mean():.1f}')
         ax1.axvline(students_df['engagement_score'].median(), color='green', linestyle='--',
