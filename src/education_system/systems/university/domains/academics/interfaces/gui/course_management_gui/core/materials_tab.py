@@ -26,6 +26,36 @@ MATERIAL_TYPES = [
     "Equipment", "Website", "Other",
 ]
 
+#: Types that belong in the Library catalogue and on a course reading list.
+LIBRARY_TYPES = ("Textbook", "Reading", "Article")
+
+#: Which fields each material type actually needs, and what to call them.
+#:
+#: The form used to show the same nine boxes whatever you were adding, so a
+#: website asked for an ISBN and an edition, and a piece of software asked for
+#: an author. The database columns are unchanged — this only decides which are
+#: shown and how they are labelled, so existing rows keep their meaning.
+#:
+#: ``(column, label)`` per type; ``title`` and ``material_type`` are always
+#: present and are not repeated here.
+TYPE_FIELDS = {
+    "Syllabus":  [("url", "URL / File path:"), ("notes", "Notes:")],
+    "Textbook":  [("author", "Author:"), ("isbn", "ISBN:"), ("edition", "Edition:"),
+                  ("cost", "Cost:"), ("url", "URL / File path:"), ("notes", "Notes:")],
+    "Reading":   [("author", "Author:"), ("isbn", "ISBN (optional):"),
+                  ("url", "URL / File path:"), ("notes", "Notes:")],
+    "Article":   [("author", "Author:"), ("isbn", "DOI / ISBN:"),
+                  ("url", "URL:"), ("notes", "Notes:")],
+    "Software":  [("author", "Vendor:"), ("edition", "Version:"),
+                  ("url", "Download / licence URL:"), ("cost", "Licence cost:"),
+                  ("notes", "Notes:")],
+    "Equipment": [("author", "Supplier:"), ("edition", "Model:"),
+                  ("cost", "Cost:"), ("notes", "Notes:")],
+    "Website":   [("url", "URL:"), ("notes", "Notes:")],
+    "Other":     [("author", "Author / Supplier:"), ("url", "URL / File path:"),
+                  ("cost", "Cost:"), ("notes", "Notes:")],
+}
+
 
 class MaterialsTabMixin:
     """Syllabus & course-materials tab."""
@@ -67,12 +97,10 @@ class MaterialsTabMixin:
             ttk.Button(bar, text=_("course_management.buttons.open_library",
                                    default="Open Library →"),
                        command=self._open_library).pack(side=tk.RIGHT, padx=5)
-            if self._ext_can_edit():
-                # Tie-in: push a textbook/reading material into the Library
-                # catalogue and onto this course's reading list.
-                ttk.Button(bar, text=_("course_management.buttons.add_to_library",
-                                       default="Add selected to Library"),
-                           command=self._add_material_to_library).pack(side=tk.LEFT, padx=15)
+            # No "Add to Library" button: a Textbook / Reading / Article is
+            # pushed to the catalogue and this course's reading list as part
+            # of saving it (see _sync_material_to_library), so there is no
+            # second step to remember.
 
             # Live Library availability for the selected material (matched by ISBN/title).
             self._mat_lib_var = tk.StringVar(value="")
@@ -176,25 +204,23 @@ class MaterialsTabMixin:
         except Exception:
             self._mat_lib_var.set("")
 
-    def _add_material_to_library(self):
-        """Add the selected textbook/reading material to the Library catalogue
-        and onto this course's reading list."""
-        if not self._ext_can_edit():
-            return
-        mat = self._mat_selected_row()
-        if not mat:
-            messagebox.showwarning(_("common.warning", default="Warning"),
-                                   _t('gui.academics.course_management_gui.core.materials_tab.dialogs.select_a_material_first', default="Select a material first."))
-            return
-        if str(mat.get("type")) not in ("Textbook", "Reading", "Article"):
-            messagebox.showinfo(_("common.info", default="Info"),
-                                _t('gui.academics.course_management_gui.core.materials_tab.dialogs.only_textbook_reading_article_materials_can_be_added_to_the_libr', default="Only Textbook / Reading / Article materials can be "
-                                "added to the Library."))
-            return
-        course = self._current_mat_course()
+    def _sync_material_to_library(self, conn, mat, course):
+        """Mirror a Textbook / Reading / Article into the Library.
+
+        Called as part of saving the material, so the catalogue and the
+        course reading list keep up on their own — this used to be a separate
+        "Add selected to Library" button that had to be remembered, and a
+        textbook nobody pressed it for simply never reached the Library.
+
+        Takes the caller's open connection so the material and its catalogue
+        entry are written in one transaction. Returns a short status list, or
+        ``[]`` when the type does not belong in the Library.
+        """
+        if str(mat.get("type")) not in LIBRARY_TYPES:
+            return []
         try:
             import uuid
-            with self._ext_db(write=True) as conn:
+            if True:
                 cur = conn.cursor()
                 book = self._library_book_for(conn, mat.get("isbn"), mat.get("title"))
                 if book:
@@ -243,15 +269,16 @@ class MaterialsTabMixin:
                             (list_id, book_id, self._ext_now(), self._ext_username()))
                         added_to_list = True
         except Exception as exc:
-            self._ext_report_error("add material to Library", exc)
-            return
+            # A material is still a valid material even if the Library push
+            # fails, so this reports rather than aborting the save.
+            logger.warning("Library sync failed for %r: %s", mat.get("title"), exc)
+            return [f"Library: not updated ({exc})"]
         self._ext_audit("add_to_library", "material", course_code=course,
                         title=mat.get("title"))
-        parts = ["Catalogue: " + ("book added" if created_book else "already present")]
+        parts = ["Library catalogue: " + ("added" if created_book else "already present")]
         if course:
             parts.append("Reading list: " + ("linked" if added_to_list else "already linked"))
-        messagebox.showinfo(_("common.success", default="Done"), "\n".join(parts))
-        self._mat_check_library()
+        return parts
 
     def _reload_mat_courses(self):
         try:
@@ -299,22 +326,61 @@ class MaterialsTabMixin:
 
     # -- CRUD -----------------------------------------------------------
 
-    def _material_fields(self, data=None):
+    def _material_fields(self, data=None, material_type=None):
+        """Form fields for *material_type*, defaulting to the row's own type.
+
+        Only the fields that type actually uses are shown, with labels that
+        suit it — "Vendor" and "Version" for software rather than "Author"
+        and "Edition". Every type still writes the same columns, so nothing
+        about existing rows changes.
+        """
         data = data or {}
-        return [
+        mtype = material_type or data.get("material_type") or "Textbook"
+        fields = [
             ("material_type", "Type:", {"type": "combo", "values": MATERIAL_TYPES,
-                                        "default": data.get("material_type", "Textbook")}),
+                                        "default": mtype}),
             ("title", "Title:", {"default": data.get("title", "")}),
-            ("author", "Author:", {"default": data.get("author", "")}),
-            ("isbn", "ISBN:", {"default": data.get("isbn", "")}),
-            ("edition", "Edition:", {"default": data.get("edition", ""), "width": 20}),
-            ("url", "URL / File path:", {"default": data.get("url", "")}),
-            ("cost", "Cost:", {"default": data.get("cost", "0.0"), "width": 12}),
-            ("required", "Required", {"type": "check",
-                                      "default": data.get("required", True)}),
-            ("notes", "Notes:", {"type": "text", "default": data.get("notes", ""),
-                                 "height": 3}),
         ]
+        widths = {"edition": 20, "cost": 12, "isbn": 28}
+        for column, label in TYPE_FIELDS.get(mtype, TYPE_FIELDS["Other"]):
+            spec = {"default": data.get(column, "0.0" if column == "cost" else "")}
+            if column in widths:
+                spec["width"] = widths[column]
+            if column == "notes":
+                spec = {"type": "text", "default": data.get("notes", ""), "height": 3}
+            fields.append((column, label, spec))
+        fields.append(("required", "Required", {"type": "check",
+                                                "default": data.get("required", True)}))
+        return fields
+
+    def _material_dialog(self, title, data, submit, submit_label):
+        """Material form that rebuilds itself when the Type changes.
+
+        ExtFormDialog builds a fixed field list, so switching type has to
+        reopen the form. Values already typed are carried across, so changing
+        your mind about the type does not lose the title you just entered.
+        """
+        state = dict(data or {})
+
+        def _open(mtype):
+            fields = self._material_fields(state, material_type=mtype)
+
+            def _submit(values):
+                # Type changed in the combo: carry the entries over and
+                # reopen with the right fields rather than saving a form
+                # whose boxes no longer match the type.
+                if values.get("material_type") != mtype:
+                    state.update({k: v for k, v in values.items()
+                                  if k != "material_type"})
+                    state["material_type"] = values["material_type"]
+                    self.root.after(0, lambda t=values["material_type"]: _open(t))
+                    return True
+                return submit(values)
+
+            ExtFormDialog(self.root, self, title, fields, _submit,
+                          submit_label=submit_label, geometry="560x520")
+
+        _open(state.get("material_type") or "Textbook")
 
     def _parse_cost(self, values):
         try:
@@ -354,20 +420,32 @@ class MaterialsTabMixin:
                         "(course_code, material_type, title, author, isbn, edition, "
                         " url, cost, required, notes, created_at, updated_at) "
                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                        (code, values["material_type"], title, values["author"],
-                         values["isbn"], values["edition"], values["url"], cost,
-                         1 if values.get("required") else 0, values["notes"],
+                        (code, values["material_type"], title,
+                         values.get("author", ""), values.get("isbn", ""),
+                         values.get("edition", ""), values.get("url", ""), cost,
+                         1 if values.get("required") else 0,
+                         values.get("notes", ""),
                          self._ext_now(), self._ext_now()))
+                    # Textbooks and reading go to the Library as part of the
+                    # same save, in the same transaction.
+                    library = self._sync_material_to_library(
+                        conn,
+                        {"type": values["material_type"], "title": title,
+                         "author": values.get("author", ""),
+                         "isbn": values.get("isbn", ""),
+                         "edition": values.get("edition", ""), "cost": cost},
+                        code)
             except Exception as exc:
                 self._ext_report_error("add material", exc)
                 return False
             self._ext_audit("create", "course_material", course_code=code, title=title)
             self._reload_materials()
+            if library:
+                messagebox.showinfo(_("common.success", default="Done"),
+                                    "Material added.\n\n" + "\n".join(library))
             return True
 
-        ExtFormDialog(self.root, self, f"Add Material for {code}",
-                      self._material_fields(), submit,
-                      submit_label="Add", geometry="560x500")
+        self._material_dialog(f"Add Material for {code}", None, submit, "Add")
 
     def _selected_material(self):
         vals = self._ext_selected_values(self._materials_tree)
@@ -417,20 +495,29 @@ class MaterialsTabMixin:
                         "UPDATE course_materials SET material_type=?, title=?, "
                         "author=?, isbn=?, edition=?, url=?, cost=?, required=?, "
                         "notes=?, updated_at=? WHERE id=?",
-                        (values["material_type"], title, values["author"],
-                         values["isbn"], values["edition"], values["url"], cost,
-                         1 if values.get("required") else 0, values["notes"],
-                         self._ext_now(), mat_id))
+                        (values["material_type"], title, values.get("author", ""),
+                         values.get("isbn", ""), values.get("edition", ""),
+                         values.get("url", ""), cost,
+                         1 if values.get("required") else 0,
+                         values.get("notes", ""), self._ext_now(), mat_id))
+                    library = self._sync_material_to_library(
+                        conn,
+                        {"type": values["material_type"], "title": title,
+                         "author": values.get("author", ""),
+                         "isbn": values.get("isbn", ""),
+                         "edition": values.get("edition", ""), "cost": cost},
+                        self._current_mat_course())
             except Exception as exc:
                 self._ext_report_error("update material", exc)
                 return False
             self._ext_audit("update", "course_material", material_id=mat_id)
             self._reload_materials()
+            if library:
+                messagebox.showinfo(_("common.success", default="Done"),
+                                    "Material updated.\n\n" + "\n".join(library))
             return True
 
-        ExtFormDialog(self.root, self, "Edit Material",
-                      self._material_fields(data), submit,
-                      submit_label="Save", geometry="560x500")
+        self._material_dialog("Edit Material", data, submit, "Save")
 
     def _delete_material(self):
         if not self._ext_can_edit():

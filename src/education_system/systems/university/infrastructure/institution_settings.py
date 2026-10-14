@@ -54,6 +54,12 @@ DEFAULT_INSTITUTION_SETTINGS: Dict[str, Any] = {
 _settings: Dict[str, Any] = {}
 _settings_loaded: bool = False
 
+# Cache for the branding-table lookup in get_institution_name(). Opening a
+# fresh connection to student_records.db costs ~100 ms, and bulk email renders
+# the institution name once per recipient.
+_branding_name: str | None = None
+_branding_name_loaded: bool = False
+
 
 def _get_config_path() -> Path:
     """Get the path to the institution settings configuration file."""
@@ -160,12 +166,58 @@ def save_settings(settings: Dict[str, Any]) -> bool:
 
 def reset_settings() -> None:
     """Reset settings cache to force reload on next access."""
-    global _settings, _settings_loaded
+    global _settings, _settings_loaded, _branding_name, _branding_name_loaded
     _settings = {}
     _settings_loaded = False
+    _branding_name = None
+    _branding_name_loaded = False
 
 
 # Convenience functions for common settings
+def get_institution_name() -> str:
+    """Return the institution's display name for user-facing text.
+
+    Resolution order, first hit wins:
+
+    1. ``UNIVERSITY_INSTITUTION_NAME`` in the environment — a deployment-level
+       override, so it beats anything stored in the instance.
+    2. ``branding_institution_name`` in the ``security_settings`` table, which
+       is what the admin Branding & Customization GUI writes.
+    3. ``institution_settings.json``, then the built-in default.
+
+    The database is consulted lazily and failures are non-fatal: a missing
+    table or an unreachable database just falls through to the file/default.
+    """
+    global _branding_name, _branding_name_loaded
+
+    env_value = os.environ.get("UNIVERSITY_INSTITUTION_NAME")
+    if env_value:
+        return env_value
+
+    if not _branding_name_loaded:
+        _branding_name_loaded = True
+        try:
+            from education_system.systems.university.infrastructure.database.db import get_connection
+
+            with get_connection() as conn:
+                row = conn.execute(
+                    "SELECT setting_value FROM security_settings WHERE setting_name = ?",
+                    ("branding_institution_name",),
+                ).fetchone()
+            if row and row[0]:
+                _branding_name = row[0]
+        except Exception as e:  # missing table, locked db, no db yet — all fine
+            import logging
+            logging.getLogger(__name__).debug(
+                f"Could not read branding institution name: {e}"
+            )
+
+    if _branding_name:
+        return _branding_name
+
+    return get_setting("institution_name", DEFAULT_INSTITUTION_SETTINGS["institution_name"])
+
+
 def get_elections_phone() -> str:
     """Get the elections office phone number."""
     return get_setting("elections_phone", DEFAULT_INSTITUTION_SETTINGS["elections_phone"])
@@ -187,6 +239,7 @@ __all__ = [
     "get_setting",
     "save_settings",
     "reset_settings",
+    "get_institution_name",
     "get_elections_phone",
     "get_events_support_phone",
     "get_mfa_recovery_format_hint",

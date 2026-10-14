@@ -30,6 +30,7 @@ from education_system.systems.university.domains.admissions.domain.ucas.ucas imp
     Applicant,
     DECIDABLE,
     DECISION_STATUSES,
+    FINAL_DECISIONS,
     UcasError,
 )
 
@@ -107,19 +108,21 @@ class ApplicantsTab:
         table_frame = ttk.Frame(self.frame)
         table_frame.pack(fill="both", expand=True, padx=8, pady=4)
         cols = ("student", "name", "cycle", "course",
-                "app_status", "decision", "terms", "submitted")
+                "app_status", "decision", "final", "terms", "submitted")
         self.tree = ttk.Treeview(table_frame, columns=cols,
                                    show="headings",
                                    selectmode="browse")
         widths = {"student": 90, "name": 180, "cycle": 60,
                    "course": 240, "app_status": 100,
-                   "decision": 160, "terms": 220, "submitted": 110}
+                   "decision": 160, "final": 90, "terms": 200,
+                   "submitted": 110}
         for c in cols:
             self.tree.heading(c, text=c.replace("_", " ").title())
             self.tree.column(c, width=widths[c],
                               anchor=("center"
                                        if c in ("cycle",
-                                                  "app_status")
+                                                  "app_status",
+                                                  "final")
                                        else "w"))
         vsb = ttk.Scrollbar(table_frame, orient="vertical",
                               command=self.tree.yview)
@@ -190,6 +193,7 @@ class ApplicantsTab:
                 values=(a.student_id, a.student_name,
                           a.cycle_year, a.course_name,
                           a.app_status, a.decision_status,
+                          a.final_decision or "—",
                           a.offer_terms or "—",
                           a.submitted_at or "—"),
                 tags=(a.decision_status,),
@@ -402,11 +406,43 @@ class ApplicantDetailDialog(tk.Toplevel):
         self.terms_hint.grid(row=1, column=0, columnspan=4,
                                 sticky="w", pady=(2, 4))
 
+        # The rest of what the offer says. These are ours to issue — the
+        # sixth form used to type its own copy of them from a letter and
+        # now reads these instead — so this is the only screen where they
+        # get filled in.
+        issued = self._existing_terms()
+        self.term_entries: dict[str, ttk.Entry] = {}
+        term_fields = (
+            ("grade_requirement", "Grade requirement:", 30),
+            ("grade_alternative", "Alternative pathway:", 30),
+            ("reply_deadline", "Reply by (YYYY-MM-DD):", 14),
+            ("expiry_date", "Expires (YYYY-MM-DD):", 14),
+            ("scholarship", "Scholarship:", 30),
+        )
+        for offset, (key, label, width) in enumerate(term_fields):
+            grid_row = 2 + offset // 2
+            col = (offset % 2) * 2
+            ttk.Label(dec_frame, text=label).grid(
+                row=grid_row, column=col, sticky="w", pady=4)
+            entry = ttk.Entry(dec_frame, width=width)
+            entry.grid(row=grid_row, column=col + 1, sticky="ew",
+                       pady=4, padx=(8, 16 if col == 0 else 0))
+            current = getattr(issued, key, None) if issued else None
+            if current:
+                entry.insert(0, current)
+            self.term_entries[key] = entry
+
+        self.accom_var = tk.BooleanVar(
+            value=bool(issued.accommodation_guaranteed) if issued else False)
+        ttk.Checkbutton(dec_frame, text="Accommodation guaranteed",
+                        variable=self.accom_var).grid(
+            row=5, column=1, columnspan=3, sticky="w", pady=4, padx=(8, 0))
+
         ttk.Label(dec_frame, text="Notes:").grid(
-            row=2, column=0, sticky="nw", pady=4)
+            row=6, column=0, sticky="nw", pady=4)
         self.t_notes = tk.Text(dec_frame, wrap="word", height=4,
                                   width=60)
-        self.t_notes.grid(row=2, column=1, columnspan=3,
+        self.t_notes.grid(row=6, column=1, columnspan=3,
                             sticky="ew", pady=4, padx=(8, 0))
         if self.applicant.choice_notes:
             self.t_notes.insert("1.0", self.applicant.choice_notes)
@@ -414,11 +450,228 @@ class ApplicantDetailDialog(tk.Toplevel):
         dec_frame.columnconfigure(3, weight=1)
         self._update_terms_hint()
 
+        # The applicant's reply to that offer, which used to be typed into
+        # the sixth form's own choice screen. It is an answer to an offer
+        # we made and it decides whether a place in our intake is taken,
+        # so it is recorded here — and saved on its own button, because
+        # "the student rang and accepted" is a different event from "we
+        # have decided to make an offer" and must not require re-issuing
+        # one to record the other.
+        self._build_reply_panel(frm)
+
+        # How the cycle ends. Moved here from the sixth form for the same
+        # reason as the reply above it: confirming a place is this
+        # university saying its own offer's conditions were met, and a
+        # college marking that on its own copy could confirm a place we
+        # had not given.
+        self._build_outcome_panel(frm)
+
         # Internal admissions notes — uni-only, not visible to the
         # sixth form. Wrapped in its own LabelFrame to make it
         # obvious from the public Notes field on the decision panel
         # above.
         self._build_internal_notes_panel(frm)
+
+    def _build_reply_panel(self, parent) -> None:
+        """Firm / Insurance / Declined, plus what saving it will send."""
+        frame = ttk.LabelFrame(
+            parent,
+            text="Applicant's reply to this offer  ·  Firm / Insurance / "
+                 "Declined",
+            padding=10)
+        frame.pack(fill="x", pady=(8, 4))
+        frame.columnconfigure(3, weight=1)
+
+        ttk.Label(frame, text="Final decision:").grid(
+            row=0, column=0, sticky="w", pady=4)
+        self.cb_final = ttk.Combobox(
+            frame, values=("",) + FINAL_DECISIONS,
+            state="readonly", width=16)
+        self.cb_final.set(self.applicant.final_decision or "")
+        self.cb_final.grid(row=0, column=1, sticky="w", pady=4,
+                            padx=(8, 16))
+        self.cb_final.bind("<<ComboboxSelected>>",
+                            lambda _e: self._update_reply_hint())
+
+        ttk.Button(frame, text="Save reply",
+                    command=self._save_final_decision).grid(
+            row=0, column=2, sticky="w", pady=4)
+
+        self.reply_hint = ttk.Label(frame, text="", foreground="#666",
+                                      wraplength=760, justify="left")
+        self.reply_hint.grid(row=1, column=0, columnspan=4, sticky="w",
+                                pady=(2, 0))
+        self._update_reply_hint()
+
+    def _update_reply_hint(self) -> None:
+        chosen = self.cb_final.get()
+        current = self.applicant.final_decision or ""
+        if not chosen:
+            self.reply_hint.configure(
+                text=("No reply recorded. Saving a blank reply clears any "
+                       "reply already on the choice and emails nobody."))
+        elif chosen == current:
+            self.reply_hint.configure(
+                text=(f"Already recorded as {chosen}. Saving again changes "
+                       "nothing and does not re-email the student."))
+        else:
+            self.reply_hint.configure(
+                text=(f"Saving records {chosen} and emails the student a "
+                       "written confirmation of what it means. Only one "
+                       "Firm and one Insurance are allowed across the "
+                       "whole application."))
+
+    def _save_final_decision(self) -> None:
+        chosen = self.cb_final.get().strip()
+        current = self.applicant.final_decision or ""
+        if chosen == current:
+            messagebox.showinfo(
+                "UCAS", f"The reply is already {chosen or '(none)'}.",
+                parent=self)
+            return
+        if not chosen and not messagebox.askyesno(
+                "UCAS",
+                f"Clear the {current} reply on this choice?\n\n"
+                "The student is not emailed about a cleared reply.",
+                parent=self):
+            return
+        try:
+            data.record_final_decision(
+                self.applicant.choice_id,
+                chosen or None,
+                issued_by=self._issuing_officer(),
+            )
+        except UcasError as e:
+            messagebox.showwarning("UCAS", str(e), parent=self)
+            return
+        except Exception as e:
+            logger.exception("record_final_decision failed")
+            messagebox.showerror(
+                "UCAS", f"Could not record the reply: {e}", parent=self)
+            return
+        # Keep the dialog's own copy in step so the hint, and a second
+        # save, both read the value that is now stored.
+        self.applicant.final_decision = chosen or None
+        self._update_reply_hint()
+        self.on_change()
+        messagebox.showinfo(
+            "UCAS",
+            (f"Reply recorded: {chosen}. The student has been emailed."
+             if chosen else "Reply cleared."),
+            parent=self)
+
+    def _build_outcome_panel(self, parent) -> None:
+        """Confirm place / Enter clearing — how the cycle closes."""
+        frame = ttk.LabelFrame(
+            parent,
+            text="Cycle outcome  ·  application status",
+            padding=10)
+        frame.pack(fill="x", pady=(8, 4))
+
+        status = self.applicant.app_status
+        ttk.Label(frame,
+                  text=f"UCAS application #{self.applicant.application_id} "
+                       f"(cycle {self.applicant.cycle_year}) is currently "
+                       f"{status}.",
+                  foreground="#444").pack(anchor="w")
+
+        bar = ttk.Frame(frame)
+        bar.pack(anchor="w", pady=(6, 0))
+        settled = status in data.SETTLED_STATUSES
+        confirm = ttk.Button(bar, text="Confirm place",
+                              command=self._confirm_place)
+        confirm.pack(side="left", padx=(0, 6))
+        clearing = ttk.Button(bar, text="Enter clearing",
+                               command=self._enter_clearing)
+        clearing.pack(side="left", padx=(0, 6))
+        # Disabled rather than hidden: a settled application is the
+        # normal end state, and a panel whose buttons vanish reads as a
+        # screen that has lost them.
+        if settled or status == "Draft":
+            confirm.state(["disabled"])
+        if settled or status == "Draft":
+            clearing.state(["disabled"])
+
+        self.outcome_hint = ttk.Label(frame, text="", foreground="#666",
+                                        wraplength=760, justify="left")
+        self.outcome_hint.pack(anchor="w", pady=(4, 0))
+        self._update_outcome_hint()
+
+    def _update_outcome_hint(self) -> None:
+        status = self.applicant.app_status
+        if status == "Draft":
+            text = ("The sixth form has not submitted this application "
+                    "yet, so there is no cycle to close.")
+        elif status in data.SETTLED_STATUSES:
+            text = (f"This cycle is closed as {status}. The sixth form's "
+                    "handover reads this status as the offer's conditions "
+                    "having been settled.")
+        elif self.applicant.final_decision != "Firm":
+            text = ("Confirming needs this choice to be the applicant's "
+                    "Firm reply — record that above first. Clearing does "
+                    "not.")
+        else:
+            text = ("Confirm place records that this offer's conditions "
+                    "were met, which is what releases the sixth form's "
+                    "handover. Enter clearing records that the applicant "
+                    "ended the cycle without a place.")
+        self.outcome_hint.configure(text=text)
+
+    def _confirm_place(self) -> None:
+        applicant = self.applicant
+        if not messagebox.askyesno(
+            "Confirm place",
+            f"Confirm {applicant.student_name}'s place?\n\n"
+            f"  {applicant.course_name}\n"
+            f"  {applicant.decision_status}"
+            + (f" — {applicant.offer_terms}" if applicant.offer_terms
+               else "")
+            + f"\n\nApplication #{applicant.application_id} moves to "
+              "Confirmed. The sixth form treats that as this offer's "
+              "conditions having been met, which makes the learner "
+              "transferable.",
+            parent=self,
+        ):
+            return
+        self._settle(data.confirm_place, "Confirmed")
+
+    def _enter_clearing(self) -> None:
+        applicant = self.applicant
+        if not messagebox.askyesno(
+            "Enter clearing",
+            f"Move {applicant.student_name} into clearing?\n\n"
+            f"Application #{applicant.application_id} moves to Clearing. "
+            "No referral is made and no place is offered — use the "
+            "Pipeline and the clearing match for that.\n\nAny replies on "
+            "the application stay as they are: they are the record of "
+            "the offers that did not come off.",
+            parent=self,
+        ):
+            return
+        self._settle(data.enter_clearing, "Clearing")
+
+    def _settle(self, call, status: str) -> None:
+        """Shared tail for the two outcome actions."""
+        try:
+            call(self.applicant.choice_id,
+                 issued_by=self._issuing_officer())
+        except UcasError as e:
+            messagebox.showwarning("UCAS", str(e), parent=self)
+            return
+        except Exception as e:
+            logger.exception("Settling the UCAS cycle failed")
+            messagebox.showerror(
+                "UCAS", f"Could not update the application: {e}",
+                parent=self)
+            return
+        # Keep this dialog's copy in step so the hint and the buttons
+        # describe what is now stored rather than what was.
+        self.applicant.app_status = status
+        self._update_outcome_hint()
+        self.on_change()
+        messagebox.showinfo(
+            "UCAS", f"Application marked {status}.", parent=self)
+        self.destroy()
 
     def _build_internal_notes_panel(self, parent) -> None:
         """Build the internal-notes panel. Loads the existing link
@@ -742,7 +995,7 @@ class ApplicantDetailDialog(tk.Toplevel):
             if isinstance(cu, dict):
                 author = cu.get("username")
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         try:
             self._links_module.add_note(
                 link_id, body, author=author)
@@ -791,16 +1044,45 @@ class ApplicantDetailDialog(tk.Toplevel):
             self.terms_hint.configure(
                 text="Offer terms are optional; leave blank to clear.")
 
+    def _existing_terms(self):
+        """Terms already issued for this choice, so reopening the dialog
+        shows what was published rather than an empty form."""
+        try:
+            from education_system.systems.university.domains.admissions.domain.ucas import (
+                offer_terms as _terms,
+            )
+            return _terms.get_terms(self.applicant.choice_id)
+        except Exception:
+            logger.debug("Could not read existing offer terms", exc_info=True)
+            return None
+
+    def _issuing_officer(self) -> str | None:
+        """Who is making this decision, if the session can say."""
+        try:
+            cu = getattr(getattr(self.master, "auth", None),
+                         "current_user", None)
+            if isinstance(cu, dict):
+                return cu.get("username")
+        except Exception:
+            logger.debug("Could not resolve the current user", exc_info=True)
+        return None
+
     def _save(self) -> None:
         decision = self.cb_decision.get()
         terms = self.e_terms.get().strip()
         notes = self.t_notes.get("1.0", "end").strip()
+        issued_terms = {key: entry.get().strip()
+                        for key, entry in self.term_entries.items()}
+        issued_terms["accommodation_guaranteed"] = self.accom_var.get()
+        issued_terms["notes"] = notes
         try:
             data.record_decision(
                 self.applicant.choice_id,
                 decision,
                 offer_terms=terms or None,
                 notes=notes or None,
+                terms=issued_terms,
+                issued_by=self._issuing_officer(),
             )
         except UcasError as e:
             messagebox.showwarning("UCAS", str(e), parent=self)

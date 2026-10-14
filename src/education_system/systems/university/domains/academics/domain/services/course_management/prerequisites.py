@@ -6,6 +6,7 @@ from education_system.systems.university.infrastructure.utils.activity_logger im
     log_delete,
 )
 from education_system.systems.university.domains.academics.domain.services.course_management.validation import check_circular_prerequisite
+from education_system.systems.university.domains.academics.domain.services.course_management.courses import resolve_course_id
 
 
 @log_create(module="course_management", description="Adding course prerequisite")
@@ -161,11 +162,13 @@ def view_prerequisites(auth):
         conn = get_connection()
         cursor = conn.cursor()
 
-        course_choice = input("Enter course ID to view its prerequisites (or press Enter for all): ").strip()
+        course_choice = input("Enter course ID or code to view its prerequisites (or press Enter for all): ").strip()
 
         if course_choice:
-            try:
-                course_id = int(course_choice)
+            course_id = resolve_course_id(cursor, course_choice)
+            if course_id is None:
+                print("No course matches that ID or code.")
+            else:
                 cursor.execute("""
                 SELECT c1.course_code, c1.course_name, c2.course_code, c2.course_name, cp.is_required
                 FROM course_prerequisites cp
@@ -184,8 +187,6 @@ def view_prerequisites(auth):
                         print(f"{prereq[2]} - {prereq[3]} ({req_status})")
                 else:
                     print("No prerequisites found for this course.")
-            except ValueError:
-                print("Invalid course ID.")
         else:
             cursor.execute("""
             SELECT c1.course_code, c1.course_name, c2.course_code, c2.course_name, cp.is_required

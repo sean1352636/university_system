@@ -117,13 +117,41 @@ class BaseMixin:
         self.time_label = tk.Label(user_frame, font=("Segoe UI", 10),
                                   bg=self.colors["bg_medium"], fg=self.colors["text_secondary"])
         self.time_label.pack(anchor="e")
+        self._time_after_id = None
+        # Closing the window leaves the pending after() queued; Tk then fires
+        # it against the deleted bound-method command and reports
+        #   invalid command name "...update_time"
+        # as a background error. Cancel on the way out instead.
+        self.root.bind("<Destroy>", self._cancel_time_updates, add="+")
         self.update_time()
 
     def update_time(self):
-        """Update the time display"""
-        current = datetime.now().strftime("%B %d, %Y | %I:%M:%S %p")
-        self.time_label.config(text=current)
-        self.root.after(1000, self.update_time)
+        """Update the time display, rescheduling once a second."""
+        try:
+            if not self.time_label.winfo_exists():
+                self._time_after_id = None
+                return
+            current = datetime.now().strftime("%B %d, %Y | %I:%M:%S %p")
+            self.time_label.config(text=current)
+            self._time_after_id = self.root.after(1000, self.update_time)
+        except tk.TclError:
+            # Widget torn down between the check and the call.
+            self._time_after_id = None
+
+    def _cancel_time_updates(self, event=None):
+        """Stop the clock when the window goes away."""
+        # <Destroy> bubbles from every child widget; only the toplevel's own
+        # teardown means the clock is finished.
+        if event is not None and event.widget is not self.root:
+            return
+        after_id = getattr(self, "_time_after_id", None)
+        if after_id is None:
+            return
+        self._time_after_id = None
+        try:
+            self.root.after_cancel(after_id)
+        except tk.TclError:
+            pass
 
     def create_sidebar(self):
         """Create sidebar navigation"""

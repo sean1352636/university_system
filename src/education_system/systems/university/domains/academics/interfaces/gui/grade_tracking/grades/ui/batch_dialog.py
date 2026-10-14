@@ -4,11 +4,12 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 from .. import *
 from ..scale import GRADE_SYSTEMS, letter_to_gpa, letter_to_percentage, percentage_to_letter
 from .grade_view import safe_combo_update, safe_grab_set
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import make_toplevel
 
 class BatchGradeDialogMixin:
     def batch_grade_entry(self):
         """Open batch grade entry dialog"""
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.academics.grade_tracking.grades.ui.batch_dialog.windows.batch_grade_entry', default="Batch Grade Entry"))
         dialog.geometry("900x600")
 
@@ -151,7 +152,7 @@ class BatchGradeDialogMixin:
             current_score = item['values'][2]
 
             # Create simple dialog to enter score
-            score_dialog = tk.Toplevel(dialog)
+            score_dialog = make_toplevel(dialog)
             score_dialog.title(_t('gui.academics.grade_tracking.grades.ui.batch_dialog.windows.enter_score', default="Enter Score"))
             score_dialog.geometry("300x150")
             score_dialog.transient(dialog)
@@ -259,6 +260,7 @@ class BatchGradeDialogMixin:
                 if saved_count:
                     user_id, session_id = get_gui_context()
                     require_grade_audit(
+                        conn=cursor.connection,
                         action=AuditAction.BULK_UPDATE,
                         user_id=user_id,
                         resource_type='grade',

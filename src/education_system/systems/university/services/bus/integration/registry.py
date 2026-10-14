@@ -15,7 +15,7 @@ from .campus.parking import _on_permit_issued
 from .curriculum.subscribers import _on_demand_forecast, _on_term_changed, _on_timetable_locked
 from .enrolment.subscribers import _on_enrolment_added, _on_enrolment_withdrew
 from .finance.subscribers import _on_grant_decided
-from .safeguarding.subscribers import _on_case_opened_for_tutor_group, _on_health_risk_assessment
+from .safeguarding.subscribers import _on_health_risk_assessment
 from .student_support.accommodation import _on_accommodation_decided
 from .student_support.complaints import _on_complaint_filed
 from .student_support.health import _on_health_appointment_booked
@@ -44,6 +44,5 @@ SUBSCRIBERS = (
     (EVENT_SELECTION_CHANGED, _on_event_check_in),
     (EVENT_SELECTION_CHANGED, _on_internship_placed),
     (EVENT_SELECTION_CHANGED, _on_admissions_decision),
-    (EVENT_CASE_OPENED, _on_case_opened_for_tutor_group),
     (EVENT_ENROLMENT_CHANGED, _on_enrolment_added),
 )

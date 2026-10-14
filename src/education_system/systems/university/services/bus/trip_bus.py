@@ -88,7 +88,7 @@ def create_trip(
                 )
                 return None
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     # First-aid certification gate for field / research trips. Off-
     # campus trips with no qualified first responder are refused
@@ -120,7 +120,7 @@ def create_trip(
                          leader_staff_id=leader_staff_id, kind=kind)
                 return None
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     body = description or ""
@@ -170,10 +170,9 @@ def create_trip(
         event_id = str(uuid.uuid4())
         with get_connection() as conn:
             conn.execute(
-                "INSERT INTO academic_calendar_events "
-                "(id, name, date, date_start, date_end, description, "
-                " event_type, date_added, last_modified, created_by) "
-                "VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO unified_events "
+                "(source_event_id, title, event_date, start_datetime, end_datetime, description, event_type, created_at, updated_at, created_by, source_type) "
+                "VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, 'academic_calendar')",
                 (event_id, f"Trip: {name}",
                  start_date[:10], (end_date or start_date)[:10],
                  f"Destination: {destination}; Cost: {cost or '—'}",
@@ -258,7 +257,7 @@ def register_student(trip_id: int, student_id: str | int,
                     "reason": "Active finance hold — settle outstanding "
                               "charges before registering."}
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
     now = datetime.now().strftime("%Y-%m-%d")
     # ``trip_registrations.user_id`` is FK→users.id; resolve from
@@ -309,7 +308,7 @@ def register_student(trip_id: int, student_id: str | int,
                 processed_by="trip_management",
             )
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     _publish(
         "trip.registration.changed",
@@ -380,7 +379,7 @@ def cancel_registration(trip_id: int, student_id: str | int,
                 processed_by="trip_management",
             )
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
     _publish(
         "trip.registration.changed",

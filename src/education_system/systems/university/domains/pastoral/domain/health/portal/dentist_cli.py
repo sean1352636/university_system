@@ -5,6 +5,7 @@ Provides comprehensive dental services including appointments, treatments,
 patient records, and billing with finance and email integration.
 """
 
+import logging
 import uuid
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict
@@ -112,6 +113,8 @@ except ImportError:
             print(f"Database initialization error: {e}")
             return False
 
+logger = logging.getLogger(__name__)
+
 # Import email service
 try:
     from education_system.systems.university.infrastructure.email.email_service import send_email
@@ -136,6 +139,127 @@ try:
 except ImportError:
     ACTIVITY_LOGGER_AVAILABLE = False
     log_activity = lambda *args, **kwargs: None
+
+
+# ---------------------------------------------------------------------------
+# Notifying the patient
+# ---------------------------------------------------------------------------
+# The clinic's JSON templates already existed under
+# assets/templates/email/finance_commerce/commerce/dentist/ but only the
+# booking flow sent anything, and it built its body inline instead of using
+# them — so cancelling, rescheduling and completing a treatment told the
+# patient nothing at all. Everything now renders a template and goes through
+# the university email system.
+
+_DENTIST_TEMPLATE_DIR = "finance_commerce/commerce/dentist"
+DENTIST_CONFIRMATION_TEMPLATE = f"{_DENTIST_TEMPLATE_DIR}/appointment_confirmation"
+DENTIST_CANCELLED_TEMPLATE = f"{_DENTIST_TEMPLATE_DIR}/appointment_cancelled"
+DENTIST_RESCHEDULED_TEMPLATE = f"{_DENTIST_TEMPLATE_DIR}/appointment_rescheduled"
+DENTIST_REMINDER_TEMPLATE = f"{_DENTIST_TEMPLATE_DIR}/appointment_reminder"
+DENTIST_TREATMENT_TEMPLATE = f"{_DENTIST_TEMPLATE_DIR}/treatment_summary"
+
+
+def send_dentist_email(template_name, recipient_email, template_vars):
+    """Render a dental template and hand it to the university email system.
+
+    Best-effort: no address, an unavailable email service or a delivery
+    failure is reported as False. The appointment change has already been
+    committed by the time we notify, so failing here must not undo it.
+    """
+    address = (recipient_email or '').strip()
+    if not address:
+        return False
+    try:
+        from education_system.systems.university.infrastructure.email.email_service import (
+            send_email as _send,
+        )
+        from education_system.systems.university.infrastructure.email.template_utils import (
+            render_template,
+        )
+    except ImportError:
+        return False
+    try:
+        subject, body = render_template(template_name, template_vars)
+        if subject is None or body is None:
+            return False
+        _send(recipient_email=address, subject=subject, body=body)
+        return True
+    except Exception as exc:
+        logger.warning("Dental email '%s' to %s failed: %s", template_name, address, exc)
+        return False
+
+
+def _report_email(sent, what):
+    """Consistent one-line outcome for the operator."""
+    if sent:
+        print(f"📧 {what} emailed to the patient.")
+    else:
+        print(f"⚠️  {what} could not be emailed.")
+
+
+def _appointment_contact(appointment_ref):
+    """(patient_name, email, row) for an appointment, or (None, None, None)."""
+    try:
+        with get_connection() as conn:
+            # COALESCE onto the patient record: patient_name is a
+            # denormalised copy that older rows may not carry.
+            row = conn.execute('''
+                SELECT a.appointment_ref,
+                       COALESCE(a.patient_name, p.user_name, 'Patient'),
+                       a.appointment_date, a.appointment_time, a.treatment_type,
+                       a.dentist_name, p.user_email, a.patient_id
+                FROM dentist_appointments a
+                LEFT JOIN dentist_patients p ON a.patient_id = p.patient_id
+                WHERE a.appointment_ref = ?
+            ''', (appointment_ref,)).fetchone()
+    except Exception as exc:
+        logger.warning("Could not read appointment %s: %s", appointment_ref, exc)
+        return None, None, None
+    if not row:
+        return None, None, None
+    return row[1], row[6], row
+
+
+def ensure_dentist_columns():
+    """Add columns this module needs but the migrated schema lacks.
+
+    The baseline migration creates dentist_appointments *without*
+    patient_name or fee, while every INSERT and SELECT here uses both — so on
+    a migrated database, booking an appointment and listing appointments both
+    failed outright with "no such column". The module's own CREATE TABLE
+    statements do declare them, but CREATE TABLE IF NOT EXISTS is a no-op
+    against an existing table, so they never took effect.
+
+    Adding the columns preserves existing rows, unlike rewriting the queries
+    to drop the fields. Idempotent: after the first run the PRAGMA check
+    matches and nothing happens.
+    """
+    columns = (
+        ('dentist_appointments', 'patient_name', 'TEXT'),
+        ('dentist_appointments', 'fee', 'REAL'),
+        ('dentist_appointments', 'duration_minutes', 'INTEGER'),
+        ('dentist_appointments', 'reminder_sent', 'INTEGER DEFAULT 0'),
+        ('dentist_treatments', 'procedure_notes', 'TEXT'),
+    )
+    added = 0
+    try:
+        with transaction() as conn:
+            for table, column, ddl in columns:
+                try:
+                    existing = {row[1] for row in
+                                # db-audit: ignore[DBW001] - literal collection
+                                conn.execute(f"PRAGMA table_info({table})")}
+                    if existing and column not in existing:
+                        # db-audit: ignore[DBW001] - literal collection
+                        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
+                        added += 1
+                except Exception as exc:
+                    logger.warning("Could not add %s.%s: %s", table, column, exc)
+    except Exception as exc:
+        logger.warning("Dental schema check skipped: %s", exc)
+    if added:
+        logger.info("Added %d missing dental column(s)", added)
+    return added
 
 
 def get_current_user():
@@ -369,31 +493,22 @@ def book_appointment():
         log_activity('create', 'dentist_appointment', appointment_ref=appointment_ref,
                      details={'treatment': treatment_details['name'], 'date': appointment_date})
 
-        # Send confirmation email
-        user_email = user.get('email', '')
-        if user_email and EMAIL_AVAILABLE:
-            subject = f"Dental Appointment Confirmed - {appointment_ref}"
-            body = f"""Dear {patient_name},
-
-Your dental appointment has been confirmed.
-
-Appointment Reference: {appointment_ref}
-Date: {appointment_date}
-Time: {appointment_time}
-Treatment: {treatment_details['name']}
-Dentist: {dentist['name']}
-Duration: {treatment_details['duration']} minutes
-Fee: £{treatment_details['fee']:.2f}
-
-Please arrive 10 minutes early for check-in.
-
-University Dental Clinic"""
-
-            try:
-                send_email(user_email, subject, body)
-                print("📧 Confirmation email sent")
-            except Exception as e:
-                print(f"⚠️  Email notification failed: {e}")
+        # Confirmation email. This used to build its body inline while a
+        # commerce/dentist/appointment_confirmation template sat unused, so
+        # the clinic's wording lived in two places and only one was
+        # maintained.
+        _report_email(send_dentist_email(
+            DENTIST_CONFIRMATION_TEMPLATE, user.get('email', ''), {
+                'patient_name': patient_name,
+                'appointment_ref': appointment_ref,
+                'appointment_date': appointment_date,
+                'appointment_time': appointment_time,
+                'treatment_type': treatment_details['name'],
+                'dentist_name': dentist['name'],
+                'amount_paid': f"{treatment_details['fee']:.2f}",
+                'payment_method': 'Due at the appointment',
+                'transaction_ref': appointment_ref,
+            }), "Confirmation")
 
     except Exception as e:
         print(f"❌ Error: {e}")
@@ -504,6 +619,9 @@ def cancel_appointment(appointment_ref: str):
     """Cancel an appointment"""
     confirm = input(f"\nCancel appointment {appointment_ref}? (yes/no): ").strip().lower()
     if confirm == 'yes':
+        # Capture the details before the status changes — the email describes
+        # the appointment that has just been cancelled.
+        name, email, row = _appointment_contact(appointment_ref)
         try:
             with transaction() as conn:
                 conn.execute('''
@@ -516,8 +634,197 @@ def cancel_appointment(appointment_ref: str):
             log_activity('update', 'dentist_appointment', appointment_ref=appointment_ref,
                          details={'status': 'cancelled'})
 
+            # Cancelling silently was the worst of the gaps here: the patient
+            # would have turned up.
+            if row:
+                _report_email(send_dentist_email(
+                    DENTIST_CANCELLED_TEMPLATE, email, {
+                        'patient_name': name or 'Patient',
+                        'appointment_ref': row[0],
+                        'appointment_date': row[2],
+                        'appointment_time': row[3],
+                        'treatment_type': row[4],
+                    }), "Cancellation notice")
+
         except Exception as e:
             print(f"❌ Error: {e}")
+
+
+def reschedule_appointment(appointment_ref: str = None):
+    """Move an appointment to a new date/time and tell the patient.
+
+    A commerce/dentist/appointment_rescheduled template already existed with
+    nothing calling it — the clinic could only cancel and rebook, which loses
+    the reference and sends the patient two confusing emails instead of one.
+    """
+    if not appointment_ref:
+        appointment_ref = input("\nAppointment reference to reschedule: ").strip()
+    if not appointment_ref:
+        return
+
+    name, email, row = _appointment_contact(appointment_ref)
+    if not row:
+        print("❌ Appointment not found.")
+        input("\nPress Enter to continue...")
+        return
+
+    old_date, old_time = row[2], row[3]
+    print(f"\nCurrent: {old_date} at {old_time} with {row[5]}")
+
+    new_date = None
+    while True:
+        raw = input("New date (YYYY-MM-DD, blank to cancel): ").strip()
+        if not raw:
+            print("Reschedule cancelled. Nothing has been changed.")
+            return
+        try:
+            if datetime.strptime(raw, '%Y-%m-%d').date() < datetime.now().date():
+                print("That date is in the past. Please choose a future date.")
+                continue
+            new_date = raw
+            break
+        except ValueError:
+            print("Invalid date format. Please use YYYY-MM-DD.")
+
+    new_time = None
+    while True:
+        raw = input("New time (HH:MM, blank to cancel): ").strip()
+        if not raw:
+            print("Reschedule cancelled. Nothing has been changed.")
+            return
+        try:
+            datetime.strptime(raw, '%H:%M')
+            new_time = raw
+            break
+        except ValueError:
+            print("Invalid time format. Please use HH:MM.")
+
+    if new_date == old_date and new_time == old_time:
+        print("That is the same slot — nothing has been changed.")
+        input("\nPress Enter to continue...")
+        return
+
+    print(f"\nMoving {appointment_ref}:")
+    print(f"  From: {old_date} at {old_time}")
+    print(f"  To:   {new_date} at {new_time}")
+    if input("\nConfirm? (yes/no): ").strip().lower() != 'yes':
+        print("Reschedule cancelled. Nothing has been changed.")
+        return
+
+    try:
+        with transaction() as conn:
+            conn.execute('''
+                UPDATE dentist_appointments
+                SET appointment_date = ?, appointment_time = ?, status = 'scheduled'
+                WHERE appointment_ref = ?
+            ''', (new_date, new_time, appointment_ref))
+
+        print(f"✅ Appointment {appointment_ref} moved to {new_date} at {new_time}")
+        log_activity('update', 'dentist_appointment', appointment_ref=appointment_ref,
+                     details={'rescheduled_from': f"{old_date} {old_time}",
+                              'rescheduled_to': f"{new_date} {new_time}"})
+
+        _report_email(send_dentist_email(
+            DENTIST_RESCHEDULED_TEMPLATE, email, {
+                'patient_name': name or 'Patient',
+                'old_date': old_date, 'old_time': old_time,
+                'new_date': new_date, 'new_time': new_time,
+                'dentist_name': row[5] or 'your dentist',
+            }), "Reschedule notice")
+
+    except Exception as e:
+        print(f"❌ Error: {e}")
+
+    input("\nPress Enter to continue...")
+
+
+def send_appointment_reminders():
+    """Email everyone with an appointment in the next few days (staff).
+
+    A commerce/dentist/appointment_reminder template existed with no caller,
+    so the clinic had no way to remind anyone.
+    """
+    user = get_current_user()
+    if not user or user.get('role') not in ['admin', 'staff']:
+        print("❌ Staff access required")
+        input("\nPress Enter to continue...")
+        return
+
+    raw = input("\nRemind patients with appointments in the next how many days? [2]: ").strip()
+    try:
+        days = int(raw) if raw else 2
+        if days < 0:
+            raise ValueError
+    except ValueError:
+        print("Not a valid number of days — using 2.")
+        days = 2
+
+    today = datetime.now().strftime('%Y-%m-%d')
+    horizon = (datetime.now() + timedelta(days=days)).strftime('%Y-%m-%d')
+
+    try:
+        with get_connection() as conn:
+            rows = conn.execute('''
+                SELECT a.appointment_ref,
+                       COALESCE(a.patient_name, p.user_name, 'Patient'),
+                       a.appointment_date, a.appointment_time, a.dentist_name,
+                       p.user_email
+                FROM dentist_appointments a
+                LEFT JOIN dentist_patients p ON a.patient_id = p.patient_id
+                WHERE a.status = 'scheduled'
+                  AND a.appointment_date BETWEEN ? AND ?
+                ORDER BY a.appointment_date, a.appointment_time
+            ''', (today, horizon)).fetchall()
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        input("\nPress Enter to continue...")
+        return
+
+    if not rows:
+        print(f"\nNo scheduled appointments between {today} and {horizon}.")
+        input("\nPress Enter to continue...")
+        return
+
+    print(f"\n===== Appointment Reminders ({len(rows)}) =====")
+    without_email = 0
+    for ref, patient, date, time_, dentist, email in rows:
+        print(f"• {patient} — {date} at {time_} with {dentist} ({ref})")
+        if not email:
+            without_email += 1
+            print("  (no email address on file — cannot be reminded)")
+
+    reachable = len(rows) - without_email
+    if without_email:
+        print(f"\n{without_email} of {len(rows)} have no email address on file.")
+
+    if input(f"\nEmail reminders to {reachable} patient(s)? (y/n): ").strip().lower() != 'y':
+        print("Reminder sending cancelled. Nothing has been sent.")
+        input("\nPress Enter to continue...")
+        return
+
+    sent = failed = 0
+    for ref, patient, date, time_, dentist, email in rows:
+        if not email:
+            continue
+        if send_dentist_email(DENTIST_REMINDER_TEMPLATE, email, {
+                'patient_name': patient or 'Patient',
+                'appointment_date': date,
+                'appointment_time': time_,
+                'dentist_name': dentist or 'your dentist'}):
+            sent += 1
+        else:
+            failed += 1
+
+    summary = f"\nReminders: {sent} sent"
+    if failed:
+        summary += f", {failed} failed"
+    if without_email:
+        summary += f", {without_email} with no address on file"
+    print(summary + ".")
+    log_activity('update', 'dentist_appointment',
+                 details={'reminders_sent': sent, 'reminders_failed': failed})
+
+    input("\nPress Enter to continue...")
 
 
 def view_treatment_history():
@@ -688,6 +995,28 @@ def complete_appointment():
             log_activity('update', 'dentist_appointment', appointment_ref=appointment_ref,
                          details={'status': 'completed'})
 
+            # Send the patient what was found, what was done, what it cost and
+            # what to watch for. Nothing was sent on completion before, so a
+            # patient left with no written record of their own treatment.
+            _name, patient_email, row = _appointment_contact(appointment_ref)
+            payment_note = ("There is nothing left to pay."
+                            if str(payment_status).lower() in ('paid', 'complete', 'completed')
+                            else "Please settle the balance through the Finance Portal "
+                                 "or at reception.")
+            _report_email(send_dentist_email(
+                DENTIST_TREATMENT_TEMPLATE, patient_email, {
+                    'patient_name': patient_name,
+                    'appointment_ref': appointment_ref,
+                    'treatment_date': datetime.now().strftime('%Y-%m-%d'),
+                    'treatment_type': treatment_type,
+                    'dentist_name': row[5] if row else 'your dentist',
+                    'diagnosis': diagnosis or 'No diagnosis was recorded.',
+                    'procedure_notes': procedure_notes or 'No procedure notes were recorded.',
+                    'fee': f"{float(fee or 0):.2f}",
+                    'payment_status': payment_status,
+                    'payment_note': payment_note,
+                }), "Treatment summary")
+
     except Exception as e:
         print(f"❌ Error: {e}")
 
@@ -764,6 +1093,9 @@ def dentist_menu():
     """Main dentist menu"""
     # Initialize database
     init_dentist_db()
+    # ...then reconcile the columns the migrated schema is missing. Runs
+    # whichever init_dentist_db was imported, so it applies either way.
+    ensure_dentist_columns()
 
     user = get_current_user()
     is_staff = user and user.get('role') in ['admin', 'staff']
@@ -774,17 +1106,23 @@ def dentist_menu():
         if user:
             print(f"\nLogged in as: {user.get('username')} ({user.get('role')})")
 
+        # Reschedule and Cancel were previously unreachable from here —
+        # cancel_appointment existed but only opened from inside the
+        # appointment-details screen, and reschedule did not exist at all.
         print("\n🦷 PATIENT SERVICES:")
         print("1. View My Patient Profile")
         print("2. Book Appointment")
         print("3. View My Appointments")
-        print("4. View Treatment History")
+        print("4. Reschedule an Appointment")
+        print("5. Cancel an Appointment")
+        print("6. View Treatment History")
 
         if is_staff:
             print("\n🔧 STAFF OPTIONS:")
-            print("5. View All Appointments")
-            print("6. Complete Appointment")
-            print("7. Clinic Statistics")
+            print("7. View All Appointments")
+            print("8. Complete Appointment")
+            print("9. Send Appointment Reminders")
+            print("10. Clinic Statistics")
 
         print("\n0. Return to Main Menu")
 
@@ -797,12 +1135,21 @@ def dentist_menu():
         elif choice == "3":
             view_my_appointments()
         elif choice == "4":
+            reschedule_appointment()
+        elif choice == "5":
+            ref = input("\nAppointment reference to cancel: ").strip()
+            if ref:
+                cancel_appointment(ref)
+                input("\nPress Enter to continue...")
+        elif choice == "6":
             view_treatment_history()
-        elif choice == "5" and is_staff:
-            view_all_appointments()
-        elif choice == "6" and is_staff:
-            complete_appointment()
         elif choice == "7" and is_staff:
+            view_all_appointments()
+        elif choice == "8" and is_staff:
+            complete_appointment()
+        elif choice == "9" and is_staff:
+            send_appointment_reminders()
+        elif choice == "10" and is_staff:
             view_clinic_statistics()
         elif choice == "0":
             break

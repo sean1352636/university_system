@@ -1,4 +1,8 @@
 # Standard library imports
+import logging
+
+logger = logging.getLogger(__name__)
+
 import csv
 import hashlib
 import hmac
@@ -55,6 +59,125 @@ from education_system.systems.university.domains.pastoral.domain.health.records.
 audit_logger = configure_logging(name=__name__)
 
 # Encryption key management
+
+
+# ---------------------------------------------------------------------------
+# Notifying the student
+# ---------------------------------------------------------------------------
+# Appointments go through the university email system
+# (infrastructure.email): render_template fills one of the JSON templates
+# under assets/templates/email/campus_services/health/ and send_email stores
+# the mail *and* raises the student's inbox message, so it appears in the
+# Email module like any other university mail.
+
+_APPOINTMENT_TEMPLATE_DIR = "campus_services/health"
+APPOINTMENT_CREATED_TEMPLATE = f"{_APPOINTMENT_TEMPLATE_DIR}/health_appointment_created"
+APPOINTMENT_UPDATED_TEMPLATE = f"{_APPOINTMENT_TEMPLATE_DIR}/health_appointment_updated"
+
+_appointment_logger = logging.getLogger(__name__)
+
+
+def _send_appointment_email(template_name, recipient_email, template_vars):
+    """Render *template_name* and hand it to the university email system.
+
+    Best-effort: a missing address or a delivery failure is logged and
+    reported as False rather than raised — the appointment is already
+    committed by the time we notify, so failing here would misreport a
+    booking that did happen.
+    """
+    address = (recipient_email or '').strip()
+    if not address:
+        _appointment_logger.warning(
+            "Appointment email '%s' not sent: no recipient address", template_name)
+        return False
+    try:
+        from education_system.systems.university.infrastructure.email.email_service import (
+            send_email,
+        )
+        from education_system.systems.university.infrastructure.email.template_utils import (
+            render_template,
+        )
+    except ImportError as exc:
+        _appointment_logger.warning(
+            "Appointment email '%s' not sent: email system unavailable (%s)",
+            template_name, exc)
+        return False
+    try:
+        subject, body = render_template(template_name, template_vars)
+        if subject is None or body is None:
+            _appointment_logger.error(
+                "Appointment email '%s' not sent: template failed to render",
+                template_name)
+            return False
+        send_email(recipient_email=address, subject=subject, body=body)
+        return True
+    except Exception as exc:
+        _appointment_logger.exception(
+            "Appointment email '%s' to %s failed: %s", template_name, address, exc)
+        return False
+
+
+def _appointment_email_context(cursor, appointment_id):
+    """Everything the appointment emails need, or None if it is gone."""
+    cursor.execute('''
+    SELECT ha.id, ha.student_id, s.first_name, s.last_name, s.email_address,
+           ha.appointment_type, ha.appointment_date, ha.appointment_time,
+           ha.provider, ha.reason, ha.status, ha.notes, ha.scheduled_at
+    FROM health_appointments ha
+    JOIN students s ON ha.student_id = s.student_id
+    WHERE ha.id = ?
+    ''', (appointment_id,))
+    row = cursor.fetchone()
+    if not row:
+        return None
+    return {
+        'appointment_id': row[0],
+        'student_id': row[1],
+        'student_name': f"{row[2] or ''} {row[3] or ''}".strip() or row[1],
+        'student_email': row[4],
+        'appointment_type': row[5],
+        'appointment_date': row[6],
+        'appointment_time': row[7],
+        'provider': row[8],
+        'reason': row[9] or 'Not recorded.',
+        'status': row[10],
+        'notes': row[11] or 'None recorded.',
+        'scheduled_at': row[12],
+    }
+
+
+def _appointment_base_vars(context):
+    return {k: v for k, v in context.items() if k != 'student_email'}
+
+
+def notify_appointment_created(context):
+    """Tell the student their appointment has been booked."""
+    return _send_appointment_email(APPOINTMENT_CREATED_TEMPLATE,
+                                   context.get('student_email'),
+                                   _appointment_base_vars(context))
+
+
+def notify_appointment_updated(context, changes, updated_by):
+    """Tell the student their appointment changed, and exactly what changed.
+
+    *changes* is ``[(field, old, new), ...]``.
+    """
+    if changes:
+        change_list = "\n".join(
+            f"  - {field}: '{old if old not in (None, '') else 'not set'}' "
+            f"-> '{new if new not in (None, '') else 'not set'}'"
+            for field, old, new in changes)
+    else:
+        change_list = "  (no changes recorded)"
+
+    template_vars = _appointment_base_vars(context)
+    template_vars.update({
+        'change_list': change_list,
+        'updated_by': updated_by,
+        'updated_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+    })
+    return _send_appointment_email(APPOINTMENT_UPDATED_TEMPLATE,
+                                   context.get('student_email'), template_vars)
 
 
 def manage_provider_schedules(auth):
@@ -953,16 +1076,26 @@ def schedule_appointment(auth):
             appointment_type=appointment_type,
         )
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     
-    # Send confirmation email when an email backend is configured.
-    try:
-        send_appointment_confirmation(student_id, appointment_id, appointment_date, appointment_time, provider)
-        print("Confirmation email sent.")
-    except Exception:
-        print("Note: Could not send confirmation email.")
-    
+    # Confirmation email.
+    #
+    # This used to call send_appointment_confirmation(...) without
+    # appointment_type — a required positional — so every booking logged
+    #   send_appointment_confirmation() missing 1 required positional
+    #   argument: 'appointment_type'
+    # and no student was ever told. It also printed "Confirmation email sent."
+    # from inside the try regardless of whether anything was sent. It now goes
+    # through the same notifier the update path uses, reading back the
+    # committed row so the email states what was actually stored.
+    context = _appointment_email_context(cursor, appointment_id)
     conn.close()
+
+    if context:
+        if notify_appointment_created(context):
+            print(f"Confirmation emailed to {context['student_email']}.")
+        else:
+            print("Note: the confirmation email could not be sent.")
 
 def view_appointments(auth):
     if not (auth.check_permission('view_own_appointments') or auth.check_permission('manage_health_appointments')):
@@ -1077,6 +1210,133 @@ def view_appointments(auth):
     
     conn.close()
 
+def update_appointment(auth):
+    """Edit an appointment's details and tell the student exactly what changed.
+
+    Separate from update_appointment_status: that moves the appointment
+    through its lifecycle, this changes the booking itself (type, date, time,
+    provider, reason, notes).
+    """
+    if not auth.check_permission('manage_health_appointments'):
+        print("You don't have permission to update appointments.")
+        return
+
+    backup_before_operation('update_appointment')
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    appointment_id = input("Enter appointment ID to update: ").strip()
+    if not appointment_id:
+        print("An appointment ID is required.")
+        conn.close()
+        return
+
+    before = _appointment_email_context(cursor, appointment_id)
+    if not before:
+        print("Error: Appointment not found.")
+        conn.close()
+        return
+
+    print("\nCurrent Appointment Details:")
+    print(f"Student:  {before['student_name']} ({before['student_id']})")
+    print(f"Type:     {before['appointment_type']}")
+    print(f"Date:     {before['appointment_date']}")
+    print(f"Time:     {before['appointment_time']}")
+    print(f"Provider: {before['provider']}")
+    print(f"Reason:   {before['reason']}")
+    print(f"Notes:    {before['notes']}")
+    print(f"Status:   {before['status']}")
+
+    print("\nLeave a field blank to keep its current value.")
+
+    appointment_type = input(f"Appointment type [{before['appointment_type']}]: ").strip() \
+        or before['appointment_type']
+
+    appointment_date = before['appointment_date']
+    while True:
+        raw = input(f"Date YYYY-MM-DD [{appointment_date}]: ").strip()
+        if not raw:
+            break
+        try:
+            datetime.strptime(raw, '%Y-%m-%d')
+            appointment_date = raw
+            break
+        except ValueError:
+            print("Invalid date format. Please use YYYY-MM-DD.")
+
+    appointment_time = before['appointment_time']
+    while True:
+        raw = input(f"Time HH:MM [{appointment_time}]: ").strip()
+        if not raw:
+            break
+        try:
+            datetime.strptime(raw, '%H:%M')
+            appointment_time = raw
+            break
+        except ValueError:
+            print("Invalid time format. Please use HH:MM.")
+
+    provider = input(f"Provider [{before['provider']}]: ").strip() or before['provider']
+
+    current_reason = '' if before['reason'] == 'Not recorded.' else before['reason']
+    reason = input(f"Reason [{current_reason or 'none'}]: ").strip() or current_reason
+
+    current_notes = '' if before['notes'] == 'None recorded.' else before['notes']
+    notes = input(f"Notes [{current_notes or 'none'}]: ").strip() or current_notes
+
+    changes = []
+    for label, old, new in [
+        ("Type", before['appointment_type'], appointment_type),
+        ("Date", before['appointment_date'], appointment_date),
+        ("Time", before['appointment_time'], appointment_time),
+        ("Provider", before['provider'], provider),
+        ("Reason", current_reason, reason),
+        ("Notes", current_notes, notes),
+    ]:
+        if (old or '') != (new or ''):
+            changes.append((label, old, new))
+
+    if not changes:
+        print("\nNothing was changed.")
+        conn.close()
+        return
+
+    print("\nAbout to apply these changes:")
+    for label, old, new in changes:
+        print(f"  - {label}: '{old or 'not set'}' -> '{new or 'not set'}'")
+
+    if input("\nApply these changes? (y/n): ").strip().lower() != 'y':
+        print("Operation cancelled. Nothing has been changed.")
+        conn.close()
+        return
+
+    cursor.execute('''
+    UPDATE health_appointments
+    SET appointment_type = ?, appointment_date = ?, appointment_time = ?,
+        provider = ?, reason = ?, notes = ?
+    WHERE id = ?
+    ''', (appointment_type, appointment_date, appointment_time, provider,
+          reason, notes, appointment_id))
+
+    conn.commit()
+    log_audit_event(auth.current_user['id'], 'update_appointment', 'appointment',
+                    appointment_id,
+                    "; ".join(f"{label}: {old} -> {new}" for label, old, new in changes))
+
+    after = _appointment_email_context(cursor, appointment_id)
+    conn.close()
+
+    print(f"\nAppointment {appointment_id} updated ({len(changes)} change(s)).")
+
+    if after:
+        updated_by = auth.current_user.get('username', 'the Health Centre')
+        if notify_appointment_updated(after, changes, updated_by):
+            print(f"Update emailed to {after['student_email']}.")
+        else:
+            print("Note: the update email could not be sent.")
+
+
 def update_appointment_status(auth):
     if not auth.check_permission('manage_health_appointments'):
         print("You don't have permission to update appointment status.")
@@ -1138,15 +1398,30 @@ def update_appointment_status(auth):
                    f"Status changed from {current_status} to {new_status}")
     
     print(f"\nAppointment status updated to '{new_status}' successfully!")
-    
+
+    # A status change is exactly the kind of thing the student needs to hear
+    # about — a cancellation they never learn of is a wasted slot and a missed
+    # appointment. Reuses the update email so the change is spelled out.
+    after = _appointment_email_context(cursor, appointment_id)
+
     # If rescheduled, offer to create new appointment
     if new_status == 'rescheduled':
         reschedule = input("Schedule new appointment now? (y/n): ").lower()
         if reschedule == 'y':
             # This would call the schedule_appointment function
             print("Please use the Schedule Appointment option to create the new appointment.")
-    
+
     conn.close()
+
+    if after:
+        updated_by = auth.current_user.get('username', 'the Health Centre')
+        status_change = [("Status", current_status, new_status)]
+        if notes and notes != (after.get('notes') or ''):
+            status_change.append(("Notes", '', notes))
+        if notify_appointment_updated(after, status_change, updated_by):
+            print(f"Status change emailed to {after['student_email']}.")
+        else:
+            print("Note: the status-change email could not be sent.")
 
 def generate_provider_utilization_report(auth, start_date, end_date):
     """Generate provider utilization report"""

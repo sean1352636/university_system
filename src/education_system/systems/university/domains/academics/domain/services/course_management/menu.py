@@ -27,16 +27,6 @@ def _launch_course_planning_cli():
         input("Press Enter to continue...")
 
 
-def _launch_lms_cli(auth):
-    """Launch the LMS CLI."""
-    try:
-        from education_system.systems.university.domains.academics.domain.services.lms.lms_core import display_lms_menu
-        display_lms_menu(auth)
-    except ImportError as e:
-        print(f"\n❌ LMS CLI not available: {e}")
-        input("Press Enter to continue...")
-
-
 def _launch_course_evaluation_cli(auth):
     """Launch the Course Evaluation CLI."""
     try:
@@ -67,23 +57,6 @@ def _launch_graduation_ceremony_cli(auth):
         input("Press Enter to continue...")
 
 
-def _switch_to_gui(auth):
-    """Switch from CLI to Course Management GUI."""
-    try:
-        import tkinter as tk
-        from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui import CourseManagementGUI
-        print("\nLaunching Course Management GUI...")
-        root = tk.Tk()
-        root.title("Course Management System")
-        root.geometry("1200x800")
-        app = CourseManagementGUI(root, auth_system=auth)
-        root.mainloop()
-    except ImportError as e:
-        print(f"\nCourse Management GUI not available: {e}")
-        input("Press Enter to continue...")
-    except Exception as e:
-        print(f"\nError launching GUI: {e}")
-        input("Press Enter to continue...")
 
 
 @log_menu_navigation(description="Displaying enhanced course management menu")
@@ -96,193 +69,126 @@ def display_enhanced_course_menu(auth):
     # Initialize enhanced database schema
     initialize_enhanced_database()
 
+    def _module_management():
+        from education_system.systems.university.shell.cli.module_operations import display_module_management_menu
+        display_module_management_menu()
+
+    # The 37 options used to be printed as one flat list. They are grouped
+    # here and shown two levels deep: pick an area, then an action.
+    if auth.check_permission('manage_courses'):
+        groups = [
+            (f"📚 {get_text('course_mgmt.sections.course_management', default='COURSES')}", [
+                (get_text('course_mgmt.menu.create_course', default='Create new course'), lambda: create_enhanced_course(auth)),
+                (get_text('course_mgmt.menu.view_courses', default='View all courses'), lambda: view_all_courses(auth)),
+                (get_text('course_mgmt.menu.update_course', default='Update course'), lambda: update_course(auth)),
+                (get_text('course_mgmt.menu.delete_course', default='Delete course'), lambda: delete_course(auth)),
+                (get_text('course_mgmt.menu.manage_status', default='Manage course status'), lambda: manage_course_status(auth)),
+                (get_text('course_mgmt.menu.search_courses', default='Search courses'), lambda: search_courses(auth)),
+                (get_text('course_mgmt.menu.course_history', default='Course history'), lambda: view_course_history(auth)),
+            ]),
+            (f"🔗 {get_text('course_mgmt.sections.prerequisites', default='CURRICULUM & STRUCTURE')}", [
+                (get_text('course_mgmt.menu.add_prerequisite', default='Add prerequisite'), lambda: add_prerequisite(auth)),
+                (get_text('course_mgmt.menu.view_prerequisites', default='View prerequisites'), lambda: view_prerequisites(auth)),
+                (get_text('course_mgmt.menu.remove_prerequisite', default='Remove prerequisite'), lambda: remove_prerequisite(auth)),
+                (get_text('course_mgmt.menu.curriculum_extensions', default='Curriculum extensions'), lambda: display_curriculum_extensions_menu(auth)),
+                (get_text('course_mgmt.menu.module_management', default='Module Management'), _module_management),
+            ]),
+            (f"👨‍🏫 {get_text('course_mgmt.sections.instructor_management', default='INSTRUCTORS & SCHEDULING')}", [
+                (get_text('course_mgmt.menu.create_instructor', default='Create instructor'), lambda: create_instructor(auth)),
+                (get_text('course_mgmt.menu.view_instructors', default='View instructors'), lambda: view_instructors(auth)),
+                (get_text('course_mgmt.menu.assign_to_course', default='Assign to course'), lambda: assign_instructor_to_course(auth)),
+                (get_text('course_mgmt.menu.create_schedule', default='Create schedule'), lambda: create_course_schedule(auth)),
+                (get_text('course_mgmt.menu.view_schedules', default='View schedules'), lambda: view_course_schedules(auth)),
+                (get_text('course_mgmt.menu.update_schedule', default='Update schedule'), lambda: update_schedule(auth)),
+            ]),
+            (f"📊 {get_text('course_mgmt.sections.enrollment_waitlists', default='ENROLMENT & ANALYTICS')}", [
+                (get_text('course_mgmt.menu.add_to_waitlist', default='Add to waitlist'), lambda: add_to_waitlist(auth)),
+                (get_text('course_mgmt.menu.view_waitlists', default='View waitlists'), lambda: view_waitlists(auth)),
+                (get_text('course_mgmt.menu.process_waitlist', default='Process waitlist'), lambda: process_waitlist(auth)),
+                (get_text('course_mgmt.menu.analytics_dashboard', default='Analytics dashboard'), lambda: generate_course_analytics(auth)),
+                (get_text('course_mgmt.menu.enrollment_report', default='Enrollment report'), lambda: generate_enrollment_report(auth)),
+                (get_text('course_mgmt.menu.dept_statistics', default='Dept statistics'), lambda: department_statistics(auth)),
+                (get_text('course_mgmt.menu.recommendations', default='Recommendations'), lambda: recommend_courses(auth)),
+                (get_text('course_mgmt.menu.alternative_courses', default='Alternative courses'), lambda: find_alternative_courses(auth)),
+            ]),
+            (f"🧰 {get_text('course_mgmt.sections.utilities', default='TOOLS, DATA & SETTINGS')}", [
+                (get_text('course_mgmt.menu.import_csv', default='Import from CSV'), lambda: import_courses_from_csv(auth)),
+                (get_text('course_mgmt.menu.export_csv', default='Export to CSV'), lambda: export_courses_to_csv(auth)),
+                (get_text('course_mgmt.menu.bulk_update', default='Bulk update'), lambda: bulk_update_courses(auth)),
+                ('Course Planning Assistant', _launch_course_planning_cli),
+                ('Course Evaluation', lambda: _launch_course_evaluation_cli(auth)),
+                ('Degree Audit', lambda: _launch_degree_audit_cli(auth)),
+                ('Graduation Ceremony', lambda: _launch_graduation_ceremony_cli(auth)),
+                (get_text('course_mgmt.menu.system_maintenance', default='System maintenance'), lambda: system_maintenance(auth)),
+                (get_text('course_mgmt.menu.language', default='Change Language'), display_language_menu_option),
+            ]),
+        ]
+    elif auth.check_permission('view_courses'):
+        groups = [
+            (f"📚 {get_text('course_mgmt.sections.course_viewing', default='BROWSE COURSES')}", [
+                (get_text('course_mgmt.menu.view_courses', default='View all courses'), lambda: view_all_courses(auth)),
+                (get_text('course_mgmt.menu.search_courses', default='Search courses'), lambda: search_courses(auth)),
+                (get_text('course_mgmt.menu.view_prerequisites', default='View prerequisites'), lambda: view_prerequisites(auth)),
+                (get_text('course_mgmt.menu.recommendations', default='Course recommendations'), lambda: recommend_courses(auth)),
+                (get_text('course_mgmt.menu.course_analytics', default='Course analytics'), lambda: generate_course_analytics(auth)),
+            ]),
+            ("📋 INTEGRATED TOOLS", [
+                ('Course Planning Assistant', _launch_course_planning_cli),
+                ('Course Evaluation', lambda: _launch_course_evaluation_cli(auth)),
+                ('Degree Audit', lambda: _launch_degree_audit_cli(auth)),
+                (get_text('course_mgmt.menu.curriculum_extensions', default='Curriculum extensions'), lambda: display_curriculum_extensions_menu(auth)),
+            ]),
+            (f"⚙️  {get_text('course_mgmt.sections.settings', default='SETTINGS')}", [
+                (get_text('course_mgmt.menu.language', default='Change Language'), display_language_menu_option),
+            ]),
+        ]
+    else:
+        print(get_text('course_mgmt.no_permission', default="You don't have permission to manage courses."))
+        return
+
     while True:
         print("\n" + "="*100)
         print(get_text('course_mgmt.title', default='ENHANCED COURSE MANAGEMENT SYSTEM').center(100))
         print("="*100)
 
-        if auth.check_permission('manage_courses'):
-            print(f"\n📚 {get_text('course_mgmt.sections.course_management', default='COURSE MANAGEMENT')}:")
-            print(f"{'1.  ' + get_text('course_mgmt.menu.create_course', default='Create new course'):<25} {'2.  ' + get_text('course_mgmt.menu.view_courses', default='View all courses'):<25} {'3.  ' + get_text('course_mgmt.menu.update_course', default='Update course'):<25} {'4.  ' + get_text('course_mgmt.menu.delete_course', default='Delete course'):<25}")
-            print(f"{'5.  ' + get_text('course_mgmt.menu.manage_status', default='Manage course status'):<25} {'6.  ' + get_text('course_mgmt.menu.search_courses', default='Search courses'):<25}")
+        for number, (title, actions) in enumerate(groups, 1):
+            print(f"  {number}. {title}  ({len(actions)})")
+        print(f"\n  0. {get_text('course_mgmt.menu.return_main', default='Return to Main Menu')}")
 
-            print(f"\n🔗 {get_text('course_mgmt.sections.prerequisites', default='PREREQUISITES & RELATIONSHIPS')}:")
-            print(f"{'7.  ' + get_text('course_mgmt.menu.add_prerequisite', default='Add prerequisite'):<25} {'8.  ' + get_text('course_mgmt.menu.view_prerequisites', default='View prerequisites'):<25} {'9.  ' + get_text('course_mgmt.menu.remove_prerequisite', default='Remove prerequisite'):<25}")
-
-            print(f"\n👨‍🏫 {get_text('course_mgmt.sections.instructor_management', default='INSTRUCTOR MANAGEMENT')}:")
-            print(f"{'10. ' + get_text('course_mgmt.menu.create_instructor', default='Create instructor'):<25} {'11. ' + get_text('course_mgmt.menu.view_instructors', default='View instructors'):<25} {'12. ' + get_text('course_mgmt.menu.assign_to_course', default='Assign to course'):<25}")
-
-            print(f"\n📅 {get_text('course_mgmt.sections.scheduling', default='SCHEDULING')}:")
-            print(f"{'13. ' + get_text('course_mgmt.menu.create_schedule', default='Create schedule'):<25} {'14. ' + get_text('course_mgmt.menu.view_schedules', default='View schedules'):<25} {'15. ' + get_text('course_mgmt.menu.update_schedule', default='Update schedule'):<25}")
-
-            print(f"\n📊 {get_text('course_mgmt.sections.enrollment_waitlists', default='ENROLLMENT & WAITLISTS')}:")
-            print(f"{'16. ' + get_text('course_mgmt.menu.add_to_waitlist', default='Add to waitlist'):<25} {'17. ' + get_text('course_mgmt.menu.view_waitlists', default='View waitlists'):<25} {'18. ' + get_text('course_mgmt.menu.process_waitlist', default='Process waitlist'):<25}")
-
-            print(f"\n📈 {get_text('course_mgmt.sections.analytics_reporting', default='ANALYTICS & REPORTING')}:")
-            print(f"{'19. ' + get_text('course_mgmt.menu.analytics_dashboard', default='Analytics dashboard'):<25} {'20. ' + get_text('course_mgmt.menu.enrollment_report', default='Enrollment report'):<25} {'21. ' + get_text('course_mgmt.menu.dept_statistics', default='Dept statistics'):<25}")
-
-            print(f"\n💾 {get_text('course_mgmt.sections.bulk_operations', default='BULK OPERATIONS')}:")
-            print(f"{'22. ' + get_text('course_mgmt.menu.import_csv', default='Import from CSV'):<25} {'23. ' + get_text('course_mgmt.menu.export_csv', default='Export to CSV'):<25} {'24. ' + get_text('course_mgmt.menu.bulk_update', default='Bulk update'):<25}")
-
-            print(f"\n🎯 {get_text('course_mgmt.sections.recommendations', default='RECOMMENDATIONS')}:")
-            print(f"{'25. ' + get_text('course_mgmt.menu.recommendations', default='Recommendations'):<25} {'26. ' + get_text('course_mgmt.menu.alternative_courses', default='Alternative courses'):<25}")
-
-            print(f"\n🔧 {get_text('course_mgmt.sections.utilities', default='UTILITIES')}:")
-            print(f"{'27. ' + get_text('course_mgmt.menu.course_history', default='Course history'):<25} {'28. ' + get_text('course_mgmt.menu.system_maintenance', default='System maintenance'):<25} {'29. ' + get_text('course_mgmt.menu.module_management', default='Module Management'):<25}")
-
-            print("\n📋 INTEGRATED TOOLS:")
-            print(f"{'30. Course Planning Assistant':<25} {'31. Learning Management (LMS)':<30} {'32. Course Evaluation':<25} {'33. Degree Audit':<25}")
-            print(f"{'37. Graduation Ceremony':<25}")
-
-            print(f"\n🧩 {get_text('course_mgmt.sections.curriculum_extensions', default='CURRICULUM EXTENSIONS')}:")
-            print(f"{'36. ' + get_text('course_mgmt.menu.curriculum_extensions', default='Curriculum extensions (terms, sections, outcomes, …)'):<25}")
-
-            print(f"\n⚙️  {get_text('course_mgmt.sections.settings', default='SETTINGS')}:")
-            print(f"{'34. ' + get_text('course_mgmt.menu.language', default='Change Language'):<25} {'35. Switch to GUI':<25}")
-
-            print(f"\n0.  {get_text('course_mgmt.menu.return_main', default='Return to Main Menu')}")
-
-            max_option = 37
-
-        elif auth.check_permission('view_courses'):
-            print(f"\n📚 {get_text('course_mgmt.sections.course_viewing', default='COURSE VIEWING')}:")
-            print(f"1. {get_text('course_mgmt.menu.view_courses', default='View all courses')}")
-            print(f"2. {get_text('course_mgmt.menu.search_courses', default='Search courses')}")
-            print(f"3. {get_text('course_mgmt.menu.view_prerequisites', default='View prerequisites')}")
-            print(f"4. {get_text('course_mgmt.menu.recommendations', default='Course recommendations')}")
-            print(f"5. {get_text('course_mgmt.menu.course_analytics', default='Course analytics')}")
-            print("6. Course Planning Assistant")
-            print("7. Learning Management (LMS)")
-            print("8. Course Evaluation")
-            print("9. Degree Audit")
-            print(f"10. {get_text('course_mgmt.menu.language', default='Change Language')}")
-            print("11. Switch to GUI")
-            print(f"12. {get_text('course_mgmt.menu.curriculum_extensions', default='Curriculum extensions')}")
-            print(f"0. {get_text('course_mgmt.menu.return_main', default='Return to Main Menu')}")
-
-            max_option = 12
-        else:
-            print(get_text('course_mgmt.no_permission', default="You don't have permission to manage courses."))
-            return
-
-        choice = input(f"\n{get_text('course_mgmt.enter_choice', default='Enter your choice')} (0-{max_option}): ").strip()
+        choice = input(f"\n{get_text('course_mgmt.enter_choice', default='Enter your choice')} (0-{len(groups)}): ").strip()
 
         if choice == '0':
             return
+        if not (choice.isdigit() and 1 <= int(choice) <= len(groups)):
+            print(get_text('course_mgmt.invalid_choice',
+                           default='Invalid choice. Please enter a number between 0 and {max_option}.'
+                           ).format(max_option=len(groups)))
+            continue
 
-        # Handle menu choices
-        if auth.check_permission('manage_courses'):
-            if choice == '1':
-                create_enhanced_course(auth)
-            elif choice == '2':
-                view_all_courses(auth)
-            elif choice == '3':
-                update_course(auth)
-            elif choice == '4':
-                delete_course(auth)
-            elif choice == '5':
-                manage_course_status(auth)
-            elif choice == '6':
-                search_courses(auth)
-            elif choice == '7':
-                add_prerequisite(auth)
-            elif choice == '8':
-                view_prerequisites(auth)
-            elif choice == '9':
-                remove_prerequisite(auth)
-            elif choice == '10':
-                create_instructor(auth)
-            elif choice == '11':
-                view_instructors(auth)
-            elif choice == '12':
-                assign_instructor_to_course(auth)
-            elif choice == '13':
-                create_course_schedule(auth)
-            elif choice == '14':
-                view_course_schedules(auth)
-            elif choice == '15':
-                update_schedule(auth)
-            elif choice == '16':
-                add_to_waitlist(auth)
-            elif choice == '17':
-                view_waitlists(auth)
-            elif choice == '18':
-                process_waitlist(auth)
-            elif choice == '19':
-                generate_course_analytics(auth)
-            elif choice == '20':
-                generate_enrollment_report(auth)
-            elif choice == '21':
-                department_statistics(auth)
-            elif choice == '22':
-                import_courses_from_csv(auth)
-            elif choice == '23':
-                export_courses_to_csv(auth)
-            elif choice == '24':
-                bulk_update_courses(auth)
-            elif choice == '25':
-                recommend_courses(auth)
-            elif choice == '26':
-                find_alternative_courses(auth)
-            elif choice == '27':
-                view_course_history(auth)
-            elif choice == '28':
-                system_maintenance(auth)
-            elif choice == '29':
-                # Import module management menu
-                from education_system.systems.university.interfaces.cli.shell.module_operations import display_module_management_menu
-                display_module_management_menu()
-            elif choice == '30':
-                _launch_course_planning_cli()
-            elif choice == '31':
-                _launch_lms_cli(auth)
-            elif choice == '32':
-                _launch_course_evaluation_cli(auth)
-            elif choice == '33':
-                _launch_degree_audit_cli(auth)
-            elif choice == '34':
-                display_language_menu_option()
-            elif choice == '35':
-                _switch_to_gui(auth)
-                return  # Exit CLI menu after launching GUI
-            elif choice == '36':
-                display_curriculum_extensions_menu(auth)
-            elif choice == '37':
-                _launch_graduation_ceremony_cli(auth)
-            else:
-                print(get_text('course_mgmt.invalid_choice', default='Invalid choice. Please enter a number between 0 and {max_option}.').format(max_option=max_option))
+        title, actions = groups[int(choice) - 1]
 
-        else:  # View-only permissions
-            if choice == '1':
-                view_all_courses(auth)
-            elif choice == '2':
-                search_courses(auth)
-            elif choice == '3':
-                view_prerequisites(auth)
-            elif choice == '4':
-                recommend_courses(auth)
-            elif choice == '5':
-                generate_course_analytics(auth)
-            elif choice == '6':
-                _launch_course_planning_cli()
-            elif choice == '7':
-                _launch_lms_cli(auth)
-            elif choice == '8':
-                _launch_course_evaluation_cli(auth)
-            elif choice == '9':
-                _launch_degree_audit_cli(auth)
-            elif choice == '10':
-                display_language_menu_option()
-            elif choice == '11':
-                _switch_to_gui(auth)
-                return  # Exit CLI menu after launching GUI
-            elif choice == '12':
-                display_curriculum_extensions_menu(auth)
-            else:
-                print(get_text('course_mgmt.invalid_choice', default='Invalid choice. Please enter a number between 0 and {max_option}.').format(max_option=max_option))
+        while True:
+            print("\n" + "="*100)
+            print(title.center(100))
+            print("="*100)
+            for number, (label, _handler) in enumerate(actions, 1):
+                print(f"  {number:>2}. {label}")
+            print(f"\n   0. {get_text('course_mgmt.menu.return_main', default='Back')}")
 
-        # Pause before showing menu again
-        input(f"\n{get_text('course_mgmt.press_enter', default='Press Enter to continue...')}")
+            picked = input(f"\n{get_text('course_mgmt.enter_choice', default='Enter your choice')} (0-{len(actions)}): ").strip()
+
+            if picked == '0' or picked == '':
+                break
+            if not (picked.isdigit() and 1 <= int(picked) <= len(actions)):
+                print(get_text('course_mgmt.invalid_choice',
+                               default='Invalid choice. Please enter a number between 0 and {max_option}.'
+                               ).format(max_option=len(actions)))
+                continue
+
+            handler = actions[int(picked) - 1][1]
+            handler()
+
+            input(f"\n{get_text('course_mgmt.press_enter', default='Press Enter to continue...')}")
 
 
 @log_menu_navigation(description="Displaying course management menu")

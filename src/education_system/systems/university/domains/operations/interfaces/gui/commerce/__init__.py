@@ -1,22 +1,13 @@
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.interfaces.gui`` (campus commerce plugin).
+
+A mirror, not an alias: an aliased package would resolve this package's
+submodules through the new ``__path__`` and load each one a second time.
+Submodules are aliased individually; this copies the package's names.
 """
-Commerce GUI Package
+# layout-shim: education_system.systems.university.plugins.campus_commerce.interfaces.gui
+import importlib as _importlib
 
-Re-exports from sub-packages for convenience.
-"""
-
-try:
-    from education_system.systems.university.domains.operations.interfaces.gui.commerce.shop_management_gui import (
-        UniversityShopGUI,
-        run_gui_mode,
-        run_cli_mode,
-        integrate_gui_with_main,
-    )
-except ImportError:
-    pass
-
-try:
-    from education_system.systems.university.domains.operations.interfaces.gui.commerce.restaurant_management_gui import (
-        RestaurantManagementGUI,
-    )
-except ImportError:
-    pass
+_new = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.interfaces.gui")
+globals().update({k: v for k, v in vars(_new).items()
+                  if not (k.startswith("__") and k.endswith("__"))})
+del _importlib, _new

@@ -13,6 +13,9 @@ module:
   6. Marks the deposit payment as Refunded (or Partially Refunded) and writes
      each deduction to housing_deposit_deductions for audit.
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import common as _common
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common import (
@@ -176,7 +179,7 @@ def process_deposit_refund():
                       f"'{current}'. Cannot re-refund.")
                 return
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Bring interest accrual up to today before computing the refund so the
         # student isn't shortchanged by stale accrual state.
@@ -593,7 +596,7 @@ def student_review_deductions():
                         actor=auth.current_user.get('username', student_id),
                     )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             conn.commit()
 
             # Refresh the row in memory for subsequent renders.
@@ -736,7 +739,7 @@ def resolve_deduction_disputes():
                         cursor, aid_row[0], actor=resolver,
                     )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             conn.commit()
             print("  Resolved.")
 

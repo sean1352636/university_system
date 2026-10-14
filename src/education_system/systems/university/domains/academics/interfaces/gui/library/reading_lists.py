@@ -3,6 +3,9 @@ Enhanced Library Management System - GUI Version
 Maintains all original CLI functions while adding a modern GUI interface
 Backwards compatible with existing database and auth systems
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -92,15 +95,11 @@ except ImportError:
     FINANCE_ACCOUNT_AVAILABLE = False
     print("Warning: Student finance account integration not available")
 
-# Import matplotlib for library finance charts
-try:
-    import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-    from matplotlib.figure import Figure
-    MATPLOTLIB_AVAILABLE = True
-except ImportError:
-    MATPLOTLIB_AVAILABLE = False
-    print("Warning: Matplotlib not available for library finance charts")
+# Matplotlib is imported lazily by finance_shared, the one module in this
+# package whose names are actually read (by the two chart dialogs under
+# finance_parts/). This module carried an identical eager copy of that import
+# and never used any of it — importing matplotlib.pyplot costs ~1.3s and was
+# paid by anything that touched the library package at all.
 
 # Import email service for library finance notifications
 try:
@@ -202,12 +201,12 @@ def _reading_list_jump_to_documents(self):
             ctx["reading_list_id"] = str(values[0])
         if len(values) > 1 and values[1]:
             ctx["list_name"] = str(values[1])
-        from education_system.systems.university.interfaces.gui.shell.main.features.academic_link_bar import (
+        from education_system.systems.university.shell.gui.main.features.academic_link_bar import (
             request_open as _request_open,
         )
         _request_open("document_manager", ctx)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
 def show_reading_lists_context_menu(self, event):
     """Show context menu for reading lists"""
@@ -493,7 +492,7 @@ def create_reading_list_database(self, name, description, category, is_public, i
                 action="created",
             )
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         return True
 

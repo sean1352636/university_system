@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import json
 import os
@@ -575,7 +579,7 @@ def _process_import_record(self, record, stats):
                     self.detector.store_analysis(submission_id, text, result)
             except Exception:
                 # If analysis fails, store basic record
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         return True
 

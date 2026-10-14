@@ -64,7 +64,7 @@ class CampaignMaterialsDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title(_t("student_union.elections.submit_campaign_materials"))
+        self.dialog.title(_t("student_union.elections.submit_campaign_materials", default="Submit Campaign Materials"))
         self.dialog.geometry("700x600")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -75,28 +75,28 @@ class CampaignMaterialsDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(main_frame, text=_t("student_union.elections.submit_campaign_materials"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t("student_union.elections.submit_campaign_materials", default="Submit Campaign Materials"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Material type
-        ttk.Label(main_frame, text=_t("student_union.elections.material_type")).pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t("student_union.elections.material_type", default="Material Type")).pack(anchor='w', pady=(0, 5))
         self.type_var = tk.StringVar()
         type_combo = ttk.Combobox(main_frame, textvariable=self.type_var, state='readonly', width=30)
-        type_combo['values'] = (_t("student_union.elections.mat_poster"), _t("student_union.elections.mat_video"), _t("student_union.elections.mat_manifesto"), _t("student_union.elections.mat_social_media"), _t("student_union.elections.mat_other"))
+        type_combo['values'] = (_t("student_union.elections.mat_poster", default="Mat Poster"), _t("student_union.elections.mat_video", default="Mat Video"), _t("student_union.elections.mat_manifesto", default="Mat Manifesto"), _t("student_union.elections.mat_social_media", default="Mat Social Media"), _t("student_union.elections.mat_other", default="Mat Other"))
         type_combo.pack(fill='x', pady=(0, 15))
         type_combo.current(0)
 
         # Title
-        ttk.Label(main_frame, text=_t("student_union.elections.title_label")).pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t("student_union.elections.title_label", default="Title:")).pack(anchor='w', pady=(0, 5))
         self.title_entry = ttk.Entry(main_frame, width=50)
         self.title_entry.pack(fill='x', pady=(0, 15))
 
         # Description
-        ttk.Label(main_frame, text=_t("student_union.elections.description_label")).pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t("student_union.elections.description_label", default="Description:")).pack(anchor='w', pady=(0, 5))
         self.description_text = scrolledtext.ScrolledText(main_frame, height=10, wrap=tk.WORD)
         self.description_text.pack(fill='both', expand=True, pady=(0, 15))
 
         # File upload (simulated)
-        ttk.Label(main_frame, text=_t("student_union.elections.file_path_or_url")).pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t("student_union.elections.file_path_or_url", default="File Path Or URL")).pack(anchor='w', pady=(0, 5))
         self.file_entry = ttk.Entry(main_frame, width=50)
         self.file_entry.pack(fill='x', pady=(0, 15))
 
@@ -113,10 +113,10 @@ class CampaignMaterialsDialog:
         file_path = self.file_entry.get().strip()
 
         if not all([self.type_var.get(), title, description]):
-            messagebox.showwarning(_t("common.warning"), _t("student_union.elections.fill_required_fields"))
+            messagebox.showwarning(_t("common.warning"), _t("student_union.elections.fill_required_fields", default="Fill Required Fields"))
             return
 
-        messagebox.showinfo(_t("common.success"), _t("student_union.elections.material_submitted_for_approval"))
+        messagebox.showinfo(_t("common.success"), _t("student_union.elections.material_submitted_for_approval", default="Material Submitted For Approval"))
         self.dialog.destroy()
 
 
@@ -129,7 +129,7 @@ class SetupElectionDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title(_t("student_union.elections.setup_new_election"))
+        self.dialog.title(_t("student_union.elections.setup_new_election", default="Setup New Election"))
         self.dialog.geometry("800x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -140,7 +140,7 @@ class SetupElectionDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(main_frame, text=_t("student_union.elections.setup_new_election"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t("student_union.elections.setup_new_election", default="Setup New Election"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Scrollable form
         canvas = tk.Canvas(main_frame)
@@ -152,41 +152,41 @@ class SetupElectionDialog:
         canvas.configure(yscrollcommand=scrollbar.set)
 
         # Position
-        ttk.Label(scrollable_frame, text=_t("student_union.elections.position_title")).grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(scrollable_frame, text=_t("student_union.elections.position_title", default="===== POSITION =====")).grid(row=0, column=0, sticky='w', pady=5)
         self.position_entry = ttk.Entry(scrollable_frame, width=40)
         self.position_entry.grid(row=0, column=1, pady=5, sticky='ew')
 
         # Department
-        ttk.Label(scrollable_frame, text=_t("student_union.elections.department_optional")).grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(scrollable_frame, text=_t("student_union.elections.department_optional", default="Department Optional")).grid(row=1, column=0, sticky='w', pady=5)
         self.department_entry = ttk.Entry(scrollable_frame, width=40)
         self.department_entry.grid(row=1, column=1, pady=5, sticky='ew')
 
         # Nomination period
-        ttk.Label(scrollable_frame, text=_t("student_union.elections.nomination_start")).grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(scrollable_frame, text=_t("student_union.elections.nomination_start", default="Nomination Start")).grid(row=2, column=0, sticky='w', pady=5)
         self.nom_start_entry = ttk.Entry(scrollable_frame, width=40)
         self.nom_start_entry.grid(row=2, column=1, pady=5, sticky='ew')
         self.nom_start_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
 
-        ttk.Label(scrollable_frame, text=_t("student_union.elections.nomination_end")).grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(scrollable_frame, text=_t("student_union.elections.nomination_end", default="Nomination End")).grid(row=3, column=0, sticky='w', pady=5)
         self.nom_end_entry = ttk.Entry(scrollable_frame, width=40)
         self.nom_end_entry.grid(row=3, column=1, pady=5, sticky='ew')
 
         # Voting period
-        ttk.Label(scrollable_frame, text=_t("student_union.elections.voting_start")).grid(row=4, column=0, sticky='w', pady=5)
+        ttk.Label(scrollable_frame, text=_t("student_union.elections.voting_start", default="Voting Start")).grid(row=4, column=0, sticky='w', pady=5)
         self.vote_start_entry = ttk.Entry(scrollable_frame, width=40)
         self.vote_start_entry.grid(row=4, column=1, pady=5, sticky='ew')
 
-        ttk.Label(scrollable_frame, text=_t("student_union.elections.voting_end")).grid(row=5, column=0, sticky='w', pady=5)
+        ttk.Label(scrollable_frame, text=_t("student_union.elections.voting_end", default="Voting End")).grid(row=5, column=0, sticky='w', pady=5)
         self.vote_end_entry = ttk.Entry(scrollable_frame, width=40)
         self.vote_end_entry.grid(row=5, column=1, pady=5, sticky='ew')
 
         # Eligibility
-        ttk.Label(scrollable_frame, text=_t("student_union.elections.voter_eligibility_rules")).grid(row=6, column=0, sticky='w', pady=5)
+        ttk.Label(scrollable_frame, text=_t("student_union.elections.voter_eligibility_rules", default="Voter Eligibility Rules")).grid(row=6, column=0, sticky='w', pady=5)
         self.eligibility_text = scrolledtext.ScrolledText(scrollable_frame, height=5, width=40, wrap=tk.WORD)
         self.eligibility_text.grid(row=6, column=1, pady=5, sticky='ew')
 
         # Campaign guidelines
-        ttk.Label(scrollable_frame, text=_t("student_union.elections.campaign_guidelines")).grid(row=7, column=0, sticky='w', pady=5)
+        ttk.Label(scrollable_frame, text=_t("student_union.elections.campaign_guidelines", default="Campaign Guidelines")).grid(row=7, column=0, sticky='w', pady=5)
         self.guidelines_text = scrolledtext.ScrolledText(scrollable_frame, height=5, width=40, wrap=tk.WORD)
         self.guidelines_text.grid(row=7, column=1, pady=5, sticky='ew')
 
@@ -199,13 +199,13 @@ class SetupElectionDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x', pady=(15, 0))
 
-        ttk.Button(button_frame, text=_t("student_union.elections.create_election"), command=self.create_election).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t("student_union.elections.create_election", default="Create Election"), command=self.create_election).pack(side='left', padx=(0, 10))
         ttk.Button(button_frame, text=_t("common.cancel"), command=self.dialog.destroy).pack(side='left')
 
     def create_election(self):
         position = self.position_entry.get().strip()
         if not position:
-            messagebox.showwarning(_t("common.warning"), _t("student_union.elections.enter_position_title"))
+            messagebox.showwarning(_t("common.warning"), _t("student_union.elections.enter_position_title", default="===== ENTER POSITION ====="))
             return
 
         try:
@@ -229,10 +229,10 @@ class SetupElectionDialog:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo(_t("common.success"), _t("student_union.elections.election_created_success", position=position))
+            messagebox.showinfo(_t("common.success"), _t("student_union.elections.election_created_success", position=position, default="Election Created Success {position}"))
             self.dialog.destroy()
         except sqlite3.Error as e:
-            messagebox.showerror(_t("common.error"), _t("student_union.elections.election_create_failed", error=str(e)))
+            messagebox.showerror(_t("common.error"), _t("student_union.elections.election_create_failed", error=str(e), default="Election Create Failed {error}"))
 
 
 # ============================================================================

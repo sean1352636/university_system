@@ -1086,9 +1086,68 @@ class AdminService:
                 action="misconduct",
             ))
 
+        alerts.extend(self._linked_platform_alerts())
+
         severity_rank = {"critical": 0, "warning": 1, "info": 2}
         alerts.sort(key=lambda a: severity_rank.get(a["severity"], 3))
         return alerts
+
+    # Delivery attempts after which the bus treats a failed receipt as a
+    # dead letter (cross_system_bus.poll_and_dispatch's default).
+    _BUS_MAX_ATTEMPTS = 5
+
+    def _linked_platform_alerts(self, stale_days=14):
+        """Dead letters on the cross-system bus, and transfers gone quiet.
+
+        Read-only and table-probing on purpose. The workflow's own readers
+        call ``ensure_enrolment_schema``, which initialises (and in dev,
+        seeds) whatever auth DB it is pointed at — acceptable for the
+        workflow, not for an alerts feed that must only look.
+        """
+        conn = _connect(self._auth_db)
+        if conn is None:
+            return []
+        out = []
+        try:
+            if _table_exists(conn, "cross_system_event_consumed"):
+                dead = conn.execute(
+                    "SELECT COUNT(*) FROM cross_system_event_consumed "
+                    "WHERE status = 'dead_letter' "
+                    "OR (status = 'failed' AND attempts >= ?)",
+                    (self._BUS_MAX_ATTEMPTS,)).fetchone()[0]
+                if dead:
+                    word = "delivery" if dead == 1 else "deliveries"
+                    out.append(_alert(
+                        "critical", "bus", None, "",
+                        f"{dead} cross-system event {word} exhausted retries "
+                        "(dead letters) — retry or abandon them.",
+                        action="events",
+                    ))
+            if _table_exists(conn, "learner_transition"):
+                cols = _get_columns(conn, "learner_transition")
+                due_col = next((c for c in ("effective_date", "expected_start_date",
+                                            "start_date") if c in cols), None)
+                past_due = (f" OR (date({due_col}) < date('now'))"  # nosec B608
+                            if due_col else "")
+                overdue = conn.execute(
+                    "SELECT COUNT(*) FROM learner_transition "
+                    "WHERE status NOT IN ('completed', 'cancelled', 'rejected') "
+                    "AND (datetime(COALESCE(updated_at, initiated_at)) "
+                    f"< datetime('now', ?){past_due})",  # nosec B608
+                    (f"-{int(stale_days)} days",)).fetchone()[0]
+                if overdue:
+                    word = "transfer is" if overdue == 1 else "transfers are"
+                    out.append(_alert(
+                        "warning", "transfers", None, "",
+                        f"{overdue} {word} overdue or idle for over "
+                        f"{stale_days} days.",
+                        action="transfers",
+                    ))
+        except sqlite3.Error:
+            logger.debug("Linked-platform alerts unavailable", exc_info=True)
+        finally:
+            conn.close()
+        return out
 
     def _latest_backup_age_days(self, system, now):
         """Return whole days since the newest backup of *system*, or None.

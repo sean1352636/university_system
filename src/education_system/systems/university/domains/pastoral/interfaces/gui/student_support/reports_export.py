@@ -1,7 +1,14 @@
+from education_system.systems.university.shell.gui import report_view as _rv
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+
+from ._dialogs import make_toplevel, messagebox
 import tkinter.font as tkFont
 from datetime import datetime, timedelta
 import json
@@ -68,7 +75,7 @@ def _patched_sqlite_connect(database, *args, **kwargs):
         if not database or db_name == str(DEFAULT_DB_PATH):
             return _original_sqlite3_connect(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return _original_sqlite3_connect(database, *args, **kwargs)
 
 sqlite3.connect = _patched_sqlite_connect
@@ -159,10 +166,9 @@ except ImportError:
 class ReportsExportMixin:
     def show_export_dialog(self):
         """Show data export dialog with advanced filters"""
-        export_dialog = tk.Toplevel(self.root)
+        export_dialog = make_toplevel(self.root)
         export_dialog.title(_t('gui.pastoral.student_support.reports_export.windows.export_data_variant_2', default="📤 Export Data"))
         export_dialog.geometry("1200x800")
-        export_dialog.transient(self.root)
         export_dialog.grab_set()
 
         # Scrollable frame
@@ -354,10 +360,9 @@ class ReportsExportMixin:
             messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), _t('gui.pastoral.student_support.reports_export.dialogs.staff_access_required', default="Staff access required"))
             return
 
-        export_dialog = tk.Toplevel(self.root)
+        export_dialog = make_toplevel(self.root)
         export_dialog.title(_t('gui.pastoral.student_support.reports_export.windows.export_data', default="Export Data"))
         export_dialog.geometry("1300x800")
-        export_dialog.transient(self.root)
         export_dialog.grab_set()
 
         form_frame = ttk.Frame(export_dialog, padding="20")
@@ -426,328 +431,25 @@ class ReportsExportMixin:
         ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.cancel', default="Cancel"), command=export_dialog.destroy).pack(side="left")
 
     def show_user_management(self):
-        """Show user management interface (admin only)"""
-        if not self.auth or not self.auth.current_user or self.auth.current_user['role'] != 'admin':
-            messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), _t('gui.pastoral.student_support.reports_export.dialogs.admin_access_required', default="Admin access required"))
-            return
+        """Open the system's User Management screen.
 
-        self.clear_content()
-
-        user_mgmt_frame = ttk.Frame(self.notebook, padding="3")
-        self.notebook.add(user_mgmt_frame, text=_t('gui.pastoral.student_support.reports_export.tabs.user_management', default="User Management"))
-
-        # Configure frame to expand
-        user_mgmt_frame.rowconfigure(0, weight=1)
-        user_mgmt_frame.columnconfigure(0, weight=1)
-
-        ttk.Label(user_mgmt_frame, text=_t('gui.pastoral.student_support.reports_export.labels.user_management', default="User Management"),
-                 style='Title.TLabel').pack(pady=(0, 20))
-
-        # User list
-        users_frame = ttk.LabelFrame(user_mgmt_frame, text=_t('gui.pastoral.student_support.reports_export.labels.system_users', default="System Users"), padding="10")
-        users_frame.pack(fill="both", expand=True)
-
-        # Create treeview for users
-        columns = ('ID', 'Username', 'Role', 'Student ID', 'Status', 'Last Login')
-        user_tree = ttk.Treeview(users_frame, columns=columns, show='headings', height=15)
-
-        for col in columns:
-            user_tree.heading(col, text=col)
-            user_tree.column(col, width=100)
-
-        # Load users
+        Student Support used to carry its own copy of this — a user list plus
+        reset-password / change-role / activate / deactivate handlers against
+        the same `users` table. That duplicated the canonical screen and its
+        permission rules, so the nav button now opens the real one.
+        """
         try:
-            from education_system.systems.university.infrastructure.database.db import get_connection
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute('SELECT id, username, role, student_id FROM users ORDER BY username')
-            users = cursor.fetchall()
-            conn.close()
-
-            for user in users:
-                user_tree.insert('', 'end', values=(
-                    user[0], user[1], user[2], user[3] or 'N/A', 'Active', 'N/A'
-                ))
-        except Exception as e:
-            ttk.Label(users_frame, text=f"Error loading users: {e}").pack()
-
-        user_tree.pack(fill="both", expand=True, pady=(0, 10))
-
-        # User actions
-        actions_frame = ttk.Frame(users_frame)
-        actions_frame.pack(fill="x")
-
-        ttk.Button(actions_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.reset_password', default="Reset Password"),
-                  command=lambda: self.reset_user_password(user_tree)).pack(side="left", padx=(0, 5))
-        ttk.Button(actions_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.change_role', default="Change Role"),
-                  command=lambda: self.change_user_role(user_tree)).pack(side="left", padx=(0, 5))
-        ttk.Button(actions_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.deactivate_user', default="Deactivate User"),
-                  command=lambda: self.deactivate_user(user_tree)).pack(side="left", padx=(0, 5))
-        ttk.Button(actions_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.activate_user', default="Activate User"),
-                  command=lambda: self.activate_user(user_tree)).pack(side="left")
-
-    def reset_user_password(self, user_tree):
-        """Reset user password"""
-        selection = user_tree.selection()
-        if not selection:
-            messagebox.showwarning(_t('gui.pastoral.student_support.reports_export.dialogs.warning', default="Warning"), _t('gui.pastoral.student_support.reports_export.dialogs.please_select_a_user', default="Please select a user"))
+            from education_system.systems.university.shell.gui.main.admin.user_management_gui import (
+                open_user_management_window,
+            )
+        except Exception:
+            messagebox.showerror(
+                _t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"),
+                _t('gui.pastoral.student_support.reports_export.dialogs.user_management_unavailable',
+                   default="The User Management screen is not available."))
             return
+        open_user_management_window(self.root, self.auth)
 
-        user_data = user_tree.item(selection[0])['values']
-        username = user_data[1]
-        user_id, admin_username = self._get_current_user_identity()
-        permissions = self.auth.current_user.get('permissions', []) if self.auth and self.auth.current_user else []
-
-        if self.auth and self.auth.current_user:
-            if 'manage_users' not in permissions and self.auth.current_user['username'] != admin_username:
-                messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.permission_denied', default="Permission Denied"), _t('gui.pastoral.student_support.reports_export.dialogs.you_do_not_have_permission_to_reset_passwords', default="You do not have permission to reset passwords."))
-                return
-        else:
-            messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), _t('gui.pastoral.student_support.reports_export.dialogs.authentication_required_to_reset_passwords', default="Authentication required to reset passwords."))
-            return
-
-        if messagebox.askyesno(_t('gui.pastoral.student_support.reports_export.dialogs.confirm', default="Confirm"), f"Reset password for user '{username}'?"):
-            try:
-                if not hasattr(self.auth, '_generate_temp_password') or not hasattr(self.auth, '_hash_password'):
-                    raise RuntimeError("Authentication system does not support password resets.")
-
-                temp_password = self.auth._generate_temp_password()
-                salt, password_hash = self.auth._hash_password(temp_password)
-                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-                conn = sqlite3.connect(self.auth.db_path)
-                cursor = conn.cursor()
-                cursor.execute(
-                    'SELECT id FROM user_accounts WHERE username = ?',
-                    (username,)
-                )
-                row = cursor.fetchone()
-                if not row:
-                    conn.close()
-                    messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), f"User account for '{username}' not found.")
-                    return
-
-                account_id = row[0]
-                cursor.execute(
-                    '''
-                    UPDATE user_accounts
-                    SET password_hash = ?, salt = ?, updated_at = ?, password_reset_required = 1
-                    WHERE id = ?
-                    ''',
-                    (password_hash, salt, timestamp, account_id)
-                )
-                conn.commit()
-                conn.close()
-
-                if hasattr(self.auth, '_log_activity'):
-                    self.auth._log_activity(
-                        self.auth.current_user['username'],
-                        f"Password reset for user: {username}",
-                        user_id=self.auth.current_user.get('id')
-                    )
-
-                messagebox.showinfo(
-                    _t('gui.pastoral.student_support.reports_export.dialogs.success', default="Success"),
-                    f"Password reset for {username}.\nTemporary password: {temp_password}\nThe user will be prompted to change it on next login."
-                )
-            except Exception as e:
-                messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), f"Could not reset password: {e}")
-
-    def change_user_role(self, user_tree):
-        """Change user role"""
-        selection = user_tree.selection()
-        if not selection:
-            messagebox.showwarning(_t('gui.pastoral.student_support.reports_export.dialogs.warning', default="Warning"), _t('gui.pastoral.student_support.reports_export.dialogs.please_select_a_user', default="Please select a user"))
-            return
-
-        user_data = user_tree.item(selection[0])['values']
-        user_id = user_data[0]
-        username = user_data[1]
-        current_role = user_data[2]
-
-        role_dialog = tk.Toplevel(self.root)
-        role_dialog.title(f"Change Role - {username}")
-        role_dialog.geometry("800x500")
-        role_dialog.transient(self.root)
-        role_dialog.grab_set()
-
-        form_frame = ttk.Frame(role_dialog, padding="20")
-        form_frame.pack(fill="both", expand=True)
-
-        ttk.Label(form_frame, text=f"Change role for {username}:").pack(pady=(0, 10))
-        ttk.Label(form_frame, text=f"Current role: {current_role}").pack(pady=(0, 10))
-
-        role_var = tk.StringVar(value=current_role)
-        for role in ['student', 'staff', 'admin']:
-            ttk.Radiobutton(form_frame, text=role.title(), variable=role_var, value=role).pack(anchor="w")
-
-        def save_role():
-            new_role = role_var.get()
-            if new_role == current_role:
-                role_dialog.destroy()
-                return
-
-            try:
-                # Use auth system to update user role if available
-                if self.auth:
-                    success = self.auth.update_user(user_id, role=new_role)
-
-                    if not success:
-                        messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), _t('gui.pastoral.student_support.reports_export.dialogs.failed_to_update_role_via_auth_system', default="Failed to update role via auth system"))
-                        return
-                else:
-                    # Fallback to direct DB access
-                    from education_system.systems.university.infrastructure.database.db import get_connection
-                    conn = get_connection()
-                    cursor = conn.cursor()
-                    cursor.execute('UPDATE users SET role = ? WHERE id = ?', (new_role, user_id))
-                    conn.commit()
-                    conn.close()
-
-                # Log activity
-                if ACTIVITY_LOGGER_AVAILABLE:
-                    log_activity('update', 'user_role', user_id=user_id, details={
-                        'username': username,
-                        'old_role': current_role,
-                        'new_role': new_role
-                    })
-
-                messagebox.showinfo(_t('gui.pastoral.student_support.reports_export.dialogs.success', default="Success"), f"Role changed to {new_role}")
-                role_dialog.destroy()
-                self.show_user_management()  # Refresh
-            except Exception as e:
-                messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), f"Could not change role: {e}")
-
-        btn_frame = ttk.Frame(form_frame)
-        btn_frame.pack(fill="x", pady=(20, 0))
-
-        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.save', default="Save"), command=save_role).pack(side="left", padx=(0, 10))
-        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.cancel', default="Cancel"), command=role_dialog.destroy).pack(side="left")
-
-    def deactivate_user(self, user_tree):
-        """Deactivate or reactivate a user account"""
-        selection = user_tree.selection()
-        if not selection:
-            messagebox.showwarning(_t('gui.pastoral.student_support.reports_export.dialogs.warning', default="Warning"), _t('gui.pastoral.student_support.reports_export.dialogs.please_select_a_user', default="Please select a user"))
-            return
-
-        user_data = user_tree.item(selection[0])['values']
-        user_id = user_data[0]
-        username = user_data[1]
-        current_status = user_data[4]  # Status column
-
-        # Check permissions
-        if not self.auth or not self.auth.current_user or self.auth.current_user['role'] != 'admin':
-            messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), _t('gui.pastoral.student_support.reports_export.dialogs.admin_access_required_to_deactivate_users', default="Admin access required to deactivate users"))
-            return
-
-        # Toggle status
-        new_status = 'Inactive' if current_status == 'Active' else 'Active'
-        action = 'deactivate' if new_status == 'Inactive' else 'reactivate'
-
-        if messagebox.askyesno(_t('gui.pastoral.student_support.reports_export.dialogs.confirm', default="Confirm"), f"Are you sure you want to {action} user '{username}'?"):
-            try:
-                # Update user status in database
-                from education_system.systems.university.infrastructure.database.db import get_connection
-                conn = get_connection()
-                cursor = conn.cursor()
-
-                # Check if users table has an 'active' or 'status' column
-                # For now, we'll use a simple flag (1 for active, 0 for inactive)
-                is_active = 1 if new_status == 'Active' else 0
-
-                # Try to update the status
-                try:
-                    cursor.execute(
-                        'UPDATE users SET active = ?, updated_at = ? WHERE id = ?',
-                        (is_active, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), user_id)
-                    )
-                except Exception:
-                    # If 'active' column doesn't exist, add it first
-                    cursor.execute('ALTER TABLE users ADD COLUMN active INTEGER DEFAULT 1')
-                    cursor.execute('ALTER TABLE users ADD COLUMN updated_at TEXT')
-                    cursor.execute(
-                        'UPDATE users SET active = ?, updated_at = ? WHERE id = ?',
-                        (is_active, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), user_id)
-                    )
-
-                conn.commit()
-                conn.close()
-
-                # Log activity
-                if ACTIVITY_LOGGER_AVAILABLE:
-                    log_activity('update', 'user_status', user_id=user_id, details={
-                        'username': username,
-                        'action': action,
-                        'new_status': new_status
-                    })
-
-                messagebox.showinfo(_t('gui.pastoral.student_support.reports_export.dialogs.success', default="Success"), f"User '{username}' has been {action}d")
-                self.show_user_management()  # Refresh the user list
-
-            except Exception as e:
-                messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), f"Could not {action} user: {e}")
-
-    def activate_user(self, user_tree):
-        """Activate a user account"""
-        selection = user_tree.selection()
-        if not selection:
-            messagebox.showwarning(_t('gui.pastoral.student_support.reports_export.dialogs.warning', default="Warning"), _t('gui.pastoral.student_support.reports_export.dialogs.please_select_a_user', default="Please select a user"))
-            return
-
-        user_data = user_tree.item(selection[0])['values']
-        user_id = user_data[0]
-        username = user_data[1]
-        current_status = user_data[4]  # Status column
-
-        # Check permissions
-        if not self.auth or not self.auth.current_user or self.auth.current_user['role'] != 'admin':
-            messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), _t('gui.pastoral.student_support.reports_export.dialogs.admin_access_required_to_activate_users', default="Admin access required to activate users"))
-            return
-
-        # Check if already active
-        if current_status == 'Active':
-            messagebox.showinfo(_t('gui.pastoral.student_support.reports_export.dialogs.info', default="Info"), f"User '{username}' is already active")
-            return
-
-        if messagebox.askyesno(_t('gui.pastoral.student_support.reports_export.dialogs.confirm', default="Confirm"), f"Are you sure you want to activate user '{username}'?"):
-            try:
-                # Update user status in database
-                from education_system.systems.university.infrastructure.database.db import get_connection
-                conn = get_connection()
-                cursor = conn.cursor()
-
-                # Activate the user (set active = 1)
-                try:
-                    cursor.execute(
-                        'UPDATE users SET active = ?, updated_at = ? WHERE id = ?',
-                        (1, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), user_id)
-                    )
-                except Exception:
-                    # If 'active' column doesn't exist, add it first
-                    cursor.execute('ALTER TABLE users ADD COLUMN active INTEGER DEFAULT 1')
-                    cursor.execute('ALTER TABLE users ADD COLUMN updated_at TEXT')
-                    cursor.execute(
-                        'UPDATE users SET active = ?, updated_at = ? WHERE id = ?',
-                        (1, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), user_id)
-                    )
-
-                conn.commit()
-                conn.close()
-
-                # Log activity
-                if ACTIVITY_LOGGER_AVAILABLE:
-                    log_activity('update', 'user_status', user_id=user_id, details={
-                        'username': username,
-                        'action': 'activate',
-                        'new_status': 'Active'
-                    })
-
-                messagebox.showinfo(_t('gui.pastoral.student_support.reports_export.dialogs.success', default="Success"), f"User '{username}' has been activated")
-                self.show_user_management()  # Refresh the user list
-
-            except Exception as e:
-                messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), f"Could not activate user: {e}")
 
     def perform_enhanced_export(self, export_type, filters, format_type):
         """Perform enhanced data export"""
@@ -778,10 +480,9 @@ class ReportsExportMixin:
 
     def show_help(self):
         """Show help dialog"""
-        help_dialog = tk.Toplevel(self.root)
+        help_dialog = make_toplevel(self.root)
         help_dialog.title(_t('gui.pastoral.student_support.reports_export.windows.user_guide', default="📖 User Guide"))
         help_dialog.geometry("1400x850")
-        help_dialog.transient(self.root)
 
         # Help content
         help_content = """
@@ -827,7 +528,7 @@ class ReportsExportMixin:
 For additional help, contact the support team.
         """
 
-        text_widget = scrolledtext.ScrolledText(help_dialog, wrap=tk.WORD, state='disabled', padding=10)
+        text_widget = scrolledtext.ScrolledText(help_dialog, wrap=tk.WORD, state='disabled', padx=10, pady=10)
         text_widget.pack(fill="both", expand=True, padx=10, pady=10)
 
         text_widget.config(state='normal')
@@ -907,10 +608,9 @@ Features:
     def generate_report(self, report_type):
         """Generate a report"""
         # Show date range dialog
-        date_dialog = tk.Toplevel(self.root)
+        date_dialog = make_toplevel(self.root)
         date_dialog.title(_t('gui.pastoral.student_support.reports_export.windows.report_date_range', default="📅 Report Date Range"))
         date_dialog.geometry("900x550")
-        date_dialog.transient(self.root)
         date_dialog.grab_set()
 
         # Date range form
@@ -965,7 +665,7 @@ Features:
 
     def show_report_window(self, report_type, report_data, date_range):
         """Show generated report in a new window as plain text"""
-        report_window = tk.Toplevel(self.root)
+        report_window = make_toplevel(self.root)
         report_window.title(f"📊 {report_type.replace('_', ' ').title()} Report")
         report_window.geometry("1200x800")
 
@@ -996,7 +696,7 @@ Features:
         text_frame.pack(fill="both", expand=True)
 
         # Create scrolled text widget
-        text_widget = scrolledtext.ScrolledText(text_frame, wrap=tk.WORD, font=('Courier New', 10))
+        text_widget = _rv.TextReportView(text_frame, wrap=tk.WORD, font=('Courier New', 10))
         text_widget.pack(fill="both", expand=True)
 
         # Format report as plain text
@@ -1212,10 +912,9 @@ Features:
 
     def _show_admin_email_dialog(self, report_type, report_data):
         """Show dialog to manually enter admin email"""
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.pastoral.student_support.reports_export.windows.enter_admin_email', default="Enter Admin Email"))
         dialog.geometry("400x200")
-        dialog.transient(self.root)
         dialog.grab_set()
 
         ttk.Label(dialog, text=_t('gui.pastoral.student_support.reports_export.labels.no_admin_email_found_in_database_please_enter_admin_email', default="No admin email found in database.\nPlease enter admin email:"),
@@ -1299,7 +998,7 @@ Features:
         }
 
         # Return just the body portion (subject is handled separately in calling code)
-        _, body = render_template('student_support_report', template_vars)
+        _, body = render_template('finance_commerce/reports/student_support_report', template_vars)
 
         if not body:
             # Fallback if template fails

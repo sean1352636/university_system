@@ -3,6 +3,9 @@ Academic Progress Dashboard CLI Interface
 
 Provides command-line interface for degree tracking, GPA simulation, and early warnings.
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 from datetime import datetime
 from typing import Optional
@@ -140,7 +143,7 @@ class AcademicProgressCLI:
             if warning_count > 0:
                 print(f"\n  ⚠ You have {warning_count} active warning(s). Check option 8 for details.")
         except Exception:
-            pass  # Gracefully handle if data not available
+            logger.debug("Suppressed exception", exc_info=True)
 
     # ========== Degree Progress ==========
 

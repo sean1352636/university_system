@@ -12,7 +12,9 @@ from __future__ import annotations
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox, simpledialog
+from tkinter import ttk, simpledialog
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import make_toplevel
 
 from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.integrations import (
     fetch_child_grades,
@@ -46,7 +48,7 @@ class GradeIntegrationsManager:
             messagebox.showinfo(_t('gui.academics.grade_tracking.integrations_manager.dialogs.child_grades', default="Child Grades"), _t('gui.academics.grade_tracking.integrations_manager.dialogs.no_student_selected', default="No student selected."))
             return
         rows = fetch_child_grades(student_id)
-        win = tk.Toplevel(self.root)
+        win = make_toplevel(self.root)
         win.title(f"Grades — {student_id}")
         win.geometry("760x500")
         ttk.Label(
@@ -203,7 +205,7 @@ class GradeIntegrationsManager:
     )
 
     def show_integrations_activity(self):
-        win = tk.Toplevel(self.root)
+        win = make_toplevel(self.root)
         win.title(_t('gui.academics.grade_tracking.integrations_manager.windows.cross_domain_activity_grade_tracking', default="Cross-Domain Activity — Grade Tracking"))
         win.geometry("960x560")
         ttk.Label(

@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from education_system.systems.apprenticeships.domain.employers.contacts import (
+    ContactLogEntry,
+    EmployerCommitment,
+)
 from education_system.systems.apprenticeships.domain.employers.models import (
     Employer,
     EmployerManager,
@@ -66,8 +70,39 @@ _WORKPLACE_FIELDS = (
 
 _MANAGER_FIELDS = (
     "employer_id", "full_name", "job_title", "email", "phone",
-    "is_primary", "username", "active",
+    "is_primary", "username", "active", "contact_role",
 )
+
+_LOG_FIELDS = (
+    "employer_id", "contact_id", "apprentice_id", "contacted_on", "channel",
+    "summary", "follow_up_date", "follow_up_done_at", "follow_up_done_by",
+    "logged_by", "logged_by_role",
+)
+
+_COMMITMENT_FIELDS = (
+    "employer_id", "apprentice_id", "commitment", "category", "due_date", "status",
+    "escalation_level", "escalated_at", "escalated_by", "escalation_reason",
+    "closed_at", "notes", "created_by",
+)
+
+_LOG_SELECT = """
+    SELECT l.*, e.name AS employer_name, m.full_name AS contact_name,
+           CASE WHEN a.apprentice_id IS NULL THEN NULL
+                ELSE a.given_name || ' ' || a.family_name END AS apprentice_name
+      FROM employer_contact_log l
+      JOIN employers e ON e.employer_id = l.employer_id
+      LEFT JOIN employer_managers m ON m.manager_id = l.contact_id
+      LEFT JOIN apprentices a ON a.apprentice_id = l.apprentice_id
+"""
+
+_COMMITMENT_SELECT = """
+    SELECT c.*, e.name AS employer_name,
+           CASE WHEN a.apprentice_id IS NULL THEN NULL
+                ELSE a.given_name || ' ' || a.family_name END AS apprentice_name
+      FROM employer_commitments c
+      JOIN employers e ON e.employer_id = c.employer_id
+      LEFT JOIN apprentices a ON a.apprentice_id = c.apprentice_id
+"""
 
 
 def _map(row: Any) -> Employer:
@@ -134,6 +169,51 @@ def _map_manager(row: Any) -> EmployerManager:
         username=col(row, "username"),
         active=to_bool(col(row, "active"), True),
         created_at=col(row, "created_at", ""),
+        contact_role=col(row, "contact_role"),
+    )
+
+
+def _map_log(row: Any) -> ContactLogEntry:
+    return ContactLogEntry(
+        log_id=row["log_id"],
+        employer_id=row["employer_id"],
+        contacted_on=row["contacted_on"],
+        channel=row["channel"],
+        summary=row["summary"],
+        logged_by=row["logged_by"],
+        contact_id=col(row, "contact_id"),
+        apprentice_id=col(row, "apprentice_id"),
+        follow_up_date=col(row, "follow_up_date"),
+        follow_up_done_at=col(row, "follow_up_done_at"),
+        follow_up_done_by=col(row, "follow_up_done_by"),
+        logged_by_role=col(row, "logged_by_role"),
+        created_at=col(row, "created_at", ""),
+        employer_name=col(row, "employer_name"),
+        contact_name=col(row, "contact_name"),
+        apprentice_name=col(row, "apprentice_name"),
+    )
+
+
+def _map_commitment(row: Any) -> EmployerCommitment:
+    return EmployerCommitment(
+        commitment_id=row["commitment_id"],
+        employer_id=row["employer_id"],
+        commitment=row["commitment"],
+        category=col(row, "category", "Other"),
+        apprentice_id=col(row, "apprentice_id"),
+        due_date=col(row, "due_date"),
+        status=col(row, "status", "Open"),
+        escalation_level=to_int(col(row, "escalation_level")),
+        escalated_at=col(row, "escalated_at"),
+        escalated_by=col(row, "escalated_by"),
+        escalation_reason=col(row, "escalation_reason"),
+        closed_at=col(row, "closed_at"),
+        notes=col(row, "notes"),
+        created_by=col(row, "created_by"),
+        created_at=col(row, "created_at", ""),
+        updated_at=col(row, "updated_at", ""),
+        employer_name=col(row, "employer_name"),
+        apprentice_name=col(row, "apprentice_name"),
     )
 
 
@@ -395,4 +475,181 @@ def clear_primary(employer_id: int) -> None:
         conn.execute(
             "UPDATE employer_managers SET is_primary = 0 WHERE employer_id = ?",
             (employer_id,),
+        )
+
+
+# ── Scope ───────────────────────────────────────────────────────────
+
+def employer_ids_for_tutor(tutor_id: int) -> set[int]:
+    """The employers of the apprentices on one tutor's caseload."""
+    init_db()
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT DISTINCT employer_id FROM apprentices "
+            "WHERE tutor_id = ? AND employer_id IS NOT NULL",
+            (tutor_id,),
+        ).fetchall()
+    return {int(r["employer_id"]) for r in rows}
+
+
+# ── Contact log ─────────────────────────────────────────────────────
+
+def list_contact_log(
+    *,
+    employer_id: int | None = None,
+    employer_ids: set[int] | list[int] | None = None,
+    apprentice_id: int | None = None,
+    contact_id: int | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    follow_up_from: str | None = None,
+    follow_up_to: str | None = None,
+    open_follow_ups: bool = False,
+    follow_up_overdue_on: str | None = None,
+    limit: int | None = None,
+) -> list[ContactLogEntry]:
+    """Conversations, newest first.
+
+    ``employer_ids`` restricts to a set of employers — an empty set
+    matches nothing rather than everything. ``follow_up_from`` /
+    ``follow_up_to`` bound the follow-up date and imply an open one;
+    ``follow_up_overdue_on`` finds open follow-ups due before that date.
+    """
+    if employer_ids is not None and not employer_ids:
+        return []
+    init_db()
+    qb = QueryBuilder()
+    qb.add_if(employer_id, "l.employer_id = ?", employer_id)
+    qb.add_in("l.employer_id", sorted(employer_ids) if employer_ids else None)
+    qb.add_if(apprentice_id, "l.apprentice_id = ?", apprentice_id)
+    qb.add_if(contact_id, "l.contact_id = ?", contact_id)
+    qb.add_if(date_from, "l.contacted_on >= ?", date_from)
+    qb.add_if(date_to, "l.contacted_on <= ?", date_to)
+    if open_follow_ups or follow_up_from or follow_up_to or follow_up_overdue_on:
+        qb.add("l.follow_up_date IS NOT NULL AND l.follow_up_done_at IS NULL")
+    qb.add_if(follow_up_from, "l.follow_up_date >= ?", follow_up_from)
+    qb.add_if(follow_up_to, "l.follow_up_date <= ?", follow_up_to)
+    qb.add_if(follow_up_overdue_on, "l.follow_up_date < ?", follow_up_overdue_on)
+    sql = f"{_LOG_SELECT} {qb.where} ORDER BY l.contacted_on DESC, l.log_id DESC"
+    args = qb.args
+    if limit:
+        sql += " LIMIT ?"
+        args = [*args, int(limit)]
+    with connect() as conn:
+        rows = conn.execute(sql, args).fetchall()
+    return [_map_log(r) for r in rows]
+
+
+def get_contact_log(log_id: int) -> ContactLogEntry | None:
+    init_db()
+    with connect() as conn:
+        row = conn.execute(f"{_LOG_SELECT} WHERE l.log_id = ?", (log_id,)).fetchone()
+    return _map_log(row) if row else None
+
+
+def create_contact_log(payload: dict[str, Any]) -> int:
+    init_db()
+    columns = [f for f in _LOG_FIELDS if f in payload]
+    placeholders = ", ".join("?" for _ in columns)
+    with connect() as conn:
+        cur = conn.execute(
+            f"INSERT INTO employer_contact_log ({', '.join(columns)}) VALUES ({placeholders})",
+            [payload[c] for c in columns],
+        )
+        return int(cur.lastrowid)
+
+
+def update_contact_log(log_id: int, payload: dict[str, Any]) -> None:
+    init_db()
+    columns = [f for f in _LOG_FIELDS if f in payload]
+    if not columns:
+        return
+    assignments = ", ".join(f"{c} = ?" for c in columns)
+    with connect() as conn:
+        conn.execute(
+            f"UPDATE employer_contact_log SET {assignments} WHERE log_id = ?",
+            [*(payload[c] for c in columns), log_id],
+        )
+
+
+# ── Commitments ─────────────────────────────────────────────────────
+
+def list_commitments(
+    *,
+    employer_id: int | None = None,
+    employer_ids: set[int] | list[int] | None = None,
+    apprentice_id: int | None = None,
+    status: str | None = None,
+    outstanding_only: bool = False,
+    overdue_on: str | None = None,
+    due_from: str | None = None,
+    due_to: str | None = None,
+    limit: int | None = None,
+) -> list[EmployerCommitment]:
+    """Commitments, outstanding ones first and soonest due first.
+
+    ``overdue_on`` finds outstanding commitments due before that date —
+    the service passes today, so "overdue" means the same thing here as
+    in the domain rule. An empty ``employer_ids`` matches nothing.
+    """
+    if employer_ids is not None and not employer_ids:
+        return []
+    init_db()
+    qb = QueryBuilder()
+    qb.add_if(employer_id, "c.employer_id = ?", employer_id)
+    qb.add_in("c.employer_id", sorted(employer_ids) if employer_ids else None)
+    qb.add_if(apprentice_id, "c.apprentice_id = ?", apprentice_id)
+    qb.add_if(status, "c.status = ?", status)
+    if outstanding_only or overdue_on:
+        qb.add("c.status IN ('Open', 'Escalated')")
+    qb.add_if(overdue_on, "c.due_date IS NOT NULL AND c.due_date < ?", overdue_on)
+    qb.add_if(due_from, "c.due_date >= ?", due_from)
+    qb.add_if(due_to, "c.due_date <= ?", due_to)
+    sql = (
+        f"{_COMMITMENT_SELECT} {qb.where} "
+        "ORDER BY CASE WHEN c.status IN ('Open', 'Escalated') THEN 0 ELSE 1 END, "
+        "COALESCE(c.due_date, '9999-12-31'), c.commitment_id"
+    )
+    args = qb.args
+    if limit:
+        sql += " LIMIT ?"
+        args = [*args, int(limit)]
+    with connect() as conn:
+        rows = conn.execute(sql, args).fetchall()
+    return [_map_commitment(r) for r in rows]
+
+
+def get_commitment(commitment_id: int) -> EmployerCommitment | None:
+    init_db()
+    with connect() as conn:
+        row = conn.execute(
+            f"{_COMMITMENT_SELECT} WHERE c.commitment_id = ?", (commitment_id,)
+        ).fetchone()
+    return _map_commitment(row) if row else None
+
+
+def create_commitment(payload: dict[str, Any]) -> int:
+    init_db()
+    columns = [f for f in _COMMITMENT_FIELDS if f in payload]
+    placeholders = ", ".join("?" for _ in columns)
+    with connect() as conn:
+        cur = conn.execute(
+            f"INSERT INTO employer_commitments ({', '.join(columns)}) VALUES ({placeholders})",
+            [payload[c] for c in columns],
+        )
+        return int(cur.lastrowid)
+
+
+def update_commitment(commitment_id: int, payload: dict[str, Any]) -> None:
+    """Update the supplied fields only; anything absent is untouched."""
+    init_db()
+    columns = [f for f in _COMMITMENT_FIELDS if f in payload]
+    if not columns:
+        return
+    assignments = ", ".join(f"{c} = ?" for c in columns)
+    with connect() as conn:
+        conn.execute(
+            f"UPDATE employer_commitments SET {assignments}, updated_at = datetime('now') "
+            "WHERE commitment_id = ?",
+            [*(payload[c] for c in columns), commitment_id],
         )

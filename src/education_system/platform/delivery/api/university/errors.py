@@ -21,6 +21,7 @@ from education_system.systems.university.infrastructure.exceptions import (
     CourseNotFoundError,
     DatabaseError,
     DuplicateStudentError,
+    EnrollmentClosedError,
     EnrollmentError,
     FinanceError,
     GradeNotFoundError,
@@ -28,6 +29,7 @@ from education_system.systems.university.infrastructure.exceptions import (
     InvalidCredentialsError,
     PaymentError,
     PermissionDeniedError,
+    PrerequisiteError,
     StudentNotFoundError,
     TransactionFailedError,
     ValidationError,
@@ -47,6 +49,14 @@ _EXCEPTION_STATUS_MAP: list[tuple[type, int]] = [
     (DuplicateStudentError, 409),
     (AlreadyEnrolledError, 409),
     (CourseFullError, 409),
+    # Unmet prerequisite/co-requisite: the request conflicts with the
+    # student's record rather than being malformed, so 409 like CourseFull.
+    # Without an entry here it would fall through to a 500.
+    (PrerequisiteError, 409),
+    # Outside the registration window / past the withdrawal deadline: a
+    # timing conflict, not a malformed request. Listed before EnrollmentError
+    # so it does not fall into that entry's 400.
+    (EnrollmentClosedError, 409),
     (EnrollmentError, 400),
     (InsufficientFundsError, 402),
     (PaymentError, 400),

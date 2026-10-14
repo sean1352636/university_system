@@ -7,13 +7,17 @@ Idempotent. Safe to call repeatedly: every statement is CREATE TABLE
 IF NOT EXISTS / CREATE INDEX IF NOT EXISTS / INSERT OR IGNORE.
 """
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.database.db import (
     sqlite3,
     get_connection,
 )
-from education_system.systems.university.infrastructure.sql_safety import (
+from education_system.systems.university.infrastructure.sql_safety import (  # nosec B608
     safe_alter_table_add_column,
+    validate_identifier,
 )
 
 
@@ -27,12 +31,17 @@ def _relax_notnull_column(cursor, table, column, create_new_sql, tmp_name, colum
     Guarded by PRAGMA table_info so it only runs when the column is still
     NOT NULL and is safe to run repeatedly.
     """
+    # db-audit: ignore[DBW001] - join over a code-controlled list; parameter passed through a validator
+    # Identifiers cannot be parameterised, so they are validated instead.
+    table = validate_identifier(table)
+    column = validate_identifier(column)
     info = cursor.execute(f"PRAGMA table_info({table})").fetchall()
     notnull = {row[1]: row[3] for row in info}
     if column not in notnull or not notnull[column]:
         return
     col_list = ", ".join(columns)
     cursor.execute(create_new_sql)
+    # db-audit: ignore[DBW001] - join over a code-controlled list; parameter passed through a validator
     cursor.execute(
         f"INSERT INTO {tmp_name} ({col_list}) SELECT {col_list} FROM {table}"
     )
@@ -465,7 +474,7 @@ def _init_finance_schemas() -> None:
                         _table, 'updated_at', 'TEXT', conn
                     )
                 except Exception:
-                    pass  # table absent or column already present
+                    logger.debug("Suppressed exception", exc_info=True)
 
             # ---- seed default grant budget categories (owning module) ----
             # Moved here from the workload init so it runs after

@@ -2991,7 +2991,7 @@ def _ucas_destination_for(student_id: str
     UCAS application whose firm/insurance choice is the student's
     final destination. Best-effort."""
     um = _safe_import(
-        "education_system.systems.sixth_form.domain.progression.ucas.ucas")
+        "education_system.systems.sixth_form.domain.progression.university.ucas")
     if um is None:
         return (None, None)
     try:

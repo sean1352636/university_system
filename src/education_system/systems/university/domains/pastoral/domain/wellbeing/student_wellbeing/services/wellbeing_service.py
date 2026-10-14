@@ -304,6 +304,7 @@ class WellbeingService:
             cols = ", ".join(validate_identifier(k, "column") for k in kwargs)
             placeholders = ", ".join("?" for _ in kwargs)
             cursor = conn.cursor()
+            # db-audit: ignore[DBW001] - passed through validate_identifier(); string literal
             cursor.execute(
                 f"INSERT INTO wellbeing_referrals ({cols}) VALUES ({placeholders})",
                 list(kwargs.values()),
@@ -353,6 +354,7 @@ class WellbeingService:
         try:
             set_clause = ", ".join(f"{validate_identifier(k, 'column')} = ?" for k in kwargs)
             values = list(kwargs.values()) + [record_id]
+            # db-audit: ignore[DBW001] - f-string of literal parts
             conn.execute(
                 f"UPDATE wellbeing_referrals SET {set_clause} WHERE id = ?",
                 values,

@@ -15,6 +15,7 @@ question in language matching the caller's intent.
 | 22   | Trips        | ``trip_collision_check``          |
 | 23   | HR           | ``staff_proratio``                |
 | 24   | Safeguarding | ``classify_incident_date``        |
+| 25   | Calendar     | ``day_status`` / ``term_on``      |
 """
 
 from __future__ import annotations
@@ -26,6 +27,7 @@ from education_system.systems.sixth_form.domain.academics.academic_year import (
     academic_year as data,
 )
 from education_system.systems.sixth_form.domain.academics.academic_year.academic_year import (
+    AcademicYear,
     Break,
     Term,
 )
@@ -213,3 +215,97 @@ def classify_incident_date(year_id: int, date_iso: str) -> str:
             return "term-time"
         return "term-time"
     return "outside-year"
+
+
+# 25 — Calendar (events)
+#
+# The events calendar asks its questions by date alone: it does not
+# know or care which academic year a date belongs to. Everything
+# above takes a ``year_id``; these three resolve it first, so the
+# calendar can ask "is the college open on the 14th?" and get an
+# answer from the module that actually owns term dates.
+#
+# Previously the calendar asked ``attendance_calendar`` instead —
+# a third copy of the term data. This is the single source.
+
+@dataclass
+class DayStatus:
+    """What the college looks like on one date."""
+
+    date: str
+    open: bool
+    reason: str | None = None       # why closed; None when open
+    term: Term | None = None
+    year_id: int | None = None
+
+
+def year_for(date_iso: str) -> AcademicYear | None:
+    """The academic year covering ``date_iso``.
+
+    Falls back to the current year when no year's range covers the
+    date — a trip pencilled in for next August is still best judged
+    against the year the user is working in. Returns None when no
+    years exist at all, and every caller here degrades to silence.
+    """
+    try:
+        _dt.date.fromisoformat(date_iso)
+    except (ValueError, TypeError):
+        return None
+    years = [y for y in data.list_years()
+             if y.start_date <= date_iso <= y.end_date]
+    if len(years) > 1:
+        # Overlapping years are a data-entry error, not a crash.
+        logger.warning("%d academic years cover %s; using #%s",
+                       len(years), date_iso, years[0].year_id)
+    if years:
+        return years[0]
+    return data.current_year()
+
+
+def term_on(date_iso: str, *,
+            group_label: str | None = None) -> Term | None:
+    """The term covering a date, without the caller knowing the year."""
+    year = year_for(date_iso)
+    if year is None:
+        return None
+    return data.find_term_on(year.year_id, date_iso,
+                             group_label=group_label)
+
+
+def day_status(date_iso: str, *,
+               group_label: str | None = None) -> DayStatus:
+    """Open/closed for one date, with the reason when closed.
+
+    Closed means: a weekend, or a full-day break (holiday, half
+    term, INSET, bank holiday). An AM/PM half day is still an open
+    day — the college is there, just not all of it. A weekday in no
+    term and no break is treated as open: a gap in the term data is
+    not evidence of a closure, and flagging it would bury real
+    warnings.
+    """
+    year = year_for(date_iso)
+    if year is None:
+        # No years configured — nothing to say, so say nothing.
+        return DayStatus(date=date_iso, open=True)
+
+    try:
+        d = _dt.date.fromisoformat(date_iso)
+    except (ValueError, TypeError):
+        return DayStatus(date=date_iso, open=True,
+                         year_id=year.year_id)
+
+    term = data.find_term_on(year.year_id, date_iso,
+                             group_label=group_label)
+    if d.weekday() >= 5:
+        return DayStatus(date=date_iso, open=False, reason="Weekend",
+                         term=term, year_id=year.year_id)
+
+    brk = data.is_break(year.year_id, date_iso,
+                        group_label=group_label)
+    if brk is not None and brk.am_pm not in ("AM", "PM"):
+        return DayStatus(date=date_iso, open=False,
+                         reason=f"{brk.type}: {brk.name}",
+                         term=term, year_id=year.year_id)
+
+    return DayStatus(date=date_iso, open=True, term=term,
+                     year_id=year.year_id)

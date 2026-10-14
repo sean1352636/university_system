@@ -3,6 +3,7 @@ Database schema initialization for Degree Audit & Academic Advising System
 """
 
 from education_system.systems.university.infrastructure.database.db import transaction
+from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608 - identifier validation
 
 
 def initialize_degree_audit_database():
@@ -323,6 +324,9 @@ def _add_columns_if_missing(cursor, table: str, columns: dict) -> None:
     ``columns`` maps column name -> column definition (type + default). Columns
     that already exist are skipped, so this is safe to run on every startup.
     """
+    # Identifiers cannot be parameterised, so they are validated instead.
+    table = validate_identifier(table)
+    # db-audit: ignore[DBW001] - parameter passed through a validator
     existing = {row[1] for row in cursor.execute(f"PRAGMA table_info({table})")}
     for name, definition in columns.items():
         if name not in existing:

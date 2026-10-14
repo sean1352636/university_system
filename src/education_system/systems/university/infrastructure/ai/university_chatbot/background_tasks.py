@@ -201,9 +201,9 @@ def send_proactive_alerts(chatbot):
 
         try:
             cursor.execute("""
-                SELECT DISTINCT student_id, course_name, exam_name, exam_date
+                SELECT DISTINCT student_id, module_name, exam_name, date
                 FROM exams
-                WHERE exam_date BETWEEN ? AND ?
+                WHERE date BETWEEN ? AND ?
             """, (today.isoformat(), week_ahead.isoformat()))
 
             upcoming_exams = cursor.fetchall()

@@ -12,6 +12,9 @@ Features:
 - Faculty notification system
 - Accommodation renewal tracking
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
@@ -77,26 +80,26 @@ class AccessibilityService:
                 try:
                     conn.execute('ALTER TABLE accommodation_requests ADD COLUMN student_name TEXT')
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
             if 'student_email' not in existing_columns:
                 try:
                     conn.execute('ALTER TABLE accommodation_requests ADD COLUMN student_email TEXT')
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
             if 'submitted_date' not in existing_columns:
                 try:
                     conn.execute('ALTER TABLE accommodation_requests ADD COLUMN submitted_date TIMESTAMP')
                     conn.execute('UPDATE accommodation_requests SET submitted_date = CURRENT_TIMESTAMP WHERE submitted_date IS NULL')
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
             if 'reviewer_notes' not in existing_columns:
                 try:
                     conn.execute('ALTER TABLE accommodation_requests ADD COLUMN reviewer_notes TEXT')
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
             # Active accommodations table
             conn.execute("""

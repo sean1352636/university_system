@@ -149,7 +149,7 @@ class EventFinancesDialog:
 
             cursor.execute('''
             SELECT event_id, event_name, event_date
-            FROM union_events
+            FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union')
             WHERE event_date >= date('now', '-90 days')
             ORDER BY event_date DESC
             ''')

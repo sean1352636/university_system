@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
 from education_system.systems.university.domains.assessment.domain.grading.grade_calculation.utils import select_assessment
 
@@ -69,7 +73,7 @@ def map_assessments_to_outcomes():
             course_result = cursor.fetchone()
             course = course_result[0] if course_result else None
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Get available learning outcomes for this course
         # importance column may not exist (may be called 'level')

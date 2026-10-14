@@ -1,0 +1,9 @@
+{
+    "subject": "🔑 Room assignment confirmed - $building_name, Room $room_number",
+    "body": "Dear $recipient_name,\n\n$intro_line\n\n=== THE ROOM ===\nBuilding: $building_name\nRoom Number: $room_number\nFloor Number: $floor_number\nRoom Type: $room_type\nBuilding Address: $building_address\nCampus: $campus_location\n\n=== WHO IS LIVING HERE ===\n$occupant_list\n\nCurrent occupancy: $current_occupants of $max_occupants\n\n=== THE NEW ASSIGNMENT ===\nStudent Assigned: $student_name ($student_id)\nAssignment Reference: $assignment_id\nContract Number: $contract_number\nMonthly Rent: £$monthly_rent\nMove-In Date: $move_in_date\nPlanned Move-Out Date: $move_out_date\nAssigned By: $assigned_by\nAssigned On: $assigned_date\n\n=== WHAT YOU NEED TO DO ===\n\n1. COLLECT YOUR KEY\n   - New residents should visit the Housing Office to collect a key or access card before moving in.\n\n2. COMPLETE THE INVENTORY CHECKLIST\n   - Complete the move-in inventory checklist within 7 days of arriving so you are not held responsible for any pre-existing damage.\n\n3. SHARED SPACES\n   - Please agree how you will share the kitchen, bathroom and communal areas, and keep them clean and clear.\n   - Quiet hours are 11:00 PM to 7:00 AM.\n\n=== IF SOMETHING IS WRONG ===\nIf this assignment is not what you expected, or your room does not meet an accessibility, medical or other agreed requirement, contact the Housing Office straight away.\n\n=== CONTACT INFORMATION ===\nHousing Office: housing@university.edu\nPhone: (555) 123-4567\nOffice Hours: Monday-Friday, 9:00 AM - 5:00 PM\n\nBest regards,\nUniversity Housing Administration\n\n$signature",
+    "variables": {
+        "intro_line": {"default": "There has been a change to the room you are living in."},
+        "occupant_list": {"default": "  (no other residents recorded)"},
+        "contract_number": {"default": "To be issued"}
+    }
+}

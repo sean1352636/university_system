@@ -10435,40 +10435,6 @@
             "available_backups": "Available Backups"
           }
         },
-        "modules_tab": {
-          "buttons": {
-            "close": "Close",
-            "email_to_admin": "Email to Admin",
-            "save": "Save",
-            "save_as_txt": "Save as TXT",
-            "save_changes": "Save Changes"
-          },
-          "dialogs": {
-            "admin_email": "Admin Email",
-            "confirm_delete": "Confirm Delete",
-            "email_error": "Email Error",
-            "email_sent": "Email Sent",
-            "enter_admin_email_address": "Enter admin email address:",
-            "error": "Error",
-            "invalid_email": "Invalid Email",
-            "no_modules_available": "No modules available.",
-            "no_selection": "No Selection",
-            "please_enter_a_valid_admin_email_address": "Please enter a valid admin email address.",
-            "please_select_a_module_to_delete": "Please select a module to delete.",
-            "please_select_a_module_to_edit": "Please select a module to edit.",
-            "report": "Report",
-            "report_saved": "Report Saved",
-            "save_error": "Save Error"
-          },
-          "values": {
-            "fall": "Fall"
-          },
-          "windows": {
-            "add_new_module": "Add New Module",
-            "edit_module": "Edit Module",
-            "module_report": "Module Report"
-          }
-        },
         "notifications": {
           "dialogs": {
             "notifications_sent": "Notifications Sent"
@@ -26129,7 +26095,7 @@
           "dialogs": {
             "authentication_required": "Authentication Required",
             "initialization_error": "Initialization Error",
-            "please_log_in_through_the_main_university_system_gui_run_python": "Please log in through the main University System GUI.\n\nRun: python run.py --gui"
+            "please_log_in_through_the_main_university_system_gui_run_python": "Please log in through the main University System GUI.\n\nRun: python -m education_system --gui"
           }
         },
         "content": {

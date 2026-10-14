@@ -135,7 +135,7 @@ class MobileAPIManager:
             """Get detailed event information for mobile"""
             try:
                 rows = self.calendar_manager.db_manager.execute_query(
-                    "SELECT * FROM academic_calendar_events WHERE id = ?", (event_id,)
+                    "SELECT * FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') WHERE id = ?", (event_id,)
                 )
 
                 if not rows:
@@ -178,7 +178,7 @@ class MobileAPIManager:
                 # Get events modified since last sync
                 if last_sync:
                     query = '''
-                    SELECT * FROM academic_calendar_events
+                    SELECT * FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar')
                     WHERE last_modified > ?
                     ORDER BY last_modified DESC
                     '''
@@ -188,7 +188,7 @@ class MobileAPIManager:
                 else:
                     # First sync - get recent events
                     rows = self.calendar_manager.db_manager.execute_query('''
-                    SELECT * FROM academic_calendar_events
+                    SELECT * FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar')
                     WHERE date >= date('now', '-30 days')
                     ORDER BY date
                     ''')

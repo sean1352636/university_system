@@ -520,7 +520,7 @@ def _run_plagiarism_for_submission(submission_id: int, assignment_id: int,
             )
             seeded_count += 1
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     if not author_user_id:
         return {'compared_count': len(other_rows)}

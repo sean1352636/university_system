@@ -17,7 +17,7 @@ app = create_app(db_path)
 **Starting the server:**
 
 ```bash
-python run.py primary --api
+python -m education_system primary --api
 # or
 python -m education_system.primary_school --api
 ```

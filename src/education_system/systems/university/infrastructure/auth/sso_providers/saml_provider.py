@@ -48,9 +48,10 @@ try:
     PYTHON3_SAML_AVAILABLE = True
 except ImportError:
     PYTHON3_SAML_AVAILABLE = False
-    logger.info(
-        "python3-saml is not installed. SAML provider will use basic XML fallback. "
-        "Install with: pip install python3-saml"
+    logger.warning(
+        "python3-saml is not installed, so SAML assertion signatures cannot be "
+        "verified and SAML logins will be refused. Install the extra to enable "
+        "SAML: pip install 'education-system[sso]'"
     )
 
 # SAML 2.0 XML namespaces
@@ -332,8 +333,41 @@ class SAMLProvider:
                 - session_index (str): The session index for logout.
                 - error (str): Error message if success is False.
         """
+        # Fail closed. There used to be an XML-parsing fallback here for when
+        # python3-saml was missing — which is the *normal* state, since it is
+        # not a declared dependency. That path read the NameID and attributes
+        # straight out of the posted XML without verifying any signature, so
+        # anyone who could reach the ACS endpoint could mint an assertion
+        # naming any user and be logged in as them. An unverifiable assertion
+        # is not a weaker credential; it is no credential at all.
         if not PYTHON3_SAML_AVAILABLE:
-            return self._process_response_fallback(saml_response, request_id)
+            logger.error(
+                "Refusing SAML login: python3-saml is not installed, so the "
+                "assertion signature cannot be verified."
+            )
+            return {
+                "success": False,
+                "error": (
+                    "SAML is not available: the signature verification library "
+                    "is not installed."
+                ),
+                "attributes": {},
+                "name_id": "",
+                "session_index": "",
+            }
+
+        if not self._clean_certificate(self.x509_cert):
+            logger.error(
+                "Refusing SAML login: no IdP certificate is configured, so "
+                "there is nothing to verify the assertion against."
+            )
+            return {
+                "success": False,
+                "error": "SAML is not configured: no trusted IdP certificate.",
+                "attributes": {},
+                "name_id": "",
+                "session_index": "",
+            }
 
         try:
             return self._process_response_onelogin(saml_response, request_id)
@@ -407,135 +441,17 @@ class SAMLProvider:
             "session_index": session_index,
         }
 
-    def _process_response_fallback(
-        self, saml_response: str, request_id: Optional[str]
-    ) -> Dict[str, Any]:
-        """Process SAML Response using basic XML parsing (fallback).
-
-        Warning: This fallback does NOT perform cryptographic signature
-        validation. It is intended for development and testing only.
-        For production use, install python3-saml.
-
-        Args:
-            saml_response: Base64-encoded SAML Response.
-            request_id: Optional request ID for InResponseTo check.
-
-        Returns:
-            Dict with attributes, name_id, session_index, and success status.
-        """
-        logger.warning(
-            "Processing SAML response without python3-saml. "
-            "Signature validation is NOT performed. "
-            "Install python3-saml for production use: pip install python3-saml"
-        )
-
-        try:
-            # Decode the base64 response
-            decoded = base64.b64decode(saml_response)
-            xml_string = decoded.decode("utf-8")
-
-            # Register namespaces for proper parsing
-            for prefix, uri in SAML_NAMESPACES.items():
-                ET.register_namespace(prefix, uri)
-
-            root = ET.fromstring(xml_string)
-
-            # Check InResponseTo if request_id provided
-            in_response_to = root.get("InResponseTo", "")
-            if request_id and in_response_to and in_response_to != request_id:
-                return {
-                    "success": False,
-                    "error": (
-                        f"InResponseTo mismatch: expected '{request_id}', "
-                        f"got '{in_response_to}'"
-                    ),
-                    "attributes": {},
-                    "name_id": "",
-                    "session_index": "",
-                }
-
-            # Find the assertion element
-            assertion = root.find(
-                f".//{{{SAML_NAMESPACES['saml']}}}Assertion"
-            )
-            if assertion is None:
-                return {
-                    "success": False,
-                    "error": "No Assertion found in SAML Response",
-                    "attributes": {},
-                    "name_id": "",
-                    "session_index": "",
-                }
-
-            # Validate the assertion
-            if not self.validate_assertion(assertion):
-                return {
-                    "success": False,
-                    "error": "Assertion validation failed",
-                    "attributes": {},
-                    "name_id": "",
-                    "session_index": "",
-                }
-
-            # Extract attributes
-            attributes = self.extract_attributes(assertion)
-
-            # Extract NameID
-            name_id_elem = assertion.find(
-                f".//{{{SAML_NAMESPACES['saml']}}}NameID"
-            )
-            name_id = (
-                name_id_elem.text if name_id_elem is not None else ""
-            )
-
-            # Extract session index
-            authn_stmt = assertion.find(
-                f".//{{{SAML_NAMESPACES['saml']}}}AuthnStatement"
-            )
-            session_index = ""
-            if authn_stmt is not None:
-                session_index = authn_stmt.get("SessionIndex", "")
-
-            # Remove used request ID
-            if request_id and request_id in self._pending_requests:
-                del self._pending_requests[request_id]
-
-            logger.info(
-                "SAML response processed (XML fallback) for NameID: %s",
-                name_id,
-            )
-            return {
-                "success": True,
-                "attributes": attributes,
-                "name_id": name_id,
-                "session_index": session_index,
-            }
-
-        except ET.ParseError as e:
-            logger.error("Failed to parse SAML response XML: %s", e)
-            return {
-                "success": False,
-                "error": f"Invalid SAML response XML: {e}",
-                "attributes": {},
-                "name_id": "",
-                "session_index": "",
-            }
-        except Exception as e:
-            logger.error("Failed to process SAML response (fallback)")
-            return {
-                "success": False,
-                "error": f"Failed to process SAML response: {e}",
-                "attributes": {},
-                "name_id": "",
-                "session_index": "",
-            }
-
     def validate_assertion(self, assertion: Any) -> bool:
         """Validate a SAML assertion.
 
         Checks the audience restriction, timestamp conditions (NotBefore,
-        NotOnOrAfter), and signature presence. When python3-saml is not
-        available, cryptographic signature validation is skipped.
+        NotOnOrAfter) and the presence of a signature.
+
+        This is a **supporting** check, not a substitute for signature
+        verification: the cryptographic check is done by python3-saml in
+        :meth:`_process_response_onelogin`. Because a caller could mistake a
+        True here for "this assertion is trustworthy", it refuses outright
+        when the verification library is missing.
 
         Args:
             assertion: An XML Element representing the SAML Assertion.
@@ -545,6 +461,13 @@ class SAMLProvider:
             True if the assertion passes validation, False otherwise.
         """
         try:
+            if not PYTHON3_SAML_AVAILABLE:
+                logger.error(
+                    "Refusing to validate a SAML assertion: python3-saml is "
+                    "not installed, so its signature cannot be checked."
+                )
+                return False
+
             if not isinstance(assertion, ET.Element):
                 logger.warning(
                     "validate_assertion received unexpected type: %s",
@@ -601,24 +524,21 @@ class SAMLProvider:
                     )
                     return False
 
-            # Check for signature presence (actual validation requires
-            # python3-saml or xmlsec)
+            # An unsigned assertion is rejected here rather than noted. The
+            # enclosing Response may legitimately carry the signature instead,
+            # which is why the authoritative check lives in python3-saml —
+            # but this method must never report success for an assertion with
+            # no signature anywhere in it.
             signature = assertion.find(
                 f".//{{{SAML_NAMESPACES['ds']}}}Signature"
             )
             if signature is None:
-                logger.info(
-                    "Assertion does not contain a Signature element. "
-                    "The enclosing Response may be signed instead."
-                )
-
-            if not PYTHON3_SAML_AVAILABLE:
                 logger.warning(
-                    "Cryptographic signature validation skipped: "
-                    "python3-saml is not installed."
+                    "Rejecting SAML assertion: no Signature element present."
                 )
+                return False
 
-            logger.debug("SAML assertion validation passed")
+            logger.debug("SAML assertion passed the supporting checks")
             return True
 
         except Exception:

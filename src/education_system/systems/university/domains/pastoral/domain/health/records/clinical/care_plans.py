@@ -198,13 +198,22 @@ def view_care_plans(auth):
         conn.close()
         return
 
+    # Settle the layout once, before the loop. Re-testing ``student_id`` per
+    # row was unsafe because the all-plans branch below reassigned it from the
+    # row itself: from the second row on the test flipped and an all-plans row
+    # was unpacked into the single-student names. Both queries happen to
+    # return ten columns, so it did not raise — it silently printed the
+    # student's first name as the plan description. Same defect as
+    # view_health_records, minus the crash that made that one visible.
+    viewing_all_students = auth.check_permission('view_any_health_record') and not student_id
+
     print("\n===== Care Plans =====")
     for plan in care_plans:
-        if auth.check_permission('view_any_health_record') and not student_id:
+        if viewing_all_students:
             # All plans view
-            plan_id, student_id, first_name, last_name, plan_name, start_date, end_date, provider, status, condition_name = plan
+            plan_id, row_student_id, first_name, last_name, plan_name, start_date, end_date, provider, status, condition_name = plan
             print(f"\nID: {plan_id}")
-            print(f"Student: {first_name} {last_name} (ID: {student_id})")
+            print(f"Student: {first_name} {last_name} (ID: {row_student_id})")
             print(f"Plan: {plan_name}")
             print(f"Condition: {condition_name if condition_name else 'General Care'}")
             print(f"Start Date: {start_date}")

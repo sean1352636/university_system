@@ -13,6 +13,94 @@ from education_system.systems.university.domains.academics.domain.services.offic
 
 logger = logging.getLogger(__name__)
 
+DAYS_OF_WEEK = [
+    'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',
+    'Saturday', 'Sunday',
+]
+
+
+def _prompt_day(prompt="Select a day (1-7)", current=None):
+    """Pick a day by number rather than typing it out.
+
+    Returns the day name, or ``None`` if the user backed out. When
+    ``current`` is given, a blank line keeps it.
+    """
+    print("\nDays of the week:")
+    for index, day in enumerate(DAYS_OF_WEEK, 1):
+        marker = "  (current)" if current and day == current else ""
+        print(f"  {index}. {day}{marker}")
+
+    suffix = " [blank to keep current]" if current else " [blank to cancel]"
+    while True:
+        raw = input(f"{prompt}{suffix}: ").strip()
+        if not raw:
+            return current
+        if raw.isdigit() and 1 <= int(raw) <= len(DAYS_OF_WEEK):
+            return DAYS_OF_WEEK[int(raw) - 1]
+        print(f"Invalid choice. Enter a number from 1 to {len(DAYS_OF_WEEK)}.")
+
+
+def _list_buildings():
+    """Buildings on file as ``[(name, code)]``. Empty on any failure."""
+    try:
+        from education_system.systems.university.infrastructure.database.db import (
+            get_connection,
+        )
+        conn = get_connection()
+        try:
+            return [
+                (row[0], row[1])
+                for row in conn.execute(
+                    "SELECT building_name, COALESCE(building_code, '') "
+                    "FROM buildings WHERE building_name IS NOT NULL "
+                    "AND TRIM(building_name) <> '' "
+                    "ORDER BY building_name"
+                )
+            ]
+        finally:
+            conn.close()
+    except Exception as e:
+        logger.warning("Could not list buildings: %s", e)
+        return []
+
+
+def _prompt_location(prompt="Select a location", current=None):
+    """Pick a location from the buildings on file.
+
+    Falls back to free text when there are no buildings recorded, so the
+    prompt never becomes a dead end. Returns ``None`` if the user backs out
+    with no ``current`` value to keep.
+    """
+    buildings = _list_buildings()
+    if not buildings:
+        typed = input("Location: ").strip()
+        return typed or current
+
+    print("\nBuildings:")
+    for index, (name, code) in enumerate(buildings, 1):
+        label = f"{name} ({code})" if code else name
+        marker = "  (current)" if current and name == current else ""
+        print(f"  {index}. {label}{marker}")
+    other = len(buildings) + 1
+    print(f"  {other}. Somewhere else (type it in)")
+
+    suffix = " [blank to keep current]" if current else " [blank to cancel]"
+    while True:
+        raw = input(f"{prompt} (1-{other}){suffix}: ").strip()
+        if not raw:
+            return current
+        if raw.isdigit():
+            choice = int(raw)
+            if 1 <= choice <= len(buildings):
+                return buildings[choice - 1][0]
+            if choice == other:
+                typed = input("Enter the location: ").strip()
+                if typed:
+                    return typed
+                print("Location cannot be empty.")
+                continue
+        print(f"Invalid choice. Enter a number from 1 to {other}.")
+
 
 def display_office_hours_menu(auth):
     """Display the office hours management CLI menu."""
@@ -142,20 +230,20 @@ def _create_office_hours(service, instructor_id):
     """Create a new office hours slot."""
     print("\n--- Create Office Hours ---")
 
-    valid_days = [
-        'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',
-        'Saturday', 'Sunday',
-    ]
-    print("Days of week: " + ", ".join(valid_days))
-    day = input("Day of week: ").strip()
-    if day not in valid_days:
-        print(f"Invalid day. Must be one of: {', '.join(valid_days)}")
+    day = _prompt_day()
+    if not day:
+        print("Cancelled.")
         input("Press Enter to continue...")
         return
 
     start_time = input("Start time (HH:MM): ").strip()
     end_time = input("End time (HH:MM): ").strip()
-    location = input("Location: ").strip()
+
+    location = _prompt_location()
+    if not location:
+        print("Cancelled.")
+        input("Press Enter to continue...")
+        return
 
     capacity_str = input("Capacity (default 5): ").strip()
     try:
@@ -221,19 +309,10 @@ def _edit_office_hours(service, instructor_id):
 
     print("\nLeave fields blank to keep current values.")
 
-    valid_days = [
-        'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',
-        'Saturday', 'Sunday',
-    ]
-
     updates = {}
 
-    day = input("New day of week: ").strip()
+    day = _prompt_day("Select the new day (1-7)", current=None)
     if day:
-        if day not in valid_days:
-            print(f"Invalid day. Must be one of: {', '.join(valid_days)}")
-            input("Press Enter to continue...")
-            return
         updates['day_of_week'] = day
 
     start_time = input("New start time (HH:MM): ").strip()
@@ -244,7 +323,7 @@ def _edit_office_hours(service, instructor_id):
     if end_time:
         updates['end_time'] = end_time
 
-    location = input("New location: ").strip()
+    location = _prompt_location("Select the new location")
     if location:
         updates['location'] = location
 

@@ -13,7 +13,6 @@ from education_system.systems.university.domains.pastoral.interfaces.gui.helpdes
 from education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk import search
 from education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk import analytics_reports
 from education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk import admin
-from education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk import user_management
 from education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk import departments_orgs
 from education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk import sla_workflows
 from education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk import export_import

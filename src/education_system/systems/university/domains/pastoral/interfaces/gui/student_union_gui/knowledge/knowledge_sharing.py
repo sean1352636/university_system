@@ -84,7 +84,7 @@ class KnowledgeSharingDialog:
         list_frame = ttk.LabelFrame(main_frame, text=_t("student_union.knowledge.upcoming_sessions"))
         list_frame.pack(fill='both', expand=True, pady=(0, 15))
 
-        columns = (_t("student_union.knowledge.columns.topic"), _t("student_union.knowledge.columns.presenter"), _t("student_union.knowledge.columns.date"), _t("student_union.knowledge.columns.duration"), _t("student_union.knowledge.columns.skill_level"), _t("student_union.knowledge.columns.spots"))
+        columns = (_t("student_union.knowledge.columns.topic"), _t("student_union.knowledge.columns.presenter"), _t("student_union.knowledge.columns.date"), _t("student_union.knowledge.columns.duration", default="Duration"), _t("student_union.knowledge.columns.skill_level", default="Skill Level"), _t("student_union.knowledge.columns.spots", default="Spots"))
         tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=10)
 
         for col in columns:
@@ -122,7 +122,7 @@ class KnowledgeSharingDialog:
         self.dialog.wait_window(dialog.dialog)
 
     def view_recordings(self):
-        messagebox.showinfo(_t("student_union.knowledge.recordings"), _t("student_union.knowledge.recordings_list"))
+        messagebox.showinfo(_t("student_union.knowledge.recordings", default="Recordings"), _t("student_union.knowledge.recordings_list", default="Recordings List"))
 
 
 
@@ -134,7 +134,7 @@ class ProposeSessionDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title(_t("student_union.knowledge.propose_workshop"))
+        self.dialog.title(_t("student_union.knowledge.propose_workshop", default="Propose Workshop"))
         self.dialog.geometry("700x650")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -145,19 +145,19 @@ class ProposeSessionDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(main_frame, text=_t("student_union.knowledge.propose_workshop"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t("student_union.knowledge.propose_workshop", default="Propose Workshop"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
-        ttk.Label(main_frame, text=_t("student_union.knowledge.share_expertise"),
+        ttk.Label(main_frame, text=_t("student_union.knowledge.share_expertise", default="Share Expertise"),
                  font=('Arial', 10, 'italic')).pack(pady=(0, 15))
 
         # Session title
-        ttk.Label(main_frame, text=_t("student_union.knowledge.session_title")).pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t("student_union.knowledge.session_title", default="===== SESSION =====")).pack(anchor='w', pady=(0, 5))
         self.title_entry = ttk.Entry(main_frame, width=60)
         self.title_entry.pack(fill='x', pady=(0, 10))
         self.title_entry.insert(0, "Introduction to Python Programming")
 
         # Category
-        ttk.Label(main_frame, text=_t("student_union.knowledge.category")).pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t("student_union.knowledge.category", default="Category")).pack(anchor='w', pady=(0, 5))
         self.category_var = tk.StringVar()
         category_combo = ttk.Combobox(main_frame, textvariable=self.category_var, width=57)
         category_combo['values'] = ('Programming', 'Design', 'Business', 'Languages',
@@ -169,31 +169,31 @@ class ProposeSessionDialog:
         details_frame = ttk.Frame(main_frame)
         details_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(details_frame, text=_t("student_union.knowledge.duration_hours")).grid(row=0, column=0, sticky='w', padx=(0, 10))
+        ttk.Label(details_frame, text=_t("student_union.knowledge.duration_hours", default="Duration Hours")).grid(row=0, column=0, sticky='w', padx=(0, 10))
         self.duration_entry = ttk.Entry(details_frame, width=10)
         self.duration_entry.grid(row=0, column=1, sticky='w', padx=(0, 30))
         self.duration_entry.insert(0, "2")
 
-        ttk.Label(details_frame, text=_t("student_union.knowledge.level")).grid(row=0, column=2, sticky='w', padx=(0, 10))
+        ttk.Label(details_frame, text=_t("student_union.knowledge.level", default="Level")).grid(row=0, column=2, sticky='w', padx=(0, 10))
         self.level_var = tk.StringVar(value=_t('gui.pastoral.student_union_gui.knowledge.knowledge_sharing.values.beginner', default="Beginner"))
         level_combo = ttk.Combobox(details_frame, textvariable=self.level_var, width=15, state='readonly')
         level_combo['values'] = ('Beginner', 'Intermediate', 'Advanced', 'All Levels')
         level_combo.grid(row=0, column=3, sticky='w')
 
         # Max participants
-        ttk.Label(main_frame, text=_t("student_union.knowledge.max_participants")).pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t("student_union.knowledge.max_participants", default="Max Participants")).pack(anchor='w', pady=(0, 5))
         self.max_participants_entry = ttk.Entry(main_frame, width=60)
         self.max_participants_entry.pack(fill='x', pady=(0, 10))
         self.max_participants_entry.insert(0, "20")
 
         # Description
-        ttk.Label(main_frame, text=_t("student_union.knowledge.session_description")).pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t("student_union.knowledge.session_description", default="Session Description")).pack(anchor='w', pady=(0, 5))
         self.description_text = scrolledtext.ScrolledText(main_frame, height=8, wrap=tk.WORD)
         self.description_text.pack(fill='both', expand=True, pady=(0, 10))
         self.description_text.insert(1.0, "Describe what participants will learn, prerequisites, and what they should bring...")
 
         # Prerequisites
-        ttk.Label(main_frame, text=_t("student_union.knowledge.prerequisites")).pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t("student_union.knowledge.prerequisites", default="Prerequisites")).pack(anchor='w', pady=(0, 5))
         self.prerequisites_entry = ttk.Entry(main_frame, width=60)
         self.prerequisites_entry.pack(fill='x', pady=(0, 15))
         self.prerequisites_entry.insert(0, "None - beginners welcome!")
@@ -202,7 +202,7 @@ class ProposeSessionDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text=_t("student_union.knowledge.submit_proposal"), command=self.submit_proposal).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t("student_union.knowledge.submit_proposal", default="Submit Proposal"), command=self.submit_proposal).pack(side='left', padx=(0, 10))
         ttk.Button(button_frame, text=_t("common.cancel"), command=self.dialog.destroy).pack(side='left')
 
     def submit_proposal(self):
@@ -215,7 +215,7 @@ class ProposeSessionDialog:
         prerequisites = self.prerequisites_entry.get().strip()
 
         if not all([title, category, duration, max_participants, description]):
-            messagebox.showwarning(_t("common.warning"), _t("student_union.knowledge.fill_required_fields"))
+            messagebox.showwarning(_t("common.warning"), _t("student_union.knowledge.fill_required_fields", default="Fill Required Fields"))
             return
 
         try:
@@ -224,7 +224,7 @@ class ProposeSessionDialog:
             if duration_float <= 0 or max_part_int <= 0:
                 raise ValueError()
         except ValueError:
-            messagebox.showwarning(_t("common.warning"), _t("student_union.knowledge.invalid_values"))
+            messagebox.showwarning(_t("common.warning"), _t("student_union.knowledge.invalid_values", default="Invalid Values."))
             return
 
         try:
@@ -262,10 +262,10 @@ class ProposeSessionDialog:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo(_t("common.success"), _t("student_union.knowledge.proposal_submitted", title=title))
+            messagebox.showinfo(_t("common.success"), _t("student_union.knowledge.proposal_submitted", title=title, default="Proposal Submitted {title}"))
             self.dialog.destroy()
         except sqlite3.Error as e:
-            messagebox.showerror(_t("common.error"), _t("student_union.knowledge.proposal_failed", error=str(e)))
+            messagebox.showerror(_t("common.error"), _t("student_union.knowledge.proposal_failed", error=str(e), default="Proposal Failed {error}"))
 
 
 

@@ -74,7 +74,7 @@ python -m education_system.secondary_school --api
 You can also launch through the universal login (all four systems):
 
 ```bash
-python run.py
+python -m education_system
 ```
 
 ### Running Tests

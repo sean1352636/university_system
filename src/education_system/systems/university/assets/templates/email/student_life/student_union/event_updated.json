@@ -1,0 +1,12 @@
+{
+    "subject": "📅 Change to an event you registered for - $event_name",
+    "body": "Dear $student_name,\n\nAn event you have registered for has been changed. The differences are listed below so you can see exactly what is different.\n\n=== WHAT CHANGED ===\n$change_list\n\n=== THE EVENT AS IT STANDS NOW ===\nEvent: $event_name\nDate and Time: $start_datetime\nEnds: $end_datetime\nLocation: $location\nOrganiser: $organizer_name\nStatus: $status\n\nDescription:\n$description\n\nUpdated On: $updated_at\nUpdated By: $updated_by\n\n=== DO YOU NEED TO DO ANYTHING? ===\nIf the date, time or location changed, check the new details still work for you. Your place is still booked — you do not need to register again.\n\nIf you can no longer make it, please let us know so the place can go to someone on the waiting list.\n\n=== CONTACT ===\nStudents' Union Events: studentunion@university.edu\nPhone: (555) 123-4567\n\nBest regards,\nStudents' Union Events Team\n\n$signature",
+    "variables": {
+        "description": {"default": "No description provided."},
+        "end_datetime": {"default": "Not specified"},
+        "location": {"default": "To be confirmed"},
+        "organizer_name": {"default": "Students' Union"},
+        "status": {"default": "upcoming"},
+        "change_list": {"default": "  (no changes recorded)"}
+    }
+}

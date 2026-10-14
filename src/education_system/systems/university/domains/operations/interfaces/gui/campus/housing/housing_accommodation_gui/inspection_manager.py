@@ -10,6 +10,22 @@ from education_system.systems.university.infrastructure.database.db import get_c
 from education_system.systems.university.infrastructure.utils.activity_logger import log_activity
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import generate_id
+# Inspection emails and the room roster come from the domain, so the CLI and
+# this GUI send residents the same wording.
+from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common import (
+    room_occupants,
+    send_inspection_completed_email,
+    send_inspection_follow_up_email,
+)
+# One vocabulary for inspection status across CLI, GUI and database. This GUI
+# used to write its own set (Completed / Issues Found / Follow-up Required),
+# so the same inspection read differently depending on the interface.
+from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.inspections import (
+    ALL_STATUSES,
+    OUTCOME_STATUSES,
+    SCHEDULED_STATUS,
+    normalise_status,
+)
 
 def show_inspections(self):
         """Show room inspections interface"""
@@ -408,7 +424,7 @@ def send_post_inspection_email(self, cursor, room_id, inspection_id, inspection_
             from education_system import paths
 
             # Determine which template to use based on status
-            if status == 'Issues Found':
+            if status == 'Failed':
                 template_name='housing/inspection_issues_found'
             else:
                 template_name='housing/inspection_completed'
@@ -424,9 +440,9 @@ def send_post_inspection_email(self, cursor, room_id, inspection_id, inspection_
                 return
 
             # Determine pass/fail result
-            if status == 'Issues Found':
+            if status == 'Failed':
                 pass_fail = "FAIL - Issues Identified"
-            elif status == 'Completed':
+            elif status == 'Passed':
                 pass_fail = "PASS - No Issues"
             else:
                 pass_fail = status
@@ -505,9 +521,9 @@ def record_inspection_dialog(self):
 
         # Status
         ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.labels.status', default="Status:")).grid(row=1, column=0, sticky='w', pady=5)
-        status_var = tk.StringVar(value=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.values.completed', default="Completed"))
+        status_var = tk.StringVar(value=OUTCOME_STATUSES[0])
         status_combo = ttk.Combobox(form_frame, textvariable=status_var,
-                                    values=['Completed', 'Issues Found', 'Follow-up Required'],
+                                    values=OUTCOME_STATUSES,
                                     width=28, state='readonly')
         status_combo.grid(row=1, column=1, pady=5, padx=5)
 
@@ -520,10 +536,49 @@ def record_inspection_dialog(self):
         pass_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.buttons.inspection_passed', default="Inspection Passed"), variable=pass_var).grid(row=3, column=1, sticky='w', pady=5)
 
+        # Follow-up date and reason. Only meaningful for 'Needs Follow-up',
+        # but shown always so the operator can see what will be asked of them;
+        # both become mandatory once that status is chosen, because a follow-up
+        # with no date leaves the resident not knowing when someone is coming.
+        ttk.Label(form_frame, text="Follow-up Date (YYYY-MM-DD):").grid(
+            row=4, column=0, sticky='w', pady=5)
+        followup_var = tk.StringVar()
+        ttk.Entry(form_frame, textvariable=followup_var, width=30).grid(
+            row=4, column=1, pady=5, padx=5)
+
+        ttk.Label(form_frame, text="Reason for follow-up:").grid(
+            row=5, column=0, sticky='nw', pady=5)
+        reason_text = tk.Text(form_frame, height=3, width=30)
+        reason_text.grid(row=5, column=1, pady=5, padx=5)
+
         def save_results():
             if not id_var.get().strip():
                 messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.id_required', default="ID Required"), _t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.please_enter_inspection_id', default="Please enter inspection ID"), parent=dialog)
                 return
+
+            follow_up_date = followup_var.get().strip() or None
+            follow_up_reason = reason_text.get("1.0", tk.END).strip() or None
+
+            if status_var.get() == 'Needs Follow-up':
+                if not follow_up_date:
+                    messagebox.showwarning(
+                        "Follow-up date required",
+                        "A follow-up needs a date so the resident knows when "
+                        "someone is coming back.", parent=dialog)
+                    return
+                try:
+                    datetime.strptime(follow_up_date, '%Y-%m-%d')
+                except ValueError:
+                    messagebox.showwarning(
+                        "Invalid date",
+                        f"'{follow_up_date}' is not a valid date. Use YYYY-MM-DD.",
+                        parent=dialog)
+                    return
+                if not follow_up_reason:
+                    messagebox.showwarning(
+                        "Reason required",
+                        "Tell the resident why a follow-up is needed.", parent=dialog)
+                    return
 
             try:
                 inspection_id = id_var.get().strip()
@@ -550,18 +605,74 @@ def record_inspection_dialog(self):
                 # Update inspection with results
                 cursor.execute('''
                 UPDATE housing_inspections
-                SET status = ?, findings = ?, action_required = ?, updated_at = ?
+                SET status = ?, findings = ?, action_required = ?,
+                    follow_up_date = ?, updated_at = ?
                 WHERE inspection_id = ?
-                ''', (status, issues, 'Follow-up Required' if not passed else 'None', timestamp, inspection_id))
+                ''', (status, issues,
+                      'Follow-up required' if not passed else 'None',
+                      follow_up_date, timestamp, inspection_id))
+
+                # Read the room, building and residents while the connection
+                # is open, so the emails below need no second query.
+                cursor.execute('''
+                SELECT i.room_id, i.inspector, i.inspection_date, i.inspection_type,
+                       b.building_name, r.room_number, r.floor_number
+                FROM housing_inspections i
+                JOIN housing_rooms r ON i.room_id = r.room_id
+                JOIN housing_buildings b ON r.building_id = b.building_id
+                WHERE i.inspection_id = ?
+                ''', (inspection_id,))
+                detail = cursor.fetchone()
+                residents = room_occupants(cursor, detail[0]) if detail else []
 
                 conn.commit()
                 conn.close()
+
+                # Tell the resident(s) the outcome. After the commit, so no
+                # result is announced that rolled back.
+                sent = failed = 0
+                if detail and residents:
+                    context = {
+                        'inspection_id': inspection_id,
+                        'inspector': detail[1],
+                        'inspection_date': detail[2],
+                        'inspection_type': detail[3],
+                        'building_name': detail[4],
+                        'room_number': detail[5],
+                        'floor_number': detail[6],
+                        'status': status,
+                        'findings': issues,
+                        'action_required': (None if passed else 'Follow-up required'),
+                        'follow_up_date': follow_up_date,
+                        'follow_up_reason': follow_up_reason,
+                    }
+                    send_fn = (send_inspection_follow_up_email
+                               if status == 'Needs Follow-up'
+                               else send_inspection_completed_email)
+                    for person in residents:
+                        payload = dict(context)
+                        payload['student_name'] = person['student_name']
+                        payload['student_id'] = person['student_id']
+                        payload['student_email'] = person['email_address']
+                        if send_fn(payload):
+                            sent += 1
+                        else:
+                            failed += 1
+
+                if not residents:
+                    email_line = ("\n\nNobody is currently assigned to this room, "
+                                  "so no result email was sent.")
+                else:
+                    email_line = (f"\n\nResult emailed to {sent} resident(s)"
+                                  + (f", {failed} failed." if failed else "."))
 
                 messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.success', default="Success"),
                                   f"Inspection results recorded successfully!\n\n"
                                   f"Inspection ID: {inspection_id}\n"
                                   f"Status: {status}\n"
-                                  f"Passed: {'Yes' if passed else 'No'}",
+                                  f"Passed: {'Yes' if passed else 'No'}"
+                                  + (f"\nFollow-up: {follow_up_date}" if follow_up_date else "")
+                                  + email_line,
                                   parent=dialog)
                 dialog.destroy()
 
@@ -630,7 +741,12 @@ def load_inspections(self, tree):
             for inspection in inspections:
                 # Convert sqlite3.Row to tuple to avoid errors
                 if hasattr(inspection, '__iter__') and not isinstance(inspection, (str, bytes)):
-                    values = tuple(inspection)
+                    values = list(inspection)
+                    # Show the canonical name even for a row still carrying an
+                    # old GUI status, so the list never disagrees with the
+                    # status shown in the edit dialog.
+                    values[5] = normalise_status(values[5])
+                    values = tuple(values)
                 else:
                     values = inspection
                 tree.insert('', 'end', values=values)
@@ -711,9 +827,11 @@ def edit_inspection(self, tree):
 
             # Status
             ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.labels.status', default="Status:")).grid(row=4, column=0, sticky='w', pady=5)
-            status_var = tk.StringVar(value=inspection_data[6])
+            # Normalise so a legacy value preselects the equivalent
+            # canonical entry instead of leaving the combobox blank.
+            status_var = tk.StringVar(value=normalise_status(inspection_data[6]))
             ttk.Combobox(form_frame, textvariable=status_var, width=28,
-                        values=['Scheduled', 'Completed', 'Issues Found', 'Follow-up Required'],
+                        values=ALL_STATUSES,
                         state='readonly').grid(row=4, column=1, pady=5, padx=5)
 
             # Findings
@@ -766,7 +884,7 @@ def edit_inspection(self, tree):
                     conn.commit()
 
                     # Send email notification if status changed and checkbox is checked
-                    if email_var.get() and new_status != old_status and new_status in ['Completed', 'Issues Found']:
+                    if email_var.get() and new_status != old_status and new_status in OUTCOME_STATUSES:
                         send_post_inspection_email(
                             self, cursor, inspection_data[0], inspection_id,
                             date_var.get(), type_var.get(), inspector_var.get(),

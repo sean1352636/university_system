@@ -208,7 +208,7 @@ def test_ics_round_trip_terms(fresh_ay_db):
                 "2026-01-05", "2026-03-27")
 
     # Build ICS using the API blueprint helper (no Flask context needed).
-    from education_system.systems.sixth_form.interfaces.api.routes.academic_year_routes import (
+    from education_system.api.sixth_form.routes.academic_year_routes import (
         _build_ics,
     )
     ics_body = _build_ics(y.year_id)

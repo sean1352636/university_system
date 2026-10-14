@@ -87,11 +87,11 @@ def calculate_late_fees():
     global auth
 
     if not auth or not auth.current_user:
-        print(get_text("finance.fee_structure.login_required_late_fees"))
+        print(get_text("finance.fee_structure.login_required_late_fees", default="Login Required Late Fees"))
         return
 
     if not auth.check_permission('manage_finances'):
-        print(get_text("finance.fee_structure.permission_denied_late_fees"))
+        print(get_text("finance.fee_structure.permission_denied_late_fees", default="Permission Denied Late Fees."))
         return
 
     try:
@@ -117,14 +117,14 @@ def calculate_late_fees():
         overdue_fees = cursor.fetchall()
 
         if not overdue_fees:
-            print(get_text("finance.fee_structure.no_overdue_fees"))
+            print(get_text("finance.fee_structure.no_overdue_fees", default="No Overdue Fees."))
             conn.close()
             return
 
         late_fees_applied = 0
         total_late_fees = 0
 
-        print(get_text("finance.fee_structure.calculating_late_fees", count=len(overdue_fees)))
+        print(get_text("finance.fee_structure.calculating_late_fees", count=len(overdue_fees), default="Calculating Late Fees {count}"))
 
         for fee_data in overdue_fees:
             (student_fee_id, student_id, amount, due_date, status, fee_name,
@@ -171,29 +171,29 @@ def calculate_late_fees():
                 late_fees_applied += 1
                 total_late_fees += calculated_late_fee
 
-                print(get_text("finance.fee_structure.applied_late_fee", amount=calculated_late_fee, first_name=first_name, last_name=last_name, fee_name=fee_name, days=effective_days_overdue))
+                print(get_text("finance.fee_structure.applied_late_fee", amount=calculated_late_fee, first_name=first_name, last_name=last_name, fee_name=fee_name, days=effective_days_overdue, default="Applied Late Fee {amount} {days} {fee_name} {first_name} {last_name}"))
 
         conn.commit()
 
-        print(get_text("finance.fee_structure.late_fee_calculation_completed"))
-        print(get_text("finance.fee_structure.late_fees_applied_count", count=late_fees_applied))
-        print(get_text("finance.fee_structure.total_late_fees", amount=total_late_fees))
+        print(get_text("finance.fee_structure.late_fee_calculation_completed", default="Late Fee Calculation Completed"))
+        print(get_text("finance.fee_structure.late_fees_applied_count", count=late_fees_applied, default="Late Fees Applied Count {count}"))
+        print(get_text("finance.fee_structure.total_late_fees", amount=total_late_fees, default="Total Late Fees {amount}"))
 
         conn.close()
 
     except sqlite3.Error as e:
-        print(get_text("finance.fee_structure.database_error", error=e))
+        print(get_text("finance.fee_structure.database_error", error=e, default="Database Error {error}"))
 
 def waive_late_fee():
     """Waive a late fee for a student"""
     global auth
 
     if not auth or not auth.current_user:
-        print(get_text("finance.fee_structure.login_required_waive"))
+        print(get_text("finance.fee_structure.login_required_waive", default="Login Required Waive"))
         return
 
     if not auth.check_permission('manage_finances'):
-        print(get_text("finance.fee_structure.permission_denied_waive"))
+        print(get_text("finance.fee_structure.permission_denied_waive", default="Permission Denied Waive."))
         return
 
     try:
@@ -201,10 +201,10 @@ def waive_late_fee():
         cursor = conn.cursor()
 
         # Get student ID
-        student_id = input(get_text("finance.fee_structure.enter_student_id")).strip()
+        student_id = input(get_text("finance.fee_structure.enter_student_id", default="Enter Student ID: ")).strip()
 
         if not student_exists(student_id):
-            print(get_text("finance.fee_structure.student_not_found", student_id=student_id))
+            print(get_text("finance.fee_structure.student_not_found", student_id=student_id, default="Student Not Found {student_id}"))
             conn.close()
             return
 

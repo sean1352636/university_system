@@ -494,11 +494,16 @@ def create_system_management_tab(self, parent):
 HelpdeskGUI.create_system_management_tab = create_system_management_tab
 
 def show_system_management(self):
-    """Switch to system management"""
+    """Switch to the Administration tab, where System Maintenance lives."""
     for i in range(self.notebook.index('end')):
         if self.notebook.tab(i, 'text') == 'Administration':
             self.notebook.select(i)
-            break
+            return
+    # Previously fell through silently, so the button appeared to do nothing.
+    messagebox.showinfo(
+        _t('gui.pastoral.helpdesk.admin.dialogs.info', default="Info"),
+        _t('gui.pastoral.helpdesk.admin.dialogs.administration_unavailable',
+           default="The Administration tab is not available for your role."))
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.show_system_management = show_system_management
@@ -817,11 +822,19 @@ def backup_database(self):
         # Get source database path
         db_path = paths.UNIVERSITY_DEFAULT_DB_PATH
 
-        # Ask for backup location
+        # Default to var/backups/university/database — the one place backups
+        # live — while still letting the operator choose somewhere else.
+        try:
+            initial_dir = paths.system_backup_dir("university", "database")
+            initial_dir.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            initial_dir = None
+
         backup_path = filedialog.asksaveasfilename(
             defaultextension=".db",
             filetypes=[("SQLite Database", "*.db"), ("All files", "*.*")],
             title=_t('gui.pastoral.helpdesk.admin.dialogs.save_database_backup', default="Save Database Backup"),
+            initialdir=str(initial_dir) if initial_dir else None,
             initialfile=f"helpdesk_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
         )
 
@@ -1083,8 +1096,12 @@ def system_management_menu_gui(self):
               command=lambda: [dialog.destroy(), self.generate_enhanced_ticket_report_gui()]).pack(fill='x', pady=5)
     ttk.Button(options_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.data_import_export', default="💾 Data Import/Export"),
               command=lambda: [dialog.destroy(), self.data_import_export_gui()]).pack(fill='x', pady=5)
+    # Opens the Administration tab's System Maintenance section — the real
+    # cleanup/backup/integrity implementations. A second dialog used to
+    # duplicate them here, calling CLI-era helpers that printed their results
+    # to stdout and reported success unconditionally.
     ttk.Button(options_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.system_maintenance', default="🔧 System Maintenance"),
-              command=lambda: [dialog.destroy(), self.system_maintenance_gui()]).pack(fill='x', pady=5)
+              command=lambda: [dialog.destroy(), self.show_system_management()]).pack(fill='x', pady=5)
     ttk.Button(options_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.audit_logs', default="📋 Audit Logs"),
               command=lambda: [dialog.destroy(), self.view_audit_logs_gui()]).pack(fill='x', pady=5)
 
@@ -1093,51 +1110,6 @@ def system_management_menu_gui(self):
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.system_management_menu_gui = system_management_menu_gui
-
-def system_maintenance_gui(self):
-    """System maintenance functions"""
-    dialog = tk.Toplevel(self.root)
-    dialog.title(_t('gui.pastoral.helpdesk.admin.windows.system_maintenance', default="System Maintenance"))
-    dialog.geometry("500x350")
-    dialog.transient(self.root)
-    dialog.grab_set()
-
-    main_frame = ttk.Frame(dialog, padding="10")
-    main_frame.pack(fill='both', expand=True)
-
-    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.admin.labels.system_maintenance', default="System Maintenance"),
-             font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 20))
-
-    info_frame = ttk.Frame(main_frame)
-    info_frame.pack(fill='both', expand=True)
-
-    def check_integrity():
-        try:
-            from education_system.systems.university.domains.pastoral.domain.services.helpdesk import check_data_integrity
-            check_data_integrity(self.auth if hasattr(self, 'auth') else None)
-            messagebox.showinfo(_t('gui.pastoral.helpdesk.admin.dialogs.success', default="Success"), _t('gui.pastoral.helpdesk.admin.dialogs.data_integrity_check_completed', default="Data integrity check completed"))
-        except Exception as e:
-            messagebox.showerror(_t('gui.pastoral.helpdesk.admin.dialogs.error', default="Error"), f"Integrity check failed: {str(e)}")
-
-    def backup_db():
-        try:
-            from education_system.systems.university.domains.pastoral.domain.services.helpdesk import backup_database
-            backup_database(self.auth if hasattr(self, 'auth') else None)
-            messagebox.showinfo(_t('gui.pastoral.helpdesk.admin.dialogs.success', default="Success"), _t('gui.pastoral.helpdesk.admin.dialogs.database_backup_completed', default="Database backup completed"))
-        except Exception as e:
-            messagebox.showerror(_t('gui.pastoral.helpdesk.admin.dialogs.error', default="Error"), f"Backup failed: {str(e)}")
-
-    ttk.Button(info_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.check_data_integrity', default="🔍 Check Data Integrity"),
-              command=check_integrity).pack(fill='x', pady=5)
-    ttk.Button(info_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.backup_database_variant_2', default="💾 Backup Database"),
-              command=backup_db).pack(fill='x', pady=5)
-    ttk.Button(info_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.database_cleanup_variant_2', default="🧹 Database Cleanup"),
-              command=lambda: messagebox.showinfo(_t('gui.pastoral.helpdesk.admin.dialogs.info', default="Info"), _t('gui.pastoral.helpdesk.admin.dialogs.database_cleanup_functionality', default="Database cleanup functionality"))).pack(fill='x', pady=5)
-
-    ttk.Button(main_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.close', default="Close"), command=dialog.destroy).pack(pady=(20, 0))
-
-# Attach method to HelpdeskGUI class
-HelpdeskGUI.system_maintenance_gui = system_maintenance_gui
 
 def view_audit_logs_gui(self):
     """View ticket audit logs"""
@@ -1200,3 +1172,64 @@ def view_audit_logs_gui(self):
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.view_audit_logs_gui = view_audit_logs_gui
 
+
+def _open_canonical_user_management(self):
+    """Open the system's User Management screen.
+
+    Helpdesk used to ship its own copy (user list, add/edit/deactivate/reset
+    dialogs) against the same `users` table. It was deleted in favour of the
+    canonical screen, so role and permission handling lives in one place.
+    """
+    try:
+        from education_system.systems.university.shell.gui.main.admin.user_management_gui import (
+            open_user_management_window,
+        )
+    except Exception:
+        messagebox.showerror(
+            _t('gui.pastoral.helpdesk.admin.dialogs.error', default="Error"),
+            _t('gui.pastoral.helpdesk.admin.dialogs.user_management_unavailable',
+               default="The User Management screen is not available."))
+        return
+    open_user_management_window(self.root, self.auth)
+
+
+HelpdeskGUI._open_canonical_user_management = _open_canonical_user_management
+
+
+def show_user_management(self):
+    """Admin menu entry — opens the canonical User Management screen."""
+    self._open_canonical_user_management()
+
+
+HelpdeskGUI.show_user_management = show_user_management
+
+
+def create_user_management_tab(self, parent):
+    """User Management tab — a way through to the canonical screen.
+
+    The tab is kept so the admin area still lists User Management where
+    people expect it; the screen itself is the system-wide one.
+    """
+    frame = ttk.Frame(parent)
+    parent.add(frame, text=_t('gui.pastoral.helpdesk.admin.tabs.user_management',
+                              default="User Management"))
+
+    inner = ttk.Frame(frame, padding=40)
+    inner.pack(expand=True)
+    ttk.Label(inner,
+              text=_t('gui.pastoral.helpdesk.admin.labels.user_management',
+                      default="User Management"),
+              font=('Arial', 14, 'bold')).pack(pady=(0, 10))
+    ttk.Label(inner,
+              text=_t('gui.pastoral.helpdesk.admin.labels.user_management_hint',
+                      default="Accounts, roles and permissions are managed in one\n"
+                              "place for the whole system."),
+              justify='center').pack(pady=(0, 20))
+    ttk.Button(inner,
+               text=_t('gui.pastoral.helpdesk.admin.buttons.open_user_management',
+                       default="Open User Management"),
+               command=self._open_canonical_user_management).pack()
+    return frame
+
+
+HelpdeskGUI.create_user_management_tab = create_user_management_tab

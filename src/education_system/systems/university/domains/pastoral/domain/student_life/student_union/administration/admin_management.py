@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.database.db import sqlite3
 import os
 import random
@@ -417,7 +421,7 @@ def _current_moderator():
         if current:
             return current.get('id'), current.get('username', 'moderator')
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return None, 'system'
 
 def ensure_content_moderation_table(cursor, conn):
@@ -973,7 +977,7 @@ def generate_environmental_reports(cursor):
             cursor.execute('''
             SELECT e.event_name, c.club_name, st.sustainability_score
             FROM sustainability_tracking st
-            JOIN union_events e ON st.event_id = e.event_id
+            JOIN (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e ON st.event_id = e.event_id
             JOIN student_clubs c ON e.organizer_id = c.club_id
             WHERE st.sustainability_score IS NOT NULL
             ORDER BY st.sustainability_score DESC
@@ -1222,21 +1226,51 @@ def send_compliance_reminders(cursor):
     except Exception as e:
         print(f"Error sending reminders: {e}")
 
+def _ensure_election_audit_columns(cursor):
+    """Add the audit columns the election screens expect.
+
+    ``union_elections`` was created without ``created_at`` / ``created_by``,
+    but the audit trail and the log export both select them — so both
+    screens died with "no such column". Adding them is idempotent; rows
+    that predate the columns simply carry NULL.
+    """
+    try:
+        existing = {r[1] for r in cursor.execute(
+            "PRAGMA table_info(union_elections)").fetchall()}
+    except sqlite3.Error:
+        return set()
+    if not existing:
+        return set()
+    for column in ("created_at", "created_by"):
+        if column not in existing:
+            try:
+                # db-audit: ignore[DBW001] - literal collection
+                cursor.execute(
+                    f"ALTER TABLE union_elections ADD COLUMN {column} TEXT")
+                existing.add(column)
+            except sqlite3.Error:
+                pass
+    return existing
+
+
 def audit_trail_analysis(cursor):
     """Analyze audit trails and system logs"""
     try:
         print("\n📋 Audit Trail Analysis")
         print("=" * 30)
 
-        # Recent election activities
+        # Recent election activities. Configuration changes are included
+        # because that is the one audit table that records who did what.
+        _ensure_election_audit_columns(cursor)
+
         cursor.execute('''
         SELECT
             'Election Created' as activity,
             position as details,
             created_at as timestamp,
-            'System' as user
+            COALESCE(created_by, 'System') as user
         FROM union_elections
-        WHERE created_at >= date('now', '-7 days')
+        WHERE created_at IS NOT NULL AND created_at >= date('now', '-7 days')
 
         UNION ALL
 
@@ -1247,6 +1281,17 @@ def audit_trail_analysis(cursor):
             'Voter ' || voter_id as user
         FROM election_votes
         WHERE vote_time >= datetime('now', '-7 days')
+
+        UNION ALL
+
+        SELECT
+            'Configuration Changed' as activity,
+            config_key || ': ' || COALESCE(old_value, 'unset') || ' -> '
+                || COALESCE(new_value, 'unset') as details,
+            changed_at as timestamp,
+            COALESCE(changed_by, 'System') as user
+        FROM configuration_audit
+        WHERE changed_at >= datetime('now', '-7 days')
 
         ORDER BY timestamp DESC
         LIMIT 20
@@ -1417,6 +1462,8 @@ def export_audit_logs(cursor):
         filename = f"audit_logs_{current_time}.csv"
 
         # Get comprehensive audit data
+        _ensure_election_audit_columns(cursor)
+
         cursor.execute('''
         SELECT
             'vote_cast' as action_type,
@@ -1436,6 +1483,17 @@ def export_audit_logs(cursor):
             'Election: ' || position as description
         FROM union_elections
         WHERE created_by IS NOT NULL
+
+        UNION ALL
+
+        SELECT
+            'configuration_changed' as action_type,
+            changed_by as user_id,
+            config_key as target_id,
+            changed_at as timestamp,
+            'Config: ' || COALESCE(old_value, 'unset') || ' -> '
+                || COALESCE(new_value, 'unset') as description
+        FROM configuration_audit
 
         ORDER BY timestamp DESC
         ''')
@@ -1720,7 +1778,7 @@ def display_admin_menu():
                 try:
                     conn.close()
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
         elif ((choice == '1' and "manage_reps" in options and "setup_election" not in options) or
               (choice == '2' and "setup_election" in options and "manage_reps" in options)):

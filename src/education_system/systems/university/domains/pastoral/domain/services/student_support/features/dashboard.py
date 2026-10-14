@@ -53,7 +53,10 @@ def get_dashboard_data(user_role, user_id):
             dashboard_data = _get_staff_dashboard(user_id, cursor)
 
         # Add common data
-        dashboard_data['notifications'] = _get_recent_notifications(user_id, cursor)
+        # 50, not the default 10: the Notifications tab renders this same
+        # list in full, and the dashboard widget slices its own top 3.
+        dashboard_data['notifications'] = _get_recent_notifications(
+            user_id, cursor, limit=50)
         dashboard_data['system_status'] = _get_system_status()
 
         conn.close()

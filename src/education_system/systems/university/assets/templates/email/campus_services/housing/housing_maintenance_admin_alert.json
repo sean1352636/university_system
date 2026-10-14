@@ -1,0 +1,11 @@
+{
+    "subject": "🔧 [$priority] New maintenance request #$request_id - $building_name Room $room_number",
+    "body": "Hello $admin_name,\n\nA new housing maintenance request has been submitted and needs triage.\n\n=== REQUEST ===\nRequest ID: $request_id\nPriority: $priority\nIssue Type: $issue_type\nStatus: $status\nSubmitted On: $request_date\nSubmitted By: $submitted_by\n\n=== LOCATION ===\nBuilding: $building_name\nRoom Number: $room_number\nFloor Number: $floor_number\nRoom Type: $room_type\n\n=== RESIDENT ===\nName: $student_name\nStudent ID: $student_id\nEmail: $student_email\n\n=== DESCRIPTION ===\n$description\n\n=== TARGET RESPONSE TIME ===\n$response_target\n\n=== NEXT STEPS ===\n1. Review the request in Housing → Maintenance Requests.\n2. Assign it to a technician and set a scheduled date.\n3. The resident has already been sent an acknowledgement.\n\nThis is an automated message from the University Housing Management System.\n\n$signature",
+    "variables": {
+        "admin_name": {"default": "Housing Administrator"},
+        "response_target": {"default": "Per the standard priority response times."},
+        "student_email": {"default": "not recorded"},
+        "floor_number": {"default": "-"},
+        "room_type": {"default": "-"}
+    }
+}

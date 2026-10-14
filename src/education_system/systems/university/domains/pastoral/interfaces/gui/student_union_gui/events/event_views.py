@@ -142,7 +142,7 @@ def refresh_events_list(self):
         cursor.execute('''
             SELECT e.event_id, e.event_name, e.event_date, e.start_time,
                    e.location, c.club_name, e.current_attendees, e.max_attendees, e.status
-            FROM union_events e
+            FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e
             LEFT JOIN student_clubs c ON e.organizer_id = c.club_id
             WHERE e.status IN ('upcoming', 'open')
             ORDER BY e.event_date, e.start_time
@@ -182,7 +182,7 @@ def view_event_details(self):
             SELECT e.event_name, e.description, e.event_date, e.start_time, e.end_time,
                    e.location, e.category, e.max_attendees, e.current_attendees,
                    c.club_name, e.status
-            FROM union_events e
+            FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e
             LEFT JOIN student_clubs c ON e.organizer_id = c.club_id
             WHERE e.event_id = ?
         ''', (event_id,))
@@ -262,8 +262,8 @@ def show_my_events(self):
             '''
             SELECT e.event_name, e.event_date, e.start_time, e.end_time,
                    e.location, e.status
-            FROM union_event_registrations r
-            JOIN union_events e ON r.event_id = e.event_id
+            FROM unified_event_registrations r
+            JOIN (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e ON r.event_id = e.event_id
             WHERE r.user_id = ?
             ORDER BY e.event_date, e.start_time
             ''',

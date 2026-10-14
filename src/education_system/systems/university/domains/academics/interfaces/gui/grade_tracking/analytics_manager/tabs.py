@@ -271,49 +271,97 @@ class TabsMixin:
         self.report_preview.pack(fill='both', expand=True, padx=10, pady=5)
 
     def create_competency_content(self):
-        """Create the competency-based assessment tab (fixed version)"""
-        # Initialize notebook for this view
+        """Competency framework and recorded student attainment.
+
+        This used to display three hard-coded rows ("Technical Skills /
+        Advanced / Portfolio Project / Dr. Smith"). They looked like
+        records and were not, so the screen reported attainment that did
+        not exist. It now reads the competency tables, and says plainly
+        when they are empty.
+        """
+        from education_system.systems.university.domains.assessment.domain.grading import (
+            competency_data as data,
+        )
+
         self.notebook = ttk.Notebook(self.content_frame)
         self.notebook.pack(fill=tk.BOTH, expand=True)
-        self.competency_frame = ttk.Frame(self.notebook)
-        self.notebook.add(self.competency_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.tabs.competencies', default="Competencies"))
 
-        # Title
-        ttk.Label(self.competency_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.labels.competency_based_assessment', default="Competency-Based Assessment"),
-                 font=('Arial', 16, 'bold')).pack(pady=10)
+        summary = data.attainment_summary()
 
-        # Competency assessment functionality
-        competency_controls = ttk.Frame(self.competency_frame)
-        competency_controls.pack(fill=tk.X, padx=20, pady=10)
+        # --- Attainment -----------------------------------------------
+        attain = ttk.Frame(self.notebook)
+        self.notebook.add(attain, text=_t(
+            'gui.academics.grade_tracking.analytics_manager.tabs.tabs.attainment',
+            default="Attainment"))
+        ttk.Label(attain, text="Competency-Based Assessment",
+                  font=('Arial', 14, 'bold')).pack(anchor="w", padx=10, pady=(10, 2))
+        ttk.Label(attain,
+                  text=(f"{summary['competencies']} competencies · "
+                        f"{summary['levels']} levels defined · "
+                        f"{summary['records']} records across "
+                        f"{summary['students_assessed']} student(s)"),
+                  foreground="#6b7280").pack(anchor="w", padx=10, pady=(0, 6))
 
-        ttk.Label(competency_controls, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.labels.select_student', default="Select Student:")).pack(side=tk.LEFT, padx=5)
-        comp_student_var = tk.StringVar()
-        comp_student_combo = ttk.Combobox(competency_controls, textvariable=comp_student_var, width=30)
-        comp_student_combo.pack(side=tk.LEFT, padx=5)
+        filter_row = ttk.Frame(attain)
+        filter_row.pack(fill=tk.X, padx=10, pady=(0, 6))
+        ttk.Label(filter_row, text="Student:").pack(side=tk.LEFT)
+        student_var = tk.StringVar()
+        try:
+            from education_system.systems.university.domains.academics.interfaces.gui._field_pickers import (
+                attach_picker,
+            )
+            attach_picker(filter_row, 'student', id_var=student_var,
+                          width=30).pack(side=tk.LEFT, padx=6)
+        except Exception:
+            ttk.Entry(filter_row, textvariable=student_var,
+                      width=20).pack(side=tk.LEFT, padx=6)
 
-        # Competency display
-        competency_display = ttk.LabelFrame(self.competency_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.labels.competency_assessment_matrix', default="Competency Assessment Matrix"), padding=10)
-        competency_display.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+        attain_tree = self._analysis_table(
+            attain, ("Student", "Competency", "Level", "Assessed", "Evidence"),
+            {"Student": 170, "Competency": 180, "Level": 120,
+             "Assessed": 100, "Evidence": 220})
 
-        columns = ("Competency", "Level", "Evidence", "Date", "Assessor")
-        comp_tree = ttk.Treeview(competency_display, columns=columns, show="headings", height=15)
-        for col in columns:
-            comp_tree.heading(col, text=col)
-            comp_tree.column(col, width=120)
+        def load_attainment():
+            rows = data.student_attainment(student_var.get().strip() or None)
+            self._fill_tree(attain_tree, [
+                (r["student_name"], r["competency"], r["level"],
+                 r["assessed"], r["evidence"]) for r in rows],
+                "No competency attainment recorded yet.")
 
-        scrollbar = ttk.Scrollbar(competency_display, orient=tk.VERTICAL, command=comp_tree.yview)
-        comp_tree.configure(yscrollcommand=scrollbar.set)
-        comp_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        ttk.Button(filter_row, text=_t(
+            'gui.academics.grade_tracking.analytics_manager.tabs.buttons.search',
+            default="Search"), command=load_attainment).pack(side=tk.LEFT, padx=4)
+        ttk.Button(filter_row, text=_t(
+            'gui.academics.grade_tracking.analytics_manager.tabs.buttons.show_all',
+            default="Show all"),
+            command=lambda: (student_var.set(""), load_attainment())).pack(side=tk.LEFT)
+        load_attainment()
 
-        # Sample data
-        sample_comps = [
-            ("Technical Skills", "Advanced", "Portfolio Project", "2024-01-15", "Dr. Smith"),
-            ("Leadership", "Intermediate", "Group Project", "2024-01-10", "Prof. Jones"),
-            ("Research", "Proficient", "Term Paper", "2024-01-05", "Dr. Davis"),
-        ]
-        for comp in sample_comps:
-            comp_tree.insert('', tk.END, values=comp)
+        # --- Framework ------------------------------------------------
+        framework = ttk.Frame(self.notebook)
+        self.notebook.add(framework, text=_t(
+            'gui.academics.grade_tracking.analytics_manager.tabs.tabs.framework',
+            default="Framework"))
+        ttk.Label(framework, text="Competencies", font=('Arial', 10, 'bold')
+                  ).pack(anchor="w", padx=10, pady=(10, 2))
+        comp_tree = self._analysis_table(
+            framework, ("Category", "Competency", "Description", "Students"),
+            {"Category": 140, "Competency": 180, "Description": 280, "Students": 90})
+        self._fill_tree(comp_tree, [
+            (c["category"], c["name"], c["description"], c["holders"])
+            for c in data.list_competencies()],
+            "No competencies defined yet.")
+
+        ttk.Label(framework, text="Levels", font=('Arial', 10, 'bold')
+                  ).pack(anchor="w", padx=10, pady=(10, 2))
+        level_tree = self._analysis_table(
+            framework, ("Competency", "Level", "Value", "Description"),
+            {"Competency": 180, "Level": 140, "Value": 70, "Description": 280})
+        self._fill_tree(level_tree, [
+            (l["competency"], l["level_name"], l["level_value"], l["description"])
+            for l in data.competency_levels()],
+            "No competency levels defined yet.")
+
 
     def create_prediction_content(self):
         """Create predictive analytics tab"""
@@ -446,3 +494,172 @@ class TabsMixin:
         # Chart display for predictions
         self.prediction_chart_frame = ttk.Frame(right_panel)
         self.prediction_chart_frame.pack(fill='both', expand=True, padx=10, pady=5)
+
+    # ------------------------------------------------------------------
+    # Grade Curve Analysis / Performance Analysis
+    #
+    # Both sidebar buttons used to fall through to the generic Analytics
+    # screen. The figures behind them existed only in the CLI, where
+    # every function prints as it goes and stops for input(), so none of
+    # it could be reused. The queries now live in
+    # grading/curve_analysis_data.py and both front-ends share them.
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _fill_tree(tree, rows, empty_message="No data recorded yet."):
+        """Populate a Treeview, or say plainly that there is nothing.
+
+        An empty table looks identical to a broken one, which is how
+        these screens hid the fact that they were never wired up.
+        """
+        for item in tree.get_children():
+            tree.delete(item)
+        if not rows:
+            tree.insert("", tk.END, values=(empty_message,) + ("",) * 8)
+            return
+        for i, row in enumerate(rows):
+            tree.insert("", tk.END, values=row, tags=("odd",) if i % 2 else ())
+
+    def _analysis_table(self, parent, columns, widths=None):
+        frame = ttk.Frame(parent)
+        frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
+        tree = ttk.Treeview(frame, columns=columns, show="headings", height=10)
+        widths = widths or {}
+        for col in columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=widths.get(col, 130),
+                        anchor=tk.E if col not in columns[:1] else tk.W)
+        tree.tag_configure("odd", background="#f7f9fb")
+        bar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=tree.yview)
+        tree.configure(yscrollcommand=bar.set)
+        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        bar.pack(side=tk.RIGHT, fill=tk.Y)
+        return tree
+
+    def create_curve_analysis_content(self):
+        """Grade distribution, and a preview of applying a curve."""
+        from education_system.systems.university.domains.assessment.domain.grading import (
+            curve_analysis_data as data,
+        )
+
+        self.notebook = ttk.Notebook(self.content_frame)
+        self.notebook.pack(fill=tk.BOTH, expand=True)
+
+        # --- Distribution -------------------------------------------
+        dist = ttk.Frame(self.notebook)
+        self.notebook.add(dist, text=_t(
+            'gui.academics.grade_tracking.analytics_manager.tabs.tabs.distribution',
+            default="Distribution"))
+        ttk.Label(dist, text="Grade Distribution", font=('Arial', 14, 'bold')
+                  ).pack(anchor="w", padx=10, pady=(10, 4))
+
+        overall = data.grade_distribution_overall()
+        for title, key in (("Module final grades", "module_grades"),
+                           ("Assessment grades", "assessment_grades")):
+            ttk.Label(dist, text=title, font=('Arial', 10, 'bold')
+                      ).pack(anchor="w", padx=10, pady=(8, 2))
+            tree = self._analysis_table(dist, ("Grade", "Count", "Share"),
+                                        {"Grade": 120, "Count": 90, "Share": 90})
+            self._fill_tree(tree, [(r["grade"], r["count"], f"{r['percentage']:.1f}%")
+                                   for r in overall[key]],
+                            "No grades recorded yet.")
+
+        # --- By course / module type ---------------------------------
+        breakdown = ttk.Frame(self.notebook)
+        self.notebook.add(breakdown, text=_t(
+            'gui.academics.grade_tracking.analytics_manager.tabs.tabs.breakdown',
+            default="Breakdown"))
+        for title, fetch in (("By course", data.grade_distribution_by_course),
+                             ("By module type", data.grade_distribution_by_module_type)):
+            ttk.Label(breakdown, text=title, font=('Arial', 10, 'bold')
+                      ).pack(anchor="w", padx=10, pady=(10, 2))
+            rows = []
+            for group, entries in fetch().items():
+                for entry in entries:
+                    rows.append((group, entry["grade"], entry["count"],
+                                 f"{entry['percentage']:.1f}%"))
+            tree = self._analysis_table(breakdown, ("Group", "Grade", "Count", "Share"),
+                                        {"Group": 180})
+            self._fill_tree(tree, rows, "No grades recorded yet.")
+
+        # --- Curve preview -------------------------------------------
+        curve = ttk.Frame(self.notebook)
+        self.notebook.add(curve, text=_t(
+            'gui.academics.grade_tracking.analytics_manager.tabs.tabs.curve_preview',
+            default="Curve Preview"))
+        controls = ttk.Frame(curve)
+        controls.pack(fill=tk.X, padx=10, pady=10)
+        ttk.Label(controls, text="Adjustment (marks):").pack(side=tk.LEFT)
+        adjust_var = tk.StringVar(value="5")
+        ttk.Spinbox(controls, from_=-50, to=50, width=6,
+                    textvariable=adjust_var).pack(side=tk.LEFT, padx=(6, 12))
+        summary = ttk.Label(controls, text="", foreground="#2c3e50")
+        summary.pack(side=tk.LEFT, padx=10)
+
+        preview_tree = self._analysis_table(
+            curve, ("Student", "Module", "Current", "Curved", "Grade", "New grade"),
+            {"Student": 120, "Module": 130})
+
+        def refresh_preview():
+            try:
+                adjustment = float(adjust_var.get())
+            except ValueError:
+                summary.config(text="Adjustment must be a number.", foreground="#c0392b")
+                return
+            result = data.curve_preview(adjustment=adjustment)
+            self._fill_tree(preview_tree, [
+                (r["student_id"], r["module_code"], f"{r['old_score']:.1f}",
+                 f"{r['new_score']:.1f}", r["old_grade"], r["new_grade"])
+                for r in result["rows"]], "No module grades recorded yet.")
+            summary.config(
+                text=f"{result['changed']} of {len(result['rows'])} would change grade",
+                foreground="#2c3e50")
+
+        # Preview only: applying a curve rewrites recorded marks, so that
+        # stays a deliberate action in the CLI rather than a side-effect
+        # of opening a tab.
+        ttk.Button(controls, text=_t(
+            'gui.academics.grade_tracking.analytics_manager.tabs.buttons.preview',
+            default="Preview"), command=refresh_preview).pack(side=tk.LEFT)
+        ttk.Label(curve, text="Preview only — no marks are changed.",
+                  foreground="#6b7280").pack(anchor="w", padx=10)
+        refresh_preview()
+
+    def create_performance_analysis_content(self):
+        """Comparative performance and trends over time."""
+        from education_system.systems.university.domains.assessment.domain.grading import (
+            curve_analysis_data as data,
+        )
+
+        self.notebook = ttk.Notebook(self.content_frame)
+        self.notebook.pack(fill=tk.BOTH, expand=True)
+
+        compare = ttk.Frame(self.notebook)
+        self.notebook.add(compare, text=_t(
+            'gui.academics.grade_tracking.analytics_manager.tabs.tabs.comparison',
+            default="Comparison"))
+        ttk.Label(compare, text="Comparative Performance", font=('Arial', 14, 'bold')
+                  ).pack(anchor="w", padx=10, pady=(10, 4))
+
+        columns = ("Group", "Results", "Average", "Lowest", "Highest")
+        for title, fetch in (("By course", data.performance_by_course),
+                             ("By module type", data.performance_by_module_type)):
+            ttk.Label(compare, text=title, font=('Arial', 10, 'bold')
+                      ).pack(anchor="w", padx=10, pady=(8, 2))
+            tree = self._analysis_table(compare, columns, {"Group": 200})
+            self._fill_tree(tree, [
+                (r["group"], r["results"], f"{r['average']:.1f}",
+                 f"{r['lowest']:.1f}", f"{r['highest']:.1f}") for r in fetch()],
+                "No scored module grades recorded yet.")
+
+        trends = ttk.Frame(self.notebook)
+        self.notebook.add(trends, text=_t(
+            'gui.academics.grade_tracking.analytics_manager.tabs.tabs.trends',
+            default="Trends"))
+        ttk.Label(trends, text="Performance Over Time", font=('Arial', 14, 'bold')
+                  ).pack(anchor="w", padx=10, pady=(10, 4))
+        tree = self._analysis_table(trends, ("Period", "Results", "Average"),
+                                    {"Period": 160})
+        self._fill_tree(tree, [(r["period"], r["results"], f"{r['average']:.1f}")
+                               for r in data.grade_trend_by_period()],
+                        "No dated module grades recorded yet.")

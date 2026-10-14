@@ -73,6 +73,7 @@ def _insert_inbox_message_with_legacy_support(cursor, sender_id, recipient_id, s
 
     placeholders = ', '.join('?' for _ in insert_columns)
     column_list = ', '.join(insert_columns)
+    # db-audit: ignore[DBW001] - join over a code-controlled list; literal collection
     cursor.execute(f'INSERT INTO messages ({column_list}) VALUES ({placeholders})', insert_values)
 
 

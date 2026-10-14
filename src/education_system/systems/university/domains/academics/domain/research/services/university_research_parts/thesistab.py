@@ -7,7 +7,12 @@ globals().update({name: value for name, value in _shared.__dict__.items() if not
 class ThesisTab(TableModule):
     title = "Theses, Vivas & Supervision"
     subtitle = "Supervisor allocation, milestones, submission and examination."
-    table_name = "theses"
+    # student_supervisions is the university's existing supervision record.
+    # `thesis_title` is its title column, `expected_end_date` the expected
+    # submission, `program_type` the degree. The viva/examiner/outcome
+    # fields it lacked were added by migration b4e19d7a3c62.
+    table_name = "student_supervisions"
+    pk = "supervision_id"
 
     DEGREES = ["PhD", "MPhil", "MRes", "Masters"]
     STATUSES = ["Active", "Submitted", "Under Examination",
@@ -53,30 +58,36 @@ class ThesisTab(TableModule):
         self.ms_tree.tag_configure("overdue", foreground=PALETTE["danger"])
         self.ms_tree.tag_configure("done", foreground=PALETTE["success"])
 
+    _BASE = """
+        SELECT v.*,
+               v.thesis_title       AS title,
+               v.expected_end_date  AS expected_submission,
+               COALESCE(NULLIF(v.degree,''), v.program_type) AS degree_display
+          FROM student_supervisions v
+    """
+
     def fetch_rows(self, search):
         q = f"%{search.lower()}%" if search else None
-        base = """SELECT t.*,
-                  s.name AS student_name,
-                  sup.name AS supervisor_name
-                  FROM research_theses t
-                  LEFT JOIN research_people s ON s.id=t.student_id
-                  LEFT JOIN research_people sup ON sup.id=t.primary_supervisor_id"""
         if q:
-            return self.db.query(base + """
-                WHERE LOWER(COALESCE(s.name,'')) LIKE ?
-                   OR LOWER(t.title) LIKE ?
-                   OR LOWER(COALESCE(sup.name,'')) LIKE ?
-                   OR LOWER(t.status) LIKE ?
-                ORDER BY t.start_date DESC""", (q, q, q, q))
-        return self.db.query(base + " ORDER BY t.start_date DESC")
+            return self.db.query(
+                self._BASE +
+                " WHERE LOWER(COALESCE(v.student_name,'')) LIKE ?"
+                "    OR LOWER(COALESCE(v.thesis_title,'')) LIKE ?"
+                "    OR LOWER(COALESCE(v.department,'')) LIKE ?"
+                "    OR LOWER(COALESCE(v.status,'')) LIKE ?"
+                " ORDER BY v.start_date DESC", (q, q, q, q))
+        return self.db.query(self._BASE + " ORDER BY v.start_date DESC")
 
     def row_to_tree_values(self, row):
-        return (row["student_name"] or "—",
-                row["title"],
-                row["degree"],
-                row["supervisor_name"] or "—",
+        # student_name is denormalised on the table; fall back to the
+        # register when it is blank.
+        student = row["student_name"] or self.person_name(row["student_id"])
+        return (student,
+                row["title"] or "(untitled)",
+                row["degree_display"] or "—",
+                self.person_name(row["supervisor_id"]),
                 fmt_date(row["viva_date"]),
-                row["status"])
+                row["status"] or "—")
 
     def get_field_specs(self, record=None):
         return [
@@ -87,7 +98,7 @@ class ThesisTab(TableModule):
             FieldSpec("degree", "Degree", kind="combo",
                       choices=self.DEGREES, required=True),
             FieldSpec("department", "Department"),
-            FieldSpec("primary_supervisor_id", "Primary supervisor",
+            FieldSpec("supervisor_id", "Primary supervisor",
                       kind="people", choices=self.people_choices(role="staff")),
             FieldSpec("secondary_supervisor_id", "Secondary supervisor",
                       kind="people", choices=self.people_choices(role="staff")),
@@ -107,20 +118,17 @@ class ThesisTab(TableModule):
         ]
 
     def render_detail(self, row):
-        def person(pid):
-            if not pid:
-                return "—"
-            r = self.db.query("SELECT name FROM research_people WHERE id=?", (pid,))
-            return r[0]["name"] if r else "—"
+        person = self.person_name
 
-        self.detail_text.insert("end", f"{row['title']}\n", ("section",))
-        self.detail_text.insert("end",
-                                f"{row.get('degree')} — {person(row.get('student_id'))}\n\n",
-                                ("muted",))
+        student = row.get("student_name") or person(row.get("student_id"))
+        degree = row.get("degree") or row.get("program_type") or "—"
+        self.detail_text.insert(
+            "end", f"{row.get('title') or '(untitled)'}\n", ("section",))
+        self.detail_text.insert("end", f"{degree} — {student}\n\n", ("muted",))
         self._write_detail([
             ("Status", row.get("status")),
             ("Department", row.get("department")),
-            ("Primary supervisor", person(row.get("primary_supervisor_id"))),
+            ("Primary supervisor", person(row.get("supervisor_id"))),
             ("Secondary supervisor",
              person(row.get("secondary_supervisor_id"))),
             ("Start date", fmt_date(row.get("start_date"))),
@@ -132,7 +140,8 @@ class ThesisTab(TableModule):
             ("External examiner", person(row.get("external_examiner_id"))),
             ("Outcome / notes", row.get("outcome")),
         ])
-        self._refresh_milestones(row["id"])
+        # Keyed on the table's own pk (supervision_id), not a literal "id".
+        self._refresh_milestones(row[self.pk])
 
     def _clear_detail(self):
         super()._clear_detail()
@@ -144,8 +153,11 @@ class ThesisTab(TableModule):
         for iid in self.ms_tree.get_children():
             self.ms_tree.delete(iid)
         rows = self.db.query(
-            "SELECT * FROM research_thesis_milestones WHERE thesis_id=? "
-            "ORDER BY COALESCE(due_date,'9999-12-31')", (thesis_id,))
+            "SELECT milestone_id AS id, milestone_name AS name, "
+            "       target_date AS due_date, completion_date AS completed_date, "
+            "       status, notes "
+            "  FROM research_milestones WHERE thesis_id=? "
+            " ORDER BY COALESCE(target_date,'9999-12-31')", (thesis_id,))
         today = date.today().isoformat()
         for r in rows:
             tag = ()
@@ -184,8 +196,8 @@ class ThesisTab(TableModule):
         self.wait_window(dlg)
         if dlg.result:
             d = dlg.result
-            self.db.execute("""INSERT INTO research_thesis_milestones
-                (thesis_id,name,due_date,status,notes)
+            self.db.execute("""INSERT INTO research_milestones
+                (thesis_id,milestone_name,target_date,status,notes)
                 VALUES(?,?,?,?,?)""",
                 (tid, d.get("name"), d.get("due_date"),
                  d.get("status"), d.get("notes")))
@@ -201,8 +213,8 @@ class ThesisTab(TableModule):
             return
         mid = int(sel[0])
         self.db.execute(
-            "UPDATE research_thesis_milestones SET status='Completed', "
-            "completed_date=? WHERE id=?",
+            "UPDATE research_milestones SET status='Completed', "
+            "completion_date=? WHERE milestone_id=?",
             (date.today().isoformat(), mid))
         self._refresh_milestones(tid)
         self.app.dashboard.refresh()
@@ -216,20 +228,24 @@ class ThesisTab(TableModule):
                                    "Delete the selected milestone?",
                                    parent=self):
             return
-        self.db.execute("DELETE FROM research_thesis_milestones WHERE id=?",
-                        (int(sel[0]),))
+        self.db.execute(
+            "DELETE FROM research_milestones WHERE milestone_id=?",
+            (int(sel[0]),))
         self._refresh_milestones(tid)
         self.app.dashboard.refresh()
 
     def insert_sql(self, d):
-        self.db.execute("""INSERT INTO research_theses
-            (student_id,title,degree,department,primary_supervisor_id,
-             secondary_supervisor_id,start_date,expected_submission,
-             submission_date,viva_date,internal_examiner_id,
-             external_examiner_id,status,outcome)
-            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-            (d.get("student_id"), d.get("title"), d.get("degree"),
-             d.get("department"), d.get("primary_supervisor_id"),
+        # supervisor_id and student_id are NOT NULL on the shared table.
+        self.db.execute("""INSERT INTO student_supervisions
+            (student_id,student_name,thesis_title,degree,program_type,
+             department,supervisor_id,secondary_supervisor_id,start_date,
+             expected_end_date,submission_date,viva_date,
+             internal_examiner_id,external_examiner_id,status,outcome,
+             supervision_role)
+            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'primary')""",
+            (d.get("student_id") or "", self.person_name(d.get("student_id")),
+             d.get("title"), d.get("degree"), d.get("degree"),
+             d.get("department"), d.get("supervisor_id") or "",
              d.get("secondary_supervisor_id"), d.get("start_date"),
              d.get("expected_submission"), d.get("submission_date"),
              d.get("viva_date"), d.get("internal_examiner_id"),
@@ -237,14 +253,17 @@ class ThesisTab(TableModule):
              d.get("outcome")))
 
     def update_sql(self, d, pk):
-        self.db.execute("""UPDATE research_theses SET
-            student_id=?,title=?,degree=?,department=?,
-            primary_supervisor_id=?,secondary_supervisor_id=?,
-            start_date=?,expected_submission=?,submission_date=?,
-            viva_date=?,internal_examiner_id=?,external_examiner_id=?,
-            status=?,outcome=? WHERE id=?""",
-            (d.get("student_id"), d.get("title"), d.get("degree"),
-             d.get("department"), d.get("primary_supervisor_id"),
+        self.db.execute("""UPDATE student_supervisions SET
+            student_id=?,student_name=?,thesis_title=?,degree=?,
+            program_type=?,department=?,supervisor_id=?,
+            secondary_supervisor_id=?,start_date=?,expected_end_date=?,
+            submission_date=?,viva_date=?,internal_examiner_id=?,
+            external_examiner_id=?,status=?,outcome=?,
+            updated_at=CURRENT_TIMESTAMP
+            WHERE supervision_id=?""",
+            (d.get("student_id") or "", self.person_name(d.get("student_id")),
+             d.get("title"), d.get("degree"), d.get("degree"),
+             d.get("department"), d.get("supervisor_id") or "",
              d.get("secondary_supervisor_id"), d.get("start_date"),
              d.get("expected_submission"), d.get("submission_date"),
              d.get("viva_date"), d.get("internal_examiner_id"),

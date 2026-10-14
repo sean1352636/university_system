@@ -200,7 +200,7 @@ class VaccinationsMixin:
         buttons_frame.grid(row=2, column=0, pady=10)
 
         ttk.Button(buttons_frame, text=_t('gui.pastoral.health.health_portal.vaccinations.buttons.view_details', default="View Details"), command=self.view_vaccination_details).pack(side=tk.LEFT, padx=5)
-        if self.auth.check_permission('verify_vaccinations'):
+        if self.auth.check_permission('manage_vaccinations'):
             ttk.Button(buttons_frame, text=_t('gui.pastoral.health.health_portal.vaccinations.buttons.verify_record', default="Verify Record"), command=self.verify_vaccination).pack(side=tk.LEFT, padx=5)
 
         parent.columnconfigure(0, weight=1)

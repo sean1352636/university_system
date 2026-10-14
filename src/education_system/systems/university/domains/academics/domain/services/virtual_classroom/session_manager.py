@@ -31,7 +31,11 @@ def _send_virtual_classroom_email(template_name: str, recipient_email: str,
     except Exception:
         logger.exception("email infrastructure unavailable")
         return False
-    subject, body = render_template(f"virtual_classroom/{template_name}", vars_)
+    # The full path from the templates root. "virtual_classroom/..." matched
+    # nothing — load_template only searches a bare name one level deep — so
+    # every invite, recording notice and attendance flag was silently dropped.
+    subject, body = render_template(
+        f"academics/research_and_events/virtual_classroom/{template_name}", vars_)
     if not subject or not body:
         return False
     try:
@@ -138,7 +142,26 @@ class SessionManager:
                     WHERE session_id = ? AND status = 'in_progress'
                 """, (recording_url, recording_size, recording_duration, session_id))
                 conn.commit()
-                return cursor.rowcount > 0
+                ended = cursor.rowcount > 0
+
+            if ended:
+                # Publish the session's attendance to the central records so
+                # an online lecture counts the same as one in a room. Kept
+                # outside the connection block and best-effort: a sync
+                # problem must not undo the session that genuinely ended.
+                try:
+                    from education_system.systems.university.domains.academics.domain.services.virtual_classroom.attendance_sync import (
+                        sync_session_attendance,
+                    )
+                    result = sync_session_attendance(session_id, db_path=self.db_path)
+                    if result.get("reason"):
+                        logger.warning(
+                            "Session %s ended but attendance was not recorded: %s",
+                            session_id, result["reason"])
+                except Exception:
+                    logger.exception(
+                        "Attendance sync failed for ended session %s", session_id)
+            return ended
 
         except Exception as e:
             print(f"Error ending session: {e}")

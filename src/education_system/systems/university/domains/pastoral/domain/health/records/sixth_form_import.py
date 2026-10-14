@@ -30,18 +30,81 @@ expect to read them.
 All work happens in a single transaction. Failure does not block the
 transfer — the caller logs and surfaces a warning, leaving the
 university student record itself intact.
+
+Consent
+-------
+Being the single seam is what makes this the right place for the gate.
+Special-category health data used to cross here on nothing more than a
+staff member clicking Save: ``handover.SIXTH_FORM_TO_UNIVERSITY`` marks
+its sensitive fields as needing consent, the sixth form records that
+consent under ``university_handover``, and none of it was consulted —
+the copy ran unconditionally from two call sites and read every
+condition, medication, allergy and GP detail on file.
+
+Every import now resolves a :class:`ReleaseDecision` first:
+
+``consent``
+    An active, unexpired ``university_handover`` consent. Full record.
+``vital_interests``
+    A named lawful basis the caller asserts, for the case consent cannot
+    be obtained and an allergy would otherwise go unknown at enrolment.
+    **Safety-critical subset only** — allergies, active conditions and
+    current medications. Inactive history, blood group and GP details do
+    not cross on this basis, because they are not what makes it lawful.
+``refused``
+    Neither. :class:`MedicalHandoverRefused` is raised and nothing is
+    written.
+
+Whatever the outcome, the attempt is written to the platform audit log
+with the basis, the scope and the receiving team, so the access record
+is complete rather than inferable from the presence of a row.
 """
 
 from __future__ import annotations
 
+import datetime as _dt
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from education_system.systems.university.domains.pastoral.infrastructure.health.storage import (
     get_connection,
 )
 
 logger = logging.getLogger(__name__)
+
+#: The consent purpose the sixth form records this release under. Named
+#: here rather than imported so a sixth form that is not installed still
+#: produces a readable refusal message instead of an ImportError.
+_CONSENT_PURPOSE = "university_handover"
+
+#: Lawful bases this seam accepts, most preferred first. Anything else is
+#: a refusal — "the operator typed a reason" is not a lawful basis.
+CONSENT = "consent"
+VITAL_INTERESTS = "vital_interests"
+LAWFUL_BASES: tuple[str, ...] = (CONSENT, VITAL_INTERESTS)
+
+#: What crosses under each basis.
+SCOPE_FULL = "full"
+SCOPE_SAFETY_CRITICAL = "safety_critical"
+
+
+class MedicalHandoverRefused(PermissionError):
+    """No consent and no lawful basis — the record must not be copied."""
+
+
+@dataclass(frozen=True)
+class ReleaseDecision:
+    """Whether this learner's health record may cross, and how much of it."""
+
+    allowed: bool
+    basis: str
+    scope: str
+    detail: str
+    consent_reference: str | None = None
+
+    @property
+    def full_record(self) -> bool:
+        return self.scope == SCOPE_FULL
 
 
 @dataclass
@@ -52,6 +115,11 @@ class ImportSummary:
     medications_written: int
     allergies_written: int
     profile_present: bool
+    #: How the release was authorised, and what it covered.
+    basis: str = CONSENT
+    scope: str = SCOPE_FULL
+    #: Categories deliberately not carried under a narrowed scope.
+    withheld: list[str] = field(default_factory=list)
 
 
 def _format_allergies(allergies) -> str | None:
@@ -110,9 +178,109 @@ def _combined_doctor_name(profile) -> str | None:
     return text or None
 
 
+def check_release(sf_student_id: str, *,
+                  lawful_basis: str | None = None) -> ReleaseDecision:
+    """May this learner's health record cross, and how much of it?
+
+    Consent is looked up in the *source* system's register, because that
+    is where the learner gave it — asking the university whether the
+    university may read something answers the wrong question.
+
+    ``lawful_basis`` is the caller's assertion of an alternative, and is
+    only honoured for :data:`VITAL_INTERESTS`. It narrows the scope
+    rather than widening it: an asserted basis is a reason to carry the
+    allergy that could kill somebody, not a way around the consent the
+    learner did not give.
+    """
+    asserted = (lawful_basis or "").strip().lower() or None
+    if asserted and asserted not in LAWFUL_BASES:
+        return ReleaseDecision(
+            allowed=False, basis="", scope="",
+            detail=f"{asserted!r} is not a lawful basis for releasing "
+                   f"special-category health data")
+
+    consent = None
+    try:
+        from education_system.systems.sixth_form.domain.progression import (
+            university_handover,
+        )
+        consent = university_handover.consent_for(sf_student_id)
+    except Exception:
+        # An unreadable consent register is not a grant. Fall through to
+        # the refusal below unless the caller asserted a basis of its own.
+        logger.exception(
+            "Could not read the sixth form's handover consent for %s",
+            sf_student_id)
+
+    if consent:
+        expires = (consent.get("expires_date") or "").strip()
+        reference = str(consent.get("consent_id") or "")
+        if expires and expires < _dt.date.today().isoformat():
+            logger.warning(
+                "Handover consent %s for %s expired on %s",
+                reference or "?", sf_student_id, expires)
+        else:
+            return ReleaseDecision(
+                allowed=True, basis=CONSENT, scope=SCOPE_FULL,
+                consent_reference=reference or None,
+                detail=f"Handover consent {reference or '(unnumbered)'} "
+                       f"granted {consent.get('granted_date') or 'undated'}")
+
+    if asserted == VITAL_INTERESTS:
+        return ReleaseDecision(
+            allowed=True, basis=VITAL_INTERESTS,
+            scope=SCOPE_SAFETY_CRITICAL,
+            detail="No handover consent on record; released on vital "
+                   "interests, limited to the safety-critical subset")
+
+    return ReleaseDecision(
+        allowed=False, basis="", scope="",
+        detail=f"No active '{_CONSENT_PURPOSE}' consent recorded in the "
+               f"sixth-form system for {sf_student_id}, and no lawful "
+               f"basis asserted")
+
+
+def _audit_release(*, uni_student_id: str, sf_student_id: str,
+                   decision: ReleaseDecision, actor: str | None,
+                   received_by: str | None, outcome: str,
+                   extra: dict | None = None) -> None:
+    """Record the attempt — allowed or refused — in the platform audit log.
+
+    Best-effort. A health record that has already been copied must not be
+    un-copied because the audit database was locked, and a refusal that
+    could not be logged is still a refusal.
+    """
+    try:
+        from education_system.platform.governance.audit.logger import (
+            AuditAction, AuditLogger,
+        )
+        details = {
+            "sf_student_id": sf_student_id,
+            "outcome": outcome,
+            "lawful_basis": decision.basis or "none",
+            "scope": decision.scope or "none",
+            "consent_reference": decision.consent_reference,
+            "received_by": received_by or actor or "unattributed",
+            "detail": decision.detail,
+        }
+        details.update(extra or {})
+        AuditLogger("university").log(
+            AuditAction.IMPORT, username=actor,
+            target_type="medical_info", target_id=uni_student_id,
+            details=details)
+    except Exception:
+        logger.exception(
+            "Could not audit the sixth-form medical release for %s -> %s "
+            "(outcome=%s)", sf_student_id, uni_student_id, outcome)
+
+
 def import_from_sixth_form(
     uni_student_id: str,
     sf_student_id: str,
+    *,
+    lawful_basis: str | None = None,
+    actor: str | None = None,
+    received_by: str | None = None,
 ) -> ImportSummary:
     """Copy a sixth-form student's medical record onto the university
     schema for ``uni_student_id``.
@@ -121,11 +289,29 @@ def import_from_sixth_form(
     validation / dataclasses are honoured), writes via the
     university's shared DB connection.
 
-    Returns an :class:`ImportSummary` describing what was written.
-    Raises only for unrecoverable database errors — if the sixth-form
-    record is genuinely empty for a student, the function still
-    succeeds, just with zero counts.
+    The release is gated first — see :func:`check_release` and the module
+    docstring. ``lawful_basis`` is the caller's alternative to recorded
+    consent and narrows what crosses; ``actor`` and ``received_by`` name
+    who did it and which team is receiving it, and both go into the audit
+    entry. There is no unaudited path through this function.
+
+    Returns an :class:`ImportSummary` describing what was written and
+    under what basis. Raises :class:`MedicalHandoverRefused` when there is
+    no consent and no basis, and otherwise only for unrecoverable
+    database errors — if the sixth-form record is genuinely empty for a
+    student, the function still succeeds, just with zero counts.
     """
+    decision = check_release(sf_student_id, lawful_basis=lawful_basis)
+    if not decision.allowed:
+        _audit_release(
+            uni_student_id=uni_student_id, sf_student_id=sf_student_id,
+            decision=decision, actor=actor, received_by=received_by,
+            outcome="refused")
+        logger.warning(
+            "Refused sixth-form medical import %s -> %s: %s",
+            sf_student_id, uni_student_id, decision.detail)
+        raise MedicalHandoverRefused(decision.detail)
+
     from education_system.systems.sixth_form.domain.pastoral.health.medical_records import (
         medical_records as sf_med,
     )
@@ -136,11 +322,29 @@ def import_from_sixth_form(
     medications  = sf_med.list_medications(student_id=sf_student_id)
     allergies    = sf_med.list_allergies(student_id=sf_student_id)
 
+    # Minimum necessary. Under vital interests the justification covers
+    # what a clinician needs in front of them now — an allergy, a live
+    # condition, a drug currently being taken — and stops there. A
+    # resolved condition from Year 12 and the family GP's phone number
+    # are ordinary record-keeping, and ordinary record-keeping needs
+    # ordinary consent.
+    withheld: list[str] = []
+    if not decision.full_record:
+        resolved = [c for c in conditions if not c.active]
+        if resolved:
+            withheld.append(f"{len(resolved)} resolved condition(s)")
+        conditions = [c for c in conditions if c.active]
+        if profile is not None:
+            withheld.append("GP details and blood group")
+            profile = None
+
     logger.info(
         "Importing sixth-form medical record for sf=%s -> uni=%s "
-        "(profile=%s, %d conditions, %d medications, %d allergies)",
-        sf_student_id, uni_student_id, profile is not None,
-        len(conditions), len(medications), len(allergies),
+        "(basis=%s, scope=%s, profile=%s, %d conditions, %d medications, "
+        "%d allergies)",
+        sf_student_id, uni_student_id, decision.basis, decision.scope,
+        profile is not None, len(conditions), len(medications),
+        len(allergies),
     )
 
     # If there's truly nothing to copy, short-circuit before opening
@@ -151,12 +355,17 @@ def import_from_sixth_form(
         logger.info(
             "Sixth-form medical record for %s is empty — nothing to import",
             sf_student_id)
+        _audit_release(
+            uni_student_id=uni_student_id, sf_student_id=sf_student_id,
+            decision=decision, actor=actor, received_by=received_by,
+            outcome="empty", extra={"withheld": withheld})
         return ImportSummary(
             medical_info_written=False,
             conditions_written=0,
             medications_written=0,
             allergies_written=0,
             profile_present=False,
+            basis=decision.basis, scope=decision.scope, withheld=withheld,
         )
 
     allergies_text   = _format_allergies(allergies)
@@ -238,7 +447,7 @@ def import_from_sixth_form(
         try:
             conn.rollback()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         logger.exception(
             "Medical-record import failed for sf=%s -> uni=%s",
             sf_student_id, uni_student_id)
@@ -247,7 +456,7 @@ def import_from_sixth_form(
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     summary = ImportSummary(
         medical_info_written=True,
@@ -255,12 +464,38 @@ def import_from_sixth_form(
         medications_written=len(medications),
         allergies_written=len(allergies),
         profile_present=profile is not None,
+        basis=decision.basis, scope=decision.scope, withheld=withheld,
     )
+    _audit_release(
+        uni_student_id=uni_student_id, sf_student_id=sf_student_id,
+        decision=decision, actor=actor, received_by=received_by,
+        outcome="imported",
+        extra={
+            "conditions": summary.conditions_written,
+            "medications": summary.medications_written,
+            "allergies": summary.allergies_written,
+            "withheld": withheld,
+        })
     logger.info(
         "Sixth-form medical import complete: sf=%s -> uni=%s "
-        "(conditions=%d, meds flattened=%d, allergies flattened=%d)",
-        sf_student_id, uni_student_id,
+        "(basis=%s, scope=%s, conditions=%d, meds flattened=%d, "
+        "allergies flattened=%d, withheld=%s)",
+        sf_student_id, uni_student_id, summary.basis, summary.scope,
         summary.conditions_written, summary.medications_written,
-        summary.allergies_written,
+        summary.allergies_written, "; ".join(withheld) or "nothing",
     )
     return summary
+
+
+__all__ = [
+    "CONSENT",
+    "VITAL_INTERESTS",
+    "LAWFUL_BASES",
+    "SCOPE_FULL",
+    "SCOPE_SAFETY_CRITICAL",
+    "MedicalHandoverRefused",
+    "ReleaseDecision",
+    "ImportSummary",
+    "check_release",
+    "import_from_sixth_form",
+]

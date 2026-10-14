@@ -120,6 +120,7 @@ def init_db():
     existing = {row[1] for row in cur.fetchall()}
     for col, decl in _EXTRA_COLUMNS:
         if col not in existing:
+            # db-audit: ignore[DBW001] - module constant
             cur.execute(f"ALTER TABLE safeguarding_submissions ADD COLUMN {col} {decl}")
 
     # Feature 24 — append-only confidential notes timeline

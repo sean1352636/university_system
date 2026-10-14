@@ -8,7 +8,7 @@ class Database:
     """Handle all database operations using university system database"""
 
     def __init__(self):
-        self.db_path = paths.DEFAULT_DB_PATH
+        self.db_path = paths.UNIVERSITY_DEFAULT_DB_PATH
         self.init_database()
 
     def get_connection(self):

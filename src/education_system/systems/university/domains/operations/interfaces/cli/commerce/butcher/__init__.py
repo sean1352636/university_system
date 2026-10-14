@@ -1,5 +1,13 @@
-"""Butcher Shop CLI package."""
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.interfaces.cli.butcher`` (campus commerce plugin).
 
-from education_system.systems.university.domains.operations.interfaces.cli.commerce.butcher.butcher_cli import ButcherCLI
+A mirror, not an alias: an aliased package would resolve this package's
+submodules through the new ``__path__`` and load each one a second time.
+Submodules are aliased individually; this copies the package's names.
+"""
+# layout-shim: education_system.systems.university.plugins.campus_commerce.interfaces.cli.butcher
+import importlib as _importlib
 
-__all__ = ['ButcherCLI']
+_new = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.interfaces.cli.butcher")
+globals().update({k: v for k, v in vars(_new).items()
+                  if not (k.startswith("__") and k.endswith("__"))})
+del _importlib, _new

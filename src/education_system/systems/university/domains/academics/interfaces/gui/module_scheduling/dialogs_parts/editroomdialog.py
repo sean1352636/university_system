@@ -116,8 +116,9 @@ class EditRoomDialog:
                 conn.commit()
 
             self.result = True
-            self.dialog.destroy()
+            # Confirm first, then close — see addholidaydialog.save_holiday.
             messagebox.showinfo(_t('gui.academics.module_scheduling.dialogs_parts.editroomdialog.dialogs.success', default="Success"), _t('gui.academics.module_scheduling.dialogs_parts.editroomdialog.dialogs.room_updated_successfully', default="Room updated successfully."), parent=self.dialog)
+            self.dialog.destroy()
 
         except ValueError:
             messagebox.showerror(_t('gui.academics.module_scheduling.dialogs_parts.editroomdialog.dialogs.error', default="Error"), _t('gui.academics.module_scheduling.dialogs_parts.editroomdialog.dialogs.capacity_must_be_a_number', default="Capacity must be a number."), parent=self.dialog)

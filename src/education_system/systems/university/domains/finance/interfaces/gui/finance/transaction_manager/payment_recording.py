@@ -1,4 +1,7 @@
 """Payment recording dialogs and payment detail views"""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -402,7 +405,7 @@ class PaymentRecordingMixin:
                         student_name = f"{srow[0]} {srow[1]}".strip()
                         student_email = srow[2]
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 conn.commit()
                 conn.close()

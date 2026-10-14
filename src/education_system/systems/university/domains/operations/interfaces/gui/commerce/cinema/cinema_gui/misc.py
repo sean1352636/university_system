@@ -1,18 +1,11 @@
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.interfaces.gui.cinema.cinema_gui.misc`` (campus commerce plugin).
+
+The old name *is* the new module object, so ``mock.patch`` and
+``monkeypatch`` targets still act on the real code. Delete once nothing
+imports the old path.
 """
-Cinema Booking System - Entry Point
-"""
-import tkinter as tk
+# layout-shim: education_system.systems.university.plugins.campus_commerce.interfaces.gui.cinema.cinema_gui.misc
+import importlib as _importlib
+import sys as _sys
 
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.cinema.cinema_gui.core.main_gui import CinemaApp
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.cinema.cinema_gui.database import init_database
-
-
-def main():
-    init_database()
-    root = tk.Tk()
-    app = CinemaApp(root)
-    root.mainloop()
-
-
-if __name__ == "__main__":
-    main()
+_sys.modules[__name__] = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.interfaces.gui.cinema.cinema_gui.misc")

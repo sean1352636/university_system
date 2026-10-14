@@ -1,5 +1,10 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
+from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling.misc import _ms_scrollable
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection, transaction  # injected
 from education_system.systems.university.infrastructure.exceptions import (
     CourseNotFoundError,
@@ -35,7 +40,8 @@ except ImportError:
     show_gui_language_selector = lambda parent=None: "en"
 
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling._dialogs import messagebox
 from tkinter.font import Font
 import os
 import sys
@@ -65,11 +71,16 @@ except ImportError:
         class ModuleScheduler: pass
 
 from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling.main_gui import ModuleSchedulingGUI
+from education_system.systems.university.infrastructure.database.schemas.modules_table import ensure_modules_table
 
 def create_management_tab(self):
     """Create the data management tab"""
-    management_frame = ttk.Frame(self.notebook)
-    self.notebook.add(management_frame, text=_t("scheduling.tabs.management"))
+    _page = ttk.Frame(self.notebook)
+    self.notebook.add(_page, text=_t("scheduling.tabs.management"))
+    # The sections below stack taller than the window, so the page
+    # scrolls; without this the bottom of the tab was cut off with
+    # no way to reach it.
+    management_frame = _ms_scrollable(_page)
 
     # Backup section
     backup_frame = ttk.LabelFrame(management_frame, text=_t("scheduling.backup_restore"), padding=15)
@@ -486,7 +497,7 @@ def import_schedules_from_csv(self):
                                 )
                                 continue
                         except Exception:
-                            pass
+                            logger.debug("Suppressed exception", exc_info=True)
 
                         cursor.execute('''
                         INSERT INTO module_schedule
@@ -644,18 +655,7 @@ def _migrate_database(self):
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='modules'")
             if not cursor.fetchone():
                 # Create modules table if it doesn't exist
-                cursor.execute('''
-                CREATE TABLE modules (
-                    module_code TEXT PRIMARY KEY,
-                    module_name TEXT NOT NULL,
-                    description TEXT,
-                    credits INTEGER DEFAULT 0,
-                    instructor_id INTEGER,
-                    is_active BOOLEAN DEFAULT 1,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (instructor_id) REFERENCES instructors (id)
-                )
-                ''')
+                ensure_modules_table(cursor)
                 print("Created modules table")
 
             # Check module_schedule table and fix foreign key references
@@ -713,17 +713,43 @@ def _migrate_database(self):
                         ''', (module_code, f"Module {module_code}"))
                         print(f"Added missing module for document_repository: {module_code}")
 
-            # Check for other tables that might reference modules
+            # Check for other tables that might reference modules.
+            #
+            # ``lesson_plan_content`` is excluded deliberately: its
+            # ``module_code`` records which module a lesson plan is *about*,
+            # not a scheduling foreign key. A lesson whose module has been
+            # retired is kept unscheduled on purpose, and letting this sweep
+            # see it would resurrect the module as a "Module <code>" stub —
+            # which is exactly how the placeholder modules that were cleaned
+            # out of this catalogue got created in the first place.
             cursor.execute('''
             SELECT DISTINCT tbl_name FROM sqlite_master
             WHERE type='table' AND sql LIKE '%module_code%'
-            AND tbl_name NOT IN ('modules', 'module_schedule', 'attendance', 'document_repository')
+            AND tbl_name NOT IN ('modules', 'module_schedule', 'attendance',
+                                 'document_repository', 'lesson_plan_content')
             ''')
             other_tables = cursor.fetchall()
 
             for (table_name,) in other_tables:
                 try:
                     safe_table = validate_table_name(table_name, conn=conn)
+
+                    # The scan above matches the DDL *text*, so it also catches
+                    # tables whose columns merely contain "module_code" as a
+                    # substring (mobility_learning_agreements and
+                    # mobility_credit_recognitions have host_module_code /
+                    # home_module_code but no plain module_code). Confirm the
+                    # column really exists rather than failing the query and
+                    # printing a warning about a table there is nothing to do for.
+                    columns = [
+                        row[1]
+                        for row in cursor.execute(
+                            'PRAGMA table_info([' + safe_table + '])'
+                        ).fetchall()
+                    ]
+                    if 'module_code' not in columns:
+                        continue
+
                     cursor.execute('''
                     SELECT DISTINCT module_code FROM [''' + safe_table + ''']
                     WHERE module_code IS NOT NULL

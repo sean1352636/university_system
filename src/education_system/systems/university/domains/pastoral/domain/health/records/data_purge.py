@@ -20,6 +20,13 @@ from collections import defaultdict
 import csv
 import statistics
 from education_system.systems.university.infrastructure.auth import UserAuth
+# Used by column_exists() below to validate table/column names before they are
+# interpolated into a PRAGMA — identifiers cannot be parameterised. It was
+# called but never imported, so that helper raised NameError instead of
+# validating.
+from education_system.systems.university.infrastructure.sql_safety import (  # nosec B608
+    validate_identifier,
+)
 from education_system.systems.university.infrastructure.database.data_backup import backup_before_operation
 from education_system.systems.university.infrastructure.email import (
     send_appointment_confirmation,
@@ -432,6 +439,7 @@ def retention_compliance_report(auth):
             continue
 
         # Count records exceeding retention period
+        # db-audit: ignore[DBW001] - looked up in a literal mapping (last assignment before use)
         cursor.execute(
             f'SELECT COUNT(*) FROM "{table_name}" WHERE "{date_column}" < ?',
             (cutoff_date,),
@@ -440,6 +448,7 @@ def retention_compliance_report(auth):
         old_count = cursor.fetchone()[0]
 
         # Count total records
+        # db-audit: ignore[DBW001] - looked up in a literal mapping (last assignment before use)
         cursor.execute(f'SELECT COUNT(*) FROM "{table_name}"')
 
         total_count = cursor.fetchone()[0]
@@ -501,6 +510,9 @@ def compliance_monitoring(auth):
         return cursor.fetchone() is not None
 
     def column_exists(table, column):
+        # Identifiers cannot be parameterised, so they are validated instead.
+        table = validate_identifier(table)
+        column = validate_identifier(column)
         if not table_exists(table):
             return False
         return column in {row[1] for row in cursor.execute(f'PRAGMA table_info("{table}")')}
@@ -550,6 +562,7 @@ def compliance_monitoring(auth):
         "SUM(CASE WHEN provider IS NOT NULL AND provider != '' THEN 1 ELSE 0 END)"
         if column_exists('health_records', 'provider') else "0"
     )
+    # db-audit: ignore[DBW001] - conditional between literals
     cursor.execute(f'''
     SELECT COUNT(*) as total_records,
         {provider_expression} as with_provider,
@@ -619,6 +632,7 @@ def compliance_monitoring(auth):
             "SUM(CASE WHEN verified = 1 THEN 1 ELSE 0 END)"
             if column_exists('vaccination_records', 'verified') else "0"
         )
+        # db-audit: ignore[DBW001] - conditional between literals
         cursor.execute(f'''
         SELECT COUNT(*) as total_vaccinations, {verified_expression} as verified_count
         FROM vaccination_records
@@ -776,6 +790,7 @@ def purge_health_records(cutoff_date, *, record_type=None, student_id=None,
     conn = get_connection()
     conn.row_factory = sqlite3.Row
     try:
+        # db-audit: ignore[DBW001] - statement builds SQL without splicing a value
         rows = [dict(row) for row in conn.execute(
             f"SELECT * FROM health_records WHERE {where}", values
         ).fetchall()]
@@ -784,6 +799,7 @@ def purge_health_records(cutoff_date, *, record_type=None, student_id=None,
         archive_path = destination / f"health_records_{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}.json"
         archive_path.write_text(json.dumps(rows, indent=2, default=str), encoding='utf-8')
         conn.execute("BEGIN IMMEDIATE")
+        # db-audit: ignore[DBW001] - join over a code-controlled list
         cursor = conn.execute(f"DELETE FROM health_records WHERE {where}", values)
         conn.commit()
         return {"deleted": cursor.rowcount, "archive_path": str(archive_path)}

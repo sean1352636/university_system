@@ -95,8 +95,8 @@ class ReportingMixin:
         with open(filename, 'w') as f:
             json.dump(report, f, indent=2)
 
-        print(_t("shared.utils.batch_operations.success_rate_exported", filename=filename))
-        print(_t("shared.utils.batch_operations.overall_success_rate", rate=f"{success_rate:.1f}"))
+        print(_t("shared.utils.batch_operations.success_rate_exported", filename=filename, default="Success Rate Exported. {filename}"))
+        print(_t("shared.utils.batch_operations.overall_success_rate", rate=f"{success_rate:.1f}", default="Overall Success Rate {rate}"))
 
     def generate_error_analysis_report(self):
         """Analyze common errors in import operations"""
@@ -134,8 +134,8 @@ class ReportingMixin:
         with open(filename, 'w') as f:
             json.dump(report, f, indent=2)
 
-        print(_t("shared.utils.batch_operations.error_analysis_exported", filename=filename))
-        print(_t("shared.utils.batch_operations.most_common_error", error=sorted_errors[0][0], count=sorted_errors[0][1]))
+        print(_t("shared.utils.batch_operations.error_analysis_exported", filename=filename, default="Error Analysis Exported. {filename}"))
+        print(_t("shared.utils.batch_operations.most_common_error", error=sorted_errors[0][0], count=sorted_errors[0][1], default="Most Common Error {count} {error}"))
 
     def generate_performance_report(self):
         """Generate performance trends report"""
@@ -190,8 +190,8 @@ class ReportingMixin:
         with open(filename, 'w') as f:
             json.dump(report, f, indent=2)
 
-        print(_t("shared.utils.batch_operations.performance_exported", filename=filename))
-        print(_t("shared.utils.batch_operations.average_performance", rate=f"{avg_performance:.1f}"))
+        print(_t("shared.utils.batch_operations.performance_exported", filename=filename, default="Performance Exported {filename}"))
+        print(_t("shared.utils.batch_operations.average_performance", rate=f"{avg_performance:.1f}", default="Average Performance {rate}"))
 
     def generate_comprehensive_report(self):
         """Generate a comprehensive report with all metrics"""
@@ -323,7 +323,7 @@ class ReportingMixin:
             print(_t("shared.utils.batch_operations.no_history_available"))
             return
 
-        print("\n" + _t("shared.utils.batch_operations.showing_operations", count=min(20, len(self.import_history))))
+        print("\n" + _t("shared.utils.batch_operations.showing_operations", count=min(20, len(self.import_history)), default="Showing Operations {count}"))
         print("-" * 100)
 
         for i, op in enumerate(reversed(self.import_history[-20:]), 1):
@@ -345,8 +345,8 @@ class ReportingMixin:
         total_failed = sum(op['failed_imports'] for op in self.import_history)
 
         print("\n" + _t("shared.utils.batch_operations.summary_statistics"))
-        print(f"{_t('shared.utils.batch_operations.total_operations')}: {total_ops}")
-        print(f"{_t('shared.utils.batch_operations.total_records_processed')}: {total_records:,}")
+        print(f"{_t('shared.utils.batch_operations.total_operations', default='Total Operations')}: {total_ops}")
+        print(f"{_t('shared.utils.batch_operations.total_records_processed', default='Total Records Processed')}: {total_records:,}")
         success_rate = f"{(total_successful/total_records*100):.1f}%" if total_records > 0 else "N/A"
-        print(f"{_t('shared.utils.batch_operations.success_rate')}: {success_rate}")
-        print(f"{_t('shared.utils.batch_operations.total_errors')}: {total_failed:,}")
+        print(f"{_t('shared.utils.batch_operations.success_rate', default='Success Rate.')}: {success_rate}")
+        print(f"{_t('shared.utils.batch_operations.total_errors', default='Total Errors')}: {total_failed:,}")

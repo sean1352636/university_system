@@ -14,7 +14,7 @@ import os
 from unittest.mock import Mock, patch, MagicMock
 import tkinter as tk
 
-_ADMIN_MOD = 'education_system.systems.university.interfaces.gui.shell.auth.mfa_admin_gui'
+_ADMIN_MOD = 'education_system.systems.university.shell.gui.auth.mfa_admin_gui'
 
 
 @pytest.fixture(autouse=True)
@@ -100,7 +100,7 @@ def make_panel(mock_mfa_service):
     """Factory to create an MFAAdminPanel with mocked service"""
     def _make():
         with patch(f'{_ADMIN_MOD}.MFAService', return_value=mock_mfa_service):
-            from education_system.systems.university.interfaces.gui.shell.auth.mfa_admin_gui import MFAAdminPanel
+            from education_system.systems.university.shell.gui.auth.mfa_admin_gui import MFAAdminPanel
             parent = MagicMock()
             panel = MFAAdminPanel(parent, admin_user_id=1)
         return panel
@@ -284,14 +284,14 @@ class TestDataLoading:
 class TestConvenienceFunction:
     """Test show_mfa_admin convenience function"""
 
-    @patch('education_system.systems.university.interfaces.gui.shell.auth.mfa_admin_gui.MFAAdminPanel')
+    @patch('education_system.systems.university.shell.gui.auth.mfa_admin_gui.MFAAdminPanel')
     def test_show_mfa_admin(self, mock_panel_class):
         """Test show_mfa_admin convenience function"""
         mock_parent = MagicMock()
         mock_panel = MagicMock()
         mock_panel_class.return_value = mock_panel
 
-        from education_system.systems.university.interfaces.gui.shell.auth.mfa_admin_gui import show_mfa_admin
+        from education_system.systems.university.shell.gui.auth.mfa_admin_gui import show_mfa_admin
 
         result = show_mfa_admin(mock_parent, 1)
 

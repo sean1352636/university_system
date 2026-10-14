@@ -112,14 +112,14 @@ def _build_registry() -> dict[str, DatasetSpec]:
     from education_system.systems.sixth_form.domain.academics.homework import homework
     from education_system.systems.sixth_form.domain.assessment.mock_exams import mock_exams
     from education_system.systems.sixth_form.domain.operations.communications.notices import notices
-    from education_system.systems.sixth_form.domain.progression.offers import offers
+    from education_system.systems.sixth_form.domain.progression.university import offers
     from education_system.systems.sixth_form.domain.operations.communications.parent_contacts import parent_contacts
     from education_system.systems.sixth_form.domain.operations.communications.parents_evenings import parents_evenings
-    from education_system.systems.sixth_form.domain.progression.personal_statements import personal_statements
+    from education_system.systems.sixth_form.domain.progression.university import statements as personal_statements
     from education_system.systems.sixth_form.domain.assessment.predicted_grades import predicted_grades
     from education_system.systems.sixth_form.domain.operations.reporting.progress import progress
     from education_system.systems.sixth_form.domain.finance.receipts import receipts
-    from education_system.systems.sixth_form.domain.progression.references import references
+    from education_system.systems.sixth_form.domain.progression.university import references
     from education_system.systems.sixth_form.domain.safeguarding import safeguarding
     from education_system.systems.sixth_form.domain.staff import staff
     from education_system.systems.sixth_form.domain.learners.students import students
@@ -127,7 +127,7 @@ def _build_registry() -> dict[str, DatasetSpec]:
     from education_system.systems.sixth_form.domain.academics.timetable import timetable
     from education_system.systems.sixth_form.domain.finance.trips import trips
     from education_system.systems.sixth_form.domain.pastoral.tutor_groups import tutor_groups
-    from education_system.systems.sixth_form.domain.progression.ucas import ucas
+    from education_system.systems.sixth_form.domain.progression.university import ucas
     from education_system.systems.sixth_form.domain.progression.apprenticeships import apprenticeships as _appr
     from education_system.systems.sixth_form.domain.academics.attendance import attendance as _att
     from education_system.systems.sixth_form.domain.pastoral.attendance_concerns import attendance_concerns as _atc
@@ -144,14 +144,14 @@ def _build_registry() -> dict[str, DatasetSpec]:
     from education_system.systems.sixth_form.domain.academics.homework import homework as _hw
     from education_system.systems.sixth_form.domain.assessment.mock_exams import mock_exams as _me
     from education_system.systems.sixth_form.domain.operations.communications.notices import notices as _no
-    from education_system.systems.sixth_form.domain.progression.offers import offers as _of
+    from education_system.systems.sixth_form.domain.progression.university import offers as _of
     from education_system.systems.sixth_form.domain.operations.communications.parent_contacts import parent_contacts as _pc
     from education_system.systems.sixth_form.domain.operations.communications.parents_evenings import parents_evenings as _pe
-    from education_system.systems.sixth_form.domain.progression.personal_statements import personal_statements as _ps
+    from education_system.systems.sixth_form.domain.progression.university import statements as _ps
     from education_system.systems.sixth_form.domain.assessment.predicted_grades import predicted_grades as _pg
     from education_system.systems.sixth_form.domain.operations.reporting.progress import progress as _pr
     from education_system.systems.sixth_form.domain.finance.receipts import receipts as _rc
-    from education_system.systems.sixth_form.domain.progression.references import references as _refs
+    from education_system.systems.sixth_form.domain.progression.university import references as _refs
     from education_system.systems.sixth_form.domain.safeguarding import safeguarding as _sg
     from education_system.systems.sixth_form.domain.staff import staff as _staff
     from education_system.systems.sixth_form.domain.learners.students import students as _students
@@ -159,7 +159,7 @@ def _build_registry() -> dict[str, DatasetSpec]:
     from education_system.systems.sixth_form.domain.academics.timetable import timetable as _tt
     from education_system.systems.sixth_form.domain.finance.trips import trips as _tr
     from education_system.systems.sixth_form.domain.pastoral.tutor_groups import tutor_groups as _tg
-    from education_system.systems.sixth_form.domain.progression.ucas import ucas as _uc
+    from education_system.systems.sixth_form.domain.progression.university import ucas as _uc
     from education_system.systems.sixth_form.domain.pastoral.wellbeing import wellbeing as _wb
     R: dict[str, DatasetSpec] = {}
 

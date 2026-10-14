@@ -38,9 +38,9 @@ pip install -r requirements.lock
 # Edit .env with production database credentials
 
 # 4. Run the application
-python run.py --gui  # For GUI
-python run.py --cli  # For CLI
-python run.py --api  # For REST API server
+python -m education_system --gui  # For GUI
+python -m education_system --cli  # For CLI
+python -m education_system --api  # For REST API server
 ```
 
 ### Backup & Recovery

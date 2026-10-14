@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Any
 
+from education_system.systems.apprenticeships.domain.apprentices import breaks
 from education_system.systems.apprenticeships.domain.apprentices.models import (
     Apprentice,
     ApprenticeSummary,
 )
-from education_system.systems.apprenticeships.domain.apprentices.status import StatusChange
+from education_system.systems.apprenticeships.domain.apprentices.lifecycle import StatusChange
 from education_system.systems.apprenticeships.infrastructure.persistence.repositories.base import (
     QueryBuilder,
     col,
@@ -45,7 +47,12 @@ _SUMMARY_SELECT = """
            (SELECT COUNT(*) FROM reviews r
              WHERE r.apprentice_id = a.apprentice_id
                AND r.status NOT IN ('Complete', 'Missed'))
-                         AS open_reviews
+                         AS open_reviews,
+           (SELECT COALESCE(SUM(MAX(0, julianday(COALESCE(b.actual_return, date('now')))
+                                     - julianday(b.start_date))), 0)
+              FROM breaks_in_learning b
+             WHERE b.apprentice_id = a.apprentice_id)
+                         AS break_days
       FROM apprentices a
       LEFT JOIN programmes          p ON p.programme_id = a.programme_id
       LEFT JOIN employers           e ON e.employer_id  = a.employer_id
@@ -117,6 +124,7 @@ def _map_summary(row: Any) -> ApprenticeSummary:
         ksbs_competent=to_int(col(row, "ksbs_competent")),
         open_reviews=to_int(col(row, "open_reviews")),
         gateway_status=col(row, "gateway_status") or "Not Ready",
+        break_days=to_int(col(row, "break_days")),
     )
 
 
@@ -152,6 +160,23 @@ def get_by_username(username: str) -> Apprentice | None:
             "SELECT * FROM apprentices WHERE LOWER(username) = LOWER(?)", (username,)
         ).fetchone()
     return _map(row) if row else None
+
+
+def ids_by_username(username: str) -> list[int]:
+    """Every apprentice record a login is attached to — normally one.
+
+    Nothing stops two records sharing a username (relinking a login moves
+    it onto a record without clearing the old one), so a caller deciding
+    whose login this is has to see all of them, not the first.
+    """
+    init_db()
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT apprentice_id FROM apprentices WHERE LOWER(username) = LOWER(?) "
+            "ORDER BY apprentice_id",
+            (username.strip(),),
+        ).fetchall()
+    return [int(r["apprentice_id"]) for r in rows]
 
 
 def get_by_uln(uln: str) -> Apprentice | None:
@@ -300,16 +325,19 @@ def set_status(
     effective_date: str,
     actor: str | None,
     actual_end_date: str | None = None,
+    clear_end_date: bool = False,
 ) -> None:
     """Move an apprentice's status and record the move in one transaction.
 
     The history row and the status column must agree, so they are
     written together — a crash between them would leave a record whose
-    status nobody can account for.
+    status nobody can account for. ``actual_end_date`` stamps the end
+    date; ``clear_end_date`` blanks it (reinstatement). Neither leaves it
+    untouched.
     """
     init_db()
     with connect() as conn:
-        if actual_end_date is not None:
+        if actual_end_date is not None or clear_end_date:
             conn.execute(
                 "UPDATE apprentices SET status = ?, actual_end_date = ?, "
                 "updated_at = datetime('now') WHERE apprentice_id = ?",
@@ -400,25 +428,11 @@ def list_breaks(apprentice_id: int) -> list[dict[str, Any]]:
 
 
 def total_break_days(apprentice_id: int, as_of: str) -> int:
-    """Days spent on breaks, so a planned end date can be pushed out."""
-    init_db()
-    with connect() as conn:
-        rows = conn.execute(
-            "SELECT start_date, actual_return FROM breaks_in_learning "
-            "WHERE apprentice_id = ?",
-            (apprentice_id,),
-        ).fetchall()
-    from datetime import date
-
-    total = 0
-    for row in rows:
-        try:
-            start = date.fromisoformat(row["start_date"])
-            end = date.fromisoformat(row["actual_return"] or as_of)
-        except (TypeError, ValueError):
-            continue
-        total += max(0, (end - start).days)
-    return total
+    """Days spent on breaks, an open one counted to *as_of*."""
+    return breaks.total_break_days(
+        [breaks.BreakInLearning.from_row(r) for r in list_breaks(apprentice_id)],
+        date.fromisoformat(as_of),
+    )
 
 
 # ── Withdrawals ─────────────────────────────────────────────────────

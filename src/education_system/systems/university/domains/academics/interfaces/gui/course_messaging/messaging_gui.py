@@ -240,7 +240,7 @@ class CourseMessagingGUI:
                 details=f"Sent message to {sent} students, subject: {subject}"
             )
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         self.status_var.set(f"Sent: {sent}, Failed: {failed}")
         messagebox.showinfo(

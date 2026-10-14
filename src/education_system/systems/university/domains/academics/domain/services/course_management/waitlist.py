@@ -5,6 +5,7 @@ from education_system.systems.university.infrastructure.utils.activity_logger im
     log_read,
     log_update,
 )
+from education_system.systems.university.domains.academics.domain.services.course_management.courses import resolve_course_id
 
 
 @log_create(module="course_management", description="Adding student to waitlist")
@@ -104,11 +105,13 @@ def view_waitlists(auth):
         conn = get_connection()
         cursor = conn.cursor()
 
-        course_choice = input("Enter course ID to view its waitlist (or press Enter for all): ").strip()
+        course_choice = input("Enter course ID or code to view its waitlist (or press Enter for all): ").strip()
 
         if course_choice:
-            try:
-                course_id = int(course_choice)
+            course_id = resolve_course_id(cursor, course_choice)
+            if course_id is None:
+                print("No course matches that ID or code.")
+            else:
                 cursor.execute("""
                 SELECT c.course_code, c.course_name, w.student_id, w.position, w.added_at, w.status
                 FROM course_waitlist w
@@ -126,8 +129,6 @@ def view_waitlists(auth):
                         print(f"{entry[3]:<10} {entry[2]:<15} {entry[4]:<20} {entry[5]:<10}")
                 else:
                     print("No waitlist entries found for this course.")
-            except ValueError:
-                print("Invalid course ID.")
         else:
             cursor.execute("""
             SELECT c.course_code, c.course_name, COUNT(w.id) as waitlist_count

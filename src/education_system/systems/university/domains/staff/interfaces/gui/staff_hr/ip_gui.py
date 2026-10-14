@@ -9,6 +9,9 @@ Provides interface for:
 """
 
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -854,7 +857,7 @@ class IPGUI:
                 display_values.append(display)
                 patent_map[display] = p['patent_id']
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return display_values, patent_map
 
     def _get_license_options(self):
@@ -869,7 +872,7 @@ class IPGUI:
                 display_values.append(display)
                 license_map[display] = lic['license_id']
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return display_values, license_map
 
     def _add_license_dialog(self):

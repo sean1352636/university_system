@@ -56,23 +56,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Import chart generation utility
-try:
-    import matplotlib
-    matplotlib.use('TkAgg')
-    import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-    from matplotlib.figure import Figure
-    import seaborn as sns
-    import numpy as np
-    CHARTS_AVAILABLE = True
-except ImportError:
-    CHARTS_AVAILABLE = False
-    plt = None
-    Figure = None
-    FigureCanvasTkAgg = None
-    sns = None
-    np = None
+# Chart generation utilities — deferred, see _lazy_charts. Importing seaborn
+# here pulled matplotlib, pandas and scipy (~4.7s) every time the Course
+# Management window opened, for charts only the analytics dialogs draw.
+from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui._lazy_charts import (
+    CHARTS_AVAILABLE, plt, Figure, FigureCanvasTkAgg, sns, np,
+)
 
 # Import email service
 try:
@@ -168,37 +157,60 @@ from education_system.systems.university.domains.academics.interfaces.gui.course
 # Sibling academic GUIs (course catalog / forums / health / AI integrity alerts).
 # Each is optional — wrap so a missing or broken sibling does not break the
 # whole Course Management GUI.
-try:
-    from education_system.systems.university.domains.academics.interfaces.gui.course_catalog.course_catalog_gui import CourseCatalogGUI
-    COURSE_CATALOG_AVAILABLE = True
-except ImportError as e:
-    CourseCatalogGUI = None
-    COURSE_CATALOG_AVAILABLE = False
-    logger.debug("Course Catalog GUI unavailable: %s", e)
+# These four are only ever instantiated (core/dialogs.py opens each in its own
+# window), so they are bound to callable proxies that import on first use. The
+# AI Detector in particular reaches sklearn, pypdf and python-docx, which the
+# Course Management window itself never needs.
+#
+# core/dialogs.py imports these names directly, so a module-level __getattr__
+# would resolve them at its import time and save nothing — the proxy is what
+# keeps `from ._imports import AIDetectorGUI` cheap.
+class _LazySiblingGUI:
+    """Sibling GUI class, imported on first instantiation."""
 
-try:
-    from education_system.systems.university.domains.academics.interfaces.gui.course_forums.course_forums_gui import CourseForumsGUI
-    COURSE_FORUMS_AVAILABLE = True
-except ImportError as e:
-    CourseForumsGUI = None
-    COURSE_FORUMS_AVAILABLE = False
-    logger.debug("Course Forums GUI unavailable: %s", e)
+    __slots__ = ("_module_path", "_attr", "_resolved")
 
-try:
-    from education_system.systems.university.domains.academics.interfaces.gui.course_health.course_health_gui import CourseHealthDashboardGUI
-    COURSE_HEALTH_AVAILABLE = True
-except ImportError as e:
-    CourseHealthDashboardGUI = None
-    COURSE_HEALTH_AVAILABLE = False
-    logger.debug("Course Health GUI unavailable: %s", e)
+    def __init__(self, module_path, attr):
+        self._module_path = module_path
+        self._attr = attr
+        self._resolved = None
 
-try:
-    from education_system.systems.university.domains.academics.interfaces.gui.ai_detector import AIDetectorGUI
-    AI_DETECTOR_AVAILABLE = True
-except ImportError as e:
-    AIDetectorGUI = None
-    AI_DETECTOR_AVAILABLE = False
-    logger.debug("AI Detector GUI unavailable: %s", e)
+    def _resolve(self):
+        if self._resolved is None:
+            import importlib
+            self._resolved = getattr(importlib.import_module(self._module_path), self._attr)
+        return self._resolved
+
+    def __call__(self, *args, **kwargs):
+        return self._resolve()(*args, **kwargs)
+
+    def __getattr__(self, name):
+        return getattr(self._resolve(), name)
+
+    def __repr__(self):
+        return f"<lazy {self._attr} from {self._module_path}>"
+
+
+CourseCatalogGUI = _LazySiblingGUI(
+    "education_system.systems.university.domains.academics.interfaces.gui.course_catalog.course_catalog_gui",
+    "CourseCatalogGUI")
+CourseForumsGUI = _LazySiblingGUI(
+    "education_system.systems.university.domains.academics.interfaces.gui.course_forums.course_forums_gui",
+    "CourseForumsGUI")
+CourseHealthDashboardGUI = _LazySiblingGUI(
+    "education_system.systems.university.domains.academics.interfaces.gui.course_health.course_health_gui",
+    "CourseHealthDashboardGUI")
+AIDetectorGUI = _LazySiblingGUI(
+    "education_system.systems.university.domains.academics.interfaces.gui.ai_detector",
+    "AIDetectorGUI")
+
+# Optimistic, matching the convention used elsewhere for deferred GUIs: a
+# genuinely broken sibling now reports when it is opened rather than silently
+# disabling its button at import time.
+COURSE_CATALOG_AVAILABLE = True
+COURSE_FORUMS_AVAILABLE = True
+COURSE_HEALTH_AVAILABLE = True
+AI_DETECTOR_AVAILABLE = True
 
 from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.academic_systems.templates_viewer import (
     EvaluationTemplatesViewerDialog

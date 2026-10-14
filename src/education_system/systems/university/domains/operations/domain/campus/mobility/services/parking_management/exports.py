@@ -708,7 +708,7 @@ def export_users(format_type):
         return
 
     if not auth.check_permission('export_data'):
-        print(_t("parking.auth.no_permission"))
+        print(_t("parking.auth.no_permission", default="No Permission."))
         return
 
     try:
@@ -916,7 +916,7 @@ def export_data(format_type):
 
     if not auth.check_permission('export_data'):
         logging.warning(f"User {auth.current_user['username']} attempted to export data without permission")
-        print(_t("parking.auth.no_permission"))
+        print(_t("parking.auth.no_permission", default="No Permission."))
         return
 
     print("\n" + _t("parking.section.export_options") + ":")

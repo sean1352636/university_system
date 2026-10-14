@@ -41,27 +41,79 @@ def _lookup_booking_context(conn, booking_id: int) -> Optional[Dict[str, Any]]:
     return dict(row) if row else None
 
 
+def _lookup_instructor(conn, instructor_id: str) -> Dict[str, str]:
+    """Resolve an instructor to ``{'name', 'email'}``.
+
+    ``office_hours.instructor_id`` holds a **username**. The staff table is
+    keyed by ``username`` and has ``name``/``email`` columns — there is no
+    ``staff_id`` and no ``first_name``/``last_name``, so the previous query
+    raised and was swallowed, leaving every email addressed to the raw id
+    and no way to reach the instructor at all.
+    """
+    blank = {'name': instructor_id or "(instructor)", 'email': ''}
+    if not instructor_id:
+        return blank
+
+    for sql in (
+        "SELECT name AS name, email AS email FROM staff WHERE username = ?",
+        "SELECT TRIM(COALESCE(first_name,'')||' '||COALESCE(last_name,'')) AS name, "
+        "       email AS email FROM users WHERE username = ?",
+    ):
+        try:
+            row = conn.execute(sql, (instructor_id,)).fetchone()
+        except sqlite3.Error:
+            continue
+        if not row:
+            continue
+        name = (row['name'] or '').strip() or instructor_id
+        return {'name': name, 'email': (row['email'] or '').strip()}
+
+    return blank
+
+
 def _lookup_instructor_name(conn, instructor_id: str) -> str:
     """Best-effort instructor display name. Falls back to the raw ID."""
-    if not instructor_id:
-        return "(instructor)"
-    try:
-        row = conn.execute(
-            "SELECT TRIM(COALESCE(first_name,'')||' '||COALESCE(last_name,'')) AS name "
-            "FROM staff WHERE staff_id = ?",
-            (instructor_id,),
-        ).fetchone()
-        if row and (row['name'] or '').strip():
-            return row['name'].strip()
-    except sqlite3.Error:
-        pass
-    return instructor_id
+    return _lookup_instructor(conn, instructor_id)['name']
+
+
+def _resolve_user_email(conn, user_id: str, fallback: str = '') -> str:
+    """Email for whoever is acting, preferring the students row.
+
+    Staff and admins book office hours too, and they have no ``students``
+    row — so the booking context's ``student_email`` comes back empty and
+    the confirmation went nowhere. Fall back to their account email.
+    """
+    if fallback:
+        return fallback
+    if not user_id:
+        return ''
+    for sql in (
+        "SELECT email_address AS email FROM students WHERE student_id = ?",
+        "SELECT email AS email FROM users WHERE username = ?",
+        "SELECT email AS email FROM staff WHERE username = ?",
+    ):
+        try:
+            row = conn.execute(sql, (user_id,)).fetchone()
+        except sqlite3.Error:
+            continue
+        if row and (row['email'] or '').strip():
+            return row['email'].strip()
+    return ''
+
+
+# Where the office-hours templates actually live. The service used to ask
+# for "office_hours/<name>", which matches no file, so every render returned
+# (None, None) and no office-hours email had ever been sent. A bare name is
+# not an option either: "booking_confirmation" also exists under
+# finance_commerce/commerce/cinema.
+_TEMPLATE_DIR = 'academics/teaching/office_hours'
 
 
 def _send_office_hours_email(template_name: str, recipient: str,
                              vars_: Dict[str, Any]) -> bool:
-    """Render ``office_hours/<template_name>`` and dispatch best-effort."""
+    """Render the office-hours template and dispatch best-effort."""
     if not recipient:
+        logger.info("no recipient for office_hours/%s; email not sent", template_name)
         return False
     try:
         from education_system.systems.university.infrastructure.email.template_utils import (
@@ -73,9 +125,9 @@ def _send_office_hours_email(template_name: str, recipient: str,
     except Exception:
         logger.exception("email infrastructure unavailable")
         return False
-    subject, body = render_template(f"office_hours/{template_name}", vars_)
+    subject, body = render_template(f"{_TEMPLATE_DIR}/{template_name}", vars_)
     if not subject or not body:
-        logger.error("template render failed: office_hours/%s", template_name)
+        logger.error("template render failed: %s/%s", _TEMPLATE_DIR, template_name)
         return False
     try:
         send_email(recipient_email=recipient, subject=subject, body=body)
@@ -501,7 +553,9 @@ class OfficeHoursService:
                     ctx_conn.row_factory = sqlite3.Row
                     ctx = _lookup_booking_context(ctx_conn, booking_id) or {}
                     instructor_name = _lookup_instructor_name(ctx_conn, ctx.get('instructor_id', ''))
-                _send_office_hours_email('booking_confirmation', ctx.get('student_email', ''), {
+                    booker_email = _resolve_user_email(
+                        ctx_conn, student_id, ctx.get('student_email', ''))
+                _send_office_hours_email('booking_confirmation', booker_email, {
                     'student_name':     ctx.get('student_name') or student_id,
                     'booking_id':       booking_id,
                     'instructor_name':  instructor_name,
@@ -566,21 +620,32 @@ class OfficeHoursService:
                     with get_connection() as ctx_conn:
                         ctx_conn.row_factory = sqlite3.Row
                         ctx = _lookup_booking_context(ctx_conn, booking_id) or {}
-                        instructor_name = _lookup_instructor_name(ctx_conn, ctx.get('instructor_id', ''))
-                    _send_office_hours_email('booking_cancelled', ctx.get('student_email', ''), {
-                        'student_name':        ctx.get('student_name') or student_id,
+                        instructor = _lookup_instructor(ctx_conn, ctx.get('instructor_id', ''))
+                        student_email = _resolve_user_email(
+                            ctx_conn, student_id, ctx.get('student_email', ''))
+
+                    student_name = ctx.get('student_name') or student_id
+                    shared = {
+                        'student_name':        student_name,
+                        'student_id':          student_id,
                         'booking_id':          booking_id,
-                        'instructor_name':     instructor_name,
+                        'instructor_name':     instructor['name'],
                         'instructor_id':       ctx.get('instructor_id', ''),
                         'booking_date':        ctx.get('booking_date', ''),
                         'day_of_week':         ctx.get('day_of_week', ''),
                         'start_time':          ctx.get('start_time', ''),
                         'end_time':            ctx.get('end_time', ''),
-                        'location':           ctx.get('location', ''),
+                        'location':            ctx.get('location', ''),
                         'cancelled_by':        f"student {student_id}",
                         'cancelled_on':        datetime.now().strftime('%Y-%m-%d %H:%M'),
                         'cancellation_reason': '(no reason supplied)',
-                    })
+                    }
+
+                    _send_office_hours_email('booking_cancelled', student_email, shared)
+                    # The instructor is expecting this appointment — tell them
+                    # the slot is free rather than leaving them waiting.
+                    _send_office_hours_email('booking_cancelled_instructor',
+                                             instructor['email'], shared)
                 except Exception:
                     logger.exception("cancel-confirmation email dispatch failed id=%s", booking_id)
             else:

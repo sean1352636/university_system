@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 # gui_course_management.py
 import tkinter as tk
@@ -36,7 +40,7 @@ def _patched_sqlite_connect(database, *args, **kwargs):
         if not database or db_name in (str(DEFAULT_DB_PATH), "courses.db"):
             return _original_sqlite_connect(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return _original_sqlite_connect(database, *args, **kwargs)
 
 sqlite3.connect = _patched_sqlite_connect
@@ -48,23 +52,13 @@ from typing import List, Dict, Optional, Tuple
 import threading
 import logging
 
-# Import chart generation utility
-try:
-    import matplotlib
-    matplotlib.use('TkAgg')
-    import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-    from matplotlib.figure import Figure
-    import seaborn as sns
-    import numpy as np
-    CHARTS_AVAILABLE = True
-except ImportError:
-    CHARTS_AVAILABLE = False
-    plt = None
-    Figure = None
-    FigureCanvasTkAgg = None
-    sns = None
-    np = None
+# Chart generation utilities — deferred, see _lazy_charts. Importing seaborn
+# here pulled matplotlib, pandas and scipy (~4.7s) into every Course Management
+# open, for charts only the analytics dialogs draw.
+from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui._lazy_charts import (
+    CHARTS_AVAILABLE, plt, Figure, FigureCanvasTkAgg, sns, np,
+)
+from education_system.systems.university.domains.academics.interfaces.gui._field_pickers import attach_combo, recent_years
 
 # Import email service
 try:
@@ -110,6 +104,29 @@ except ImportError as e:
 # =====================================================================
 # GUI APPLICATION CLASS
 # =====================================================================
+
+
+def _instructor_name(cursor, instructor_id):
+    """Display name for *instructor_id*, or None when it names nobody.
+
+    Used to say who a re-assignment displaced, so replacing a colleague on a
+    course is visible rather than silent.
+    """
+    if instructor_id in (None, ""):
+        return None
+    try:
+        cursor.execute(
+            "SELECT TRIM(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) "
+            "FROM instructors WHERE id = ?",
+            (instructor_id,),
+        )
+        row = cursor.fetchone()
+    except sqlite3.Error:
+        logger.debug("could not resolve instructor %r", instructor_id, exc_info=True)
+        return None
+    if not row:
+        return None
+    return (row[0] or "").strip() or f"instructor {instructor_id}"
 
 
 def create_instructors_tab(self):
@@ -676,7 +693,8 @@ class InstructorDetailsDialog:
                      values=["Fall", "Spring", "Summer", "Winter"]).grid(row=0, column=1, sticky=tk.W, padx=5)
         ttk.Label(schedule_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.year', default="Year:")).grid(row=1, column=0, sticky=tk.W)
         self.year_var = tk.StringVar(value=str(datetime.now().year))
-        ttk.Entry(schedule_frame, textvariable=self.year_var, width=10).grid(row=1, column=1, sticky=tk.W, padx=5)
+        attach_combo(schedule_frame, recent_years(ahead=3, back=3),
+                     textvariable=self.year_var, width=10).grid(row=1, column=1, sticky=tk.W, padx=5)
 
         current_frame = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.current_assignments', default="Current Assignments"), padding=10)
         current_frame.pack(fill=tk.BOTH, expand=True, pady=5)
@@ -778,11 +796,40 @@ class InstructorDetailsDialog:
                     UNIQUE(course_id, semester, year)
                 )
                 ''')
+                # Read the *current* instructor too, not just whether a row
+                # exists: re-assigning the same person to the same course and
+                # slot used to run a no-op UPDATE and still report success, so
+                # a duplicate assignment looked like a new one.
                 cursor.execute(
-                    "SELECT id FROM course_schedule WHERE course_id = ? AND semester = ? AND year = ?",
+                    "SELECT id, instructor_id FROM course_schedule "
+                    "WHERE course_id = ? AND semester = ? AND year = ?",
                     (course_id, semester, year_int),
                 )
                 existing = cursor.fetchone()
+
+                if existing and str(existing[1]) == str(self.instructor_id):
+                    messagebox.showinfo(
+                        _t('gui.academics.course_management_gui.instructors.instructors.dialogs.already_assigned',
+                           default="Already Assigned"),
+                        f"This instructor is already assigned to {course_text} "
+                        f"for {semester} {year_int}.\n\n"
+                        f"Nothing has been changed.",
+                    )
+                    return
+
+                replaced = _instructor_name(cursor, existing[1]) if existing else None
+
+                # Taking over a slot removes whoever currently holds it, and
+                # nothing else records that it happened — so confirm first
+                # rather than silently displacing a colleague.
+                if replaced and not messagebox.askyesno(
+                        _t('gui.academics.course_management_gui.instructors.instructors.dialogs.replace_instructor',
+                           default="Replace Instructor?"),
+                        f"{course_text} for {semester} {year_int} is currently "
+                        f"assigned to {replaced}.\n\n"
+                        f"Reassigning it will remove them from this slot. Continue?"):
+                    return
+
                 if existing:
                     cursor.execute("UPDATE course_schedule SET instructor_id = ? WHERE id = ?",
                                    (self.instructor_id, existing[0]))
@@ -796,7 +843,9 @@ class InstructorDetailsDialog:
 
             self.result = True
             self._refresh_assignments()
-            messagebox.showinfo(_("common.success"), f"Assigned to {course_text} for {semester} {year_int}.")
+            note = f"\n\nThis replaced {replaced}." if replaced else ""
+            messagebox.showinfo(_("common.success"),
+                                f"Assigned to {course_text} for {semester} {year_int}.{note}")
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to assign instructor: {e}")
 
@@ -852,7 +901,8 @@ class AssignInstructorDialog:
 
         ttk.Label(schedule_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.year', default="Year:")).grid(row=1, column=0, sticky=tk.W)
         self.year_var = tk.StringVar(value=str(datetime.now().year))
-        ttk.Entry(schedule_frame, textvariable=self.year_var, width=10).grid(row=1, column=1, sticky=tk.W, padx=5)
+        attach_combo(schedule_frame, recent_years(ahead=3, back=3),
+                     textvariable=self.year_var, width=10).grid(row=1, column=1, sticky=tk.W, padx=5)
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
@@ -959,10 +1009,41 @@ class AssignInstructorDialog:
 
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-                # Check if schedule exists
-                cursor.execute("SELECT id FROM course_schedule WHERE course_id = ? AND semester = ? AND year = ?",
-                              (course_id, semester, year_int))
+                # Read the current instructor as well as the row id: assigning
+                # the same person to the same course and slot twice used to run
+                # a no-op UPDATE, mail them again and report success, which is
+                # indistinguishable from a real assignment.
+                cursor.execute(
+                    "SELECT id, instructor_id FROM course_schedule "
+                    "WHERE course_id = ? AND semester = ? AND year = ?",
+                    (course_id, semester, year_int))
                 existing = cursor.fetchone()
+
+                if existing and str(existing[1]) == str(instructor_id):
+                    messagebox.showinfo(
+                        _t('gui.academics.course_management_gui.instructors.instructors.dialogs.already_assigned',
+                           default="Already Assigned"),
+                        f"{instructor_text} is already assigned to {course_text} "
+                        f"for {semester} {year_int}.\n\n"
+                        f"Nothing has been changed, and no notification was sent.",
+                        parent=self.dialog,
+                    )
+                    return
+
+                replaced = _instructor_name(cursor, existing[1]) if existing else None
+
+                # Taking over a slot removes whoever currently holds it, and
+                # nothing else records that it happened — so confirm first
+                # rather than silently displacing a colleague.
+                if replaced and not messagebox.askyesno(
+                        _t('gui.academics.course_management_gui.instructors.instructors.dialogs.replace_instructor',
+                           default="Replace Instructor?"),
+                        f"{course_text} for {semester} {year_int} is currently "
+                        f"assigned to {replaced}.\n\n"
+                        f"Reassigning it to {instructor_text} will remove them "
+                        f"from this slot. Continue?",
+                        parent=self.dialog):
+                    return
 
                 if existing:
                     # Update existing schedule
@@ -982,9 +1063,10 @@ class AssignInstructorDialog:
             # Notify the instructor by email that they've been assigned
             email_msg = self._send_assignment_email(instructor_text, course_text, semester, year_int)
 
+            note = f"\n\nThis replaced {replaced}." if replaced else ""
             messagebox.showinfo(
                 _("common.success"),
-                f"Instructor assigned to {course_text} for {semester} {year}{email_msg}"
+                f"Instructor assigned to {course_text} for {semester} {year}{note}{email_msg}"
             )
             self.result = True
             self.dialog.destroy()

@@ -1,4 +1,9 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.database.db import get_connection
+from education_system.systems.university.infrastructure.email.sign_off import office_name
 
 
 class NotificationsMixin:
@@ -81,7 +86,7 @@ class NotificationsMixin:
 
         except Exception:
             # Silently fail - notifications are optional
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def send_schedule_change_notifications(self, schedule_id, change_description):
         """Send notifications when schedules change"""
@@ -222,7 +227,7 @@ class NotificationsMixin:
 
                     # Fallback if template not found
                     if not template_subject or not personalized_message:
-                        personalized_message = f"Dear {student_name},\n\n{message}\n\nModule: {module_name} ({module_code})\n\nBest regards,\nUniversity Module Scheduling System"
+                        personalized_message = f"Dear {student_name},\n\n{message}\n\nModule: {module_name} ({module_code})\n\nBest regards,\n{office_name('Module Scheduling')}"
 
                     send_email(email, subject, personalized_message)
                     summary['students_emailed'] += 1
@@ -246,7 +251,7 @@ class NotificationsMixin:
                     email, first_name, last_name = instructor
                     try:
                         instructor_name = f"{first_name or ''} {last_name or ''}".strip() or "Instructor"
-                        personalized_message = f"Dear {instructor_name},\n\n{message}\n\nModule: {module_name} ({module_code})\n\nBest regards,\nUniversity Module Scheduling System"
+                        personalized_message = f"Dear {instructor_name},\n\n{message}\n\nModule: {module_name} ({module_code})\n\nBest regards,\n{office_name('Module Scheduling')}"
 
                         send_email(email, subject, personalized_message)
                         summary['instructor_emailed'] = True

@@ -1,4 +1,7 @@
 """Extracted class implementation."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -302,7 +305,7 @@ class EnvironmentalReportsDialog:
                     'report_content': report_content
                 })
             except Exception:
-                pass  # Use plain text subject/body
+                logger.debug("Suppressed exception", exc_info=True)
 
             result = send_email(
                 recipient_email=admin_email,

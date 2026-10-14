@@ -312,12 +312,29 @@ class DatabaseMixin:
         except Exception as e:
             print(_("course_management.errors.migration_error", error=str(e)))
 
-    def refresh_course_list(self):
-        """Reload the current page of courses from the database."""
-        try:
-            # Switch to courses tab first
-            self.notebook.select(0)  # Courses tab is index 0
+    def show_course_list_tab(self):
+        """Bring the Courses tab to the front and reload it.
 
+        For the callers that used to rely on refresh_course_list()
+        switching tabs as a side effect.
+        """
+        try:
+            self.notebook.select(0)
+        except Exception:
+            pass
+        self.refresh_course_list()
+
+    def refresh_course_list(self):
+        """Reload the current page of courses from the database.
+
+        Reloading data no longer jumps to the Courses tab. It is called
+        from ~19 places, including startup and after edits made on other
+        tabs, so the jump moved the user away from whatever they were
+        doing — and it silently overrode any attempt to open this GUI on
+        a specific tab. Callers that genuinely want the list in front
+        select it themselves via ``show_course_list_tab()``.
+        """
+        try:
             # Clear existing items
             for item in self.course_tree.get_children():
                 self.course_tree.delete(item)
@@ -383,17 +400,25 @@ class DatabaseMixin:
                 courses = cursor.fetchall()
 
                 # Pre-compute course-codes that have unresolved schedule
-                # conflicts on any of their modules. Single bus call per
+                # conflicts on any of their modules. Single detection pass per
                 # refresh — the per-row check is then a set lookup.
+                #
+                # This used to call find_conflicts_for_course() inside the loop.
+                # That function re-runs the whole scheduling-conflict detector
+                # over the entire database on every call, so a page of 20
+                # courses ran 20 full detections and opened ~500 database
+                # connections — about 50s to open this window. The batch call
+                # does one detection for the whole page.
                 conflict_courses: set[str] = set()
                 try:
                     from education_system.systems.university.domains.academics.interfaces.gui._cross_services import (
-                        find_conflicts_for_course,
+                        find_conflicts_for_courses,
                     )
-                    for course in courses:
-                        course_code = course[1]
-                        if course_code and find_conflicts_for_course(course_code):
-                            conflict_courses.add(course_code)
+                    page_codes = [c[1] for c in courses if c[1]]
+                    conflict_courses = {
+                        code for code, found in find_conflicts_for_courses(page_codes).items()
+                        if found
+                    }
                 except Exception:
                     conflict_courses = set()
 

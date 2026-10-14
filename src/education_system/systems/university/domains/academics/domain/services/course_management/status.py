@@ -1,6 +1,10 @@
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
 from datetime import datetime
 from education_system.systems.university.infrastructure.utils.activity_logger import log_update
+from education_system.systems.university.domains.academics.domain.services.course_management.courses import (
+    _fit,
+    resolve_course_id,
+)
 
 
 @log_update(module="course_management", description="Updating course status")
@@ -28,26 +32,22 @@ def manage_course_status(auth):
             return False
 
         print("\nAll Courses:")
-        print(f"{'ID':<5} {'Code':<10} {'Name':<30} {'Status':<12}")
-        print("-" * 57)
+        print(f"{'ID':<12} {'Code':<10} {'Name':<30} {'Status':<12}")
+        print("-" * 67)
         for course in courses:
-            print(f"{course[0]:<5} {course[1]:<10} {course[2]:<30} {course[3]:<12}")
+            print(f"{_fit(course[0], 12):<12} {_fit(course[1], 10):<10} {_fit(course[2], 30):<30} {_fit(course[3], 12):<12}")
 
-        # Select course (handle both integer and string IDs)
+        # Select course by id or code (courses.id is TEXT, never an integer)
         while True:
-            course_id_input = input("\nEnter course ID to update status (or press Enter to go back): ").strip()
+            course_id_input = input("\nEnter course ID or code to update status (or press Enter to go back): ").strip()
             if not course_id_input:
                 conn.close()
                 return False
-            # Try to convert to int, but also accept string IDs
-            try:
-                course_id = int(course_id_input)
-            except ValueError:
-                course_id = course_id_input
+            course_id = resolve_course_id(cursor, course_id_input)
             selected_course = next((c for c in courses if str(c[0]) == str(course_id)), None)
             if selected_course:
                 break
-            print("Invalid course ID.")
+            print("No course matches that ID or code.")
 
         current_status = selected_course[3]
         print(f"\nCurrent status: {current_status}")
@@ -89,13 +89,24 @@ def manage_course_status(auth):
         # Update status
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-        # Try with updated_at first, fall back to just status if column doesn't exist
+        # Canonical write, shared with the GUI status dialogs and the API.
+        # The service normalises casing, so a status entered as "Active" no
+        # longer becomes invisible to student enrolment.
+        from education_system.systems.university.application.course_lifecycle_service import (
+            CourseLifecycleService,
+            CourseValidationError,
+        )
         try:
-            cursor.execute("UPDATE courses SET status = ?, updated_at = ? WHERE id = ?",
-                          (new_status, timestamp, selected_course[0]))
-        except sqlite3.OperationalError:
-            cursor.execute("UPDATE courses SET status = ? WHERE id = ?",
-                          (new_status, selected_course[0]))
+            new_status = CourseLifecycleService().set_status(
+                selected_course[0], new_status,
+                actor_id=str((auth.current_user or {}).get('id', 'unknown')),
+                reason="Status changed via course management CLI",
+            ).status
+        except CourseValidationError as exc:
+            for field, message in exc.errors.items():
+                print(f"Error: {field} {message}")
+            conn.close()
+            return False
 
         # Log the change in history (wrap in try/except in case table doesn't exist)
         try:

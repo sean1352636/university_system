@@ -62,7 +62,7 @@ class MaintenanceMixin:
         try:
             # Check for orphaned events (events without valid academic year context)
             orphaned_events = self.db_manager.execute_query('''
-                SELECT COUNT(*) as count FROM academic_calendar_events e
+                SELECT COUNT(*) as count FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') e
                 WHERE e.date_start IS NOT NULL
                 AND NOT EXISTS (
                     SELECT 1 FROM semesters s
@@ -75,7 +75,7 @@ class MaintenanceMixin:
 
             # Check for invalid date ranges
             invalid_ranges = self.db_manager.execute_query('''
-                SELECT COUNT(*) as count FROM academic_calendar_events
+                SELECT COUNT(*) as count FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar')
                 WHERE date_start IS NOT NULL AND date_end IS NOT NULL
                 AND date_start > date_end
             ''')
@@ -94,7 +94,7 @@ class MaintenanceMixin:
             # Count events by type
             event_counts = self.db_manager.execute_query('''
                 SELECT event_type, COUNT(*) as count
-                FROM academic_calendar_events
+                FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar')
                 GROUP BY event_type
             ''')
             stats['events_by_type'] = {row['event_type']: row['count'] for row in event_counts}
@@ -119,7 +119,7 @@ class MaintenanceMixin:
             current_date = datetime.now().strftime("%Y-%m-%d")
 
             upcoming_events = self.db_manager.execute_query('''
-                SELECT COUNT(*) as count FROM academic_calendar_events
+                SELECT COUNT(*) as count FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar')
                 WHERE COALESCE(date, date_start) BETWEEN ? AND ?
             ''', (current_date, future_date))
 
@@ -141,8 +141,9 @@ class MaintenanceMixin:
 
             # Clean up old events
             old_events = self.db_manager.execute_update('''
-                DELETE FROM academic_calendar_events
-                WHERE COALESCE(date, date_end) < ?
+                DELETE FROM unified_events
+                WHERE source_type = 'academic_calendar'
+                AND COALESCE(event_date, end_datetime) < ?
                 AND event_type NOT IN ('Holiday', 'Academic')
             ''', (cutoff_date,))
 

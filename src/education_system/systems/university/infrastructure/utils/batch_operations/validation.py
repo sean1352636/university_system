@@ -15,10 +15,10 @@ class ValidationMixin:
     def get_import_file_path(self, file_type: str) -> Optional[str]:
         """Get the file path for import with validation"""
         while True:
-            file_path = input(_t("shared.utils.batch_operations.prompt_file_path", file_type=file_type))
+            file_path = input(_t("shared.utils.batch_operations.prompt_file_path", file_type=file_type, default="Prompt File Path {file_type}"))
 
             if not os.path.exists(file_path):
-                print(_t("shared.utils.batch_operations.error_file_not_found", path=file_path))
+                print(_t("shared.utils.batch_operations.error_file_not_found", path=file_path, default="Error File Not Found. {path}"))
                 retry = input(_t("shared.utils.batch_operations.prompt_try_again"))
                 if retry.lower() != 'y':
                     return None
@@ -135,16 +135,16 @@ class ValidationMixin:
 
     def display_validation_errors(self, error_records: List[Dict], max_display: int = 10):
         """Display validation errors in a formatted way"""
-        print("\n" + _t("shared.utils.batch_operations.records_with_errors", count=min(len(error_records), max_display)))
+        print("\n" + _t("shared.utils.batch_operations.records_with_errors", count=min(len(error_records), max_display), default="Records With Errors {count}"))
         print("-" * 80)
 
         for i, record in enumerate(error_records[:max_display], 1):
-            print(f"\n{i}. {_t('shared.utils.batch_operations.row')}: {record['row']}")
-            print(f"   {_t('shared.utils.batch_operations.name')}: {record['data'].get('first_name', 'N/A')} {record['data'].get('last_name', 'N/A')}")
-            print(f"   {_t('shared.utils.batch_operations.errors')}: {'; '.join(record['errors'])}")
+            print(f"\n{i}. {_t('shared.utils.batch_operations.row', default='Row')}: {record['row']}")
+            print(f"   {_t('shared.utils.batch_operations.name', default='Name')}: {record['data'].get('first_name', 'N/A')} {record['data'].get('last_name', 'N/A')}")
+            print(f"   {_t('shared.utils.batch_operations.errors', default='Errors')}: {'; '.join(record['errors'])}")
 
         if len(error_records) > max_display:
-            print("\n" + _t("shared.utils.batch_operations.and_more_errors", count=len(error_records) - max_display))
+            print("\n" + _t("shared.utils.batch_operations.and_more_errors", count=len(error_records) - max_display, default="And More Errors {count}"))
 
     def validate_and_clean_data(self):
         """Validate and clean existing data in database"""
@@ -159,7 +159,7 @@ class ValidationMixin:
             cursor.execute("SELECT * FROM students")
             students = cursor.fetchall()
 
-            print(_t("shared.utils.batch_operations.analyzing_students", count=len(students)))
+            print(_t("shared.utils.batch_operations.analyzing_students", count=len(students), default="Analyzing Students {count}"))
 
             issues = []
             fixed_count = 0
@@ -220,25 +220,25 @@ class ValidationMixin:
             conn.commit()
 
             print("\n" + _t("shared.utils.batch_operations.validation_complete_summary"))
-            print(_t("shared.utils.batch_operations.records_with_issues", count=len(issues)))
-            print(_t("shared.utils.batch_operations.auto_fixes_applied", count=fixed_count))
+            print(_t("shared.utils.batch_operations.records_with_issues", count=len(issues), default="Records With Issues {count}"))
+            print(_t("shared.utils.batch_operations.auto_fixes_applied", count=fixed_count, default="Auto Fixes Applied {count}"))
 
             if issues:
                 print("\n" + _t("shared.utils.batch_operations.first_issues_found"))
                 for i, issue in enumerate(issues[:10], 1):
-                    print(f"{i}. {_t('shared.utils.batch_operations.student')} {issue['student_id']} ({issue['name']}): {', '.join(issue['issues'])}")
+                    print(f"{i}. {_t('shared.utils.batch_operations.student', default='Student')} {issue['student_id']} ({issue['name']}): {', '.join(issue['issues'])}")
 
                 if len(issues) > 10:
-                    print(_t("shared.utils.batch_operations.and_more_issues", count=len(issues) - 10))
+                    print(_t("shared.utils.batch_operations.and_more_issues", count=len(issues) - 10, default="And More Issues {count}"))
 
                 # Export issues report
                 import json
                 filename = f"data_quality_issues_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
                 with open(filename, 'w') as f:
                     json.dump(issues, f, indent=2)
-                print(_t("shared.utils.batch_operations.issues_report_saved", filename=filename))
+                print(_t("shared.utils.batch_operations.issues_report_saved", filename=filename, default="Issues Report Saved {filename}"))
 
         except sqlite3.Error as e:
-            print(_t("shared.utils.batch_operations.database_error", error=str(e)))
+            print(_t("shared.utils.batch_operations.database_error", error=str(e), default="Database Error {error}"))
         finally:
             conn.close()

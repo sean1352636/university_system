@@ -3,6 +3,9 @@ Enhanced Library Management System - GUI Version
 Maintains all original CLI functions while adding a modern GUI interface
 Backwards compatible with existing database and auth systems
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -92,15 +95,11 @@ except ImportError:
     FINANCE_ACCOUNT_AVAILABLE = False
     print("Warning: Student finance account integration not available")
 
-# Import matplotlib for library finance charts
-try:
-    import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-    from matplotlib.figure import Figure
-    MATPLOTLIB_AVAILABLE = True
-except ImportError:
-    MATPLOTLIB_AVAILABLE = False
-    print("Warning: Matplotlib not available for library finance charts")
+# Matplotlib is imported lazily by finance_shared, the one module in this
+# package whose names are actually read (by the two chart dialogs under
+# finance_parts/). This module carried an identical eager copy of that import
+# and never used any of it — importing matplotlib.pyplot costs ~1.3s and was
+# paid by anything that touched the library package at all.
 
 # Import email service for library finance notifications
 try:
@@ -115,7 +114,10 @@ except ImportError:
 _AUDIT_LOG_COLUMNS_CACHE: Optional[List[str]] = None
 _STUDENT_COLUMNS_CACHE: Optional[List[str]] = None
 
-class LibraryGUI:
+from education_system.systems.university.domains.academics.interfaces.gui._report_presentation import TextReportRendererMixin
+
+
+class LibraryGUI(TextReportRendererMixin):
     def __init__(self, master, auth=None):
         # Pre-8.117.22 this set ``self.master = master`` and then
         # *unconditionally* called ``self.master.title(...)`` and
@@ -235,21 +237,21 @@ class LibraryGUI:
                             foreground="#c0392b",
                         )
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
 
             def _on_reading_list_change(**_payload):
                 if hasattr(self, "refresh_reading_lists"):
                     try:
                         self.refresh_reading_lists()
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
 
             def _on_loan_change(**_payload):
                 if hasattr(self, "refresh_overdue_books"):
                     try:
                         self.refresh_overdue_books()
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
 
             subscribe_tk(EVENT_EXAM_CHANGED, self.master, _on_exam_change)
             subscribe_tk(EVENT_READING_LIST_CHANGED, self.master,
@@ -257,7 +259,7 @@ class LibraryGUI:
             subscribe_tk(EVENT_LOAN_CHANGED, self.master, _on_loan_change)
             subscribe_tk(EVENT_CHARGE_RAISED, self.master, _on_loan_change)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def get_user_role(self):
         """Get the current user's role from authentication system"""
@@ -423,28 +425,34 @@ class LibraryGUI:
         is_staff = self.is_staff()
         is_student = self.is_student()
 
-        # File menu
+        # File menu.
+        #
+        # No Exit item: the window's own close control already does that,
+        # and a menu Exit inside a Toplevel is ambiguous about whether it
+        # closes the library or the whole application. Built first and
+        # only attached if it ends up with entries — for a student every
+        # item below is gated off, and an empty File menu is worse than
+        # none at all.
         file_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label=_("library.menu.file"), menu=file_menu)
 
         # Admin and Staff can import/export
         if is_admin or is_staff:
             file_menu.add_command(label=_("library.menu.bulk_import_books"), command=self.bulk_import_books_gui)
             file_menu.add_command(label=_("library.menu.bulk_export_books"), command=self.bulk_export_books_gui)
-            file_menu.add_separator()
 
         # Admin only - System backup/restore
         if is_admin:
+            file_menu.add_separator()
             file_menu.add_command(label=_("library.menu.backup_system"), command=self.backup_system_gui)
             file_menu.add_command(label=_("library.menu.restore_system"), command=self.restore_system_gui)
-            file_menu.add_separator()
-
-        file_menu.add_command(label=_("common.exit"), command=self.exit_application)
 
         # Admin and Staff can export statistics
         if is_admin or is_staff:
             file_menu.add_separator()
             file_menu.add_command(label=_("library.menu.export_statistics"), command=self.generate_library_statistics_export)
+
+        if file_menu.index("end") is not None:
+            menubar.add_cascade(label=_("library.menu.file"), menu=file_menu)
 
         # Edit menu - Admin and Staff only
         if is_admin or is_staff:
@@ -902,9 +910,23 @@ class LibraryGUI:
         self.status_label.config(foreground=colors.get(status_type, "black"))
 
     def clear_content_area(self):
-        """Clear the content area"""
+        """Clear the content area, destroying the widgets behind each tab.
+
+        ``forget()`` alone detaches the tab but leaves its frame and every
+        child alive under the notebook, so each navigation click leaked a
+        whole screen — eventually exhausting X pixmaps.
+        """
         for tab in self.notebook.tabs():
+            try:
+                widget = self.notebook.nametowidget(tab)
+            except KeyError:
+                widget = None
             self.notebook.forget(tab)
+            if widget is not None:
+                try:
+                    widget.destroy()
+                except tk.TclError:
+                    pass
 
     def check_permission(self, permission):
         """Check if current user has permission"""

@@ -25,6 +25,7 @@ import sqlite3
 from typing import Any, Optional
 
 from education_system.systems.university.infrastructure.database.db import get_connection
+from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608 - identifier validation
 
 
 class InstitutionalAnalyticsError(Exception):
@@ -72,6 +73,9 @@ class InstitutionalAnalyticsService:
 
     @staticmethod
     def _columns(conn: sqlite3.Connection, table: str) -> set[str]:
+        # db-audit: ignore[DBW001] - parameter passed through a validator
+        # Identifiers cannot be parameterised, so they are validated instead.
+        table = validate_identifier(table)
         try:
             return {r[1] for r in conn.execute(f"PRAGMA table_info('{table}')").fetchall()}
         except sqlite3.Error:
@@ -371,14 +375,17 @@ class InstitutionalAnalyticsService:
                 has_status = "status" in pcols
                 # Only completed payments count as collected revenue.
                 cond = "lower(status)='completed'" if has_status else "1=1"
+                # db-audit: ignore[DBW001] - conditional between literals
                 total = conn.execute(
                     f"SELECT COALESCE(SUM(amount),0) FROM payments WHERE {cond}"
                 ).fetchone()[0]
+                # db-audit: ignore[DBW001] - conditional between literals
                 count = conn.execute(
                     f"SELECT COUNT(*) FROM payments WHERE {cond}"
                 ).fetchone()[0]
                 by_method: dict[str, float] = {}
                 if "payment_method" in pcols:
+                    # db-audit: ignore[DBW001] - conditional between literals
                     for r in conn.execute(
                         f"SELECT payment_method m, COALESCE(SUM(amount),0) s "
                         f"FROM payments WHERE {cond} GROUP BY lower(payment_method)"
@@ -386,6 +393,7 @@ class InstitutionalAnalyticsService:
                         by_method[self._norm(r["m"]) or "unknown"] = round(r["s"] or 0, 2)
                 by_month: dict[str, float] = {}
                 if "payment_date" in pcols:
+                    # db-audit: ignore[DBW001] - conditional between literals
                     for r in conn.execute(
                         f"SELECT substr(payment_date,1,7) ym, "
                         f"COALESCE(SUM(amount),0) s FROM payments "

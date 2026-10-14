@@ -1,4 +1,13 @@
-"""Music Shop GUI Module"""
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.musicshop.musicshop_gui import MusicShopGUI, launch_musicshop_gui
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.interfaces.gui.musicshop`` (campus commerce plugin).
 
-__all__ = ['MusicShopGUI', 'launch_musicshop_gui']
+A mirror, not an alias: an aliased package would resolve this package's
+submodules through the new ``__path__`` and load each one a second time.
+Submodules are aliased individually; this copies the package's names.
+"""
+# layout-shim: education_system.systems.university.plugins.campus_commerce.interfaces.gui.musicshop
+import importlib as _importlib
+
+_new = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.interfaces.gui.musicshop")
+globals().update({k: v for k, v in vars(_new).items()
+                  if not (k.startswith("__") and k.endswith("__"))})
+del _importlib, _new

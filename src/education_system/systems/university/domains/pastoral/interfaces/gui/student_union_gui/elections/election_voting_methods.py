@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog, filedialog
@@ -890,7 +894,7 @@ class ConfigureVotingMethodsDialog:
                         "manifesto": cand_row[2] or "",
                     })
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         finally:
             if conn:
                 conn.close()

@@ -33,7 +33,7 @@ def setup_api_routes(chatbot):
         return jsonify({
             'success': False,
             'error': 'Authentication must be performed through the main application',
-            'message': 'Please log in via the main GUI (python run.py --gui) first'
+            'message': 'Please log in via the main GUI (python -m education_system --gui) first'
         }), 401
 
     @chatbot.app.route('/api/auth/logout', methods=['POST'])
@@ -132,7 +132,7 @@ def setup_api_routes(chatbot):
         return jsonify({
             'success': False,
             'error': 'Authentication must be performed through the main application',
-            'message': 'Please log in via the main GUI (python run.py --gui) first'
+            'message': 'Please log in via the main GUI (python -m education_system --gui) first'
         }), 401
 
     @chatbot.app.route('/api/recommendations/<student_id>', methods=['GET'])

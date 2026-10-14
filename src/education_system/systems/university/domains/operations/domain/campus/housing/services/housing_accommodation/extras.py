@@ -302,6 +302,17 @@ def save_contract_document(assignment_id: str, source_path: str, *,
         now = datetime.datetime.now().isoformat(timespec='seconds')
         conn = get_connection()
         try:
+            if not assignment_exists(conn, assignment_id):
+                logger.warning(
+                    "save_contract_document: no assignment %r - nothing saved",
+                    assignment_id)
+                # The file was already copied into the contracts dir above;
+                # remove it rather than leaving an orphan with no DB row.
+                try:
+                    target.unlink(missing_ok=True)
+                except OSError:
+                    logger.warning("could not remove orphaned upload %s", target)
+                return None
             conn.execute('''
                 INSERT INTO housing_contract_documents
                 (doc_id, assignment_id, original_filename, stored_path,
@@ -410,6 +421,36 @@ CHECKLIST_TEMPLATES: dict[str, list[tuple[str, str]]] = {
 }
 
 
+def assignment_exists(conn, assignment_id: str) -> bool:
+    """True when *assignment_id* is a real row in housing_assignments.
+
+    Both the checklist and guest-pass tables carry a foreign key onto
+    housing_assignments, and both CLI screens ask the operator to type the
+    id by hand. A typo therefore surfaced as a bare
+    ``sqlite3.IntegrityError: FOREIGN KEY constraint failed`` and a
+    "Create failed (see logs)" with nothing to act on. Checking first lets
+    the caller say *which* id was wrong.
+    """
+    if not assignment_id:
+        return False
+    row = conn.execute(
+        "SELECT 1 FROM housing_assignments WHERE assignment_id = ? LIMIT 1",
+        (assignment_id,),
+    ).fetchone()
+    return row is not None
+
+
+def inspection_exists(conn, inspection_id: str) -> bool:
+    """True when *inspection_id* is a real row in housing_inspections."""
+    if not inspection_id:
+        return False
+    row = conn.execute(
+        "SELECT 1 FROM housing_inspections WHERE inspection_id = ? LIMIT 1",
+        (inspection_id,),
+    ).fetchone()
+    return row is not None
+
+
 def create_checklist(assignment_id: str, template: str, *,
                      inspection_id: str | None = None) -> str | None:
     if template not in CHECKLIST_TEMPLATES:
@@ -420,6 +461,16 @@ def create_checklist(assignment_id: str, template: str, *,
         conn = get_connection()
         try:
             cur = conn.cursor()
+            if not assignment_exists(conn, assignment_id):
+                logger.warning(
+                    "create_checklist: no assignment %r - nothing created",
+                    assignment_id)
+                return None
+            if inspection_id and not inspection_exists(conn, inspection_id):
+                logger.warning(
+                    "create_checklist: no inspection %r - nothing created",
+                    inspection_id)
+                return None
             now = datetime.datetime.now().isoformat(timespec='seconds')
             cl_id = generate_id('CL')
             cur.execute('''
@@ -605,6 +656,11 @@ def request_guest_pass(assignment_id: str, *, guest_name: str,
         now = datetime.datetime.now().isoformat(timespec='seconds')
         conn = get_connection()
         try:
+            if not assignment_exists(conn, assignment_id):
+                logger.warning(
+                    "request_guest_pass: no assignment %r - nothing created",
+                    assignment_id)
+                return None
             conn.execute('''
                 INSERT INTO housing_guest_passes
                 (pass_id, assignment_id, guest_name, guest_relation,

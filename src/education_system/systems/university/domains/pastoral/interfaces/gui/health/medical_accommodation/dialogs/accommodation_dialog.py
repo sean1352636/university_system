@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 # dialogs/accommodation_dialog.py
 # Dialog for adding/editing accommodation records.
@@ -35,7 +39,7 @@ def _load_students():
                 students.append(label)
                 student_map[label] = sid
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return students, student_map
 
 

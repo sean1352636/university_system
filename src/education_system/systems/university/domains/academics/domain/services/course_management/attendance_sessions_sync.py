@@ -132,7 +132,7 @@ def find_or_create_session(module_code: str, date_str: str
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
 
 def generate_sessions_for_module(module_code: str,
@@ -185,4 +185,4 @@ def get_canonical_roster(module_code: str) -> List[str]:
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)

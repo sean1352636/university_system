@@ -340,7 +340,7 @@ class AcademicProgressGUI:
                   command=self.calculate_progress).pack(side=tk.LEFT, padx=5)
 
         # Results area
-        self.progress_results = scrolledtext.ScrolledText(progress_tab, height=30, width=100, wrap=tk.WORD)
+        self.progress_results = ReportPane(progress_tab, title=_t('academic_progress.tabs.degree_progress_title', default="Degree Progress"))
         self.progress_results.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     def calculate_progress(self):

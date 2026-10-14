@@ -1,4 +1,5 @@
 """Database management and maintenance"""
+from education_system.systems.university.shell.gui import report_view as _rv
 
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 from education_system.systems.university.infrastructure.i18n import get_text as _
@@ -345,27 +346,27 @@ class DatabaseManager:
                 try:
                     cursor.execute("ALTER TABLE payments ADD COLUMN source_type TEXT DEFAULT NULL")
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
                 try:
                     cursor.execute("ALTER TABLE payments ADD COLUMN reference_id TEXT DEFAULT NULL")
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
                 try:
                     cursor.execute("ALTER TABLE payments ADD COLUMN reference_type TEXT DEFAULT NULL")
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
                 try:
                     cursor.execute("ALTER TABLE payments ADD COLUMN payment_type TEXT DEFAULT NULL")
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
                 try:
                     cursor.execute("ALTER TABLE payments ADD COLUMN description TEXT DEFAULT NULL")
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
                 try:
                     cursor.execute("ALTER TABLE payments ADD COLUMN processed_by TEXT DEFAULT NULL")
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
             # Create indexes for club payments in the payments table
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_payments_source_type ON payments(source_type)')
@@ -553,7 +554,7 @@ class DatabaseManager:
                 ''')
                 cleaned_count += cursor.rowcount
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Delete old transaction records (>5 years) — table may not exist
             try:
@@ -563,7 +564,7 @@ class DatabaseManager:
                 ''')
                 cleaned_count += cursor.rowcount
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Delete orphaned fee records (no associated student)
             try:
@@ -573,7 +574,7 @@ class DatabaseManager:
                 ''')
                 cleaned_count += cursor.rowcount
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Optimize database
             conn.commit()
@@ -667,7 +668,7 @@ class DatabaseManager:
             text_frame = tk.Frame(stats_window)
             text_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-            text_widget = tk.Text(text_frame, font=('Courier', 10))
+            text_widget = _rv.TextReportView(text_frame, font=('Courier', 10))
             scrollbar = tk.Scrollbar(text_frame, orient='vertical', command=text_widget.yview)
             text_widget.configure(yscrollcommand=scrollbar.set)
 
@@ -829,7 +830,7 @@ class DatabaseManager:
             text_frame = tk.Frame(text_window)
             text_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-            text_widget = ScrolledText(text_frame, font=('Courier', 10), wrap='word')
+            text_widget = _rv.TextReportView(text_frame, font=('Courier', 10), wrap='word')
             text_widget.pack(fill='both', expand=True)
 
             text_widget.insert('1.0', content)

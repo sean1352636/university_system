@@ -487,7 +487,7 @@ PRIVACY NOTICE: This health record is protected under HIPAA regulations."""
     def open_email_manager_gui(self):
         """Open email manager GUI for health portal"""
         try:
-            from education_system.systems.university.interfaces.gui.shell.email.email_gui import EmailManagerGUI
+            from education_system.systems.university.shell.gui.email.email_gui import EmailManagerGUI
             email_window = tk.Toplevel(self.root)
             email_window.title(_t('gui.pastoral.health.health_portal.email_integration.windows.health_portal_email_manager', default="Health Portal - Email Manager"))
             email_window.geometry("800x600")

@@ -33,7 +33,7 @@ def predictive_analytics_menu():
     from education_system.systems.university.domains.assessment.domain.grading.interventions import intervention_recommendations
     from education_system.systems.university.domains.assessment.domain.grading.progress import success_probability_calculator
     from education_system.systems.university.domains.assessment.domain.grading.curve_analysis import dropout_risk_analysis
-    from education_system.systems.university.domains.assessment.domain.grading.grade_calculation.menus import grade_prediction
+    from education_system.systems.university.domains.assessment.domain.grading.grade_calculation.prediction import grade_prediction
     from education_system.systems.university.domains.assessment.domain.grading.trends import trend_forecasting
     while True:
         print("\nPredictive Analytics & Early Warning:")

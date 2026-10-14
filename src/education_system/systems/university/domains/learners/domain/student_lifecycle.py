@@ -55,6 +55,27 @@ _STATUS_ACTIONS: dict[str, tuple[frozenset[str], str]] = {
 }
 
 
+def available_actions(status: str | None) -> tuple[str, ...]:
+    """Lifecycle actions legal from *status*, in declaration order.
+
+    The transition table is the domain's business rule, so callers (the
+    records GUI, the API) ask for it rather than re-deriving it. An
+    unknown or legacy status - anything outside the vocabulary above,
+    e.g. a hand-set 'Graduated' - yields no actions rather than raising,
+    so a caller can explain the record is outside the state machine.
+    """
+    return tuple(
+        action for action, (sources, _target) in _STATUS_ACTIONS.items()
+        if status in sources
+    )
+
+
+def target_status(action: str) -> str | None:
+    """The status *action* moves a student to, or None if unknown."""
+    entry = _STATUS_ACTIONS.get(action.strip().lower())
+    return entry[1] if entry else None
+
+
 def ensure_schema() -> None:
     """Validate the migration-owned lifecycle schema without mutating it."""
     require_tables(
@@ -388,11 +409,12 @@ def change_status(student_id: str, action: str, *, actor_id: str, reason: str,
             expected_return_date=expected_return_date,
         )
         conn.execute(
-            """UPDATE students SET status = ?, expected_return_date = ?,
+            """UPDATE students SET status = ?, is_active = ?,
+                   expected_return_date = ?,
                    record_closed_at = CASE WHEN ? = 'Closed'
                                            THEN ? ELSE record_closed_at END
                WHERE student_id = ?""",
-            (target, expected_return_date, target,
+            (target, int(target == ACTIVE), expected_return_date, target,
              datetime.now().isoformat(), student_id),
         )
         if action in {"interrupt", "withdraw", "suspend", "complete", "close"}:
@@ -524,11 +546,13 @@ def reverse_change(
         )
         conn.execute(
             """UPDATE students SET status=COALESCE(?, status),
+                   is_active=CASE WHEN COALESCE(?, status)=? THEN 1 ELSE 0 END,
                    course=COALESCE(?, course), mode_of_study=COALESCE(?, mode_of_study),
                    campus_code=COALESCE(?, campus_code)
                WHERE student_id=?""",
             (
-                original["from_status"], original["old_programme"],
+                original["from_status"], original["from_status"], ACTIVE,
+                original["old_programme"],
                 original["old_mode"], original["old_campus"],
                 original["student_id"],
             ),
@@ -590,5 +614,6 @@ def history(student_id: str) -> list[dict[str, Any]]:
 __all__ = [
     "register", "change_status", "change_study", "pending_actions",
     "complete_action", "history", "reverse_change", "reconciliation_dashboard",
-    "ensure_schema", "DOWNSTREAM_SYSTEMS",
+    "ensure_schema", "available_actions", "target_status",
+    "DOWNSTREAM_SYSTEMS",
 ]

@@ -131,7 +131,7 @@ def manage_sustainable_events(student_id, cursor, conn):
             # View green certified events
             cursor.execute('''
             SELECT e.event_name, c.club_name, e.event_date, st.sustainability_score
-            FROM union_events e
+            FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e
             JOIN student_clubs c ON e.organizer_id = c.club_id
             JOIN sustainability_tracking st ON e.event_id = st.event_id
             WHERE st.sustainability_score >= 80
@@ -160,7 +160,7 @@ def manage_sustainable_events(student_id, cursor, conn):
             # Get events eligible for certification
             cursor.execute('''
             SELECT e.event_id, e.event_name, st.sustainability_score
-            FROM union_events e
+            FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e
             JOIN sustainability_tracking st ON e.event_id = st.event_id
             WHERE st.sustainability_score >= 70
             AND e.organizer_id IN (

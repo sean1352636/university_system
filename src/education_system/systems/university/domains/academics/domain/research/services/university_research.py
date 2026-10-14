@@ -18,6 +18,25 @@ _remove_legacy_db = _part_3._remove_legacy_db
 _shared._remove_legacy_db = _remove_legacy_db
 _shared.__all__.append("_remove_legacy_db") if "_remove_legacy_db" not in _shared.__all__ else None
 
+from .university_research_parts import charts as _part_3b
+BarChart = _part_3b.BarChart
+_shared.BarChart = BarChart
+StatCard = _part_3b.StatCard
+_shared.StatCard = StatCard
+money = _part_3b.money
+_shared.money = money
+for _n in ('BarChart', 'StatCard', 'money'):
+    if _n not in _shared.__all__:
+        _shared.__all__.append(_n)
+
+from .university_research_parts import people as _part_3c
+for _n in ('fetch_people', 'people_index', 'person_name', 'person_choices',
+           'person_key', 'split_key'):
+    globals()[_n] = getattr(_part_3c, _n)
+    setattr(_shared, _n, globals()[_n])
+    if _n not in _shared.__all__:
+        _shared.__all__.append(_n)
+
 from .university_research_parts import database as _part_4
 Database = _part_4.Database
 _shared.Database = Database
@@ -93,6 +112,16 @@ PeopleTab = _part_18.PeopleTab
 _shared.PeopleTab = PeopleTab
 _shared.__all__.append("PeopleTab") if "PeopleTab" not in _shared.__all__ else None
 
+from .university_research_parts import searchtab as _part_18b
+SearchTab = _part_18b.SearchTab
+_shared.SearchTab = SearchTab
+_shared.__all__.append('SearchTab') if 'SearchTab' not in _shared.__all__ else None
+
+from .university_research_parts import reportstab as _part_18c
+ReportsTab = _part_18c.ReportsTab
+_shared.ReportsTab = ReportsTab
+_shared.__all__.append('ReportsTab') if 'ReportsTab' not in _shared.__all__ else None
+
 from .university_research_parts import universityapp as _part_19
 UniversityApp = _part_19.UniversityApp
 _shared.UniversityApp = UniversityApp
@@ -103,16 +132,16 @@ main = _part_20.main
 _shared.main = main
 _shared.__all__.append("main") if "main" not in _shared.__all__ else None
 
-_exports = {name: globals()[name] for name in ['DashboardTab', 'Database', 'EthicsTab', 'FieldSpec', 'IPTab', 'ModuleTab', 'OutputsTab', 'PeopleTab', 'RecordDialog', 'TableModule', 'ThesisTab', 'UniversityApp', '_get_current_user', '_remove_legacy_db', '_user_display_name', 'configure_styles', 'fmt_date', 'main', 'parse_date', 'status_colour']}
-for _module in [_part_1, _part_2, _part_3, _part_4, _part_5, _part_6, _part_7, _part_8, _part_9, _part_10, _part_11, _part_12, _part_13, _part_14, _part_15, _part_16, _part_17, _part_18, _part_19, _part_20]:
+_exports = {name: globals()[name] for name in ['BarChart', 'DashboardTab', 'fetch_people', 'people_index', 'person_name', 'person_choices', 'Database', 'EthicsTab', 'FieldSpec', 'IPTab', 'ModuleTab', 'OutputsTab', 'PeopleTab', 'RecordDialog', 'TableModule', 'ReportsTab', 'SearchTab', 'StatCard', 'ThesisTab', 'UniversityApp', '_get_current_user', '_remove_legacy_db', '_user_display_name', 'configure_styles', 'fmt_date', 'main', 'money', 'parse_date', 'status_colour']}
+for _module in [_part_1, _part_2, _part_3, _part_4, _part_5, _part_6, _part_7, _part_8, _part_9, _part_10, _part_11, _part_12, _part_13, _part_14, _part_15, _part_16, _part_17, _part_18, _part_18b, _part_18c, _part_19, _part_20, _part_3b, _part_3c]:
     _module.__dict__.update(_exports)
 
 
 # Keep extracted callables synchronized with compatibility-module globals.
-for _module in [_part_1, _part_2, _part_3, _part_4, _part_5, _part_6, _part_7, _part_8, _part_9, _part_10, _part_11, _part_12, _part_13, _part_14, _part_15, _part_16, _part_17, _part_18, _part_19, _part_20]:
+for _module in [_part_1, _part_2, _part_3, _part_4, _part_5, _part_6, _part_7, _part_8, _part_9, _part_10, _part_11, _part_12, _part_13, _part_14, _part_15, _part_16, _part_17, _part_18, _part_18b, _part_18c, _part_19, _part_20, _part_3b, _part_3c]:
     _module.__dict__.update({name: value for name, value in globals().items() if not name.startswith("__")})
 
-__all__ = ['DashboardTab', 'Database', 'EthicsTab', 'FieldSpec', 'IPTab', 'ModuleTab', 'OutputsTab', 'PeopleTab', 'RecordDialog', 'TableModule', 'ThesisTab', 'UniversityApp', '_get_current_user', '_remove_legacy_db', '_user_display_name', 'configure_styles', 'fmt_date', 'main', 'parse_date', 'status_colour']
+__all__ = ['BarChart', 'DashboardTab', 'fetch_people', 'people_index', 'person_name', 'person_choices', 'Database', 'EthicsTab', 'FieldSpec', 'IPTab', 'ModuleTab', 'OutputsTab', 'PeopleTab', 'RecordDialog', 'TableModule', 'ReportsTab', 'SearchTab', 'StatCard', 'ThesisTab', 'UniversityApp', '_get_current_user', '_remove_legacy_db', '_user_display_name', 'configure_styles', 'fmt_date', 'main', 'money', 'parse_date', 'status_colour']
 
 if __name__ == "__main__":
     main()

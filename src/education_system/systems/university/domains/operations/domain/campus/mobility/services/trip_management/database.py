@@ -119,6 +119,29 @@ def safe_db_operation(operation_func, *args, max_retries=3, **kwargs):
     logging.error(get_text("mobility.trip_management.database.operation_failed_attempts", "Operation failed after {max_retries} attempts. Last error: {error_type}: {error}").format(max_retries=max_retries, error_type=type(last_error).__name__, error=last_error))
     return False
 
+def ensure_participant_payment_columns(conn):
+    """Add the payment columns to an existing trip_participants table.
+
+    CREATE TABLE IF NOT EXISTS is a no-op once the table exists, so a
+    database created before trip payments were taken needs the columns
+    adding explicitly.
+    """
+    try:
+        existing = {row[1] for row in conn.execute("PRAGMA table_info(trip_participants)")}
+    except sqlite3.Error:
+        return
+    if not existing:
+        return  # table not created yet; the CREATE above covers it
+    for column in ('payment_method', 'payment_reference'):
+        if column not in existing:
+            try:
+                # db-audit: ignore[DBW001] - literal collection
+                conn.execute(f"ALTER TABLE trip_participants ADD COLUMN {column} TEXT")
+                logging.info("Added trip_participants.%s", column)
+            except sqlite3.Error as e:
+                logging.warning("Could not add trip_participants.%s: %s", column, e)
+
+
 def init_trip_db():
     """Initialize trip management database tables"""
     def create_tables(conn):
@@ -158,6 +181,8 @@ def init_trip_db():
                 medical_info TEXT,
                 dietary_requirements TEXT,
                 status TEXT DEFAULT 'registered',
+                payment_method TEXT,
+                payment_reference TEXT,
                 FOREIGN KEY (trip_id) REFERENCES trips (id) ON DELETE CASCADE,
                 FOREIGN KEY (student_id) REFERENCES students (student_id),
                 FOREIGN KEY (user_id) REFERENCES users (id),
@@ -212,6 +237,8 @@ def init_trip_db():
                 UNIQUE (trip_id, day_number, start_time)
             )
             ''')
+
+            ensure_participant_payment_columns(conn)
 
             logging.info(get_text("mobility.trip_management.database.tables_created", "Trip management tables created successfully"))
             return True

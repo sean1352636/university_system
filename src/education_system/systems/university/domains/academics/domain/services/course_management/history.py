@@ -1,5 +1,6 @@
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
 from education_system.systems.university.infrastructure.utils.activity_logger import log_read
+from education_system.systems.university.domains.academics.domain.services.course_management.courses import resolve_course_id
 
 
 @log_read(module="course_management", description="Viewing course history")
@@ -22,49 +23,47 @@ def view_course_history(auth):
         print("====================")
 
         # Option to view specific course or all changes
-        view_option = input("Enter course ID for specific history, or press Enter for all recent changes: ").strip()
+        view_option = input("Enter course ID or code for specific history, or press Enter for all recent changes: ").strip()
 
         if view_option:
-            try:
-                course_id = int(view_option)
-
-                # Get course info
-                cursor.execute("SELECT course_code, course_name FROM courses WHERE id = ?", (course_id,))
-                course_info = cursor.fetchone()
-
-                if not course_info:
-                    print("Course not found.")
-                    return
-
-                print(f"\nHistory for {course_info[0]} - {course_info[1]}:")
-                print("=" * 60)
-
-                # Get history for specific course
-                cursor.execute("""
-                SELECT field_name, old_value, new_value, changed_by, changed_at
-                FROM course_history
-                WHERE course_id = ?
-                ORDER BY changed_at DESC
-                """, (course_id,))
-
-                history = cursor.fetchall()
-
-                if not history:
-                    print("No history found for this course.")
-                    return
-
-                print(f"{'Date/Time':<20} {'Field':<20} {'Old Value':<20} {'New Value':<20} {'Changed By':<15}")
-                print("-" * 95)
-
-                for entry in history:
-                    field, old_val, new_val, changed_by, changed_at = entry
-                    old_display = str(old_val)[:17] + "..." if old_val and len(str(old_val)) > 20 else str(old_val or "")
-                    new_display = str(new_val)[:17] + "..." if new_val and len(str(new_val)) > 20 else str(new_val or "")
-                    print(f"{changed_at:<20} {field:<20} {old_display:<20} {new_display:<20} {changed_by:<15}")
-
-            except ValueError:
-                print("Invalid course ID.")
+            course_id = resolve_course_id(cursor, view_option)
+            if course_id is None:
+                print("No course matches that ID or code.")
                 return
+
+            # Get course info
+            cursor.execute("SELECT course_code, course_name FROM courses WHERE id = ?", (course_id,))
+            course_info = cursor.fetchone()
+
+            if not course_info:
+                print("Course not found.")
+                return
+
+            print(f"\nHistory for {course_info[0]} - {course_info[1]}:")
+            print("=" * 60)
+
+            # Get history for specific course
+            cursor.execute("""
+            SELECT field_name, old_value, new_value, changed_by, changed_at
+            FROM course_history
+            WHERE course_id = ?
+            ORDER BY changed_at DESC
+            """, (course_id,))
+
+            history = cursor.fetchall()
+
+            if not history:
+                print("No history found for this course.")
+                return
+
+            print(f"{'Date/Time':<20} {'Field':<20} {'Old Value':<20} {'New Value':<20} {'Changed By':<15}")
+            print("-" * 95)
+
+            for entry in history:
+                field, old_val, new_val, changed_by, changed_at = entry
+                old_display = str(old_val)[:17] + "..." if old_val and len(str(old_val)) > 20 else str(old_val or "")
+                new_display = str(new_val)[:17] + "..." if new_val and len(str(new_val)) > 20 else str(new_val or "")
+                print(f"{changed_at:<20} {field:<20} {old_display:<20} {new_display:<20} {changed_by:<15}")
 
         else:
             # Show recent changes across all courses

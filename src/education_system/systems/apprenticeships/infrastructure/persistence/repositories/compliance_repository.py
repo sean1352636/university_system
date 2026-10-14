@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Any
 
 from education_system.systems.apprenticeships import config
+from education_system.systems.apprenticeships.domain.records import audit
+from education_system.systems.apprenticeships.domain.records.audit import AuditRecord
 from education_system.systems.apprenticeships.domain.compliance.eligibility import (
     AuditEntry,
     ComplianceDocument,
@@ -261,22 +264,29 @@ def record(
     actor: str | None = None,
     actor_role: str | None = None,
     detail: str | None = None,
+    changes: Sequence[Any] | None = None,
 ) -> None:
     """Append to the audit trail.
 
     Never raises. An audit write failing must not take down the
     operation it was recording — the alternative is a user unable to
     approve a timesheet because the log table is locked.
+
+    *changes* is optional and keyword-only, so every existing caller is
+    unaffected: a list of ``{field, before, after}`` (see
+    ``domain.records.audit.diff``), stored as JSON. Leave it out for an
+    event that is not an edit.
     """
     try:
+        encoded = audit.encode(changes)
         init_db()
         with connect() as conn:
             conn.execute(
                 """INSERT INTO audit_log
-                       (actor, actor_role, action, entity, entity_id, detail)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
+                       (actor, actor_role, action, entity, entity_id, detail, changes)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
                 (actor, actor_role, action, entity,
-                 None if entity_id is None else str(entity_id), detail),
+                 None if entity_id is None else str(entity_id), detail, encoded),
             )
     except Exception:  # pragma: no cover - defensive
         import logging
@@ -291,22 +301,33 @@ def list_audit(
     actor: str | None = None,
     action: str | None = None,
     since: str | None = None,
+    until: str | None = None,
+    changes_only: bool = False,
     limit: int = 200,
-) -> list[AuditEntry]:
+) -> list[AuditRecord]:
+    """Newest first. *since* and *until* are inclusive ISO dates.
+
+    Returns :class:`AuditRecord`, which is an ``AuditEntry`` with the
+    recorded field changes on top, so older readers keep working.
+    """
     init_db()
     qb = QueryBuilder()
     qb.add_if(entity, "entity = ?", entity)
-    qb.add_if(entity_id is not None, "entity_id = ?", str(entity_id))
+    qb.add_if(entity_id is not None and entity_id != "", "entity_id = ?", str(entity_id))
     qb.add_if(actor, "actor = ?", actor)
     qb.add_if(action, "action = ?", action)
     qb.add_if(since, "ts >= ?", since)
+    # ts is "YYYY-MM-DD HH:MM:SS", so compare its date part to keep the
+    # whole of the last day.
+    qb.add_if(until, "substr(ts, 1, 10) <= ?", until)
+    qb.add_if(changes_only, "changes IS NOT NULL")
     with connect() as conn:
         rows = conn.execute(
             f"SELECT * FROM audit_log {qb.where} ORDER BY ts DESC, audit_id DESC LIMIT ?",
             [*qb.args, int(limit)],
         ).fetchall()
     return [
-        AuditEntry(
+        AuditRecord(
             audit_id=r["audit_id"],
             ts=r["ts"],
             actor=r["actor"],
@@ -315,9 +336,24 @@ def list_audit(
             entity=r["entity"],
             entity_id=r["entity_id"],
             detail=r["detail"],
+            changes=audit.decode(col(r, "changes")),
         )
         for r in rows
     ]
+
+
+def audit_filter_values() -> dict[str, list[str]]:
+    """The entities and actors that actually appear, for filter dropdowns."""
+    init_db()
+    with connect() as conn:
+        entities = [r[0] for r in conn.execute(
+            "SELECT DISTINCT entity FROM audit_log WHERE entity IS NOT NULL ORDER BY entity"
+        ).fetchall()]
+        actors = [r[0] for r in conn.execute(
+            "SELECT DISTINCT actor FROM audit_log "
+            "WHERE actor IS NOT NULL AND actor != '' ORDER BY actor"
+        ).fetchall()]
+    return {"entities": entities, "actors": actors}
 
 
 def retention_due(as_of: str) -> list[dict[str, Any]]:

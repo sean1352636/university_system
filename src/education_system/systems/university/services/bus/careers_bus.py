@@ -254,7 +254,7 @@ def log_hours(engagement_id: int, hours: float,
                     source="careers_bus",
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         _publish(
             "careers.hours.logged",
@@ -526,7 +526,7 @@ def can_apply(student_id: str | int) -> dict[str, Any]:
                     "reason": "Active finance hold — resolve outstanding "
                               "charges before applying."}
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return {"ok": True, "reason": ""}
 
 

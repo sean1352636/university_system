@@ -481,9 +481,9 @@ class SQLiteStudentRepository(StudentRepository):
 
         conditions = []
         values = []
-        for field, value in criteria.items():
+        for field_name, value in criteria.items():
             if value is not None:
-                safe_field = validate_identifier(field, "column")
+                safe_field = validate_identifier(field_name, "column")
                 conditions.append(safe_field + " = ?")
                 values.append(value)
 

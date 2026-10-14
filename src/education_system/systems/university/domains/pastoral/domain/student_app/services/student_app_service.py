@@ -1,4 +1,7 @@
 """Student app portal service - aggregates timetable, grades, messages."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -57,12 +60,12 @@ class StudentAppService:
                 rows = conn.execute("SELECT * FROM timetable_entries WHERE student_id = ? ORDER BY day, start_time LIMIT 10", (student_id,)).fetchall()
                 dashboard['timetable'] = [dict(r) for r in rows]
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             try:
                 rows = conn.execute("SELECT * FROM grades WHERE student_id = ? ORDER BY date_recorded DESC LIMIT 5", (student_id,)).fetchall()
                 dashboard['grades'] = [dict(r) for r in rows]
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             unread = conn.execute("SELECT COUNT(*) FROM student_app_notifications WHERE student_id = ? AND is_read = 0", (student_id,)).fetchone()[0]
             dashboard['unread_notifications'] = unread
             notifs = conn.execute("SELECT * FROM student_app_notifications WHERE student_id = ? ORDER BY created_at DESC LIMIT 5", (student_id,)).fetchall()
@@ -92,6 +95,7 @@ class StudentAppService:
                 updates.append("updated_at = ?")
                 values.append(datetime.now().isoformat())
                 values.append(student_id)
+                # db-audit: ignore[DBW001] - join over a code-controlled list
                 conn.execute(f"UPDATE student_app_preferences SET {', '.join(updates)} WHERE student_id = ?", values)
             else:
                 conn.execute(

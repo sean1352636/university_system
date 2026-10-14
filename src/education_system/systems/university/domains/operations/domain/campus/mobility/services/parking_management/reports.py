@@ -29,7 +29,7 @@ def generate_permit_report():
         return
 
     if not auth.check_permission('generate_reports'):
-        print(_t("parking.auth.no_permission"))
+        print(_t("parking.auth.no_permission", default="No Permission."))
         return
 
     try:
@@ -273,7 +273,7 @@ def generate_violation_report():
         return
 
     if not auth.check_permission('generate_reports'):
-        print(_t("parking.auth.no_permission"))
+        print(_t("parking.auth.no_permission", default="No Permission."))
         return
 
     try:
@@ -560,7 +560,7 @@ def generate_compliance_report():
         return
 
     if not auth.check_permission('generate_reports'):
-        print(_t("parking.auth.no_permission"))
+        print(_t("parking.auth.no_permission", default="No Permission."))
         return
 
     try:
@@ -875,88 +875,6 @@ def generate_compliance_report():
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Unexpected error in generate_compliance_report: {e}")
-        try:
-            cursor.execute("SELECT * FROM parking_permits WHERE active_status = 'Active'")
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
-            active_permits = cursor.fetchone()[0]
-
-            # Unpaid violations
-            cursor.execute("SELECT COUNT(*) FROM parking_violations WHERE payment_status = 'Unpaid'")
-            unpaid_violations = cursor.fetchone()[0]
-
-            # Total unpaid fines
-            cursor.execute("SELECT SUM(fine_amount) FROM parking_violations WHERE payment_status = 'Unpaid'")
-            unpaid_fines = cursor.fetchone()[0] or 0
-
-            print("\n" + _t("parking.section.current_status") + ":")
-            print("-" * 50)
-            print(f"Active Permits: {active_permits}")
-            print(f"Unpaid Violations: {unpaid_violations}")
-            print(f"Total Unpaid Fines: £{unpaid_fines:.2f}")
-
-            # Usage by role
-            cursor.execute('''
-            SELECT role, COUNT(*)
-            FROM users
-            GROUP BY role
-            ORDER BY COUNT(*) DESC
-            ''')
-
-            roles = cursor.fetchall()
-
-            print("\n" + _t("parking.section.users_by_role") + ":")
-            print("-" * 50)
-            for role, count in roles:
-                print(f"{role}: {count}")
-
-            # Permits by zone
-            cursor.execute('''
-            SELECT zone, COUNT(*)
-            FROM parking_permits
-            GROUP BY zone
-            ORDER BY COUNT(*) DESC
-            ''')
-
-            zones = cursor.fetchall()
-
-            print("\n" + _t("parking.section.permits_by_zone") + ":")
-            print("-" * 50)
-            for zone, count in zones:
-                zone_name = PARKING_ZONES.get(zone, {}).get('name', 'Unknown')
-                print(f"Zone {zone} ({zone_name}): {count}")
-
-        else:
-            print(_t("common.invalid_choice"))
-            conn.close()
-            return
-
-        # Ask if user wants to export the report
-        export = input("\nExport this report? (y/n): ")
-        if export.lower() == 'y':
-            print("\n" + _t("parking.section.export_format") + ":")
-            print("1. " + _t("parking.menu.csv"))
-            print("2. " + _t("parking.menu.pdf"))
-
-            format_choice = input("Enter your choice (1-2): ")
-
-            if format_choice == '1':
-                filename = f"{report_title.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d')}.csv"
-                file_path = get_file_path('CSV', filename)
-                print(f"Report exported to {file_path}")
-            elif format_choice == '2':
-                filename = f"{report_title.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d')}.pdf"
-                file_path = get_file_path('PDF', filename)
-                print(f"Report exported to {file_path}")
-
-        conn.close()
-
-    except sqlite3.Error as e:
-        logging.error(f"Database error in generate_user_activity_report: {e}")
-        logger.error("Database error: %s", e, exc_info=True)
-        print(f"Database error: {e}")
-    except Exception as e:
-        logging.error(f"Unexpected error in generate_user_activity_report: {e}")
         print(f"An unexpected error occurred: {e}")
 
 def generate_analytics_dashboard():
@@ -969,7 +887,7 @@ def generate_analytics_dashboard():
         return
 
     if not auth.check_permission('generate_reports'):
-        print(_t("parking.auth.no_permission"))
+        print(_t("parking.auth.no_permission", default="No Permission."))
         return
 
     try:
@@ -1178,7 +1096,7 @@ def generate_revenue_report():
         return
 
     if not auth.check_permission('generate_reports'):
-        print(_t("parking.auth.no_permission"))
+        print(_t("parking.auth.no_permission", default="No Permission."))
         return
 
     try:
@@ -1503,7 +1421,7 @@ def generate_user_activity_report():
         return
 
     if not auth.check_permission('generate_reports'):
-        print(_t("parking.auth.no_permission"))
+        print(_t("parking.auth.no_permission", default="No Permission."))
         return
 
     try:

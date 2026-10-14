@@ -118,7 +118,7 @@ class PerformanceAnalyticsMixin:
             return
 
         if not (self.auth.check_permission('manage_grades') or
-                self.auth.check_permission('use_ml_models')):
+                self.auth.check_permission('predictive_analytics')):
             messagebox.showerror(_("common.error"), _("grades.performance.no_permission_prediction"))
             return
 
@@ -209,7 +209,7 @@ class PerformanceAnalyticsMixin:
             return
 
         if not (self.auth.check_permission('manage_grades') or
-                self.auth.check_permission('use_ml_models')):
+                self.auth.check_permission('predictive_analytics')):
             messagebox.showerror(_("common.error"), _("grades.performance.no_permission_ml"))
             return
 

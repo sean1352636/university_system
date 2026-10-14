@@ -120,7 +120,7 @@ If not set, random 16-char passwords generated on startup.
 
 | Interface | File | Location |
 |-----------|------|----------|
-| Main Menu | run.py | Line 104 |
+| Main Menu | python -m education_system | Line 104 |
 | GUI Login | main_gui.py | Line 1522 |
 | GUI Process | main_gui.py | Line 1575 |
 | CLI Login | cli_main.py | Various |

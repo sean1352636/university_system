@@ -249,6 +249,7 @@ def set_question_type(question_id: int, qtype: str,
         args.append(scale_max)
     args.append(question_id)
     with transaction() as conn:
+        # db-audit: ignore[DBW001] - join over a code-controlled list
         conn.execute(
             f"UPDATE evaluation_questions SET {','.join(fields)} WHERE question_id=?",
             args,

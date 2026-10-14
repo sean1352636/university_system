@@ -110,6 +110,7 @@ class DegreeProgramManager:
 
             program_id = cursor.lastrowid
             conn.commit()
+
             return program_id
 
         except sqlite3.Error as e:
@@ -310,6 +311,19 @@ class DegreeProgressManager:
             ''', (total_credits, gpa, completion_pct, datetime.now().isoformat(), student_id, program_id))
 
             conn.commit()
+
+            try:
+                from education_system.systems.university.services.bus import (
+                    degree_apprenticeship_events,
+                )
+                degree_apprenticeship_events.publish_for_student(
+                    student_id, program_id, reason="credits",
+                )
+            except Exception:
+                logger.exception(
+                    "degree-apprenticeship credit publication failed sid=%s",
+                    student_id,
+                )
 
         except (CourseNotFoundError, StudentNotFoundError):
             conn.rollback()
@@ -520,6 +534,25 @@ class AdvisingAppointmentManager:
 
         finally:
             conn.close()
+
+    @staticmethod
+    def get_all_appointments(limit: int = 500) -> List[Dict[str, Any]]:
+        """Every appointment, newest first — the administrator's view.
+
+        ``get_student_appointments`` only ever answers for one student, so an
+        administrator had no way to see the diary as a whole.
+        """
+        conn = get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                """SELECT * FROM advising_appointments
+                    ORDER BY appointment_date DESC, appointment_time DESC
+                    LIMIT ?""", (limit,))
+            return [dict(row) for row in cursor.fetchall()]
+        finally:
+            conn.close()
+
 
 class GraduationAuditManager:
     """Manages graduation audits and conferral"""
@@ -757,6 +790,21 @@ class GraduationAuditManager:
             except Exception:
                 logger.exception("conferral notice dispatch failed sid=%s prog=%s",
                                  student_id, program_id)
+            try:
+                from education_system.systems.university.services.bus import (
+                    degree_apprenticeship_events,
+                )
+                degree_apprenticeship_events.publish_for_student(
+                    student_id, program_id, reason="award",
+                    university_gateway_confirmed=True,
+                    degree_outcome=classification,
+                    degree_awarded_at=graduation_date,
+                )
+            except Exception:
+                logger.exception(
+                    "degree-apprenticeship award publication failed sid=%s",
+                    student_id,
+                )
             return True
 
         except sqlite3.Error as e:

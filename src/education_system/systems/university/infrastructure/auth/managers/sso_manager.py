@@ -410,6 +410,7 @@ class SSOManager:
                 update_values.append(timestamp)
                 update_values.append(provider_id)
 
+                # db-audit: ignore[DBW001] - join over a code-controlled list
                 cursor.execute(
                     f"UPDATE sso_providers SET {', '.join(update_fields)} WHERE provider_id = ?",
                     update_values,

@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
@@ -559,7 +563,7 @@ Your participation matters!
                 candidates_by_position[pos] = [r[0] for r in cursor.fetchall()]
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Fallback sample data if no active elections
         if not positions:

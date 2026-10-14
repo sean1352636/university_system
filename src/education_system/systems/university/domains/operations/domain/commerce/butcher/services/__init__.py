@@ -1,23 +1,13 @@
-"""Butchers Shop Core Services Module"""
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.domain.butcher.services`` (campus commerce plugin).
 
-from education_system.systems.university.domains.operations.domain.commerce.butcher.services.butcher_core import (
-    ProductManager,
-    OrderManager,
-    TransactionManager,
-    ReportManager,
-    init_butcher_db,
-    MEAT_CATEGORIES,
-    UNIT_TYPES,
-    ORDER_STATUSES
-)
+A mirror, not an alias: an aliased package would resolve this package's
+submodules through the new ``__path__`` and load each one a second time.
+Submodules are aliased individually; this copies the package's names.
+"""
+# layout-shim: education_system.systems.university.plugins.campus_commerce.domain.butcher.services
+import importlib as _importlib
 
-__all__ = [
-    'ProductManager',
-    'OrderManager',
-    'TransactionManager',
-    'ReportManager',
-    'init_butcher_db',
-    'MEAT_CATEGORIES',
-    'UNIT_TYPES',
-    'ORDER_STATUSES'
-]
+_new = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.domain.butcher.services")
+globals().update({k: v for k, v in vars(_new).items()
+                  if not (k.startswith("__") and k.endswith("__"))})
+del _importlib, _new

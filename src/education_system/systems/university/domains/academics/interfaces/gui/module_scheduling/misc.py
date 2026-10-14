@@ -32,7 +32,8 @@ except ImportError:
     show_gui_language_selector = lambda parent=None: "en"
 
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling._dialogs import messagebox
 from tkinter.font import Font
 import os
 import sys
@@ -173,3 +174,35 @@ System Statistics:
 # Import the GUI class and assign the method
 from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling.main_gui import ModuleSchedulingGUI
 ModuleSchedulingGUI.launch_cli_mode = launch_cli_mode
+
+
+def _ms_scrollable(parent):
+    """Return an inner frame on a vertically scrolling canvas filling *parent*.
+
+    Used by the Management and Settings tabs, whose stacked sections are
+    taller than the window. The wheel is bound only while the pointer is over
+    the area so it does not fight the notebook or a tree elsewhere.
+    """
+    canvas = tk.Canvas(parent, borderwidth=0, highlightthickness=0)
+    bar = ttk.Scrollbar(parent, orient=tk.VERTICAL, command=canvas.yview)
+    canvas.configure(yscrollcommand=bar.set)
+    bar.pack(side=tk.RIGHT, fill=tk.Y)
+    canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+    inner = ttk.Frame(canvas)
+    window = canvas.create_window((0, 0), window=inner, anchor="nw")
+    canvas.bind("<Configure>", lambda e: canvas.itemconfigure(window, width=e.width))
+    inner.bind("<Configure>",
+               lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+
+    def _wheel(event):
+        delta = -1 * (event.delta // 120) if event.delta else (-1 if event.num == 4 else 1)
+        canvas.yview_scroll(delta, "units")
+
+    canvas.bind("<Enter>", lambda e: (canvas.bind_all("<MouseWheel>", _wheel),
+                                      canvas.bind_all("<Button-4>", _wheel),
+                                      canvas.bind_all("<Button-5>", _wheel)))
+    canvas.bind("<Leave>", lambda e: (canvas.unbind_all("<MouseWheel>"),
+                                      canvas.unbind_all("<Button-4>"),
+                                      canvas.unbind_all("<Button-5>")))
+    return inner

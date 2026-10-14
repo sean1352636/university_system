@@ -8,11 +8,14 @@ this view shows. New flat-row callers should go through
 instead of adding more raw ``FROM assignment_submissions`` queries
 here.
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import messagebox
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.analytics_manager.constants import get_connection
@@ -33,7 +36,7 @@ def _open_connection():
             if conn is not None:
                 return raw_conn, conn
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
     return raw_conn, raw_conn
 
 

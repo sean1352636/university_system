@@ -92,15 +92,11 @@ except ImportError:
     FINANCE_ACCOUNT_AVAILABLE = False
     print("Warning: Student finance account integration not available")
 
-# Import matplotlib for library finance charts
-try:
-    import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-    from matplotlib.figure import Figure
-    MATPLOTLIB_AVAILABLE = True
-except ImportError:
-    MATPLOTLIB_AVAILABLE = False
-    print("Warning: Matplotlib not available for library finance charts")
+# Matplotlib is imported lazily by finance_shared, the one module in this
+# package whose names are actually read (by the two chart dialogs under
+# finance_parts/). This module carried an identical eager copy of that import
+# and never used any of it — importing matplotlib.pyplot costs ~1.3s and was
+# paid by anything that touched the library package at all.
 
 # Import email service for library finance notifications
 try:
@@ -149,7 +145,7 @@ def _send_library_payment_confirmation_email(self, student_id, student_name, ema
 def _send_email_via_gui(self, to_email, subject, message):
     """Try to send email via email GUI"""
     try:
-        from education_system.systems.university.interfaces.gui.shell.email.email_gui import EmailManagerGUI as EmailGUI
+        from education_system.systems.university.shell.gui.email.email_gui import EmailManagerGUI as EmailGUI
         email_gui = EmailGUI(self.master, self.auth)
         email_gui.send_email(to_email=to_email, subject=subject, message=message)
         return True

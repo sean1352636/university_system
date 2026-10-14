@@ -30,6 +30,12 @@ from education_system.systems.university.infrastructure.shared_context import (
     get_current_user,
 )
 from education_system import paths
+from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608 - identifier validation
+from education_system.systems.university.infrastructure.database.schemas.unified_events_link import (
+    SC_EVENTS_SRC,
+    SOURCE_STUDENT_COUNCIL,
+    start_datetime,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -47,17 +53,6 @@ _SCHEMA = [
         department TEXT,
         position TEXT,
         joined_at TEXT
-    )""",
-    """CREATE TABLE IF NOT EXISTS sc_events (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        event_date TEXT,
-        event_time TEXT,
-        venue TEXT,
-        organiser TEXT,
-        description TEXT,
-        calendar_event_id TEXT,
-        created_at TEXT
     )""",
     """CREATE TABLE IF NOT EXISTS sc_announcements (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -82,6 +77,12 @@ _SCHEMA = [
         FOREIGN KEY (candidate_id) REFERENCES sc_candidates(id)
     )""",
 ]
+
+
+# Council events are rows in ``unified_events`` tagged
+# ``source_type = 'student_council'``; there is no ``sc_events`` table. The
+# dashboard still keys its Events card on the old name.
+_COUNT_SOURCES = {"sc_events": SC_EVENTS_SRC + " e"}
 
 
 def _init_schema(conn):
@@ -236,7 +237,7 @@ class StudentCouncilSystem:
         try:
             self.conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         logger.info("Student Council GUI closed by %s", self._user_label())
         self.root.destroy()
 
@@ -354,6 +355,9 @@ class StudentCouncilSystem:
         self.refresh_activity()
 
     def _table_count(self, table):
+        # db-audit: ignore[DBW001] - parameter passed through a validator
+        # Identifiers cannot be parameterised, so they are validated instead.
+        table = _COUNT_SOURCES.get(table) or validate_identifier(table)
         try:
             cur = self.conn.execute(f"SELECT COUNT(*) AS n FROM {table}")
             return cur.fetchone()["n"]
@@ -373,7 +377,7 @@ class StudentCouncilSystem:
                 lines.append(f"📢 Latest announcement: {row['title']} ({row['posted_at']})")
 
             cur = self.conn.execute(
-                "SELECT name, event_date FROM sc_events "
+                "SELECT name, event_date FROM " + SC_EVENTS_SRC + " e "
                 "ORDER BY id DESC LIMIT 1")
             row = cur.fetchone()
             if row:
@@ -714,12 +718,13 @@ class StudentCouncilSystem:
 
         try:
             self.conn.execute(
-                "INSERT INTO sc_events "
-                "(name, event_date, event_time, venue, organiser, "
-                "description, calendar_event_id, created_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                (name, date_str, time_str, venue, organiser, description,
-                 calendar_event_id, datetime.now().isoformat()),
+                "INSERT INTO unified_events "
+                "(source_type, title, event_date, start_time, start_datetime, "
+                "location, organizer_name, description, created_by, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (SOURCE_STUDENT_COUNCIL, name, date_str, time_str or None,
+                 start_datetime(date_str, time_str), venue, organiser,
+                 description, self._user_label(), datetime.now().isoformat()),
             )
             self.conn.commit()
         except sqlite3.Error as e:
@@ -771,7 +776,9 @@ class StudentCouncilSystem:
             return
         event_id = self.events_tree.item(sel[0])["tags"][0]
         try:
-            self.conn.execute("DELETE FROM sc_events WHERE id=?", (event_id,))
+            self.conn.execute(
+                "DELETE FROM unified_events WHERE event_id=? AND source_type=?",
+                (event_id, SOURCE_STUDENT_COUNCIL))
             self.conn.commit()
         except sqlite3.Error as e:
             logger.error("Failed to remove event id=%s: %s", event_id, e)
@@ -787,7 +794,8 @@ class StudentCouncilSystem:
         try:
             cur = self.conn.execute(
                 "SELECT id, name, event_date, event_time, venue, organiser, "
-                "description FROM sc_events ORDER BY event_date DESC")
+                "description FROM " + SC_EVENTS_SRC + " e "
+                "ORDER BY event_date DESC")
             for r in cur.fetchall():
                 desc = r["description"] or ""
                 short = desc[:50] + ("..." if len(desc) > 50 else "")

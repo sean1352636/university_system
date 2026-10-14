@@ -16,6 +16,7 @@ def _resolve_staff_email(cursor, identifier: str) -> Optional[str]:
     for table, col in (("users", "username"), ("users", "id"),
                        ("staff", "username"), ("staff", "id")):
         try:
+            # db-audit: ignore[DBW001] - loop over a literal table
             cursor.execute(
                 f"SELECT email FROM {table} WHERE {col} = ? "  # nosec B608 - literals only
                 f"AND email IS NOT NULL AND TRIM(email) <> '' LIMIT 1",

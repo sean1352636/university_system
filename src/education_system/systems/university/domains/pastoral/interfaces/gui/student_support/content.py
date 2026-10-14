@@ -1,8 +1,14 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+
+from ._dialogs import make_toplevel, messagebox
 import tkinter.font as tkFont
 from datetime import datetime, timedelta
 import json
@@ -69,7 +75,7 @@ def _patched_sqlite_connect(database, *args, **kwargs):
         if not database or db_name == str(DEFAULT_DB_PATH):
             return _original_sqlite3_connect(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return _original_sqlite3_connect(database, *args, **kwargs)
 
 sqlite3.connect = _patched_sqlite_connect
@@ -455,11 +461,10 @@ class ContentMixin:
 
     def show_resource_detail(self, resource, content_data=None):
         """Show resource detail in a popup window"""
-        detail_window = tk.Toplevel(self.root)
+        detail_window = make_toplevel(self.root)
         title = resource.get('title', 'Resource')
         detail_window.title(f"📄 {title}")
         detail_window.geometry("900x700")
-        detail_window.transient(self.root)
 
         # Make window resizable
         detail_window.rowconfigure(0, weight=1)
@@ -610,10 +615,9 @@ class ContentMixin:
 
     def show_faq_detail(self, faq):
         """Show FAQ detail in popup"""
-        detail_window = tk.Toplevel(self.root)
+        detail_window = make_toplevel(self.root)
         detail_window.title(f"❓ {faq['question']}")
         detail_window.geometry("1400x850")
-        detail_window.transient(self.root)
 
         # Content
         content_frame = ttk.Frame(detail_window, padding="20")
@@ -891,10 +895,9 @@ class ContentMixin:
 
     def show_article_detail(self, article):
         """Show full article in a new window"""
-        detail_window = tk.Toplevel(self.root)
+        detail_window = make_toplevel(self.root)
         detail_window.title(f"📖 {article['title']}")
         detail_window.geometry("1500x900")
-        detail_window.transient(self.root)
 
         # Create scrollable content
         canvas = tk.Canvas(detail_window)

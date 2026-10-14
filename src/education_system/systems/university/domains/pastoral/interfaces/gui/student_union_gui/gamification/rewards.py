@@ -458,8 +458,8 @@ class CreateBadgeDialog:
 
             cursor.execute('''
             INSERT INTO achievement_badges (
-                badge_name, description, criteria, point_value, rarity, category,
-                icon, created_date, status
+                badge_name, description, criteria, points_required, rarity, category,
+                badge_icon, created_date, status
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')
             ''', (name, description, criteria, int(points), rarity, category, icon,
                   datetime.now().isoformat()))
@@ -498,7 +498,7 @@ class EditBadgeDialog:
             cursor = conn.cursor()
 
             cursor.execute('''
-            SELECT badge_name, description, criteria, point_value, rarity, category, icon
+            SELECT badge_name, description, criteria, points_required, rarity, category, badge_icon
             FROM achievement_badges WHERE badge_id = ?
             ''', (self.badge_id,))
 
@@ -602,8 +602,8 @@ class EditBadgeDialog:
 
             cursor.execute('''
             UPDATE achievement_badges SET
-                badge_name = ?, description = ?, criteria = ?, point_value = ?,
-                rarity = ?, category = ?, icon = ?
+                badge_name = ?, description = ?, criteria = ?, points_required = ?,
+                rarity = ?, category = ?, badge_icon = ?
             WHERE badge_id = ?
             ''', (name, description, criteria, int(points), rarity, category, icon, self.badge_id))
 

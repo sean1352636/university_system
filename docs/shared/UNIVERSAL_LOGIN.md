@@ -24,7 +24,7 @@ Source: `education_system/shared/gui/login_gui.py` (`UniversalLoginWindow`)
 
 ## Entry Point
 
-The top-level `run.py` launches `UniversalLoginWindow` for GUI mode. After a successful login and system selection, it passes `user_info`, `role`, and `shared_auth` to the chosen system's launcher, which skips its own login screen.
+The top-level `python -m education_system` launches `UniversalLoginWindow` for GUI mode. After a successful login and system selection, it passes `user_info`, `role`, and `shared_auth` to the chosen system's launcher, which skips its own login screen.
 
 ## Returned Attributes
 

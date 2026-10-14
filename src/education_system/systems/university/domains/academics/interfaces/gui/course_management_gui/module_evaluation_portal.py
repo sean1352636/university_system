@@ -28,6 +28,7 @@ import sys
 import tkinter as tk
 from datetime import datetime
 from tkinter import ttk, messagebox, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui._student_enrolment import enrolment_summary
 
 logger = logging.getLogger(__name__)
 
@@ -437,13 +438,32 @@ class ModuleEvaluationPortal:
                   text=_t('gui.academics.course_management_gui.module_evaluation_portal.labels.choose_the_module_you_wish_to_provide_feedback_for', default="Choose the module you wish to provide feedback for:"),
                   style="Body.TLabel").pack(pady=(0, 15))
 
-        modules = self.db.get_modules()
+        # A student evaluates the modules they are actually enrolled on.
+        # This listed all 380 modules in the catalogue, so they had to find
+        # their own among them and nothing stopped them submitting feedback
+        # on a module they had never taken. Staff and admins still see the
+        # full catalogue, because they evaluate on others' behalf.
+        summary = enrolment_summary(self.student_id)
+        if self.is_admin or not self.student_id:
+            modules = self.db.get_modules()
+            scope_note = None
+        else:
+            modules = [(m["code"], m["name"]) for m in summary["modules"]]
+            course = summary["course"]
+            scope_note = (f"Showing the modules you are enrolled on"
+                          + (f" for {course['name']} ({course['code']})."
+                             if course else "."))
+
         if not modules:
             ttk.Label(body,
-                      text=_t('gui.academics.course_management_gui.module_evaluation_portal.labels.no_modules_are_listed_in_the_catalog_yet_please_contact_an_admin', default="No modules are listed in the catalog yet.\n"
-                           "Please contact an administrator."),
-                      style="Body.TLabel", justify="center").pack(pady=40)
+                      text=(summary["reason"] or
+                            _t('gui.academics.course_management_gui.module_evaluation_portal.labels.no_modules_are_listed_in_the_catalog_yet_please_contact_an_admin', default="No modules are listed in the catalog yet.\n"
+                               "Please contact an administrator.")),
+                      style="Body.TLabel", justify="center", wraplength=560).pack(pady=40)
             return
+
+        if scope_note:
+            ttk.Label(body, text=scope_note, style="Body.TLabel").pack(pady=(0, 10))
 
         self._modules = modules
         module_options = [f"{code} — {name}" for code, name in modules]

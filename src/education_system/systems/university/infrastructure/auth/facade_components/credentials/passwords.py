@@ -1,4 +1,8 @@
 """Extracted backwards-compatible UserAuth methods."""
+import logging
+
+logger = logging.getLogger(__name__)
+
 from ...facade_support import *
 
 class AuthCredentialsPasswordsMixin:
@@ -59,7 +63,7 @@ class AuthCredentialsPasswordsMixin:
                                                       old_password, new_password)
                     return True
                 except Exception:
-                    pass  # Fall through to legacy
+                    logger.debug("Suppressed exception", exc_info=True)
 
         # ── Fallback to legacy user_accounts table ───────────────────
         from education_system.systems.university.infrastructure.auth.managers.password_manager import change_user_password

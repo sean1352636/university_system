@@ -1,5 +1,8 @@
 """PollsMixin — extracted from chat.py."""
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.email.admin._imports import (
     datetime,
@@ -54,7 +57,7 @@ class PollsMixin:
             try:
                 self._propose_poll_dates_inner(cursor, mid)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             return mid
 
         try:
@@ -141,6 +144,7 @@ class PollsMixin:
             placeholders = ','.join('?' for _ in chosen)
             valid_ids = set()
             if chosen:
+                # db-audit: ignore[DBW001] - string literal
                 cursor.execute(
                     f'SELECT id FROM chat_poll_options WHERE message_id = ? AND id IN ({placeholders})',
                     [message_id, *chosen],
@@ -234,7 +238,7 @@ class PollsMixin:
                     cursor=cursor,
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
         return proposed
 
     @handle_exception
@@ -272,6 +276,7 @@ class PollsMixin:
         placeholders = ','.join('?' for _ in ids)
 
         def _go(cursor):
+            # db-audit: ignore[DBW001] - module constant
             cursor.execute(
                 f'''SELECT message_id, question, multi_choice, closes_at
                     FROM chat_polls WHERE message_id IN ({placeholders})''',
@@ -287,6 +292,7 @@ class PollsMixin:
             poll_ids = list(polls.keys())
             placeholders2 = ','.join('?' for _ in poll_ids)
             # Options + totals + my-vote in one go
+            # db-audit: ignore[DBW001] - string literal
             cursor.execute(
                 f'''SELECT o.id, o.message_id, o.label, o.sort_order,
                           (SELECT COUNT(*) FROM chat_poll_votes WHERE option_id = o.id),
@@ -303,6 +309,7 @@ class PollsMixin:
                     'mine': bool(mine),
                 })
             # Distinct voter counts per poll
+            # db-audit: ignore[DBW001] - string literal
             cursor.execute(
                 f'''SELECT o.message_id, COUNT(DISTINCT v.user_id)
                     FROM chat_poll_votes v

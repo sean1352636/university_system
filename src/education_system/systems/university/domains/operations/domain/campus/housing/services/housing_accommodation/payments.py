@@ -1,9 +1,32 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import common as _common
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common import (
     sqlite3, datetime, get_text, get_connection, generate_id,
     record_payment_to_finance, log_create, log_read,
 )
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.applications import select_student
+
+
+# The four ways housing takes money. "Finance Account" settles against credit
+# already held on the student's university finance account; the other three are
+# money taken at the desk and only recorded here.
+FINANCE_ACCOUNT_METHOD = 'Finance Account'
+PAYMENT_METHODS = ['Cash', 'Card', 'Bank Transfer', FINANCE_ACCOUNT_METHOD]
+
+
+def _student_finance_balance(student_id):
+    """Balance on the student's university finance account, 0.0 if unknown."""
+    try:
+        from education_system.systems.university.services.bus import finance_bus
+        return float(finance_bus.student_balance(student_id) or 0.0)
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning(
+            "finance balance lookup for %s failed: %s", student_id, exc)
+        return 0.0
 
 
 # Payment Functions
@@ -98,36 +121,43 @@ def record_payment():
             except ValueError:
                 print("Please enter a valid amount.")
 
-        # Payment method
+        # Payment method. "Finance Account" settles against the credit already
+        # sitting on the student's university finance account rather than
+        # taking money at the desk, so it needs a balance check up front.
         print("\nSelect Payment Method:")
-        print("1. Credit Card")
-        print("2. Bank Transfer")
-        print("3. Cash")
-        print("4. Check")
-        print("5. Other")
+        for i, method in enumerate(PAYMENT_METHODS, 1):
+            print(f"{i}. {method}")
 
         while True:
-            method_choice = input("\nSelect method (1-5): ")
-            if method_choice == '1':
-                payment_method = 'Credit Card'
+            method_choice = input(f"\nSelect method (1-{len(PAYMENT_METHODS)}): ").strip()
+            try:
+                payment_method = PAYMENT_METHODS[int(method_choice) - 1]
+                if int(method_choice) < 1:
+                    raise IndexError
                 break
-            elif method_choice == '2':
-                payment_method = 'Bank Transfer'
-                break
-            elif method_choice == '3':
-                payment_method = 'Cash'
-                break
-            elif method_choice == '4':
-                payment_method = 'Check'
-                break
-            elif method_choice == '5':
-                payment_method = input("Specify payment method: ").strip()
-                if not payment_method:
-                    print("Payment method cannot be empty.")
-                    continue
-                break
-            else:
-                print("Invalid choice. Please select 1-5.")
+            except (ValueError, IndexError):
+                print(f"Invalid choice. Please select 1-{len(PAYMENT_METHODS)}.")
+
+        finance_account_used = payment_method == FINANCE_ACCOUNT_METHOD
+        balance_before = balance_after = None
+
+        if finance_account_used:
+            balance_before = _student_finance_balance(student_id)
+            print(f"\n{student_name}'s finance account balance: £{balance_before:,.2f}")
+
+            if balance_before < payment_amount:
+                print(f"Insufficient funds: £{payment_amount:,.2f} is needed but only "
+                      f"£{balance_before:,.2f} is on the account.")
+                print("Take the payment by another method, or top the account up in Finance first.")
+                conn.close()
+                return
+
+            balance_after = balance_before - payment_amount
+            print(f"Taking £{payment_amount:,.2f} would leave £{balance_after:,.2f}.")
+            if input("Proceed? (y/n): ").strip().lower() != 'y':
+                print("Operation cancelled.")
+                conn.close()
+                return
 
         # Get transaction reference
         transaction_ref = input("Transaction Reference (optional): ").strip() or None
@@ -205,7 +235,25 @@ def record_payment():
             conn.commit()
         local_payment_row_id = cursor.lastrowid
 
+        # Everything the receipt needs, gathered before the connection closes.
+        cursor.execute('''
+        SELECT s.first_name, s.last_name, s.email_address, r.room_number, b.building_name
+        FROM housing_assignments a
+        JOIN students s ON a.student_id = s.student_id
+        JOIN housing_rooms r ON a.room_id = r.room_id
+        JOIN housing_buildings b ON r.building_id = b.building_id
+        WHERE a.assignment_id = ?
+        ''', (assignment_id,))
+        receipt_row = cursor.fetchone()
+
         conn.commit()
+        conn.close()
+
+        # Everything below opens its own connection to the same SQLite file.
+        # It runs after the commit and close so the second writer never has to
+        # wait on this one's lock — the same ordering rule that fixed
+        # "raise_charge(...) failed: database is locked" in application
+        # processing.
 
         # Auto-post local payment row to GL (never raises).
         try:
@@ -215,6 +263,41 @@ def record_payment():
         except Exception as _e:
             import logging
             logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
+
+        # A finance-account payment is settled by drawing the amount down from
+        # the student's account, so the money actually leaves their balance.
+        # Desk payments (cash / card / bank transfer) don't touch it — the
+        # payments row above is the finance system's record of those.
+        finance_draw_ok = False
+        if finance_account_used:
+            try:
+                from education_system.systems.university.services.bus import housing_finance
+                processed_by = auth.current_user.get('username', 'housing')
+                if payment_type == 'Rent':
+                    housing_finance.post_rent_charge(
+                        student_id, assignment_id, payment_amount,
+                        period_start=period_start, period_end=period_end,
+                        processed_by=processed_by,
+                    )
+                else:
+                    housing_finance.post_damage_charge(
+                        student_id, assignment_id, payment_amount,
+                        f"Housing {payment_type} settled from finance account",
+                        processed_by=processed_by,
+                    )
+                finance_draw_ok = True
+                # Re-read rather than trusting the arithmetic, so the receipt
+                # states the balance finance actually holds.
+                balance_after = _student_finance_balance(student_id)
+            except Exception as _e:
+                import logging
+                logging.getLogger(__name__).warning(
+                    "finance account draw-down failed: %s", _e)
+                # The payment row is committed but the money never left the
+                # account. Never quote a "remaining balance" for a draw-down
+                # that did not happen — say so instead, so the operator can
+                # settle it in Finance by hand.
+                balance_after = None
 
         # Note: a duplicate call to record_payment_to_finance was removed here.
         # That central helper writes to the same `payments` table (DEFAULT_DB_PATH)
@@ -240,16 +323,55 @@ def record_payment():
                 if released:
                     print(f"Cleared {released} arrears hold(s) for {student_id}.")
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         print(f"\nPayment recorded successfully with ID: {payment_id}")
-        print(f"Type: {payment_type} | Amount: £{payment_amount} | Method: {payment_method}")
+        print(f"Type: {payment_type} | Amount: £{payment_amount:,.2f} | Method: {payment_method}")
         if period_start and period_end:
             print(f"Period: {period_start} to {period_end}")
         if finance_payment_id:
             print(f"Finance System Payment ID: {finance_payment_id}")
 
-        conn.close()
+        # A finance-account payer can't see their remaining balance anywhere
+        # else in this flow, so state it here as well as in the receipt.
+        if finance_account_used and finance_draw_ok:
+            print(f"Paid from finance account: £{payment_amount:,.2f}")
+            print(f"Remaining finance account balance: £{float(balance_after or 0):,.2f}")
+        elif finance_account_used:
+            print("WARNING: the payment was recorded, but the finance account "
+                  "could not be drawn down — the balance is unchanged.")
+            print("Settle this against the student's finance account manually.")
+
+        receipt = {
+            'payment_id': payment_id,
+            'student_id': student_id,
+            'student_name': (f"{receipt_row[0] or ''} {receipt_row[1] or ''}".strip()
+                             if receipt_row else student_name),
+            'student_email': receipt_row[2] if receipt_row else None,
+            'payment_type': payment_type,
+            'amount': payment_amount,
+            'payment_method': payment_method,
+            'payment_date': timestamp,
+            'status': 'Completed',
+            'transaction_reference': transaction_ref,
+            'processed_by': auth.current_user.get('username', 'housing'),
+            'assignment_id': assignment_id,
+            'room_number': receipt_row[3] if receipt_row else '',
+            'building_name': receipt_row[4] if receipt_row else '',
+            'period_start': period_start,
+            'period_end': period_end,
+            'finance_reference': finance_payment_id,
+            # Only claim a finance-account settlement in the receipt when the
+            # draw-down actually went through.
+            'finance_account_used': finance_account_used and finance_draw_ok,
+            'balance_before': balance_before,
+            'balance_after': balance_after,
+        }
+
+        if _common.send_payment_receipt_email(receipt):
+            print(f"Receipt emailed to {receipt['student_email']}.")
+        else:
+            print("Note: the receipt email could not be sent.")
 
     except sqlite3.Error as e:
         print(f"Database error: {e}")

@@ -2,12 +2,18 @@ from __future__ import annotations
 
 import logging
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.calendar_bridge import (
+    mirror as _mirror_to_calendar,
+)
 from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import union_context as ctx
 from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.union_context import (
     manage_book_clubs, manage_shared_resources, knowledge_sharing_sessions,
     learning_analytics_dashboard, auto_award_points
+)
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.identity import (
+    current_student_id as _current_student_id,
 )
 
 logger = logging.getLogger(__name__)
@@ -364,15 +370,13 @@ def manage_learning_integration():
         cursor = conn.cursor()
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (ctx.auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, ctx.auth)
 
-        if not result:
+        if not student_id:
             print("No student record is associated with your account.")
             conn.close()
             return
 
-        student_id = result[0]
 
         while True:
             print("\n📚 Learning Integration")
@@ -488,6 +492,26 @@ def organize_academic_conferences(student_id, cursor, conn):
             save_plan = input("\nSave conference plan? (y/n): ").strip().lower() == 'y'
             if save_plan:
                 print("Conference plan saved!")
+                # The plan itself is not persisted anywhere else, so the
+                # calendar entry is what makes the dates real.
+                end_date = start_date
+                try:
+                    end_date = (datetime.strptime(start_date, '%Y-%m-%d')
+                                + timedelta(days=max(duration_days, 1) - 1)
+                                ).strftime('%Y-%m-%d')
+                except (ValueError, TypeError):
+                    pass
+                if _mirror_to_calendar(
+                    name=f"SU Conference: {conference_name}",
+                    kind="conference",
+                    date_start=start_date or None, date_end=end_date or None,
+                    description=(f"{conference_type or 'Conference'} — {theme}. "
+                                 f"{conf_format}, ~{expected_attendees} attendees."),
+                    created_by=student_id,
+                    source_table="su_conference_plan",
+                    source_id=conference_name.lower().replace(" ", "-"),
+                ):
+                    print("Added to the university academic calendar.")
                 print("Next steps:")
                 print("• Submit formal proposal")
                 print("• Secure funding approval")

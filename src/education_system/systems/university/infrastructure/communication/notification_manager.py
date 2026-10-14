@@ -406,7 +406,7 @@ class NotificationManager:
 
             with get_connection() as conn:
                 cursor = conn.execute('''
-                    SELECT email_address, phone_number
+                    SELECT email_address, phone
                     FROM students
                     WHERE student_id = ?
                 ''', (user_id,))

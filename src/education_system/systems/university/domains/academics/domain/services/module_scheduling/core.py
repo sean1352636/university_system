@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
 from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.domains.academics.domain.services.module_scheduling.constants import DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES
@@ -15,6 +19,7 @@ from education_system.systems.university.domains.academics.domain.services.modul
 from education_system.systems.university.domains.academics.domain.services.module_scheduling.settings import SettingsMixin
 import os
 from datetime import datetime, timedelta
+from education_system.systems.university.infrastructure.database.schemas.modules_table import ensure_modules_table
 
 
 class ModuleScheduler(
@@ -45,18 +50,7 @@ class ModuleScheduler(
             cursor = conn.cursor()
 
             # Modules reference table (needed for foreign keys and lookups)
-            cursor.execute('''
-            CREATE TABLE IF NOT EXISTS modules (
-                module_code TEXT PRIMARY KEY,
-                module_name TEXT NOT NULL,
-                module_type TEXT,
-                credits INTEGER DEFAULT 1,
-                description TEXT,
-                course TEXT,
-                semester TEXT,
-                year INTEGER
-            )
-            ''')
+            ensure_modules_table(cursor)
 
             # Existing tables (keeping your original structure)
             cursor.execute('''
@@ -190,13 +184,15 @@ class ModuleScheduler(
             )
             ''')
 
-            # Initialize default settings
-            cursor.execute('INSERT OR IGNORE INTO scheduling_system_settings (key, value, description) VALUES (?, ?, ?)',
-                          ('institution_name', 'University', 'Name of the institution'))
-            cursor.execute('INSERT OR IGNORE INTO scheduling_system_settings (key, value, description) VALUES (?, ?, ?)',
-                          ('semester_start', '', 'Semester start date'))
-            cursor.execute('INSERT OR IGNORE INTO scheduling_system_settings (key, value, description) VALUES (?, ?, ?)',
-                          ('semester_end', '', 'Semester end date'))
+            # Initialize default settings.
+            #
+            # institution_name, semester_start and semester_end are NOT
+            # seeded here. The institution is owned by Branding &
+            # Customization and the term dates by the academic calendar;
+            # seeding a local 'University' is what made the scheduler
+            # display that instead of the configured institution name,
+            # and any value stored here would take precedence over the
+            # real one.
             cursor.execute('INSERT OR IGNORE INTO scheduling_system_settings (key, value, description) VALUES (?, ?, ?)',
                           ('default_session_duration', '60', 'Default session duration in minutes'))
             cursor.execute('INSERT OR IGNORE INTO scheduling_system_settings (key, value, description) VALUES (?, ?, ?)',
@@ -362,7 +358,7 @@ class ModuleScheduler(
                 ''')
                 modules_from_enrollments = cursor.fetchall()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Also get from existing schedules
             cursor.execute('''

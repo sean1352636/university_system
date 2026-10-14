@@ -2338,9 +2338,7 @@ def bulk_ucas_reference_reminders(
     from education_system.systems.sixth_form.domain.learners.students import (
         students as _students,
     )
-    from education_system.systems.sixth_form.domain.progression.ucas import (
-        ucas as _ucas,
-    )
+    from education_system.systems.sixth_form.domain.progression.university import ucas as _ucas
     result = BulkResult(operation="ucas_reference_reminders",
                          target_count=len(targets))
     if dry_run:
@@ -2986,9 +2984,7 @@ def bulk_ucas_update_status(
 ) -> BulkResult:
     """Update each student's UCAS application to the given app status."""
     targets = _validate_targets(student_ids)
-    from education_system.systems.sixth_form.domain.progression.ucas import (
-        ucas as _ucas,
-    )
+    from education_system.systems.sixth_form.domain.progression.university import ucas as _ucas
     if status not in _ucas.APP_STATUSES:
         raise ValidationError(
             f"Status must be one of: {', '.join(_ucas.APP_STATUSES)}")

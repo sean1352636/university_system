@@ -1,8 +1,9 @@
 """Launcher orchestration for the Education System.
 
-Splits the monolithic run.py into focused modules:
+Splits the original monolithic launcher into focused modules:
 
 - main: ``main()`` and command-line argument parsing — the entry point itself
+- environment: launch-time ``APP_ENV`` default (dependency-free; safe to import)
 - auth: shared auth initialisation & MFA sync
 - systems: per-system bootstrap & launcher functions + dispatch table
 - menus: CLI interactive mode/system selection menus

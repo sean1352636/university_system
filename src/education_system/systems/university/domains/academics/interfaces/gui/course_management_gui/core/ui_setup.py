@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from tkinter.scrolledtext import ScrolledText
 
@@ -7,9 +11,39 @@ from education_system.systems.university.domains.academics.interfaces.gui.course
     ORIGINAL_MODULE_AVAILABLE, display_enhanced_course_menu,
     ACADEMIC_SYSTEMS_AVAILABLE,
 )
+from education_system.platform.delivery.gui.portal_dismiss import forget_tab
+from education_system.systems.university.domains.academics.interfaces.gui._report_presentation import (
+    ReportPresentationMixin,
+    _split_row,  # noqa: F401  (re-exported: analytics.py imports it from here)
+)
 
 
-class UISetupMixin:
+def _live_headcount(conn, data):
+    """Real number of students registered on this course, or None.
+
+    Returns None (leaving the stored counter in place) when there is no
+    connection to ask or the lookup fails — a details card is not worth
+    failing over a count.
+    """
+    if conn is None:
+        return None
+    code = data.get("course_code") or data.get("code")
+    name = data.get("course_name") or data.get("name")
+    if not code and not name:
+        return None
+    try:
+        from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core.enrolment_sync import (
+            students_for_course,
+        )
+        return len(students_for_course(conn, code or name, name or code))
+    except Exception:
+        logger.debug("live headcount lookup failed", exc_info=True)
+        return None
+
+
+
+
+class UISetupMixin(ReportPresentationMixin):
     """Menu bar, toolbar, and tab creation."""
 
     def _bind_shortcut(self, menu, label, command, accelerator=None, sequence=None):
@@ -287,7 +321,7 @@ class UISetupMixin:
         open_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label=_t('gui.academics.course_management_gui.core.ui_setup.menus.open', default="Open"), menu=open_menu)
         open_menu.add_command(
-            label=_t('gui.academics.course_management_gui.core.ui_setup.menus.exam_scheduler', default="Exam Scheduler"),
+            label=_t('gui.academics.course_management_gui.core.ui_setup.menus.exam_scheduler', default="Exam Management"),
             command=lambda: open_exam_gui(self.root, getattr(self, "auth", None)),
         )
         open_menu.add_command(
@@ -398,7 +432,25 @@ class UISetupMixin:
             f"Page {self._page + 1} of {total_pages}  ({self._page_total} total)")
 
     def create_main_interface(self):
-        """Create the main interface with tabs"""
+        """Create the main interface with tabs.
+
+        Wrapped in a reuse_connection() block: building the tabs makes ~50
+        short database reads through ``_ext_db``, and each fresh connection
+        costs ~60ms on its first statement. Sharing one connection for the
+        build turns that into a single open. The block covers construction
+        only — reads — so the shared connection is never carrying a user's
+        pending write when it is released.
+        """
+        from education_system.systems.university.infrastructure.database.db import reuse_connection
+        from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core._imports import (
+            DEFAULT_DB_PATH,
+        )
+        # row_factory=False to match what _ext_db asks for; reuse is not
+        # granted across a differing row factory (it would change row types).
+        with reuse_connection(DEFAULT_DB_PATH, row_factory=False):
+            self._create_main_interface_body()
+
+    def _create_main_interface_body(self):
         # Create toolbar frame at the top
         toolbar_frame = ttk.Frame(self.root)
         toolbar_frame.pack(fill=tk.X, padx=10, pady=(10, 0))
@@ -407,12 +459,6 @@ class UISetupMixin:
         home_button = ttk.Button(toolbar_frame, text=_("course_management.buttons.return_to_main_menu"),
                                 command=self.return_to_main_menu)
         home_button.pack(side=tk.LEFT, padx=5)
-
-        # Launch CLI button
-        ttk.Button(toolbar_frame,
-                   text=_("course_management.buttons.switch_to_cli", default="Switch to CLI"),
-                   command=self.open_course_management_cli
-                   ).pack(side=tk.LEFT, padx=5)
 
         # Ensure the curriculum-extension schema exists before any tab that
         # reads from it is built. Defensive: failure here disables the new
@@ -445,9 +491,6 @@ class UISetupMixin:
 
         # Instructors Tab
         self.create_instructors_tab()
-
-        # LMS Tab (embedded)
-        self.create_lms_tab()
 
         # Degree Audit Tab (embedded)
         self.create_degree_audit_tab()
@@ -488,8 +531,10 @@ class UISetupMixin:
             selected = self.notebook.select()
             if selected == str(self._course_planning_placeholder):
                 self._course_planning_loaded = True
-                # Remove placeholder and load the real tab
-                self.notebook.forget(self._course_planning_placeholder)
+                # Remove the placeholder and load the real tab. Destroying
+                # it too is safe: _course_planning_loaded is already True, so
+                # the re-entrant tab-changed event returns before touching it.
+                forget_tab(self.notebook, self._course_planning_placeholder)
                 try:
                     from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.course_planning_gui import CoursePlanningGUI
                     CoursePlanningGUI(root=self.root, auth=self.auth, parent_notebook=self.notebook)
@@ -504,32 +549,6 @@ class UISetupMixin:
 
         self.notebook.bind("<<NotebookTabChanged>>", _on_tab_changed, add="+")
 
-    def open_course_management_cli(self):
-        """Launch the course management CLI in a terminal."""
-        if not ORIGINAL_MODULE_AVAILABLE:
-            messagebox.showwarning(_("common.error"), _t('gui.academics.course_management_gui.core.ui_setup.dialogs.course_management_cli_is_unavailable', default="Course management CLI is unavailable."))
-            return
-
-        try:
-            # Hide GUI temporarily
-            self.root.withdraw()
-
-            # Launch CLI in a new thread
-            def run_cli():
-                try:
-                    display_enhanced_course_menu(self.auth)
-                except Exception as e:
-                    logging.error(f"CLI mode error: {e}")
-                finally:
-                    # Show GUI again
-                    self.root.after(0, self.root.deiconify)
-
-            cli_thread = threading.Thread(target=run_cli, daemon=True)
-            cli_thread.start()
-
-        except Exception as e:
-            messagebox.showerror(_("common.error"), f"Failed to launch CLI: {e}")
-            self.root.deiconify()
 
     def create_course_list_tab(self):
         """Create the course list tab"""
@@ -642,7 +661,7 @@ class UISetupMixin:
                 )
                 set_current_selection(course_code=code, source="course_management")
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         self.course_tree.bind(
             "<<TreeviewSelect>>", _publish_course_selection, add="+",
@@ -702,19 +721,46 @@ class UISetupMixin:
         # Everyone can refresh
         ttk.Button(buttons_frame, text=_("common.refresh"), command=self.refresh_course_list).pack(side=tk.LEFT, padx=5)
 
-        # Load initial data
-        self.refresh_course_list()
-        self.load_filter_options()
+        # Load initial data once the window has been drawn.
+        #
+        # These ran synchronously here, during widget construction, so the
+        # whole first page of courses — including its scheduling-conflict
+        # detection — had to finish before the launcher could show the window.
+        # Deferring to the first idle tick lets the built window appear
+        # immediately and fill in a moment later, which is what Module
+        # Scheduling already does.
+        self._defer_initial_course_load()
+
+    def _defer_initial_course_load(self):
+        """Populate the course list after the window has painted."""
+        def _load():
+            # Flush pending redraws first: after(0) fires on the next trip
+            # round the event loop, which is not necessarily after the window
+            # has actually been drawn. update_idletasks() runs the pending
+            # redraws and nothing else — update() would re-enter user event
+            # handlers mid-construction.
+            try:
+                self.root.update_idletasks()
+            except tk.TclError:
+                return  # window closed before the load ran
+            try:
+                self.refresh_course_list()
+                self.load_filter_options()
+            except Exception as exc:
+                logging.getLogger(__name__).warning("initial course load failed: %s", exc)
+
+        try:
+            self.update_status(_("course_management.status.initializing"))
+        except Exception:
+            logger.debug("Suppressed exception", exc_info=True)
+        try:
+            self.root.after(0, _load)
+        except tk.TclError:
+            # No event loop yet (or window already gone) — fall back to a
+            # synchronous load so the list is never left silently empty.
+            _load()
 
     # --- Course details tab palette (flat-UI, matches the rest of the GUI) ---
-    DETAIL_BG = "#eef1f4"      # page background behind the cards
-    _C_HEADER = "#2c3e50"      # dark header banner
-    _C_CARD = "#ffffff"        # card surface
-    _C_ACCENT = "#3498db"      # section accent / stat numbers
-    _C_LABEL = "#6b7280"       # muted field labels
-    _C_VALUE = "#1f2933"       # field values
-    _C_MUTED = "#95a5a6"       # timestamps / secondary text
-    _DETAIL_FONT = "Segoe UI"  # Tk substitutes a sane default where absent
 
     def create_course_details_tab(self):
         """Create the course details tab (card-based, scrollable layout)."""
@@ -804,11 +850,11 @@ class UISetupMixin:
             bar.pack(fill=tk.X, padx=16, pady=(12, 0))
             tk.Frame(bar, bg=accent or self._C_ACCENT, width=4, height=16).pack(side=tk.LEFT, padx=(0, 8))
             tk.Label(
-                bar, text=title, font=(self._DETAIL_FONT, 11, "bold"),
+                bar, text=title, font=(self._DETAIL_FONT, 10, "bold"),
                 bg=self._C_CARD, fg=self._C_HEADER,
             ).pack(side=tk.LEFT)
         body = tk.Frame(shell, bg=self._C_CARD)
-        body.pack(fill=tk.X, padx=16, pady=12)
+        body.pack(fill=tk.X, padx=12, pady=8)
         return body
 
     def _kv_grid(self, body, pairs, cols=2):
@@ -825,185 +871,98 @@ class UISetupMixin:
             r, base = divmod(idx, cols)
             base *= 2
             tk.Label(
-                grid, text=label, font=(self._DETAIL_FONT, 9),
+                grid, text=label, font=(self._DETAIL_FONT, 8),
                 bg=self._C_CARD, fg=self._C_LABEL, anchor="w",
-            ).grid(row=r, column=base, sticky="w", padx=(0, 8), pady=4)
+            ).grid(row=r, column=base, sticky="w", padx=(0, 8), pady=3)
             tk.Label(
-                grid, text=str(value), font=(self._DETAIL_FONT, 10, "bold"),
+                grid, text=str(value), font=(self._DETAIL_FONT, 9, "bold"),
                 bg=self._C_CARD, fg=self._C_VALUE, anchor="w", justify="left",
-            ).grid(row=r, column=base + 1, sticky="w", padx=(0, 24), pady=4)
+                wraplength=320,
+            ).grid(row=r, column=base + 1, sticky="w", padx=(0, 24), pady=3)
 
     def _text_block(self, title, text, accent=None, parent=None):
+        """A card holding a paragraph of prose, wrapped to the card's width.
+
+        The wrap width was previously hard-coded at 980px. The details pane is
+        narrower than that on a 1366-wide screen, and the canvas scrolls
+        vertically only, so long values (Description, Learning Outcomes) ran
+        off the right-hand edge with no way to reach them. Re-wrapping on
+        <Configure> keeps the text inside whatever width the card actually has.
+        """
         body = self._detail_card(title, accent=accent, parent=parent)
-        tk.Label(
-            body, text=text, font=(self._DETAIL_FONT, 10),
+        label = tk.Label(
+            body, text=text, font=(self._DETAIL_FONT, 9),
             bg=self._C_CARD, fg=self._C_VALUE, anchor="w", justify="left",
-            wraplength=980,
-        ).pack(fill=tk.X)
+            wraplength=600,
+        )
+        label.pack(fill=tk.X)
+
+        def _rewrap(event):
+            # A little slack so the text never touches the card border.
+            width = max(200, event.width - 16)
+            if abs(int(label.cget("wraplength")) - width) > 8:
+                label.configure(wraplength=width)
+        body.bind("<Configure>", _rewrap)
+        return label
 
     # ----- Reusable building blocks shared with the analytics reports -----
 
-    def _scrollable_area(self, parent, bg=None):
-        """Return (inner_frame) hosted on a scrollable canvas inside ``parent``.
 
-        The inner frame stretches to the canvas width and scrolls with the
-        wheel while the pointer is over it. Used by both the course-details
-        tab and the analytics report windows.
+
+
+
+
+
+    def render_course_details(self, course, conn=None):
+        """Render a course row as presentable cards instead of raw text.
+
+        ``conn`` is an open connection the modules card reuses; omitted, it
+        opens its own.
         """
-        bg = bg or self.DETAIL_BG
-        outer = ttk.Frame(parent)
-        outer.pack(fill=tk.BOTH, expand=True)
-        canvas = tk.Canvas(outer, borderwidth=0, highlightthickness=0, bg=bg)
-        vbar = ttk.Scrollbar(outer, orient=tk.VERTICAL, command=canvas.yview)
-        canvas.configure(yscrollcommand=vbar.set)
-        vbar.pack(side=tk.RIGHT, fill=tk.Y)
-        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core.course_fields import (
+            available_spots,
+            course_fields,
+            is_legacy,
+        )
 
-        inner = tk.Frame(canvas, bg=bg)
-        win = canvas.create_window((0, 0), window=inner, anchor="nw")
-        canvas.bind("<Configure>", lambda e: canvas.itemconfigure(win, width=e.width))
-        inner.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-
-        def _wheel(event):
-            delta = -1 * (event.delta // 120) if event.delta else (-1 if event.num == 4 else 1)
-            canvas.yview_scroll(delta, "units")
-        canvas.bind("<Enter>", lambda e: (
-            canvas.bind_all("<MouseWheel>", _wheel),
-            canvas.bind_all("<Button-4>", _wheel),
-            canvas.bind_all("<Button-5>", _wheel),
-        ))
-        canvas.bind("<Leave>", lambda e: (
-            canvas.unbind_all("<MouseWheel>"),
-            canvas.unbind_all("<Button-4>"),
-            canvas.unbind_all("<Button-5>"),
-        ))
-        return inner
-
-    def _report_header(self, parent, title, subtitle=None):
-        """Dark banner used at the top of the analytics report windows."""
-        header = tk.Frame(parent, bg=self._C_HEADER)
-        header.pack(fill=tk.X, padx=6, pady=(6, 0))
-        tk.Label(
-            header, text=title, font=(self._DETAIL_FONT, 16, "bold"),
-            bg=self._C_HEADER, fg="white", anchor="w",
-        ).pack(anchor="w", padx=18, pady=(14, 0 if subtitle else 14))
-        if subtitle:
-            tk.Label(
-                header, text=subtitle, font=(self._DETAIL_FONT, 10),
-                bg=self._C_HEADER, fg="#bdc3c7", anchor="w",
-            ).pack(anchor="w", padx=18, pady=(2, 12))
-
-    def _stat_strip(self, parent, items, accent=None):
-        """Row of headline number cards. ``items`` is a list of (value, label)."""
-        accent = accent or self._C_ACCENT
-        strip = tk.Frame(parent, bg=self.DETAIL_BG)
-        strip.pack(fill=tk.X, padx=2, pady=(2, 0))
-        for c in range(len(items)):
-            strip.columnconfigure(c, weight=1, uniform="stat")
-        for c, (num, lab) in enumerate(items):
-            cell = tk.Frame(strip, bg=self._C_CARD, highlightbackground="#e5e7eb", highlightthickness=1)
-            cell.grid(row=0, column=c, sticky="ew", padx=4, pady=6)
-            tk.Label(cell, text=str(num), font=(self._DETAIL_FONT, 16, "bold"),
-                     bg=self._C_CARD, fg=accent).pack(pady=(10, 0))
-            tk.Label(cell, text=lab, font=(self._DETAIL_FONT, 9),
-                     bg=self._C_CARD, fg=self._C_LABEL).pack(pady=(0, 10))
-        return strip
-
-    def _fill_bar(self, parent, percent, label=None):
-        """A labelled horizontal fill-rate bar, colour-coded by utilisation."""
-        pct = max(0.0, min(100.0, percent))
-        colour = "#2ecc71" if pct < 75 else "#f39c12" if pct < 95 else "#e74c3c"
-        wrap = tk.Frame(parent, bg=self._C_CARD)
-        wrap.pack(fill=tk.X, pady=4)
-        if label:
-            tk.Label(wrap, text=label, font=(self._DETAIL_FONT, 9),
-                     bg=self._C_CARD, fg=self._C_LABEL).pack(anchor="w")
-        track = tk.Frame(wrap, bg="#e5e7eb", height=18)
-        track.pack(fill=tk.X, pady=(2, 0))
-        track.pack_propagate(False)
-        fill = tk.Frame(track, bg=colour)
-        fill.place(relwidth=pct / 100.0, relheight=1.0)
-        tk.Label(track, text=f"{pct:.1f}%", font=(self._DETAIL_FONT, 8, "bold"),
-                 bg="#e5e7eb", fg=self._C_HEADER).place(relx=1.0, x=-4, rely=0.5, anchor="e")
-        return wrap
-
-    def _ensure_report_tree_style(self):
-        """Configure a tidy Treeview style for report tables (idempotent)."""
-        if getattr(self, "_report_tree_styled", False):
-            return
-        style = ttk.Style()
-        style.configure("Report.Treeview", rowheight=26, font=(self._DETAIL_FONT, 10),
-                        background=self._C_CARD, fieldbackground=self._C_CARD)
-        style.configure("Report.Treeview.Heading", font=(self._DETAIL_FONT, 10, "bold"))
-        self._report_tree_styled = True
-
-    def _report_table(self, parent, columns, rows, widths=None, anchors=None,
-                      tag_colours=None, height=12):
-        """Build a styled Treeview table inside a card and return it.
-
-        ``columns`` -> list of headings. ``rows`` -> list of (values, tag).
-        ``tag_colours`` -> {tag: foreground}. Zebra striping is applied on top.
-        """
-        self._ensure_report_tree_style()
-        card = tk.Frame(parent, bg=self._C_CARD, highlightbackground="#e5e7eb", highlightthickness=1)
-        card.pack(fill=tk.BOTH, expand=True, padx=6, pady=6)
-        holder = tk.Frame(card, bg=self._C_CARD)
-        holder.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
-
-        tree = ttk.Treeview(holder, columns=columns, show="headings",
-                            style="Report.Treeview", height=min(height, max(3, len(rows))))
-        widths = widths or {}
-        anchors = anchors or {}
-        for col in columns:
-            tree.heading(col, text=col)
-            tree.column(col, width=widths.get(col, 120), anchor=anchors.get(col, tk.W),
-                        stretch=True)
-        tree.tag_configure("_odd", background="#f7f9fb")
-        tree.tag_configure("_even", background=self._C_CARD)
-        for colour_tag, fg in (tag_colours or {}).items():
-            tree.tag_configure(colour_tag, foreground=fg)
-        for i, entry in enumerate(rows):
-            values, extra_tag = entry if isinstance(entry, tuple) else (entry, None)
-            tags = ["_odd" if i % 2 else "_even"]
-            if extra_tag:
-                tags.append(extra_tag)
-            tree.insert("", tk.END, values=values, tags=tags)
-
-        vsb = ttk.Scrollbar(holder, orient=tk.VERTICAL, command=tree.yview)
-        tree.configure(yscrollcommand=vsb.set)
-        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        vsb.pack(side=tk.RIGHT, fill=tk.Y)
-        return tree
-
-    def render_course_details(self, course):
-        """Render a course row as presentable cards instead of raw text."""
         self._clear_details()
 
-        def get(i, default="N/A"):
-            return course[i] if len(course) > i and course[i] not in (None, "") else default
+        data = course_fields(course)
 
-        def years(i):
-            v = course[i] if len(course) > i else None
-            return f"{v} years" if v not in (None, "") else "N/A"
+        # Prefer the live headcount over the stored counter for the enrolment
+        # figures, so the card, the Course List and the students popup all
+        # report the same number even before the counter is reconciled.
+        live = _live_headcount(conn, data)
+        if live is not None:
+            data["current_enrollment"] = live
 
-        def money(i):
-            v = course[i] if len(course) > i else None
-            if isinstance(v, (int, float)):
+        def get(name, default="N/A"):
+            v = data.get(name)
+            return v if v not in (None, "") else default
+
+        def years(name):
+            v = data.get(name)
+            if v in (None, ""):
+                return "N/A"
+            # ``duration`` already reads "3 years" for most rows; only a bare
+            # number needs the unit appending.
+            text = str(v)
+            return text if not text.replace(".", "", 1).isdigit() else f"{text} years"
+
+        def money(name):
+            v = data.get(name)
+            if isinstance(v, (int, float)) and not isinstance(v, bool):
                 return f"£{v:,.2f}"
             return "N/A" if v in (None, "") else str(v)
 
-        def yesno(i):
-            if len(course) <= i:
+        def yesno(name):
+            v = data.get(name)
+            if v in (None, ""):
                 return "N/A"
-            v = course[i]
-            return "Yes" if bool(v) else "No" if v in (False, 0) else "N/A"
+            return "Yes" if bool(v) else "No"
 
         def avail_spots():
-            max_e = course[15] if len(course) > 15 else None
-            cur_e = course[16] if len(course) > 16 else None
-            if isinstance(max_e, (int, float)) and isinstance(cur_e, (int, float)):
-                return max(0, max_e - cur_e)
-            return "N/A"
+            return available_spots(data)
 
         # ---- Header banner ----
         header = tk.Frame(self.details_container, bg=self._C_HEADER)
@@ -1013,20 +972,20 @@ class UISetupMixin:
         left = tk.Frame(header, bg=self._C_HEADER)
         left.grid(row=0, column=0, sticky="w", padx=18, pady=14)
         tk.Label(
-            left, text=str(get(2)), font=(self._DETAIL_FONT, 17, "bold"),
+            left, text=str(get("course_name")), font=(self._DETAIL_FONT, 13, "bold"),
             bg=self._C_HEADER, fg="white", anchor="w", justify="left",
         ).pack(anchor="w")
-        subparts = [str(get(1))]
-        if get(6) != "N/A":
-            subparts.append(str(get(6)))
-        if get(5) != "N/A":
-            subparts.append(f"Level {get(5)}")
+        subparts = [str(get("course_code"))]
+        if get("department") != "N/A":
+            subparts.append(str(get("department")))
+        if get("level") != "N/A":
+            subparts.append(f"Level {get('level')}")
         tk.Label(
-            left, text="   •   ".join(subparts), font=(self._DETAIL_FONT, 10),
+            left, text="   •   ".join(subparts), font=(self._DETAIL_FONT, 9),
             bg=self._C_HEADER, fg="#bdc3c7", anchor="w",
         ).pack(anchor="w", pady=(4, 0))
 
-        status = get(17)
+        status = get("status")
         status_colors = {"active": "#2ecc71", "open": "#2ecc71", "inactive": "#e74c3c",
                          "closed": "#e74c3c", "archived": "#95a5a6"}
         badge_bg = status_colors.get(str(status).lower(), self._C_ACCENT) if status != "N/A" else self._C_MUTED
@@ -1040,9 +999,9 @@ class UISetupMixin:
         stats = tk.Frame(self.details_container, bg=self.DETAIL_BG)
         stats.pack(fill=tk.X, padx=2, pady=(2, 0))
         stat_items = [
-            (get(7), "Credit Hours"),
-            (get(15), "Max Enrolment"),
-            (get(16), "Current Enrolment"),
+            (get("credit_hours"), "Credit Hours"),
+            (get("max_enrollment"), "Max Enrolment"),
+            (get("current_enrollment"), "Current Enrolment"),
             (avail_spots(), "Available Spots"),
         ]
         for c in range(len(stat_items)):
@@ -1051,74 +1010,123 @@ class UISetupMixin:
             cell = tk.Frame(stats, bg=self._C_CARD, highlightbackground="#e5e7eb", highlightthickness=1)
             cell.grid(row=0, column=c, sticky="ew", padx=4, pady=6)
             tk.Label(
-                cell, text=str(num), font=(self._DETAIL_FONT, 16, "bold"),
+                cell, text=str(num), font=(self._DETAIL_FONT, 13, "bold"),
                 bg=self._C_CARD, fg=self._C_ACCENT,
-            ).pack(pady=(10, 0))
+            ).pack(pady=(8, 0))
             tk.Label(
-                cell, text=lab, font=(self._DETAIL_FONT, 9),
+                cell, text=lab, font=(self._DETAIL_FONT, 8),
                 bg=self._C_CARD, fg=self._C_LABEL,
-            ).pack(pady=(0, 10))
+            ).pack(pady=(0, 8))
 
-        legacy = len(course) < 10
+        legacy = is_legacy(course)
 
         # ---- Basic information ----
         basic = self._detail_card("Basic Information")
         basic_pairs = [
-            ("Course ID", get(0)),
-            ("Course Code", get(1)),
-            ("Department", get(6)),
-            ("Level", get(5)),
+            ("Course ID", get("id")),
+            ("Course Code", get("course_code")),
+            ("Department", get("department")),
+            ("Level", get("level")),
         ]
         if not legacy:
-            basic_pairs += [("Course Type", get(18)), ("Status", get(17))]
+            basic_pairs += [("Course Type", get("course_type")), ("Status", get("status"))]
         self._kv_grid(basic, basic_pairs)
 
         # ---- Description ----
-        if get(3) != "N/A":
-            self._text_block("Description", get(3), accent="#9b59b6")
+        if get("description") != "N/A":
+            self._text_block("Description", get("description"), accent="#9b59b6")
 
         if not legacy:
             # ---- Academic details ----
             acad = self._detail_card("Academic Details", accent="#16a34a")
             self._kv_grid(acad, [
-                ("Duration", years(4)),
-                ("Credit Hours", get(7)),
-                ("Contact Hours/Week", get(8)),
-                ("Course Fee", money(12)),
-                ("Lab Required", yesno(13)),
-                ("Online Available", yesno(14)),
+                ("Duration", years("duration")),
+                ("Credit Hours", get("credit_hours")),
+                ("Contact Hours/Week", get("contact_hours_per_week")),
+                ("Course Fee", money("course_fee")),
+                ("Lab Required", yesno("lab_required")),
+                ("Online Available", yesno("online_available")),
             ])
 
             # ---- Long-form academic content ----
-            if get(9) != "N/A":
-                self._text_block("Learning Outcomes", get(9), accent="#16a34a")
-            if get(10) != "N/A":
-                self._text_block("Assessment Methods", get(10), accent="#f39c12")
-            if get(11) != "N/A":
-                self._text_block("Required Textbooks", get(11), accent="#f39c12")
+            if get("learning_outcomes") != "N/A":
+                self._text_block("Learning Outcomes", get("learning_outcomes"), accent="#16a34a")
+            if get("assessment_methods") != "N/A":
+                self._text_block("Assessment Methods", get("assessment_methods"), accent="#f39c12")
+            if get("required_textbooks") != "N/A":
+                self._text_block("Required Textbooks", get("required_textbooks"), accent="#f39c12")
 
             # ---- Additional info ----
-            extra_pairs = [p for p in [("Tags", get(19)), ("Availability", get(20))]
+            extra_pairs = [p for p in [("Tags", get("tags")), ("Availability", get("availability_periods"))]
                            if p[1] != "N/A"]
             if extra_pairs:
                 extra = self._detail_card("Additional Information", accent="#3498db")
                 self._kv_grid(extra, extra_pairs)
+
+            # ---- Modules on this course ----
+            self._course_modules_card(get("course_code"), conn=conn)
 
             # ---- Timestamps (muted footer) ----
             foot = tk.Frame(self.details_container, bg=self.DETAIL_BG)
             foot.pack(fill=tk.X, padx=10, pady=(2, 12))
             tk.Label(
                 foot,
-                text=f"Created: {get(21)}      Last Updated: {get(22)}",
+                text=f"Created: {get('created_at')}      Last Updated: {get('updated_at')}",
                 font=(self._DETAIL_FONT, 8), bg=self.DETAIL_BG, fg=self._C_MUTED,
             ).pack(anchor="w")
         else:
             # Legacy schema exposes duration but none of the enhanced fields.
             self._kv_grid(self._detail_card("Academic Details", accent="#16a34a"),
-                          [("Duration", years(4))])
+                          [("Duration", years("duration"))])
+            self._course_modules_card(get("course_code"), conn=conn)
 
         # Reset the scroll position to the top for the new course.
         self.details_container.update_idletasks()
+
+    def _course_modules_card(self, course_code, conn=None):
+        """Card listing the modules that make up *course_code*.
+
+        Shown on the details tab so the modules are visible without opening the
+        course popup. Reuses the caller's connection when there is one, so
+        selecting a course does not open a second connection to the same file.
+        """
+        from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core._imports import (
+            sqlite3, DEFAULT_DB_PATH,
+        )
+        from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core.course_modules import (
+            COLUMNS,
+            modules_for_course,
+        )
+
+        if course_code in (None, "", "N/A"):
+            return
+
+        rows = []
+        try:
+            if conn is not None:
+                rows = modules_for_course(course_code, conn)
+            else:
+                with sqlite3.connect(str(DEFAULT_DB_PATH)) as own:
+                    rows = modules_for_course(course_code, own)
+        except sqlite3.Error:
+            logger.warning("could not load modules for %r", course_code, exc_info=True)
+            rows = []
+
+        body = self._detail_card(f"Modules ({len(rows)})", accent="#8e44ad")
+        if not rows:
+            tk.Label(
+                body, text="No modules are mapped to this course.",
+                font=(self._DETAIL_FONT, 9), bg=self._C_CARD, fg=self._C_MUTED,
+                anchor="w",
+            ).pack(fill=tk.X)
+            return
+
+        self._report_table(
+            body, list(COLUMNS), [tuple(r) for r in rows],
+            widths={"Code": 100, "Module": 220, "Credits": 65, "Semester": 85,
+                    "Type": 85, "Instructor": 140, "Status": 75},
+            height=min(12, len(rows)),
+        )
 
     def create_analytics_tab(self):
         """Create the analytics tab with role-based access"""

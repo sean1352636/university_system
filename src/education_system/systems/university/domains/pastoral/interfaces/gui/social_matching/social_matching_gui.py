@@ -13,6 +13,7 @@ Features:
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
+import logging
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime, timedelta
@@ -28,6 +29,8 @@ from education_system.systems.university.domains.pastoral.domain.social_matching
     ACTIVITY_LEVELS
 )
 
+logger = logging.getLogger(__name__)
+
 
 class SocialMatchingGUI:
     """GUI interface for social matching system."""
@@ -36,13 +39,20 @@ class SocialMatchingGUI:
         """Initialize the GUI."""
         self.parent = parent
         self.service = SocialMatchingService()
-        self.auth = get_auth()
+        # get_auth() raises when nothing has initialised the process-wide auth
+        # (a standalone/subprocess launch). Letting that escape kills the
+        # constructor with a traceback instead of the login message below.
+        try:
+            self.auth = get_auth()
+        except Exception:
+            logger.debug("shared-context auth unavailable", exc_info=True)
+            self.auth = None
 
         self.window = tk.Toplevel(parent)
         self.window.title(_t('gui.pastoral.social_matching.social_matching.windows.interest_based_social_matching', default="Interest-Based Social Matching"))
         self.window.geometry("1200x800")
 
-        if not self.auth.current_user:
+        if not self.auth or not getattr(self.auth, "current_user", None):
             messagebox.showerror(_t('gui.pastoral.social_matching.social_matching.dialogs.error', default="Error"), _t('gui.pastoral.social_matching.social_matching.dialogs.you_must_be_logged_in_to_use_social_matching', default="You must be logged in to use Social Matching."))
             self.window.destroy()
             return
@@ -1115,6 +1125,13 @@ class SocialMatchingGUI:
 
 def main():
     """Main entry point for GUI."""
+    # Standalone launches must come through the launcher's login, same as
+    # every sibling GUI (Events, Feedback, Accessibility, Campus Navigation).
+    from education_system.systems.university.shell.gui.auth.launch_guard import (
+        require_launcher_auth,
+    )
+    if require_launcher_auth("Social Matching GUI") is None:
+        return
     root = tk.Tk()
     root.withdraw()
     app = SocialMatchingGUI(root)

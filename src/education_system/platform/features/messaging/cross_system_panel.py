@@ -11,16 +11,13 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.platform.features.messaging.messaging_service import InterSystemMessagingService
+from education_system import paths as _paths
 
-SYSTEM_NAMES = {
-    "university": "University",
-    "sixth_form": "Sixth Form College",
-    "secondary": "Secondary School",
-    "primary": "Primary School",
-    "nursery": "Nursery",
-}
-
-ALL_SYSTEM_KEYS = ["nursery", "primary", "secondary", "sixth_form", "university"]
+# Read from paths rather than restated here: a local copy of this list drifts
+# silently, and every system missing from it becomes unreachable from this
+# screen rather than raising anything.
+SYSTEM_NAMES = dict(_paths.SYSTEM_LABELS)
+ALL_SYSTEM_KEYS = list(_paths.SYSTEM_ORDER)
 
 
 class CrossSystemMessagePanel(tk.Frame):

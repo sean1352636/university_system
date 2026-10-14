@@ -201,7 +201,7 @@ class HealthAndBehaviorMixin:
             print("This function is only available for parent accounts.")
             return
 
-        if not self.auth.check_permission('view_behavior_reports'):
+        if not self.auth.check_permission('view_attendance_behavior'):
             print("You don't have permission to view behavior reports.")
             return
 

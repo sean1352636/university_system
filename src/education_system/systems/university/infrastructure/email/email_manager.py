@@ -74,14 +74,14 @@ def display_chat_rooms_menu(*args, **kwargs) -> None:
     Prints a simple text-based menu for chat room management.
     """
     print("\n" + "=" * 60)
-    print(_t("email.chat_rooms.menu_title").center(60))
+    print(_t("email.chat_rooms.menu_title", default="===== CHAT ROOMS =====").center(60))
     print("=" * 60)
-    print(f"\n1. {_t('email.chat_rooms.view_all')}")
-    print(f"2. {_t('email.chat_rooms.create_new')}")
-    print(f"3. {_t('email.chat_rooms.archive')}")
-    print(f"4. {_t('email.chat_rooms.view_statistics')}")
-    print(f"5. {_t('email.chat_rooms.manage_members')}")
-    print(f"0. {_t('email.common.return_to_main')}")
+    print(f"\n1. {_t('email.chat_rooms.view_all', default='View All')}")
+    print(f"2. {_t('email.chat_rooms.create_new', default='Create New')}")
+    print(f"3. {_t('email.chat_rooms.archive', default='Archive')}")
+    print(f"4. {_t('email.chat_rooms.view_statistics', default='View Statistics')}")
+    print(f"5. {_t('email.chat_rooms.manage_members', default='Manage Members')}")
+    print(f"0. {_t('email.common.return_to_main', default='Return To Main')}")
     print("\n" + "=" * 60)
     logger.debug("Displayed chat rooms menu")
 

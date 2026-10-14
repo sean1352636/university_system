@@ -1,4 +1,5 @@
 """Personal budget dashboard and operations"""
+from education_system.systems.university.shell.gui import report_view as _rv
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -223,7 +224,7 @@ class PersonalBudgetMixin:
             window.title(f"Budget Details: {summary['budget_name']}")
             window.geometry("600x500")
 
-            text = ScrolledText(window, wrap=tk.WORD, font=('Courier', 10))
+            text = _rv.TextReportView(window, wrap=tk.WORD, font=('Courier', 10))
             text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
             output = f"""

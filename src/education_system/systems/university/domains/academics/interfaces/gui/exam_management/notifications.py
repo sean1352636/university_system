@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Tuple, List, Dict, Optional
 
 from education_system.systems.university.domains.academics.interfaces.gui.exam_management.models import Exam
+from education_system.systems.university.infrastructure.email.sign_off import office_name
 
 logger = logging.getLogger(__name__)
 
@@ -129,11 +130,11 @@ def send_exam_notifications(exam: Exam, get_enrolled_students, get_instructor_by
         # Fallback if template not found
         if not subject or not body:
             subject = f"Exam Scheduled: {exam.module_code} - {exam.module_name}"
-            body = f"Dear Student/Instructor,\n\nAn exam has been scheduled for {exam.module_code} - {exam.module_name} on {exam.date} from {exam.start_time} to {exam.end_time} in {exam.room}.\n\nBest regards,\nUniversity Examination Office"
+            body = f"Dear Student/Instructor,\n\nAn exam has been scheduled for {exam.module_code} - {exam.module_name} on {exam.date} from {exam.start_time} to {exam.end_time} in {exam.room}.\n\nBest regards,\n{office_name('Examination Office')}"
     except Exception as e:
         logger.error(f"Error rendering email template: {e}")
         subject = f"Exam Scheduled: {exam.module_code} - {exam.module_name}"
-        body = f"Dear Student/Instructor,\n\nAn exam has been scheduled for {exam.module_code} - {exam.module_name} on {exam.date} from {exam.start_time} to {exam.end_time} in {exam.room}.\n\nBest regards,\nUniversity Examination Office"
+        body = f"Dear Student/Instructor,\n\nAn exam has been scheduled for {exam.module_code} - {exam.module_name} on {exam.date} from {exam.start_time} to {exam.end_time} in {exam.room}.\n\nBest regards,\n{office_name('Examination Office')}"
 
     # Send to students
     for student in students:
@@ -164,7 +165,7 @@ def send_exam_notifications(exam: Exam, get_enrolled_students, get_instructor_by
             # Fallback if template not found
             if not instructor_subject or not instructor_body:
                 instructor_subject = f"Exam Scheduled (Instructor): {exam.module_code} - {exam.module_name}"
-                instructor_body = f"Dear {instructor['display_name']},\n\nYou have been assigned as the instructor for an exam on {exam.date} from {exam.start_time} to {exam.end_time} in {exam.room}.\n\nBest regards,\nUniversity Examination Office"
+                instructor_body = f"Dear {instructor['display_name']},\n\nYou have been assigned as the instructor for an exam on {exam.date} from {exam.start_time} to {exam.end_time} in {exam.room}.\n\nBest regards,\n{office_name('Examination Office')}"
 
             send_email(instructor['email'], instructor_subject, instructor_body)
             success_count += 1
@@ -219,11 +220,11 @@ def send_exam_update_notifications(exam: Exam, get_enrolled_students, get_instru
         # Fallback if template not found
         if not subject or not body:
             subject = f"Exam Updated: {exam.module_code} - {exam.module_name}"
-            body = f"Dear Student/Instructor,\n\nIMPORTANT: The exam for {exam.module_code} - {exam.module_name} has been updated.\n\nNew details: {exam.date}, {exam.start_time} - {exam.end_time}, {exam.room}\n\nBest regards,\nUniversity Examination Office"
+            body = f"Dear Student/Instructor,\n\nIMPORTANT: The exam for {exam.module_code} - {exam.module_name} has been updated.\n\nNew details: {exam.date}, {exam.start_time} - {exam.end_time}, {exam.room}\n\nBest regards,\n{office_name('Examination Office')}"
     except Exception as e:
         logger.error(f"Error rendering email template: {e}")
         subject = f"Exam Updated: {exam.module_code} - {exam.module_name}"
-        body = f"Dear Student/Instructor,\n\nIMPORTANT: The exam for {exam.module_code} - {exam.module_name} has been updated.\n\nNew details: {exam.date}, {exam.start_time} - {exam.end_time}, {exam.room}\n\nBest regards,\nUniversity Examination Office"
+        body = f"Dear Student/Instructor,\n\nIMPORTANT: The exam for {exam.module_code} - {exam.module_name} has been updated.\n\nNew details: {exam.date}, {exam.start_time} - {exam.end_time}, {exam.room}\n\nBest regards,\n{office_name('Examination Office')}"
 
     # Send to students
     for student in students:
@@ -254,7 +255,7 @@ def send_exam_update_notifications(exam: Exam, get_enrolled_students, get_instru
             # Fallback if template not found
             if not instructor_subject or not instructor_body:
                 instructor_subject = f"Exam Updated (Instructor): {exam.module_code} - {exam.module_name}"
-                instructor_body = f"Dear {instructor['display_name']},\n\nIMPORTANT: The exam you are supervising has been updated.\n\nNew details: {exam.date}, {exam.start_time} - {exam.end_time}, {exam.room}\n\nBest regards,\nUniversity Examination Office"
+                instructor_body = f"Dear {instructor['display_name']},\n\nIMPORTANT: The exam you are supervising has been updated.\n\nNew details: {exam.date}, {exam.start_time} - {exam.end_time}, {exam.room}\n\nBest regards,\n{office_name('Examination Office')}"
 
             send_email(instructor['email'], instructor_subject, instructor_body)
             success_count += 1
@@ -357,24 +358,21 @@ def add_exam_to_calendar(exam: Exam) -> bool:
 
         with closing(get_connection()) as conn:
             existing = conn.execute(
-                "SELECT 1 FROM academic_calendar_events WHERE id = ?",
+                "SELECT 1 FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') WHERE id = ?",
                 (event_id,),
             ).fetchone()
             if existing:
                 conn.execute(
-                    """UPDATE academic_calendar_events
-                       SET name = ?, date_start = ?, date_end = ?,
-                           description = ?, event_type = ?, last_modified = ?
-                       WHERE id = ?""",
+                    """UPDATE unified_events SET title = ?, start_datetime = ?, end_datetime = ?,
+                           description = ?, event_type = ?, updated_at = ? WHERE source_type = 'academic_calendar' AND (source_event_id = ?)""",
                     (name, start_datetime, end_datetime, description,
                      'Exam', now, event_id),
                 )
             else:
                 conn.execute(
-                    """INSERT INTO academic_calendar_events
-                       (id, name, date_start, date_end, description,
-                        event_type, date_added, last_modified)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                    """INSERT INTO unified_events (
+                    source_event_id, title, start_datetime, end_datetime, description, event_type, created_at, updated_at, source_type
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'academic_calendar')""",
                     (event_id, name, start_datetime, end_datetime,
                      description, 'Exam', now, now),
                 )
@@ -397,7 +395,7 @@ def remove_exam_from_calendar(exam_id) -> bool:
         event_id = _calendar_event_id(exam_id)
         with closing(get_connection()) as conn:
             conn.execute(
-                "DELETE FROM academic_calendar_events WHERE id = ?",
+                "DELETE FROM unified_events WHERE source_type = 'academic_calendar' AND (source_event_id = ?)",
                 (event_id,),
             )
             conn.commit()

@@ -15,7 +15,9 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 import logging
 import threading
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 
 from education_system.systems.university.infrastructure.database.db import (
     DEFAULT_DB_PATH,
@@ -44,7 +46,7 @@ class AutoGradingStaffPortal:
         self.auth = auth
         self.user_id = self._resolve_user_id()
 
-        self.window = tk.Toplevel(parent)
+        self.window = make_toplevel(parent)
         self.window.title(_t('gui.academics.assignment_system.auto_grading_portal.windows.ai_auto_grading_staff_portal', default="AI Auto-Grading — Staff Portal"))
         self.window.geometry("1120x720")
         self.window.minsize(960, 600)
@@ -52,7 +54,7 @@ class AutoGradingStaffPortal:
         try:
             self.window.transient(parent)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         self.assignment_var = tk.StringVar()
         self.status_var = tk.StringVar(value=_t('gui.academics.assignment_system.auto_grading_portal.values.loading_your_assignments', default="Loading your assignments…"))
@@ -376,7 +378,7 @@ class AutoGradingStaffPortal:
                 student_label = f"{student_id} — {name}"
                 file_label = file_name or ''
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         assignment_title = self._current_assignment[1] if self._current_assignment else ''
         max_marks = result.max_marks or (

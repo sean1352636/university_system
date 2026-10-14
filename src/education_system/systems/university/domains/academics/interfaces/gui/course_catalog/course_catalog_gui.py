@@ -12,8 +12,18 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.systems.university.infrastructure.sql_safety import escape_like
-from education_system.systems.university.infrastructure.database.db import get_connection, sqlite3, transaction
+from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.utils.activity_logger import log_activity
+from education_system.systems.university.services.bus.enrolment_bus import (
+    check_enrolment_eligibility,
+)
+from education_system.systems.university.services.bus.registration_calendar import (
+    classify_drop,
+    record_status_change,
+)
+from education_system.systems.university.domains.academics.interfaces.gui._section_picker import (
+    choose_section,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -218,34 +228,50 @@ class CourseCatalogGUI:
                     )
                     return
 
-                # Fetch capacity and current enrollment. `modules` doesn't
-                # always have a capacity column — treat missing as uncapped.
-                capacity = 0
-                try:
-                    mod = conn.execute(
-                        "SELECT capacity FROM modules WHERE module_code = ?",
-                        (module_code,),
-                    ).fetchone()
-                    capacity = (mod['capacity'] or 0) if mod else 0
-                except sqlite3.OperationalError:
-                    capacity = 0
+                # One gate for the registration window, prerequisites,
+                # co-requisites, capacity and sections — shared with the
+                # student registration GUI and the REST route so the three
+                # cannot drift apart.
+                eligibility = check_enrolment_eligibility(
+                    self.student_id, module_code, conn=conn,
+                )
 
-                enrolled_count = conn.execute(
-                    "SELECT COUNT(*) as cnt FROM student_modules "
-                    "WHERE module_code = ? AND status = 'Enrolled'",
-                    (module_code,),
-                ).fetchone()
-                enrolled = (enrolled_count['cnt'] or 0) if enrolled_count else 0
+                section_id = None
+                if eligibility.needs_section and eligibility.sections:
+                    section_id = choose_section(
+                        self.window, module_code, eligibility.sections)
+                    if section_id is None:
+                        return
+                    eligibility = check_enrolment_eligibility(
+                        self.student_id, module_code, section_id=section_id,
+                        conn=conn,
+                    )
 
-            if capacity and enrolled >= capacity:
-                # Course is full -- offer waitlist
-                if messagebox.askyesno(
-                    _t('gui.academics.course_catalog.course_catalog.dialogs.course_full', default="Course Full"),
-                    f"{module_code} is full ({enrolled}/{capacity}). "
-                    "Would you like to join the waitlist?",
+            if not eligibility.ok:
+                if eligibility.only_capacity:
+                    # Full, but otherwise eligible -- offer the waitlist.
+                    if messagebox.askyesno(
+                        _t('gui.academics.course_catalog.course_catalog.dialogs.course_full', default="Course Full"),
+                        f"{eligibility.reason()} "
+                        "Would you like to join the waitlist?",
+                        parent=self.window,
+                    ):
+                        self._add_to_waitlist(module_code)
+                    return
+                # A prerequisite or co-requisite is missing: the waitlist
+                # would not help, so say what is actually required.
+                messagebox.showwarning(
+                    _t('gui.academics.course_catalog.course_catalog.dialogs.enrolment_not_permitted',
+                       default="Enrolment not permitted"),
+                    f"You cannot register for {module_code} yet.\n\n"
+                    f"{eligibility.reason()}",
                     parent=self.window,
-                ):
-                    self._add_to_waitlist(module_code)
+                )
+                logger.info(
+                    "Registration blocked for %s in %s: %s",
+                    self.student_id, module_code,
+                    eligibility.reason().replace("\n", "; "),
+                )
                 return
 
             # Perform enrollment inside a transaction
@@ -258,19 +284,40 @@ class CourseCatalogGUI:
                 ).fetchone()
 
                 if dropped:
-                    conn.execute(
-                        "UPDATE student_modules SET status = 'Enrolled', "
-                        "enrollment_date = datetime('now') "
-                        "WHERE student_id = ? AND module_code = ? AND status = 'Dropped'",
-                        (self.student_id, module_code),
-                    )
-                else:
+                    if section_id is None:
+                        conn.execute(
+                            "UPDATE student_modules SET status = 'Enrolled', "
+                            "enrollment_date = datetime('now') "
+                            "WHERE student_id = ? AND module_code = ? AND status = 'Dropped'",
+                            (self.student_id, module_code),
+                        )
+                    else:
+                        conn.execute(
+                            "UPDATE student_modules SET status = 'Enrolled', "
+                            "enrollment_date = datetime('now'), section_id = ? "
+                            "WHERE student_id = ? AND module_code = ? AND status = 'Dropped'",
+                            (section_id, self.student_id, module_code),
+                        )
+                elif section_id is None:
                     conn.execute(
                         "INSERT INTO student_modules "
                         "(student_id, module_code, status, enrollment_date) "
                         "VALUES (?, ?, 'Enrolled', datetime('now'))",
                         (self.student_id, module_code),
                     )
+                else:
+                    conn.execute(
+                        "INSERT INTO student_modules "
+                        "(student_id, module_code, status, enrollment_date, section_id) "
+                        "VALUES (?, ?, 'Enrolled', datetime('now'), ?)",
+                        (self.student_id, module_code, section_id),
+                    )
+                record_status_change(
+                    self.student_id, module_code, 'Enrolled',
+                    from_status='Dropped' if dropped else None,
+                    changed_by=self.student_id, source='course_catalog',
+                    verdict=eligibility.window, conn=conn,
+                )
 
             try:
                 log_activity(
@@ -279,7 +326,7 @@ class CourseCatalogGUI:
                     details=f"Enrolled in {module_code}",
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             messagebox.showinfo(
                 _t('gui.academics.course_catalog.course_catalog.dialogs.enrolled', default="Enrolled"),
@@ -319,7 +366,7 @@ class CourseCatalogGUI:
                     details=f"Added to waitlist for {module_code} at position {next_pos}",
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             messagebox.showinfo(
                 _t('gui.academics.course_catalog.course_catalog.dialogs.waitlisted', default="Waitlisted"),
@@ -349,9 +396,26 @@ class CourseCatalogGUI:
         if not module_code:
             return
 
+        # The academic calendar decides whether this is a clean drop, a
+        # transcript-visible withdrawal, or something only the formal process
+        # can do now.
+        verdict = classify_drop()
+        if not verdict["allowed"]:
+            messagebox.showwarning(
+                _t('gui.academics.course_catalog.course_catalog.dialogs.deadline_passed',
+                   default="Deadline passed"),
+                f"{module_code} cannot be dropped here.\n\n{verdict['reason']}",
+                parent=self.window,
+            )
+            return
+
+        new_status = verdict["status"]
+        prompt = [f"Are you sure you want to drop {module_code}?"]
+        if verdict["reason"]:
+            prompt += ["", verdict["reason"]]
         if not messagebox.askyesno(
             _t('gui.academics.course_catalog.course_catalog.dialogs.confirm_drop', default="Confirm Drop"),
-            f"Are you sure you want to drop {module_code}?",
+            "\n".join(prompt),
             parent=self.window,
         ):
             return
@@ -359,23 +423,29 @@ class CourseCatalogGUI:
         try:
             with transaction() as conn:
                 conn.execute(
-                    "UPDATE student_modules SET status = 'Dropped' "
+                    "UPDATE student_modules SET status = ? "
                     "WHERE student_id = ? AND module_code = ? AND status = 'Enrolled'",
-                    (self.student_id, module_code),
+                    (new_status, self.student_id, module_code),
+                )
+                record_status_change(
+                    self.student_id, module_code, new_status,
+                    from_status='Enrolled', changed_by=self.student_id,
+                    source='course_catalog', verdict=verdict, conn=conn,
                 )
 
             try:
                 log_activity(
                     self.student_id, self.student_id, 'student',
                     'update', 'enrollment',
-                    details=f"Dropped {module_code}",
+                    details=f"{new_status} {module_code} ({verdict['phase']})",
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             messagebox.showinfo(
                 _t('gui.academics.course_catalog.course_catalog.dialogs.dropped', default="Dropped"),
-                f"You have been dropped from {module_code}.",
+                f"You have been {'withdrawn from' if verdict['on_transcript'] else 'dropped from'} "
+                f"{module_code}.",
                 parent=self.window,
             )
             self._search_courses()

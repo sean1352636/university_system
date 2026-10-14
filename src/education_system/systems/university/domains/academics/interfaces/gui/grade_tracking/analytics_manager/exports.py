@@ -3,18 +3,11 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import messagebox, filedialog
+from tkinter import filedialog
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import messagebox
 import csv
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
-
-try:
-    from reportlab.lib.pagesizes import letter
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-    from reportlab.lib.styles import getSampleStyleSheet
-    from reportlab.lib.units import inch
-except ImportError:
-    SimpleDocTemplate = None
 
 
 class ExportsMixin:
@@ -26,7 +19,14 @@ class ExportsMixin:
             messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.exports.dialogs.no_report', default="No Report"), _t('gui.academics.grade_tracking.analytics_manager.exports.dialogs.please_generate_a_report_first', default="Please generate a report first."))
             return
 
-        if SimpleDocTemplate is None:
+        # Imported here, not at module scope: reportlab is only needed for
+        # this export and Grade Tracking imports this module on open.
+        try:
+            from reportlab.lib.pagesizes import letter
+            from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+            from reportlab.lib.styles import getSampleStyleSheet
+            from reportlab.lib.units import inch
+        except ImportError:
             messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.exports.dialogs.feature_unavailable', default="Feature Unavailable"), _t('gui.academics.grade_tracking.analytics_manager.exports.dialogs.reportlab_is_required_for_pdf_export', default="ReportLab is required for PDF export."))
             return
 

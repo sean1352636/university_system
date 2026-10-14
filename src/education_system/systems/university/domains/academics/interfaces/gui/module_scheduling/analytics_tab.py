@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection, transaction  # injected
 from education_system.systems.university.infrastructure.exceptions import (
@@ -34,7 +38,8 @@ except ImportError:
     show_gui_language_selector = lambda parent=None: "en"
 
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling._dialogs import messagebox
 from tkinter.font import Font
 import os
 import sys
@@ -118,7 +123,7 @@ def _analytics_ready(self):
             _t('gui.academics.module_scheduling.analytics_tab.dialogs.the_scheduling_analytics_view_is_no_longer_open_reopen_it_and_tr', default="The Scheduling Analytics view is no longer open. Reopen it and try again."),
             parent=_safe_parent(self))
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return False
 
 
@@ -187,11 +192,27 @@ def show_room_utilization(self):
         self.analytics_text.delete(1.0, tk.END)
         self.analytics_text.insert(tk.END, report_text)
 
-        # Show report in window with email option
+        # Structured form for the report window and for a CSV/PDF save; the
+        # text above is still what the email body carries.
+        rates = [r.get('Utilization Rate (%)') or 0 for r in room_data]
+        sections = [(
+            "Room utilisation",
+            ("Room", "Type", "Capacity", "Sessions", "Utilisation %", "Avg duration (min)"),
+            [(_s(r.get('Room')), _s(r.get('Type')), _s(r.get('Capacity'), '0'),
+              _s(r.get('Sessions'), '0'), _s(r.get('Utilization Rate (%)'), '0'),
+              _s(r.get('Avg Duration (min)'), '0')) for r in room_data],
+        )]
+        stats = [
+            (len(room_data), "Rooms"),
+            (sum(int(r.get('Sessions') or 0) for r in room_data), "Sessions"),
+            (f"{(sum(rates) / len(rates) if rates else 0):.1f}%", "Average utilisation"),
+        ]
         self._show_report_with_email_option(
             "Room Utilization Report",
             report_text,
-            "Room Utilization Analytics"
+            "Room Utilization Analytics",
+            sections=sections,
+            stats=stats,
         )
 
         self.update_activity_log("Generated room utilization report")
@@ -241,10 +262,29 @@ def show_instructor_workload(self):
         self.analytics_text.insert(tk.END, report_text)
 
         # Show report in window with email option
+        overloaded_names = [i['Instructor'] for i in workload_data
+                            if i.get('Status') == 'Overloaded']
+        sections = [(
+            "Instructor workload",
+            ("Instructor", "Department", "Sessions", "Hours", "Max", "Load %", "Status"),
+            [(i.get('Instructor', '-'), i.get('Department', '-'),
+              i.get('Sessions', 0), i.get('Total Hours', 0), i.get('Max Hours', 0),
+              i.get('Workload (%)', 0), i.get('Status', '-')) for i in workload_data],
+        )]
+        if overloaded_names:
+            sections.append(("Overloaded instructors", (),
+                             [(name, "over their maximum hours") for name in overloaded_names]))
+        stats = [
+            (len(workload_data), "Instructors"),
+            (sum(int(i.get('Sessions') or 0) for i in workload_data), "Sessions"),
+            (len(overloaded_names), "Overloaded"),
+        ]
         self._show_report_with_email_option(
             "Instructor Workload Report",
             report_text,
-            "Instructor Workload Analytics"
+            "Instructor Workload Analytics",
+            sections=sections,
+            stats=stats,
         )
 
         self.update_activity_log("Generated instructor workload report")
@@ -287,10 +327,26 @@ def show_peak_usage(self):
         self.analytics_text.insert(tk.END, report_text)
 
         # Show report in window with email option
+        sections = [
+            ("Peak times by day", ("Day", "Peak periods"),
+             [(day, ", ".join(times) if times else "No data")
+              for day, times in peak_times.items()]),
+            ("Module distribution", (),
+             [("Total modules", module_stats['total']),
+              ("Most common session type", module_stats['most_common_type']),
+              ("Average sessions per module", f"{module_stats['avg_sessions']:.2f}")]),
+        ]
+        stats = [
+            (len([d for d, t in peak_times.items() if t]), "Days with data"),
+            (module_stats['total'], "Modules"),
+            (f"{module_stats['avg_sessions']:.2f}", "Avg sessions / module"),
+        ]
         self._show_report_with_email_option(
             "Peak Usage Analysis",
             report_text,
-            "Peak Usage Analytics"
+            "Peak Usage Analytics",
+            sections=sections,
+            stats=stats
         )
 
         self.update_activity_log("Generated peak usage analysis")
@@ -324,6 +380,11 @@ def generate_charts(self):
                 "Visual Charts"
             )
 
+            # Offer to save the chart image wherever the user wants. It is
+            # written to an internal analytics folder, which was the only
+            # copy — there was no way to put it somewhere useful.
+            self._offer_save_charts(chart_path)
+
             # Ask if user wants to open charts
             if messagebox.askyesno(_t('gui.academics.module_scheduling.analytics_tab.dialogs.open_charts', default="Open Charts"), f"Charts generated successfully!\n\nPath: {chart_path}\n\nWould you like to open the charts?", parent=self._safe_parent()):
                 webbrowser.open(f"file://{os.path.abspath(chart_path)}")
@@ -337,6 +398,39 @@ def generate_charts(self):
     except Exception as e:
         messagebox.showerror(_t('gui.academics.module_scheduling.analytics_tab.dialogs.error', default="Error"), f"Failed to generate charts: {str(e)}", parent=self._safe_parent())
         self.update_status("Ready")
+
+def _offer_save_charts(self, chart_path):
+    """Copy the generated chart file to a location the user chooses."""
+    import shutil
+    from tkinter import filedialog
+
+    if not chart_path or not os.path.exists(chart_path):
+        return
+    suffix = os.path.splitext(chart_path)[1] or ".png"
+    if not messagebox.askyesno(
+            _t('gui.academics.module_scheduling.analytics_tab.dialogs.save_charts', default="Save Charts"),
+            "Save a copy of the generated charts?",
+            parent=self._safe_parent()):
+        return
+    target = filedialog.asksaveasfilename(
+        parent=self._safe_parent(),
+        title="Save charts",
+        defaultextension=suffix,
+        initialfile=f"module_scheduling_charts_{datetime.now():%Y%m%d_%H%M%S}{suffix}",
+        filetypes=[("Image", f"*{suffix}"), ("All files", "*.*")])
+    if not target:
+        return
+    try:
+        shutil.copyfile(chart_path, target)
+    except Exception as exc:
+        messagebox.showerror(_t('gui.academics.module_scheduling.analytics_tab.dialogs.error', default="Error"),
+                             f"Could not save the charts: {exc}",
+                             parent=self._safe_parent())
+        return
+    messagebox.showinfo(_t('gui.academics.module_scheduling.analytics_tab.dialogs.saved', default="Saved"),
+                        f"Charts saved to:\n{target}", parent=self._safe_parent())
+
+ModuleSchedulingGUI._offer_save_charts = _offer_save_charts
 
 ModuleSchedulingGUI.generate_charts = generate_charts
 
@@ -704,10 +798,34 @@ def generate_reports(self):
         report_text += f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
 
         # Show report in window with email option
+        sections = []
+        if room_data:
+            sections.append((
+                "Room utilisation",
+                ("Room", "Type", "Capacity", "Sessions", "Utilisation %"),
+                [(r.get('Room', '-'), r.get('Type', '-'), r.get('Capacity', 0),
+                  r.get('Sessions', 0), r.get('Utilization Rate (%)', 0))
+                 for r in room_data]))
+        if workload_data:
+            sections.append((
+                "Instructor workload",
+                ("Instructor", "Department", "Sessions", "Hours", "Load %", "Status"),
+                [(i.get('Instructor', '-'), i.get('Department', '-'),
+                  i.get('Sessions', 0), i.get('Total Hours', 0),
+                  i.get('Workload (%)', 0), i.get('Status', '-'))
+                 for i in workload_data]))
+        stats = [
+            (len(room_data or []), "Rooms"),
+            (len(workload_data or []), "Instructors"),
+            (len([i for i in (workload_data or [])
+                  if i.get('Status') == 'Overloaded']), "Overloaded"),
+        ]
         self._show_report_with_email_option(
             "Comprehensive Module Scheduling Reports",
             report_text,
-            "Management Reports"
+            "Management Reports",
+            sections=sections or None,
+            stats=stats,
         )
 
         # Automatically send email to admin
@@ -775,29 +893,64 @@ def quick_generate_report(self):
 
 ModuleSchedulingGUI.quick_generate_report = quick_generate_report
 
-def _show_report_with_email_option(self, report_title, report_text, report_type="Report"):
-    """Show report in a window with email send option"""
+def _show_report_with_email_option(self, report_title, report_text,
+                                   report_type="Report", sections=None,
+                                   stats=None):
+    """Show a report, with Save and Email actions.
+
+    ``sections`` is an optional list of ``(heading, columns, rows)`` blocks;
+    when given the report renders as cards and tables instead of the
+    fixed-width text these reports used to be. ``report_text`` is still
+    required — it is what the email body and a TXT save contain.
+    """
+    from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui import (
+        report_widgets as _report,
+    )
+
     # Create dialog window
     report_dialog = tk.Toplevel(self.root)
     report_dialog.title(report_title)
-    report_dialog.geometry("1000x700")
+    report_dialog.geometry("1040x740")
+    report_dialog.minsize(820, 560)
     report_dialog.transient(self.root)
 
     # Main frame
     main_frame = ttk.Frame(report_dialog, padding=10)
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    # Report display
-    ttk.Label(main_frame, text=report_title, font=('Arial', 14, 'bold')).pack(pady=(0, 10))
-
-    report_display = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD, font=('Courier', 10))
-    report_display.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
-    report_display.insert('1.0', report_text)
-    report_display.config(state='disabled')
-
-    # Email section
+    # The email panel is packed against the bottom first so a long report
+    # cannot push the Save / Send / Close buttons off the window.
     email_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.module_scheduling.analytics_tab.labels.email_report_to_admin', default="Email Report to Admin"), padding=10)
-    email_frame.pack(fill=tk.X, pady=(10, 0))
+    email_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(10, 0))
+
+    body_frame = ttk.Frame(main_frame)
+    body_frame.pack(fill=tk.BOTH, expand=True)
+
+    if sections:
+        surface = _report.scrollable(body_frame)
+        _report.banner(surface, report_title,
+                       f"Generated {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+        if stats:
+            _report.stat_strip(surface, stats)
+        for heading, columns, rows in sections:
+            if columns and rows:
+                _report.card(surface, heading, accent="#3498db")
+                _report.table(surface, columns, rows, height=14)
+            elif rows:
+                body = _report.card(surface, heading)
+                _report.kv_grid(body, rows)
+            else:
+                body = _report.card(surface, heading, accent=_report.MUTED)
+                tk.Label(body, text="Nothing to report.", bg=_report.CARD,
+                         fg=_report.MUTED, font=(_report.FONT, 9)).pack(anchor="w")
+    else:
+        ttk.Label(body_frame, text=report_title,
+                  font=('Arial', 14, 'bold')).pack(pady=(0, 10))
+        report_display = scrolledtext.ScrolledText(body_frame, wrap=tk.WORD,
+                                                   font=('Courier', 10))
+        report_display.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        report_display.insert('1.0', report_text)
+        report_display.config(state='disabled')
 
     # Get admin email
     admin_email = self._get_admin_email()
@@ -920,6 +1073,16 @@ This email was sent from the Module Scheduling GUI.
     button_frame = ttk.Frame(email_frame)
     button_frame.pack(fill=tk.X)
 
+    def save_report():
+        """Save anywhere, as PDF, CSV or TXT."""
+        from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core.report_export import (
+            save_report as _save,
+        )
+        base = report_type.lower().replace(" ", "_") or "report"
+        _save(report_dialog, base, report_title, report_text, sections)
+
+    ttk.Button(button_frame, text=_t('gui.academics.module_scheduling.analytics_tab.buttons.save_report', default="💾 Save Report"),
+              command=save_report).pack(side=tk.LEFT, padx=(0, 10))
     ttk.Button(button_frame, text=_t('gui.academics.module_scheduling.analytics_tab.buttons.send_email', default="📧 Send Email"),
               command=send_report_email).pack(side=tk.LEFT, padx=(0, 10))
     ttk.Button(button_frame, text=_t('gui.academics.module_scheduling.analytics_tab.buttons.close_variant_2', default="❌ Close"),

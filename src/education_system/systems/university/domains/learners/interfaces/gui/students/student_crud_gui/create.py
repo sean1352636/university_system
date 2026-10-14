@@ -9,7 +9,7 @@ import json
 import csv
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from datetime import datetime
-from education_system.systems.university.interfaces.gui.shell.main._tk_callback_filter import install_clean_close as _install_clean_close
+from education_system.platform.delivery.gui.tk_callback_filter import install_clean_close as _install_clean_close
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import get_db_connection, get_connection, transaction, foreign_keys_off
@@ -28,6 +28,7 @@ except ImportError:
     ACTIVITY_LOGGER_AVAILABLE = False
 
 from .widgets import _DOBPicker, _safe_set_combobox, _safe_entry_insert
+from .authorization import require_student_permission
 from .importers import _open_sixth_form_import_dialog, _open_bulk_csv_import_dialog
 from .sync.visa import _create_visa_record_for_new_student
 from .sync.atas import _resync_atas_after_module_change
@@ -48,8 +49,167 @@ from education_system.systems.university.domains.academics.domain.services.admis
     GRADE_CHOICES as _GRADE_CHOICES,
 )
 
+def _attach_sixth_form_application(*, journey_id, application_id,
+                                   student_id, actor_id):
+    """Bind an applicant already staged for this learner to the new student.
+
+    The bus intake stages a sixth-form handover as an *applicant*; this
+    dialog creates an active *student* directly. Both are legitimate
+    records of the same person arriving, and until they were joined the
+    learner existed twice — enrolled on one side, stuck in
+    ``documents_pending`` on the other, with the admissions team chasing
+    documents for somebody who had already started.
+
+    Best-effort throughout: the student has been created and stands
+    regardless. A conflict (the application is bound to a *different*
+    student) is logged by the lifecycle service and needs a human.
+    """
+    if not journey_id and not application_id:
+        return
+    try:
+        from education_system.systems.university.domains.admissions.domain import (
+            sixthform_intake,
+        )
+        from education_system.systems.university.domains.admissions.domain.services import (
+            admissions_lifecycle,
+        )
+        if not application_id:
+            existing = sixthform_intake.find_application_for_journey(
+                journey_id)
+            application_id = (existing["application_id"] if existing
+                              else None)
+        if not application_id:
+            return
+        admissions_lifecycle.attach_direct_enrolment(
+            int(application_id), student_id,
+            actor_id=actor_id or "university CRUD GUI",
+            reason="Enrolled directly from the sixth-form import picker — "
+                   "the admissions readiness gates were not evaluated",
+        )
+    except Exception:
+        logger.exception(
+            "Could not attach university student %s to the application "
+            "staged on journey %s; check for a duplicate applicant record",
+            student_id, journey_id)
+
+
+def _clear_ucas_application_after_import(sf_student_id, uni_student_id, *,
+                                         actor=None):
+    """Close the learner's UCAS application to this university.
+
+    The manual import creates the student directly, so nothing else marks
+    the UCAS choice as spent. Left alone, the applicant reappears in "Admit
+    from UCAS" for ever — shown as enrolled, and refused when clicked.
+
+    Best-effort by design: this runs after the student, the journey link and
+    the transfer are all done, and a tidy-up problem must not undo any of it.
+    """
+    if not sf_student_id:
+        return
+    try:
+        from education_system.systems.university.services.bus import ucas_bus
+        summary = ucas_bus.clear_after_admission(
+            sf_student_id, uni_student_id, actor=actor)
+        logger.info("UCAS clear-down for %s -> %s: %s",
+                    sf_student_id, uni_student_id, ucas_bus.describe(summary))
+    except Exception:
+        logger.exception(
+            "Could not clear the UCAS application for %s after importing "
+            "them as %s; they may still appear in the UCAS picker",
+            sf_student_id, uni_student_id)
+
+
+def _import_sixth_form_medical_record(*, parent, uni_student_id,
+                                      sf_student_id, actor):
+    """Copy the learner's health record across, if they consented to it.
+
+    Consent is the sixth form's to hold and this dialog's to respect. When
+    there is none, the operator is offered the narrow alternative — the
+    safety-critical subset on vital interests — and told plainly that the
+    decision is audited against their account. Declining is a valid
+    outcome, not an error: the record simply does not cross, and the
+    university student is enrolled either way.
+    """
+    from education_system.systems.university.domains.pastoral.domain.health.records import (
+        sixth_form_import as _sf_med_import,
+    )
+    title = _t('gui.learners.students.student_crud_gui.create.dialogs.sixth_form_medical_import', default="Sixth-form medical import")
+    try:
+        decision = _sf_med_import.check_release(sf_student_id)
+        lawful_basis = None
+        if not decision.allowed:
+            proceed = messagebox.askyesno(
+                title,
+                f"{decision.detail}.\n\n"
+                "Their health record will NOT be copied.\n\n"
+                "If there is an immediate safety need you may copy the "
+                "safety-critical subset — allergies, active conditions and "
+                "current medications — on the basis of the student's vital "
+                "interests. Resolved conditions, blood group and GP details "
+                "will not be copied, and the decision is recorded against "
+                "your account.\n\n"
+                "Copy the safety-critical subset now?",
+                parent=parent, icon="warning",
+            )
+            if not proceed:
+                logger.info(
+                    "Sixth-form medical record for %s not copied to %s — "
+                    "no consent, and the operator declined vital interests",
+                    sf_student_id, uni_student_id)
+                return
+            lawful_basis = _sf_med_import.VITAL_INTERESTS
+
+        summary = _sf_med_import.import_from_sixth_form(
+            uni_student_id=uni_student_id,
+            sf_student_id=sf_student_id,
+            lawful_basis=lawful_basis,
+            actor=actor,
+            received_by="university student records",
+        )
+        logger.info(
+            "Sixth-form medical record imported for uni student %s: %s",
+            uni_student_id, summary)
+        if summary.withheld:
+            messagebox.showinfo(
+                title,
+                "Copied the safety-critical subset of their medical "
+                "record.\n\nNot copied: "
+                + "; ".join(summary.withheld)
+                + ".\n\nObtain the handover consent to carry the rest.",
+                parent=parent,
+            )
+    except _sf_med_import.MedicalHandoverRefused as refused:
+        logger.warning(
+            "Sixth-form medical record refused for sf=%s -> uni=%s: %s",
+            sf_student_id, uni_student_id, refused)
+        messagebox.showwarning(
+            title,
+            "The student was transferred successfully, but their medical "
+            f"record was NOT copied:\n\n{refused}\n\n"
+            "Ask the sixth form to record the handover consent, or enter "
+            "their conditions / medications / allergies on the university "
+            "health record directly.",
+            parent=parent,
+        )
+    except Exception as med_err:
+        logger.exception(
+            "Sixth-form medical-record import failed for sf=%s -> uni=%s "
+            "(student status/login/email cleanup did succeed)",
+            sf_student_id, uni_student_id)
+        messagebox.showwarning(
+            title,
+            "The student was transferred successfully, but their medical "
+            f"record could not be imported:\n\n{med_err}\n\n"
+            "You can re-enter their conditions / medications / allergies "
+            "on the university health record manually.",
+            parent=parent,
+        )
+
+
 def create_student_dialog(self):
     """Create comprehensive dialog for adding new student with full form validation"""
+    if not require_student_permission(self, "create_student", "create"):
+        return
     dialog = self.create_themed_toplevel(_t("student.create_new_student"), "1200x740")
     dialog.minsize(1180, 680)
 
@@ -109,7 +269,7 @@ def create_student_dialog(self):
     def _open_csv_import():
         _open_bulk_csv_import_dialog(self, dialog)
 
-    ttk.Button(import_bar, text=_t('gui.learners.students.student_crud_gui.create.buttons.import_from_sixth_form_system', default="Import from Sixth Form System"),
+    ttk.Button(import_bar, text=_t('gui.learners.students.student_crud_gui.create.buttons.admit_from_ucas', default="Admit from UCAS"),
                command=_open_sixth_form_import).pack(side=tk.RIGHT)
     ttk.Button(import_bar, text=_t('gui.learners.students.student_crud_gui.create.buttons.bulk_import_from_csv', default="Bulk import from CSV"),
                command=_open_csv_import).pack(
@@ -394,14 +554,16 @@ def create_student_dialog(self):
         try:
             _refresh_live_preview()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         try:
             fields['first_name'].focus_set()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def create_student():
         """Create student with comprehensive data processing and random course assignment"""
+        if not require_student_permission(self, "create_student", "create"):
+            return
         try:
             # Validate form
             errors = validate_form()
@@ -460,6 +622,52 @@ def create_student_dialog(self):
             now_dt = datetime.now()
             age = _compute_age(dob, now_dt)
 
+            # All canonical writes and provisioning state transitions go
+            # through the application service. The legacy implementation is
+            # retained below temporarily for source-history readability but is
+            # unreachable from this adapter.
+            from education_system.systems.university.application.student_lifecycle_service import (
+                StudentCommand,
+                StudentLifecycleService,
+            )
+            actor = str((getattr(self.auth, 'current_user', {}) or {}).get('id', 'unknown'))
+            lifecycle = StudentLifecycleService()
+            created = lifecycle.create(
+                StudentCommand(
+                    first_name=first_name, middle_name=middle_name,
+                    last_name=last_name, title=title, gender=gender,
+                    dob=dob_text, course=course,
+                    entry_qualifications=entry_qualifications,
+                    ucas_tariff=ucas_tariff,
+                ),
+                actor_id=actor,
+                idempotency_key=f"gui:create:{secrets.token_urlsafe(18)}",
+            )
+            provisioned = lifecycle.provision(created.student_id, auth=self.auth)
+            if provisioned.provisioning_error:
+                messagebox.showwarning(
+                    "Provisioning pending",
+                    f"Student {created.student_id} was saved safely, but provisioning "
+                    f"is pending: {provisioned.provisioning_error}. The outbox can retry it.",
+                    parent=dialog,
+                )
+            else:
+                messagebox.showinfo(
+                    _t("common.success"),
+                    f"Student {created.student_id} was created and provisioned. "
+                    "A single-use activation link was sent to their university email.",
+                    parent=dialog,
+                )
+            if hasattr(self, 'view_students'):
+                self.view_students()
+            self.refresh_advanced_search()
+            if getattr(dialog, '_add_another_after_save', False):
+                dialog._add_another_after_save = False
+                _reset_for_next_entry()
+            else:
+                dialog.destroy()
+            return
+
             # Generate student ID and email
             student_id = str(secrets.randbelow(9000000) + 1000000).zfill(7)
             email_address = f"C{student_id}@tees.ac.uk"
@@ -511,7 +719,7 @@ def create_student_dialog(self):
                 cursor.execute('''
                     UPDATE courses
                     SET current_enrollment = current_enrollment + 1
-                    WHERE course_code = ? AND status = 'active'
+                    WHERE course_code = ? AND LOWER(COALESCE(status, 'active')) = 'active'
                 ''', (course,))
 
             # Commit + close BEFORE the cross-domain bus side effects below.
@@ -536,7 +744,7 @@ def create_student_dialog(self):
                 print(f"Note: could not assess enrolment fees: {exc}")
 
             try:
-                from education_system.systems.university.domains.operations.domain.commerce.textbooks.services.library_holds import (
+                from education_system.systems.university.plugins.campus_commerce.domain.textbooks.services.library_holds import (
                     place_holds_for_enrolment,
                 )
                 for code in selected_modules:
@@ -565,14 +773,15 @@ def create_student_dialog(self):
             # whether the student can actually sign in — if it failed we
             # surface a prominent warning below rather than swallowing it.
             temp_password = _default_student_password(first_name, student_id)
-            login_ok = _provision_student_login(
+            login_result = _provision_student_login(
                 self.auth,
                 username=student_id,
                 password=temp_password,
                 email=email_address,
                 first_name=first_name,
                 last_name=last_name,
-            )["shared_ok"]
+            )
+            login_ok = login_result["shared_ok"]
 
             # If the admin flagged this student as international, create the
             # visa-sponsorship record and queue the right-to-study reminder.
@@ -618,10 +827,15 @@ def create_student_dialog(self):
                     for m in by_year[yr]:
                         modules_text += f"      - {m['module_code']} {m['module_name']}\n"
 
+            activation_sent = login_result.get("activation_sent", False)
             login_line = (
-                f"Login credentials (use these to sign in):\n"
-                f"- Username: {student_id}\n"
-                f"- Password: {temp_password}"
+                f"Username: {student_id}\n"
+                "A single-use account activation link has been sent to the "
+                "student's university email address."
+                if login_ok and activation_sent else
+                f"Username: {student_id}\n"
+                "⚠ The account was created, but its activation email could not be sent. "
+                "Use the approved password-reset workflow to send a new link."
                 if login_ok else
                 "⚠ LOGIN ACCOUNT NOT CREATED — the student record was saved but\n"
                 "  the sign-in account could not be set up, so they CANNOT log in\n"
@@ -650,7 +864,6 @@ Student Details:
                 first_name=first_name,
                 last_name=last_name,
                 email_address=email_address,
-                temp_password=temp_password,
                 course=course
             )
 
@@ -660,18 +873,26 @@ Student Details:
             self.refresh_advanced_search()  # ADD THIS LINE
 
             # If this record originated from the sixth-form import
-            # picker, finalise the transfer: flip the sixth-form
-            # status to 'Left', deactivate the sixth-form login, and
-            # notify the sixth-form admin inbox. Best-effort: any
-            # failure here is logged and surfaced as a warning but
-            # never reverses the successful university create.
+            # picker, finalise the transfer: link the journey, reconcile
+            # with any application already staged for this learner, end
+            # the sixth-form enrolment, and notify the sixth-form admin
+            # inbox. Best-effort: any failure here is logged and surfaced
+            # as a warning but never reverses the successful university
+            # create.
             sf_origin = getattr(dialog, '_sixth_form_origin_id', None)
-            # Consume the origin id immediately so it can't leak onto a
-            # later save in this dialog (e.g. via "Save & add another"),
+            sf_journey_id = getattr(dialog, '_sixth_form_journey_id', None)
+            sf_application_id = getattr(
+                dialog, '_sixth_form_application_id', None)
+            sf_handover = getattr(dialog, '_sixth_form_handover', None)
+            # Consume the picker's state immediately so it can't leak onto
+            # a later save in this dialog (e.g. via "Save & add another"),
             # which would otherwise re-fire the transfer against the
             # wrong student. Cleared up-front so a failure below can't
             # leave it set either.
             dialog._sixth_form_origin_id = None
+            dialog._sixth_form_journey_id = None
+            dialog._sixth_form_application_id = None
+            dialog._sixth_form_handover = None
             if sf_origin:
                 try:
                     from education_system.systems.sixth_form.domain.learners.students import (
@@ -688,48 +909,113 @@ Student Details:
                             moved_by = (current_user.get('username')
                                          or moved_by)
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
+                    # Fill the journey's university slot BEFORE announcing
+                    # the transfer. mark_transferred() publishes a
+                    # progression event addressed to the university, and
+                    # this process's own bus drainer consumes it within
+                    # ~30s; the intake treats an unfilled slot as "not here
+                    # yet" and builds a second, applications-side record for
+                    # the student just created above. Writing the slot first
+                    # is what turns that event into a no-op.
+                    #
+                    # Resolve the journey by the sixth-form id the picker
+                    # handed us rather than by (name, DOB): the admin may
+                    # have corrected a spelling or date on the form, and an
+                    # identity match would then miss the journey the
+                    # sixth-form record anchors and start a second one.
+                    # Identity matching is the fallback, for a sixth-form
+                    # student that predates the journey registry.
+                    # Best-effort throughout: the university student stands
+                    # regardless.
+                    journey_id = sf_journey_id
+                    try:
+                        from education_system.platform.cross_system import (
+                            identity_service,
+                            progression,
+                        )
+                        if not journey_id:
+                            anchor = identity_service.find_by_student(
+                                "sixth_form", sf_origin)
+                            journey_id = (anchor["journey_id"] if anchor
+                                          else None)
+                        if journey_id:
+                            identity_service.link_system(
+                                journey_id, "university",
+                                student_id=student_id, set_current=True)
+                        else:
+                            journey_id = progression.register_local_student(
+                                "university",
+                                student_id=student_id,
+                                first_name=first_name,
+                                last_name=last_name,
+                                date_of_birth=dob_text,
+                            )
+                        if journey_id:
+                            # Once: mark_transferred() records the same hop
+                            # a moment later, and a learner who moved up one
+                            # phase should read as one transition, not two.
+                            identity_service.record_transition_once(
+                                journey_id,
+                                from_system="sixth_form",
+                                to_system="university",
+                                reason=f"Sixth-form import by {moved_by}",
+                            )
+                    except Exception:
+                        logger.exception(
+                            "Journey link failed for sixth-form import "
+                            "%s -> %s; the bus intake may now create a "
+                            "duplicate application", sf_origin, student_id)
+
+                    # Reconcile with the applications side. If the bus
+                    # already staged this learner as an applicant, bind the
+                    # student just created to it: one person must not end up
+                    # as an active student *and* a pending applicant with
+                    # nothing joining the two. The picker re-checks at
+                    # selection time; re-read here because the drainer runs
+                    # every ~30s and may have staged one since.
+                    _attach_sixth_form_application(
+                        journey_id=journey_id,
+                        application_id=sf_application_id,
+                        student_id=student_id,
+                        actor_id=moved_by,
+                    )
+
                     sf_students.mark_transferred(
                         sf_origin, moved_by=moved_by)
+
+                    # Their application to us is over: remove the UCAS
+                    # choice that lists them as an applicant here, so the
+                    # import picker stops showing somebody who has already
+                    # arrived. Best-effort — the student stands regardless.
+                    _clear_ucas_application_after_import(
+                        sf_origin, student_id, actor=moved_by)
+
                     logger.info(
                         "Completed sixth-form transfer for %s -> "
-                        "university student %s",
-                        sf_origin, student_id,
+                        "university student %s (journey=%s, handover "
+                        "fields=%s)",
+                        sf_origin, student_id, journey_id,
+                        ", ".join(sf_handover.included)
+                        if sf_handover else "not assembled",
                     )
-                    # Copy the medical record across. Failure here is
-                    # surfaced separately so the user sees that the
-                    # status/login/email cleanup succeeded even if the
-                    # medical mapping had a problem.
-                    try:
-                        from education_system.systems.university.domains.pastoral.domain.health.records import (
-                            sixth_form_import as _sf_med_import,
-                        )
-                        med_summary = _sf_med_import.import_from_sixth_form(
-                            uni_student_id=student_id,
-                            sf_student_id=sf_origin,
-                        )
-                        logger.info(
-                            "Sixth-form medical record imported for "
-                            "uni student %s: %s",
-                            student_id, med_summary,
-                        )
-                    except Exception as med_err:
-                        logger.exception(
-                            "Sixth-form medical-record import failed "
-                            "for sf=%s -> uni=%s "
-                            "(student status/login/email cleanup did "
-                            "succeed)", sf_origin, student_id,
-                        )
-                        messagebox.showwarning(
-                            _t('gui.learners.students.student_crud_gui.create.dialogs.sixth_form_medical_import', default="Sixth-form medical import"),
-                            "The student was transferred successfully, "
-                            "but their medical record could not be "
-                            "imported:\n\n"
-                            f"{med_err}\n\n"
-                            "You can re-enter their conditions / "
-                            "medications / allergies on the university "
-                            "health record manually.",
-                        )
+                    # Copy the medical record across — but only if the
+                    # learner consented to it. Health data is special
+                    # category, the handover spec marks it as needing
+                    # consent, and this route used to copy every condition,
+                    # medication, allergy and GP detail on the strength of
+                    # somebody clicking Save. The import seam now refuses
+                    # without a basis; ask the operator to name one rather
+                    # than deciding on their behalf. Failure is surfaced
+                    # separately so the user sees that the status/login/
+                    # email cleanup succeeded even if the medical mapping
+                    # had a problem.
+                    _import_sixth_form_medical_record(
+                        parent=dialog,
+                        uni_student_id=student_id,
+                        sf_student_id=sf_origin,
+                        actor=moved_by,
+                    )
                 except Exception as transfer_err:
                     logger.exception(
                         "Sixth-form transfer side-effects failed "
@@ -743,9 +1029,11 @@ Student Details:
                         "sixth-form side-effects could not all be "
                         "applied:\n\n"
                         f"{transfer_err}\n\n"
-                        "Please verify the sixth-form student is "
-                        "marked 'Left' and their login is "
-                        "deactivated.",
+                        "Please verify the sixth-form student is marked "
+                        "'Left' and that their sixth-form access has been "
+                        "revoked. Their sign-in account itself stays "
+                        "active — it is the same person, now a university "
+                        "student.",
                     )
 
             # Honour "Save & add another": keep the dialog open and

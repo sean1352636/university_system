@@ -8,6 +8,8 @@ from education_system.systems.university.infrastructure.sql_safety import (
     validate_table_name,
 )
 from education_system.systems.university.services.analytics.advanced_search import _globals
+from education_system.systems.university.infrastructure.database.schemas.students_table import ensure_students_table
+from education_system.systems.university.infrastructure.database.schemas.modules_table import ensure_student_modules_table
 
 
 def refresh_search_analytics_columns(cursor) -> List[str]:
@@ -47,6 +49,7 @@ def ensure_search_analytics_schema(cursor) -> List[str]:
     time_column = 'timestamp' if 'timestamp' in columns else 'search_datetime' if 'search_datetime' in columns else None
     if time_column:
         validated_time_col = validate_identifier(time_column, 'column')
+        # db-audit: ignore[DBW001] - passed through validate_identifier()
         cursor.execute(
             f"UPDATE search_analytics SET {validated_time_col} = COALESCE({validated_time_col}, datetime('now'))"
         )
@@ -109,36 +112,10 @@ def init_enhanced_database():
         print("Creating enhanced database tables...")
 
         # Create the main students table if it doesn't exist
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS students (
-            student_id TEXT PRIMARY KEY,
-            email TEXT,
-            title TEXT,
-            first_name TEXT,
-            middle_name TEXT,
-            last_name TEXT,
-            gender TEXT,
-            date_of_birth TEXT,
-            age INTEGER,
-            course TEXT,
-            registration_datetime TEXT
-        )
-        ''')
+        ensure_students_table(cursor)
 
         # Create the student_modules table if it doesn't exist
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS student_modules (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id TEXT,
-            module_type TEXT,
-            module_code TEXT,
-            module_name TEXT,
-            grade TEXT,
-            enrollment_date TEXT,
-            completion_date TEXT,
-            FOREIGN KEY (student_id) REFERENCES students (student_id)
-        )
-        ''')
+        ensure_student_modules_table(cursor)
 
         # Create enhanced tables for new features
         cursor.execute('''

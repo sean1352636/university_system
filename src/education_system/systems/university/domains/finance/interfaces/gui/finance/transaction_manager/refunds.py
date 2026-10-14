@@ -1,4 +1,7 @@
 """Refund processing GUI"""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -414,14 +417,14 @@ class RefundsMixin:
             try:
                 process_btn.config(state='disabled')
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             def _release():
                 is_processing['busy'] = False
                 try:
                     process_btn.config(state='normal')
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
             try:
                 student_id = _selected_student_id()
@@ -475,7 +478,7 @@ class RefundsMixin:
                     user = auth.get_current_user() or {}
                     username = user.get('username', 'system')
                     has_approve_permission = (
-                        auth.has_permission('approve_refunds')
+                        auth.has_permission('manage_finances')
                         if hasattr(auth, 'has_permission') else False
                     )
 
@@ -551,7 +554,7 @@ class RefundsMixin:
                 try:
                     self.update_status(f"Refund request created for £{refund_amount:.2f}")
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
                 # Successful submission — clear the form and keep button disabled
                 # to prevent accidental duplicate submissions. User can submit
                 # another refund after re-selecting/filling the form.

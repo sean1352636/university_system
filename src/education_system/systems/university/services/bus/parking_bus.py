@@ -126,7 +126,7 @@ def issue_permit(holder_id: str | int,
                 processed_by=issued_by or "parking_management",
             )
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
     return pid
 
 
@@ -172,7 +172,7 @@ def suspend_permit(permit_id: int, *,
             placed_by=suspended_by or "parking_management",
         )
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return True
 
 
@@ -276,7 +276,7 @@ def record_violation(plate: str,
                 processed_by=issued_by or "parking_management",
             )
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     # Repeat-offender check — count by plate (independent of whether
     # a permit row exists), since unpermitted plates are exactly the

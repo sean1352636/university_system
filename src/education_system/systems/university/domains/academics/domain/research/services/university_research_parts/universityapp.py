@@ -58,6 +58,17 @@ class UniversityApp:
                  bg=PALETTE["header"], fg=PALETTE["muted"],
                  font=("Segoe UI", 10)).pack(anchor="w")
 
+        # Packed before the date/user block so it lands on the far right.
+        # Label depends on hosting: a workspace tab says "Back to dashboard",
+        # a Toplevel or standalone root says "Close".
+        from education_system.platform.delivery.gui.portal_dismiss import (
+            add_dismiss_button,
+        )
+        add_dismiss_button(
+            header, self.root, on_before=self.db.close, style="ttk",
+            padx=(0, 18), pady=22,
+        )
+
         right = tk.Frame(header, bg=PALETTE["header"])
         right.pack(side="right", padx=24)
         tk.Label(right, text=datetime.now().strftime("%A, %d %B %Y"),
@@ -79,6 +90,8 @@ class UniversityApp:
         self.ip = IPTab(self.notebook, self.db, self)
         self.thesis = ThesisTab(self.notebook, self.db, self)
         self.people = PeopleTab(self.notebook, self.db, self)
+        self.reports = ReportsTab(self.notebook, self.db, self)
+        self.search = SearchTab(self.notebook, self.db, self)
 
         self.notebook.add(self.dashboard, text="  Dashboard  ")
         self.notebook.add(self.ethics, text="  Ethics  ")
@@ -86,6 +99,8 @@ class UniversityApp:
         self.notebook.add(self.ip, text="  IP & Commercialisation  ")
         self.notebook.add(self.thesis, text="  Theses & Vivas  ")
         self.notebook.add(self.people, text="  People  ")
+        self.notebook.add(self.reports, text="  Reports  ")
+        self.notebook.add(self.search, text="  Search  ")
 
         self.notebook.bind("<<NotebookTabChanged>>",
                            lambda e: self._on_tab_changed())

@@ -4,7 +4,9 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 
 import logging
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
+from tkinter import ttk, scrolledtext
+
+from ._dialogs import make_toplevel, messagebox
 
 from education_system.systems.university.infrastructure.database.db import transaction
 from education_system.systems.university.infrastructure.utils.activity_logger import log_activity

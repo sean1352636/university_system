@@ -27,6 +27,7 @@ imported from anywhere without risking a circular import.
 from __future__ import annotations
 
 import os
+import stat
 from pathlib import Path
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -47,6 +48,174 @@ PROGRAM_ROOT: Path = SRC_ROOT
 
 # Runtime state lives in one gitignored tree at the repository root (ADR 0018).
 VAR_DIR: Path = REPO_ROOT / "var"
+
+# ---------------------------------------------------------------------------
+# Backups
+# ---------------------------------------------------------------------------
+# Every backup this project writes belongs under BACKUP_DIR and nowhere else.
+# Backups used to be scattered — some under ``var/backups/<system>``, some
+# under ``var/data/university/backups/``, some in ad-hoc one-off directories —
+# which made them hard to find when they were actually needed. Route new
+# backups through ``system_backup_dir()`` or ``maintenance_backup_dir()``
+# rather than composing a path of your own.
+BACKUP_DIR: Path = VAR_DIR / "backups"
+
+#: One directory per system, holding that system's routine//automated backups.
+NURSERY_BACKUP_DIR: Path = BACKUP_DIR / "nursery"
+PRIMARY_BACKUP_DIR: Path = BACKUP_DIR / "primary"
+SECONDARY_BACKUP_DIR: Path = BACKUP_DIR / "secondary"
+SIXTH_FORM_BACKUP_DIR: Path = BACKUP_DIR / "sixth_form"
+FE_COLLEGE_BACKUP_DIR: Path = BACKUP_DIR / "fe_college"
+APPRENTICESHIPS_BACKUP_DIR: Path = BACKUP_DIR / "apprenticeships"
+PLATFORM_BACKUP_DIR: Path = BACKUP_DIR / "platform"
+
+#: One-off backups taken before a manual repair, migration or cleanup.
+MAINTENANCE_BACKUP_DIR: Path = BACKUP_DIR / "maintenance"
+
+# Retention for the maintenance tree. Nothing pruned these until 2026-08-23,
+# by which point 31 snapshots of `student_records.db` — all holding the same 24
+# students, differing only in which views a campaign had added — accounted for
+# 466MB of a 667MB backup tree. One campaign wrote three identical copies inside
+# two minutes. The defaults keep every run for MAINTENANCE_BACKUP_MAX_AGE_DAYS,
+# then collapse each campaign to its newest MAINTENANCE_BACKUP_KEEP runs.
+MAINTENANCE_BACKUP_KEEP: int = 3
+MAINTENANCE_BACKUP_MAX_AGE_DAYS: int = 30
+
+# A run directory is only ever a prune candidate if its name starts with a date
+# stamp. That deliberately excludes hand-named drops such as `loose/`, so a
+# human-curated backup is never removed by an automated sweep.
+_MAINTENANCE_RUN_RE = r"^(\d{8})(?:_(\d{6}))?"
+
+
+def system_backup_dir(system_key: str, category: str | None = None) -> Path:
+    """Return the backup directory for *system_key*, optionally by category.
+
+    ``system_backup_dir("university", "database")`` ->
+    ``var/backups/university/database``. Unknown keys still resolve under
+    :data:`BACKUP_DIR` rather than escaping the tree.
+    """
+    base = BACKUP_DIR / system_key
+    return base / category if category else base
+
+
+def _maintenance_run_sort_key(run: Path) -> tuple[float, str]:
+    """Order a run directory by the date in its name, falling back to mtime.
+
+    Names are not uniformly ``%Y%m%d_%H%M%S``; the tree also holds forms like
+    ``20260815_pre_seed`` and ``20260812_110613_pre_restore``. Parsing only the
+    leading stamp orders those correctly, and mtime breaks ties between runs
+    that share a date but carry no time.
+    """
+    import re
+    from datetime import datetime as _dt
+
+    try:
+        mtime = run.stat().st_mtime
+    except OSError:
+        mtime = 0.0
+    match = re.match(_MAINTENANCE_RUN_RE, run.name)
+    if not match:
+        return (mtime, run.name)
+    day, time_part = match.group(1), match.group(2)
+    try:
+        parsed = _dt.strptime(day + (time_part or "000000"), "%Y%m%d%H%M%S")
+    except ValueError:
+        return (mtime, run.name)
+    # A dateless name sorts at the start of its day; mtime separates same-day runs.
+    return (parsed.timestamp() if time_part else mtime, run.name)
+
+
+def prune_maintenance_backups(
+    label: str,
+    *,
+    keep: int = MAINTENANCE_BACKUP_KEEP,
+    max_age_days: int = MAINTENANCE_BACKUP_MAX_AGE_DAYS,
+    exclude: Path | None = None,
+    dry_run: bool = False,
+) -> list[Path]:
+    """Delete superseded run directories under ``maintenance/<label>``.
+
+    The newest *keep* runs are always retained. Of what remains, a run is
+    deleted once it is older than *max_age_days*. Pass ``max_age_days=0`` for a
+    strict keep-the-newest-N rule with no age reprieve.
+
+    Only immediate subdirectories whose name begins with a date stamp are
+    considered, so loose files sitting directly in the label directory and
+    hand-named drops are left alone. *exclude* is never removed — callers pass
+    the run they are about to write into.
+
+    Returns the directories removed, or the ones that would be removed when
+    *dry_run* is set. Missing labels return ``[]`` rather than raising.
+    """
+    import shutil
+    from datetime import datetime as _dt, timedelta as _td
+
+    # Validate the label before touching the filesystem: a label that escapes
+    # the tree must raise, not quietly resolve to nothing because the traversal
+    # target happens not to exist.
+    if (
+        not label
+        or label in (".", "..")
+        or "/" in label
+        or "\\" in label
+        or Path(label).is_absolute()
+    ):
+        raise ValueError(f"maintenance label escapes the backup tree: {label!r}")
+
+    base = MAINTENANCE_BACKUP_DIR / label
+    if not base.is_dir():
+        return []
+
+    import re
+    runs = sorted(
+        (p for p in base.iterdir() if p.is_dir() and re.match(_MAINTENANCE_RUN_RE, p.name)),
+        key=_maintenance_run_sort_key,
+        reverse=True,
+    )
+    keep = max(keep, 0)
+    candidates = runs[keep:]
+
+    if max_age_days > 0:
+        cutoff = (_dt.now() - _td(days=max_age_days)).timestamp()
+        candidates = [p for p in candidates if _maintenance_run_sort_key(p)[0] < cutoff]
+
+    excluded = exclude.resolve() if exclude is not None else None
+    removed: list[Path] = []
+    for run in candidates:
+        if excluded is not None and run.resolve() == excluded:
+            continue
+        if not dry_run:
+            shutil.rmtree(run)
+        removed.append(run)
+    return removed
+
+
+def maintenance_backup_dir(
+    label: str,
+    timestamp: str | None = None,
+    *,
+    create: bool = False,
+    prune: bool | None = None,
+) -> Path:
+    """Return ``var/backups/maintenance/<label>/<timestamp>``.
+
+    For the pre-change safety copies taken by repair scripts and one-off
+    tooling. By default this only computes a path — nothing is created and
+    nothing is deleted, so it stays safe to call just to locate a backup.
+
+    Pass ``create=True`` to make the directory and apply the retention rule in
+    :func:`prune_maintenance_backups`, which is how a script taking a fresh
+    backup should call it. Pruning follows *create* unless *prune* overrides it;
+    the run being created is never itself a prune candidate.
+    """
+    from datetime import datetime as _dt
+    stamp = timestamp or _dt.now().strftime("%Y%m%d_%H%M%S")
+    target = MAINTENANCE_BACKUP_DIR / label / stamp
+    if create:
+        target.mkdir(parents=True, exist_ok=True)
+    if prune if prune is not None else create:
+        prune_maintenance_backups(label, exclude=target)
+    return target
 
 # Package roots, formerly derived from each module's own ``__file__``.
 PLATFORM_ROOT: Path = EDUCATION_SYSTEM_ROOT / "platform"
@@ -69,6 +238,42 @@ def _ensure(dir_path: Path) -> Path:
     """Create *dir_path* (and parents) if it does not already exist."""
     dir_path.mkdir(parents=True, exist_ok=True)
     return dir_path
+
+
+# Config files hold credentials — an SMTP password, and historically an API
+# key. They are written by a dozen different ``save_config`` implementations,
+# each using a plain ``json.dump`` that inherits the process umask (0644 on a
+# typical host), so hardening any single writer would not hold. Sweeping the
+# directories at bootstrap covers every writer, including a GUI that rewrites
+# a file later in the session.
+_CONFIG_FILE_MODE = 0o600
+_CONFIG_DIR_MODE = 0o700
+
+
+def harden_config_permissions(*config_dirs: Path) -> list[Path]:
+    """Restrict config files to owner-only access. Returns what changed.
+
+    Best-effort: a permission change can fail on a mounted volume or a
+    filesystem without POSIX modes, and that must not stop the application
+    from starting.
+    """
+    changed: list[Path] = []
+    for directory in config_dirs:
+        try:
+            if not directory.is_dir():
+                continue
+            if stat.S_IMODE(directory.stat().st_mode) != _CONFIG_DIR_MODE:
+                directory.chmod(_CONFIG_DIR_MODE)
+                changed.append(directory)
+            for entry in directory.iterdir():
+                if not entry.is_file():
+                    continue
+                if stat.S_IMODE(entry.stat().st_mode) != _CONFIG_FILE_MODE:
+                    entry.chmod(_CONFIG_FILE_MODE)
+                    changed.append(entry)
+        except OSError:
+            continue
+    return changed
 
 
 def _university_resolve_email_config_file() -> Path:
@@ -895,7 +1100,7 @@ UNIVERSITY_IMPORT_HISTORY_FILE: Path = UNIVERSITY_DATA_DIR / "import_history.jso
 UNIVERSITY_LOG_DIR: Path = VAR_DIR / "logs" / "university"
 
 # Backup paths - organised by type under a single top-level directory
-UNIVERSITY_BACKUP_DIR: Path = VAR_DIR / "backups" / "university"
+UNIVERSITY_BACKUP_DIR: Path = BACKUP_DIR / "university"
 UNIVERSITY_BACKUP_DATABASE_DIR: Path = UNIVERSITY_BACKUP_DIR / "database"
 UNIVERSITY_BACKUP_FILES_DIR: Path = UNIVERSITY_BACKUP_DIR / "files"
 UNIVERSITY_BACKUP_ATTENDANCE_DIR: Path = UNIVERSITY_BACKUP_DIR / "attendance"
@@ -905,6 +1110,8 @@ UNIVERSITY_BACKUP_HEALTH_DIR: Path = UNIVERSITY_BACKUP_DIR / "health"
 UNIVERSITY_BACKUP_SETTINGS_DIR: Path = UNIVERSITY_BACKUP_DIR / "settings"
 UNIVERSITY_BACKUP_CALENDAR_DIR: Path = UNIVERSITY_BACKUP_DIR / "calendar"
 UNIVERSITY_BACKUP_SUBMISSIONS_DIR: Path = UNIVERSITY_BACKUP_DIR / "submissions"
+UNIVERSITY_BACKUP_SAFETY_DIR: Path = UNIVERSITY_BACKUP_DIR / "safety"
+UNIVERSITY_BACKUP_ASSIGNMENTS_DIR: Path = UNIVERSITY_BACKUP_DIR / "assignments"
 # Remote backup location and archive member names are centralized here so
 # callers do not embed storage-layout literals.
 UNIVERSITY_REMOTE_BACKUP_PATH: str = "/backups"
@@ -1110,6 +1317,11 @@ APPRENTICESHIPS_EVIDENCE_DIR: Path = APPRENTICESHIPS_DATA_DIR / "evidence"
 # Generated funding-audit evidence packs (one ZIP/PDF per export).
 APPRENTICESHIPS_EXPORTS_DIR: Path = APPRENTICESHIPS_DATA_DIR / "exports"
 
+# Uploaded record documents (agreements, ID, certificates, EPA paperwork).
+# Metadata rows live in the DB (``documents``); the bytes live here under
+# generated names — never the uploader's filename. Runtime user data.
+APPRENTICESHIPS_DOCUMENTS_DIR: Path = APPRENTICESHIPS_DATA_DIR / "documents"
+
 # ── Individual files ────────────────────────────────────────────────
 # One physical SQLite file, many logical names — the tables are heavily
 # joined (an apprentice's OTJ hours, reviews, portfolio and EPA record
@@ -1213,6 +1425,7 @@ def ensure_platform_directories() -> None:
     """Create the runtime directory structure. Safe to call repeatedly."""
     for d in (PLATFORM_DATA_DIR, PLATFORM_DB_FILES_DIR, PLATFORM_CONFIG_DIR, PLATFORM_DOCUMENTS_DIR, PLATFORM_LOGS_DIR):
         d.mkdir(parents=True, exist_ok=True)
+    harden_config_permissions(PLATFORM_CONFIG_DIR)
 
 
 def ensure_nursery_directories() -> None:
@@ -1246,6 +1459,7 @@ def ensure_apprenticeships_directories() -> None:
     APPRENTICESHIPS_DATA_DIR.mkdir(parents=True, exist_ok=True)
     APPRENTICESHIPS_EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
     APPRENTICESHIPS_EXPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    APPRENTICESHIPS_DOCUMENTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def ensure_university_directories() -> None:
@@ -1258,6 +1472,8 @@ def ensure_university_directories() -> None:
     _ensure(UNIVERSITY_DATA_DIR)
     _ensure(UNIVERSITY_DB_DIR)
     _ensure(UNIVERSITY_LOG_DIR)
+    _ensure(UNIVERSITY_CONFIG_DIR)
+    harden_config_permissions(UNIVERSITY_CONFIG_DIR)
     # Backup subdirectories
     _ensure(UNIVERSITY_BACKUP_DATABASE_DIR)
     _ensure(UNIVERSITY_BACKUP_FILES_DIR)
@@ -1267,6 +1483,9 @@ def ensure_university_directories() -> None:
     _ensure(UNIVERSITY_BACKUP_HEALTH_DIR)
     _ensure(UNIVERSITY_BACKUP_SETTINGS_DIR)
     _ensure(UNIVERSITY_BACKUP_CALENDAR_DIR)
+    _ensure(UNIVERSITY_BACKUP_SUBMISSIONS_DIR)
+    _ensure(UNIVERSITY_BACKUP_SAFETY_DIR)
+    _ensure(UNIVERSITY_BACKUP_ASSIGNMENTS_DIR)
     # Export subdirectories
     _ensure(UNIVERSITY_EXPORTS_DATABASE_DIR)
     _ensure(UNIVERSITY_EXPORTS_PDF_DIR)
@@ -1328,6 +1547,7 @@ __all__ = [
     "APPRENTICESHIPS_COMPLIANCE_DB",
     "APPRENTICESHIPS_DATA_DIR",
     "APPRENTICESHIPS_DB",
+    "APPRENTICESHIPS_DOCUMENTS_DIR",
     "APPRENTICESHIPS_EMAIL_TEMPLATES_DIR",
     "APPRENTICESHIPS_EMPLOYERS_DB",
     "APPRENTICESHIPS_EPA_DB",
@@ -1409,11 +1629,11 @@ __all__ = [
     "PRIMARY_COMPLIANCE_DB",
     "PRIMARY_CPD_DB",
     "PRIMARY_DATA_DIR",
-    "PRIMARY_EMAIL_TEMPLATES_DIR",
     "PRIMARY_DATA_EXPORT_DB",
     "PRIMARY_DBS_CHECKS_DB",
     "PRIMARY_DEPARTMENTS_DB",
     "PRIMARY_DOCUMENT_HUB_DB",
+    "PRIMARY_EMAIL_TEMPLATES_DIR",
     "PRIMARY_ENROLMENT_DB",
     "PRIMARY_EQUALITY_DIVERSITY_DB",
     "PRIMARY_EXPENSE_CLAIMS_DB",
@@ -1450,7 +1670,6 @@ __all__ = [
     "PRIMARY_VISITORS_DB",
     "PROGRAM_ROOT",
     "REPO_ROOT",
-    "SRC_ROOT",
     "SECONDARY_ACADEMIC_YEAR_DB",
     "SECONDARY_ACTIVITY_FEED_DB",
     "SECONDARY_ADMISSIONS_DB",
@@ -1465,11 +1684,11 @@ __all__ = [
     "SECONDARY_COMPLIANCE_DB",
     "SECONDARY_CPD_DB",
     "SECONDARY_DATA_DIR",
-    "SECONDARY_EMAIL_TEMPLATES_DIR",
     "SECONDARY_DATA_EXPORT_DB",
     "SECONDARY_DBS_CHECKS_DB",
     "SECONDARY_DEPARTMENTS_DB",
     "SECONDARY_DOCUMENT_HUB_DB",
+    "SECONDARY_EMAIL_TEMPLATES_DIR",
     "SECONDARY_ENROLMENT_DB",
     "SECONDARY_EQUALITY_DIVERSITY_DB",
     "SECONDARY_EXPENSE_CLAIMS_DB",
@@ -1624,6 +1843,7 @@ __all__ = [
     "SIXTH_FORM_VISITORS_DB",
     "SIXTH_FORM_WELLBEING_DB",
     "SIXTH_FORM_WORK_EXPERIENCE_DB",
+    "SRC_ROOT",
     "SYSTEM_DB_PATHS",
     "SYSTEM_LABELS",
     "SYSTEM_ORDER",
@@ -1631,8 +1851,24 @@ __all__ = [
     "UNIVERSITY_ANALYTICS_PLOTS_DIR",
     "UNIVERSITY_ANALYTICS_REPORTS_DIR",
     "UNIVERSITY_API_SERVER_CONFIG_FILE",
+    "harden_config_permissions",
     "UNIVERSITY_ASSETS_DIR",
     "UNIVERSITY_ASSIGNMENT_TEMPLATES_DIR",
+    "APPRENTICESHIPS_BACKUP_DIR",
+    "BACKUP_DIR",
+    "FE_COLLEGE_BACKUP_DIR",
+    "MAINTENANCE_BACKUP_DIR",
+    "MAINTENANCE_BACKUP_KEEP",
+    "MAINTENANCE_BACKUP_MAX_AGE_DAYS",
+    "NURSERY_BACKUP_DIR",
+    "PLATFORM_BACKUP_DIR",
+    "PRIMARY_BACKUP_DIR",
+    "SECONDARY_BACKUP_DIR",
+    "SIXTH_FORM_BACKUP_DIR",
+    "maintenance_backup_dir",
+    "prune_maintenance_backups",
+    "system_backup_dir",
+    "UNIVERSITY_BACKUP_ASSIGNMENTS_DIR",
     "UNIVERSITY_BACKUP_ATTENDANCE_DIR",
     "UNIVERSITY_BACKUP_CALENDAR_DIR",
     "UNIVERSITY_BACKUP_DATABASE_DIR",
@@ -1642,6 +1878,7 @@ __all__ = [
     "UNIVERSITY_BACKUP_HEALTH_DIR",
     "UNIVERSITY_BACKUP_LIBRARY_DIR",
     "UNIVERSITY_BACKUP_METADATA_FILE",
+    "UNIVERSITY_BACKUP_SAFETY_DIR",
     "UNIVERSITY_BACKUP_SETTINGS_DIR",
     "UNIVERSITY_BACKUP_SUBMISSIONS_DIR",
     "UNIVERSITY_BACKUP_TEMPLATES_DIR",

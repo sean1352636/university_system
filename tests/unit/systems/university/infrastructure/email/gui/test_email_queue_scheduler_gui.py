@@ -17,7 +17,7 @@ from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime, timedelta
 
 # Import the module under test
-from education_system.systems.university.interfaces.gui.shell.email import email_queue_scheduler_gui
+from education_system.systems.university.shell.gui.email import email_queue_scheduler_gui
 
 
 @pytest.fixture(autouse=True)
@@ -166,7 +166,7 @@ class TestWorkerControlTab:
     def test_start_workers_button(self, root_window, temp_db):
         """Test start workers functionality"""
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
-            with patch('education_system.systems.university.interfaces.gui.shell.email.email_queue_scheduler_gui.start_email_workers', return_value=True):
+            with patch('education_system.systems.university.shell.gui.email.email_queue_scheduler_gui.start_email_workers', return_value=True):
                 try:
                     gui = email_queue_scheduler_gui.EmailQueueSchedulerGUI(parent=root_window)
                     with patch('tkinter.messagebox.showinfo') as mock_info:
@@ -179,7 +179,7 @@ class TestWorkerControlTab:
     def test_stop_workers_button(self, root_window, temp_db):
         """Test stop workers functionality"""
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
-            with patch('education_system.systems.university.interfaces.gui.shell.email.email_queue_scheduler_gui.stop_email_workers', return_value=True):
+            with patch('education_system.systems.university.shell.gui.email.email_queue_scheduler_gui.stop_email_workers', return_value=True):
                 try:
                     gui = email_queue_scheduler_gui.EmailQueueSchedulerGUI(parent=root_window)
                     with patch('tkinter.messagebox.showinfo') as mock_info:
@@ -191,7 +191,7 @@ class TestWorkerControlTab:
     def test_refresh_status_button(self, root_window, temp_db):
         """Test refresh status functionality"""
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
-            with patch('education_system.systems.university.interfaces.gui.shell.email.email_queue_scheduler_gui.worker_threads', []):
+            with patch('education_system.systems.university.shell.gui.email.email_queue_scheduler_gui.worker_threads', []):
                 try:
                     gui = email_queue_scheduler_gui.EmailQueueSchedulerGUI(parent=root_window)
                     gui.refresh_status()
@@ -205,7 +205,7 @@ class TestQueueEmailTab:
     def test_queue_direct_email(self, root_window, temp_db):
         """Test queueing direct email"""
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
-            with patch('education_system.systems.university.interfaces.gui.shell.email.email_queue_scheduler_gui.queue_email', return_value=True):
+            with patch('education_system.systems.university.shell.gui.email.email_queue_scheduler_gui.queue_email', return_value=True):
                 try:
                     gui = email_queue_scheduler_gui.EmailQueueSchedulerGUI(parent=root_window)
 
@@ -237,7 +237,7 @@ class TestQueueEmailTab:
     def test_queue_template_email(self, root_window, temp_db):
         """Test queueing template email"""
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
-            with patch('education_system.systems.university.interfaces.gui.shell.email.email_queue_scheduler_gui.queue_template_email', return_value=True):
+            with patch('education_system.systems.university.shell.gui.email.email_queue_scheduler_gui.queue_template_email', return_value=True):
                 try:
                     gui = email_queue_scheduler_gui.EmailQueueSchedulerGUI(parent=root_window)
 
@@ -258,7 +258,7 @@ class TestScheduleEmailTab:
     def test_schedule_emails(self, root_window, temp_db):
         """Test scheduling emails"""
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
-            with patch('education_system.systems.university.interfaces.gui.shell.email.email_queue_scheduler_gui.schedule_send', return_value=True):
+            with patch('education_system.systems.university.shell.gui.email.email_queue_scheduler_gui.schedule_send', return_value=True):
                 try:
                     gui = email_queue_scheduler_gui.EmailQueueSchedulerGUI(parent=root_window)
 
@@ -290,7 +290,7 @@ class TestScheduleEmailTab:
     def test_process_due_emails(self, root_window, temp_db):
         """Test processing due scheduled emails"""
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
-            with patch('education_system.systems.university.interfaces.gui.shell.email.email_queue_scheduler_gui.process_scheduled_emails', return_value=5):
+            with patch('education_system.systems.university.shell.gui.email.email_queue_scheduler_gui.process_scheduled_emails', return_value=5):
                 try:
                     gui = email_queue_scheduler_gui.EmailQueueSchedulerGUI(parent=root_window)
 
@@ -316,8 +316,8 @@ class TestMonitorTab:
     def test_refresh_monitor(self, root_window, temp_db):
         """Test refreshing monitor information"""
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
-            with patch('education_system.systems.university.interfaces.gui.shell.email.email_queue_scheduler_gui.email_queue') as mock_queue:
-                with patch('education_system.systems.university.interfaces.gui.shell.email.email_queue_scheduler_gui.worker_threads', []):
+            with patch('education_system.systems.university.shell.gui.email.email_queue_scheduler_gui.email_queue') as mock_queue:
+                with patch('education_system.systems.university.shell.gui.email.email_queue_scheduler_gui.worker_threads', []):
                     mock_queue.qsize.return_value = 3
 
                     try:
@@ -333,7 +333,7 @@ class TestUtilitiesTab:
     def test_wait_for_queue(self, root_window, temp_db):
         """Test wait for queue utility"""
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
-            with patch('education_system.systems.university.interfaces.gui.shell.email.email_queue_scheduler_gui.wait_for_email_queue', return_value=True):
+            with patch('education_system.systems.university.shell.gui.email.email_queue_scheduler_gui.wait_for_email_queue', return_value=True):
                 try:
                     gui = email_queue_scheduler_gui.EmailQueueSchedulerGUI(parent=root_window)
                     # This would normally block, so we won't actually call it
@@ -345,7 +345,7 @@ class TestUtilitiesTab:
     def test_fix_inbox_display(self, root_window, temp_db):
         """Test fix inbox display utility"""
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
-            with patch('education_system.systems.university.interfaces.gui.shell.email.email_queue_scheduler_gui.fix_inbox_display_issue', return_value=True):
+            with patch('education_system.systems.university.shell.gui.email.email_queue_scheduler_gui.fix_inbox_display_issue', return_value=True):
                 try:
                     gui = email_queue_scheduler_gui.EmailQueueSchedulerGUI(parent=root_window)
 
@@ -359,7 +359,7 @@ class TestUtilitiesTab:
     def test_update_email_status(self, root_window, temp_db):
         """Test update email status utility"""
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
-            with patch('education_system.systems.university.interfaces.gui.shell.email.email_queue_scheduler_gui.update_scheduled_email_status', return_value=True):
+            with patch('education_system.systems.university.shell.gui.email.email_queue_scheduler_gui.update_scheduled_email_status', return_value=True):
                 try:
                     gui = email_queue_scheduler_gui.EmailQueueSchedulerGUI(parent=root_window)
 
@@ -379,7 +379,7 @@ class TestTemplateLoading:
     def test_load_templates(self, root_window, temp_db):
         """Test loading email templates"""
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
-            with patch('education_system.systems.university.interfaces.gui.shell.email.email_queue_scheduler_gui.list_templates', return_value=['test_template', 'welcome']):
+            with patch('education_system.systems.university.shell.gui.email.email_queue_scheduler_gui.list_templates', return_value=['test_template', 'welcome']):
                 try:
                     gui = email_queue_scheduler_gui.EmailQueueSchedulerGUI(parent=root_window)
                     gui.load_templates()
@@ -390,7 +390,7 @@ class TestTemplateLoading:
     def test_load_schedule_templates(self, root_window, temp_db):
         """Test loading templates for scheduler"""
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
-            with patch('education_system.systems.university.interfaces.gui.shell.email.email_queue_scheduler_gui.list_templates', return_value=['test_template', 'welcome']):
+            with patch('education_system.systems.university.shell.gui.email.email_queue_scheduler_gui.list_templates', return_value=['test_template', 'welcome']):
                 try:
                     gui = email_queue_scheduler_gui.EmailQueueSchedulerGUI(parent=root_window)
                     gui.load_schedule_templates()
@@ -404,7 +404,7 @@ class TestErrorHandling:
     def test_queue_email_smtp_error(self, root_window, temp_db):
         """Test handling SMTP error when queueing email"""
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
-            with patch('education_system.systems.university.interfaces.gui.shell.email.email_queue_scheduler_gui.queue_email',
+            with patch('education_system.systems.university.shell.gui.email.email_queue_scheduler_gui.queue_email',
                        side_effect=Exception('SMTP error')):
                 try:
                     gui = email_queue_scheduler_gui.EmailQueueSchedulerGUI(parent=root_window)
@@ -511,8 +511,8 @@ class TestIntegration:
     def test_worker_lifecycle(self, root_window, temp_db):
         """Test worker start/stop lifecycle"""
         with patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
-            with patch('education_system.systems.university.interfaces.gui.shell.email.email_queue_scheduler_gui.start_email_workers', return_value=True):
-                with patch('education_system.systems.university.interfaces.gui.shell.email.email_queue_scheduler_gui.stop_email_workers', return_value=True):
+            with patch('education_system.systems.university.shell.gui.email.email_queue_scheduler_gui.start_email_workers', return_value=True):
+                with patch('education_system.systems.university.shell.gui.email.email_queue_scheduler_gui.stop_email_workers', return_value=True):
                     try:
                         gui = email_queue_scheduler_gui.EmailQueueSchedulerGUI(parent=root_window)
 

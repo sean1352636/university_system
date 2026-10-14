@@ -100,21 +100,25 @@ class AdminToolsMixin:
                             errors.append(f"Row {i}: missing required field(s)")
                             continue
 
-                        # Upsert student
+                        # Upsert student. This block named four things the
+                        # students table does not have: an ``id`` column (the
+                        # key is student_id), ``email`` (it is email_address),
+                        # ``updated_at`` (there is no such column) and
+                        # ``created_at`` (it is created_date).
                         cursor.execute(
-                            'SELECT id FROM students WHERE student_id = ?', (sid,))
+                            'SELECT student_id FROM students WHERE student_id = ?', (sid,))
                         existing = cursor.fetchone()
 
                         if existing:
                             cursor.execute('''
                                 UPDATE students
-                                SET first_name = ?, last_name = ?, email = ?, updated_at = ?
+                                SET first_name = ?, last_name = ?, email_address = ?
                                 WHERE student_id = ?
-                            ''', (fname, lname, email, timestamp, sid))
+                            ''', (fname, lname, email, sid))
                             updated += 1
                         else:
                             cursor.execute('''
-                                INSERT INTO students (student_id, first_name, last_name, email, created_at)
+                                INSERT INTO students (student_id, first_name, last_name, email_address, created_date)
                                 VALUES (?, ?, ?, ?, ?)
                             ''', (sid, fname, lname, email, timestamp))
                             inserted += 1
@@ -126,7 +130,7 @@ class AdminToolsMixin:
                         ''', (sid, module))
                         if not cursor.fetchone():
                             cursor.execute('''
-                                INSERT INTO student_modules (student_id, module_code, enrolled_at)
+                                INSERT INTO student_modules (student_id, module_code, enrollment_date)
                                 VALUES (?, ?, ?)
                             ''', (sid, module, timestamp))
                             enrolled += 1

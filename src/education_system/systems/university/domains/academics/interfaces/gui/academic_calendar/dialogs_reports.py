@@ -3,13 +3,142 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 import html
 import logging
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext, filedialog, simpledialog
+from tkinter import ttk, scrolledtext, filedialog, simpledialog
 from datetime import datetime, timedelta
 from typing import Any, Optional, List, Dict, Tuple
 from education_system.systems.university.infrastructure.i18n import get_text as _
 from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar.utils import safe_grab_set
+# Message boxes parented to the window that raised them, not the main
+# GUI — see _dialogs.
+from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui import report_widgets as _report
 
 gui_logger = logging.getLogger(__name__)
+
+#: Academic calendar events. They live in unified_events tagged
+#: source_type 'academic_calendar'; the legacy academic_calendar_events table
+#: is retired and empty, which is why the reports and the Event Distribution
+#: chart that still read it all showed 0.
+_CALENDAR_EVENTS = (
+    "(SELECT source_event_id AS id, title AS name, event_date AS date, "
+    "start_datetime AS date_start, end_datetime AS date_end, description, "
+    "event_type, created_at AS date_added, location, trip_id "
+    "FROM unified_events WHERE source_type = 'academic_calendar')"
+)
+
+#: House window size; window_sizing clamps it to smaller screens.
+_WINDOW_SIZE = "1400x900"
+_WINDOW_MIN = (1200, 800)
+
+
+def _center(window):
+    """Centre *window* on screen, never at a negative (off-screen) position."""
+    window.update_idletasks()
+    x = max(0, (window.winfo_screenwidth() - window.winfo_width()) // 2)
+    y = max(0, (window.winfo_screenheight() - window.winfo_height()) // 2)
+    window.geometry(f"+{x}+{y}")
+
+
+def _merge_types(rows, key='event_type', count='count'):
+    """Fold event types that differ only by case or spacing ('academic' / 'Academic').
+
+    Returns ``[{'label', 'count', 'rows'}, ...]`` largest first; the label is
+    the spelling carrying the most events.
+    """
+    merged = {}
+    for row in rows:
+        row = dict(row)
+        raw = (row.get(key) or '').strip() or 'Unspecified'
+        entry = merged.setdefault(raw.lower(), {'label': raw, 'count': 0, 'best': -1, 'rows': []})
+        n = row.get(count) or 0
+        if n > entry['best']:
+            entry['label'], entry['best'] = raw, n
+        entry['count'] += n
+        entry['rows'].append(row)
+    return sorted(merged.values(), key=lambda e: (-e['count'], e['label'].lower()))
+
+
+def _month_label(month):
+    try:
+        return datetime.strptime(month, "%Y-%m").strftime("%B %Y")
+    except (ValueError, TypeError):
+        return month or "Undated"
+
+
+def _trim(text, limit):
+    text = ' '.join(str(text or '').split())
+    return text if len(text) <= limit else text[:limit - 1] + '…'
+
+
+def _event_date(event):
+    return (event.get('date') or event.get('date_start') or '')[:10]
+
+
+def _bar_list(parent, items, colour=_report.ACCENT):
+    """Labelled proportion bars for ``[(label, value), ...]`` — no matplotlib needed."""
+    body = tk.Frame(parent, bg=_report.CARD)
+    body.pack(fill=tk.X)
+    body.columnconfigure(1, weight=1)
+    top = max((value for _label, value in items), default=0) or 1
+    for row, (label, value) in enumerate(items):
+        tk.Label(body, text=_trim(label, 34), font=(_report.FONT, 9), bg=_report.CARD,
+                 fg=_report.HEADER, anchor="w", width=30).grid(row=row, column=0, sticky="w", pady=2)
+        track = tk.Canvas(body, height=16, bg="#f1f3f5", highlightthickness=0)
+        track.grid(row=row, column=1, sticky="ew", padx=8, pady=2)
+
+        def _draw(event, canvas=track, share=value / top):
+            canvas.delete("bar")
+            if share:
+                canvas.create_rectangle(0, 0, max(2, int(event.width * share)), 16,
+                                        fill=colour, width=0, tags="bar")
+        track.bind("<Configure>", _draw)
+        tk.Label(body, text=f"{value:,}", font=(_report.FONT, 9, "bold"), bg=_report.CARD,
+                 fg=_report.VALUE, anchor="e", width=10).grid(row=row, column=2, sticky="e")
+    return body
+
+
+def _table_block(parent, heading, columns, rows, widths=None):
+    """A headed table; an empty one says so instead of showing blank rows."""
+    if not rows:
+        body = _report.card(parent, heading, accent=_report.MUTED)
+        tk.Label(body, text="Nothing recorded.", font=(_report.FONT, 9),
+                 bg=_report.CARD, fg=_report.MUTED).pack(anchor="w")
+        return None
+    tk.Label(parent, text=heading, font=(_report.FONT, 10, "bold"), bg=_report.BG,
+             fg=_report.HEADER, anchor="w").pack(fill=tk.X, padx=12, pady=(10, 0))
+    return _report.table(parent, columns, rows, widths=widths, height=15)
+
+
+def _render_sections(surface, title, sections):
+    """Draw a structured report.
+
+    *sections* is ``{'subtitle': str, 'stats': [(value, label), ...],
+    'blocks': [...]}``, each block one of ``('kv', title, pairs)``,
+    ``('bars', title, [(label, value), ...])``,
+    ``('table', title, columns, rows[, widths])`` or ``('note', title, text)``.
+    """
+    _report.banner(surface, title, sections.get('subtitle', ''))
+    if sections.get('stats'):
+        _report.stat_strip(surface, sections['stats'])
+    for block in sections.get('blocks', []):
+        kind = block[0]
+        if kind == 'kv':
+            _report.kv_grid(_report.card(surface, block[1]), block[2])
+        elif kind == 'bars':
+            body = _report.card(surface, block[1])
+            if block[2]:
+                _bar_list(body, block[2])
+            else:
+                tk.Label(body, text="Nothing recorded.", font=(_report.FONT, 9),
+                         bg=_report.CARD, fg=_report.MUTED).pack(anchor="w")
+        elif kind == 'table':
+            _table_block(surface, block[1], block[2], block[3],
+                         block[4] if len(block) > 4 else None)
+        elif kind == 'note':
+            body = _report.card(surface, block[1], accent=_report.MUTED)
+            tk.Label(body, text=block[2], font=(_report.FONT, 9), bg=_report.CARD,
+                     fg=_report.VALUE, anchor="w", justify="left",
+                     wraplength=900).pack(anchor="w")
 
 class ReportsDialog:
     """Dialog for generating reports with larger window"""
@@ -20,8 +149,8 @@ class ReportsDialog:
 
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(_("academic_calendar.dialogs.reports.title"))
-        self.dialog.geometry("750x550")
-        self.dialog.minsize(600, 400)
+        self.dialog.geometry(_WINDOW_SIZE)
+        self.dialog.minsize(*_WINDOW_MIN)
         self.dialog.transient(parent)
         safe_grab_set(self.dialog, parent)
 
@@ -55,7 +184,7 @@ class ReportsDialog:
 
             ttk.Button(report_frame, text=report_name, width=22,
                       command=command).pack(side=tk.LEFT)
-            ttk.Label(report_frame, text=description, wraplength=400).pack(side=tk.LEFT, padx=(15, 0))
+            ttk.Label(report_frame, text=description, wraplength=950).pack(side=tk.LEFT, padx=(15, 0))
 
         # Quick export section
         export_frame = ttk.LabelFrame(main_frame, text=_("academic_calendar.dialogs.reports.quick_export"), padding=10)
@@ -83,31 +212,40 @@ class ReportsDialog:
 
             monthly_data = {}
             for event in events:
-                date_str = event.get('date') or event.get('date_start', '')
+                date_str = _event_date(event)
                 if date_str:
-                    month_key = date_str[:7]
-                    if month_key not in monthly_data:
-                        monthly_data[month_key] = []
-                    monthly_data[month_key].append(event)
+                    monthly_data.setdefault(date_str[:7], []).append(event)
+            months = sorted(monthly_data)
 
             report = "MONTHLY OVERVIEW\n" + "="*60 + "\n\n"
-
-            for month in sorted(monthly_data.keys()):
-                try:
-                    month_label = datetime.strptime(month, "%Y-%m").strftime("%B %Y")
-                except (ValueError, TypeError):
-                    month_label = month
-
-                report += f"{month_label} ({len(monthly_data[month])} events)\n"
+            for month in months:
+                report += f"{_month_label(month)} ({len(monthly_data[month])} events)\n"
                 report += "-" * 40 + "\n"
-                for event in monthly_data[month][:5]:
-                    event_date = event.get('date') or event.get('date_start', '')
-                    report += f"  {event_date}: {event.get('name', '')}\n"
-                if len(monthly_data[month]) > 5:
-                    report += f"  ... and {len(monthly_data[month]) - 5} more\n"
+                for event in monthly_data[month]:
+                    report += f"  {_event_date(event)}: {event.get('name') or ''}\n"
                 report += "\n"
 
-            ReportViewDialog(self.dialog, "Monthly Overview", report)
+            busiest = max(months, key=lambda m: len(monthly_data[m]), default=None)
+            blocks = [('bars', "Events per month",
+                       [(_month_label(m), len(monthly_data[m])) for m in months])]
+            for month in months:
+                rows = [(_event_date(e), e.get('name') or '', e.get('event_type') or '',
+                         e.get('location') or '')
+                        for e in sorted(monthly_data[month], key=_event_date)]
+                blocks.append(('table', f"{_month_label(month)} — {len(rows):,} events",
+                               ("Date", "Event", "Type", "Location"), rows,
+                               {"Date": 110, "Event": 520, "Type": 180, "Location": 200}))
+            sections = {
+                'subtitle': f"{_month_label(start_date[:7])} to {_month_label(end_date[:7])}",
+                'stats': [
+                    (f"{len(events):,}", "Events"),
+                    (len(months), "Months with events"),
+                    (f"{_month_label(busiest)} ({len(monthly_data[busiest]):,})" if busiest else "—",
+                     "Busiest month"),
+                ],
+                'blocks': blocks,
+            }
+            ReportViewDialog(self.dialog, "Monthly Overview", report, sections)
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("academic_calendar.messages.failed_generate_monthly", error=str(e)), parent=self.dialog)
@@ -115,24 +253,49 @@ class ReportsDialog:
     def _show_type_analysis(self):
         """Show event type analysis"""
         try:
-            events = self.calendar_manager.db_manager.execute_query(
-                "SELECT event_type, COUNT(*) as count, MIN(date) as first_date, MAX(date) as last_date FROM academic_calendar_events GROUP BY event_type ORDER BY count DESC"
+            rows = self.calendar_manager.db_manager.execute_query(
+                "SELECT event_type, COUNT(*) AS count, "
+                "MIN(COALESCE(date, date_start)) AS first_date, "
+                "MAX(COALESCE(date, date_start)) AS last_date "
+                f"FROM {_CALENDAR_EVENTS} GROUP BY event_type"
             )
+            types = _merge_types(rows)
+            total = sum(t['count'] for t in types)
+            for t in types:
+                firsts = [r['first_date'] for r in t['rows'] if r.get('first_date')]
+                lasts = [r['last_date'] for r in t['rows'] if r.get('last_date')]
+                t['first'] = min(firsts)[:10] if firsts else None
+                t['last'] = max(lasts)[:10] if lasts else None
 
             report = "EVENT TYPE ANALYSIS\n" + "="*60 + "\n\n"
-
-            total = sum(e['count'] for e in events) if events else 0
-
-            for event in events:
-                pct = (event['count'] / total * 100) if total > 0 else 0
-                report += f"{event['event_type'] or 'Unknown'}\n"
-                report += f"  Count: {event['count']} ({pct:.1f}%)\n"
-                report += f"  First: {event['first_date'] or 'N/A'}\n"
-                report += f"  Last:  {event['last_date'] or 'N/A'}\n\n"
-
+            for t in types:
+                pct = (t['count'] / total * 100) if total > 0 else 0
+                report += f"{t['label']}\n"
+                report += f"  Count: {t['count']} ({pct:.1f}%)\n"
+                report += f"  First: {t['first'] or 'N/A'}\n"
+                report += f"  Last:  {t['last'] or 'N/A'}\n\n"
             report += f"{'='*60}\nTotal Events: {total}"
 
-            ReportViewDialog(self.dialog, "Event Type Analysis", report)
+            all_first = [t['first'] for t in types if t['first']]
+            all_last = [t['last'] for t in types if t['last']]
+            sections = {
+                'subtitle': "Every calendar event type, with when it first and last occurs",
+                'stats': [
+                    (f"{total:,}", "Events"),
+                    (len(types), "Event types"),
+                    (min(all_first) if all_first else "—", "Earliest event"),
+                    (max(all_last) if all_last else "—", "Latest event"),
+                ],
+                'blocks': [
+                    ('bars', "Events by type", [(t['label'], t['count']) for t in types]),
+                    ('table', "Type breakdown", ("Type", "Events", "Share", "First", "Last"),
+                     [(t['label'], f"{t['count']:,}",
+                       f"{(t['count'] / total * 100) if total else 0:.1f}%",
+                       t['first'] or "—", t['last'] or "—") for t in types],
+                     {"Type": 280, "Events": 110, "Share": 100, "First": 140, "Last": 140}),
+                ],
+            }
+            ReportViewDialog(self.dialog, "Event Type Analysis", report, sections)
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("academic_calendar.messages.failed_generate_analysis", error=str(e)), parent=self.dialog)
@@ -149,7 +312,7 @@ class ReportsDialog:
         if filename:
             try:
                 events = self.calendar_manager.db_manager.execute_query(
-                    "SELECT * FROM academic_calendar_events ORDER BY date DESC"
+                    f"SELECT * FROM {_CALENDAR_EVENTS} ORDER BY COALESCE(date, date_start) DESC"
                 )
 
                 with open(filename, 'w', encoding='utf-8') as f:
@@ -216,21 +379,34 @@ class ReportsDialog:
     def _show_events_summary(self):
         """Show events summary"""
         try:
-            # Get basic statistics
-            events = self.calendar_manager.db_manager.execute_query(
-                "SELECT event_type, COUNT(*) as count FROM academic_calendar_events GROUP BY event_type"
+            rows = self.calendar_manager.db_manager.execute_query(
+                f"SELECT event_type, COUNT(*) AS count FROM {_CALENDAR_EVENTS} GROUP BY event_type"
             )
+            types = _merge_types(rows)
+            total_events = sum(t['count'] for t in types)
 
             summary = "EVENTS SUMMARY\n" + "="*50 + "\n\n"
-
-            total_events = 0
-            for event in events:
-                summary += f"{event['event_type']}: {event['count']} events\n"
-                total_events += event['count']
-
+            for t in types:
+                summary += f"{t['label']}: {t['count']} events\n"
             summary += f"\nTotal Events: {total_events}"
 
-            ReportViewDialog(self.dialog, "Events Summary", summary)
+            sections = {
+                'subtitle': "All academic calendar events, by type",
+                'stats': [
+                    (f"{total_events:,}", "Events"),
+                    (len(types), "Event types"),
+                    (types[0]['label'] if types else "—", "Most common type"),
+                ],
+                'blocks': [
+                    ('bars', "Events by type", [(t['label'], t['count']) for t in types]),
+                    ('table', "Breakdown", ("Type", "Events", "Share"),
+                     [(t['label'], f"{t['count']:,}",
+                       f"{(t['count'] / total_events * 100) if total_events else 0:.1f}%")
+                      for t in types],
+                     {"Type": 320, "Events": 120, "Share": 120}),
+                ],
+            }
+            ReportViewDialog(self.dialog, "Events Summary", summary, sections)
 
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Failed to generate events summary: {e}")
@@ -370,11 +546,15 @@ class ReportsDialog:
             if events:
                 def event_sort_key(evt: Dict[str, Any]) -> Tuple[Optional[datetime], str]:
                     date_str = evt.get('date') or evt.get('date_start')
+                    # Undated events sort last. They used to sort as None,
+                    # which cannot be compared with a datetime and aborted the
+                    # whole report as soon as one dated and one undated event
+                    # were both present.
                     try:
-                        sort_date = datetime.strptime(date_str, "%Y-%m-%d")
+                        sort_date = datetime.strptime((date_str or '')[:10], "%Y-%m-%d")
                     except Exception:
-                        sort_date = None
-                    return (sort_date, evt.get('name', ''))
+                        sort_date = datetime.max
+                    return (sort_date, evt.get('name') or '')
 
                 sorted_events = sorted(events, key=event_sort_key)
                 for event in sorted_events[:10]:
@@ -398,7 +578,35 @@ class ReportsDialog:
             report_lines.append(f"Report generated at: {summary.get('generated_at', datetime.now().isoformat())}")
 
             report_content = "\n".join(report_lines)
-            ReportViewDialog(self.dialog, f"Academic Year Report ({selected_year_id})", report_content)
+
+            year_types = _merge_types([{'event_type': k, 'count': v} for k, v in event_stats.items()])
+            ordered_events = sorted(events, key=lambda evt: (_event_date(evt) or '9999-99-99',
+                                                             evt.get('name') or ''))
+            sections = {
+                'subtitle': f"{start_date} → {end_date}",
+                'stats': [
+                    (f"{summary.get('total_events', 0):,}", "Events"),
+                    (len(semesters), "Semesters"),
+                    (f"{duration_days:,}" if isinstance(duration_days, int) else duration_days, "Days"),
+                    (len(year_types), "Event types"),
+                ],
+                'blocks': [
+                    ('table', "Semesters", ("Semester", "Start", "End"),
+                     [(s.get('name') or 'Unnamed', s.get('start_date') or '?', s.get('end_date') or '?')
+                      for s in semesters],
+                     {"Semester": 360, "Start": 160, "End": 160}),
+                    ('bars', "Events by type", [(t['label'], t['count']) for t in year_types]),
+                    ('bars', "Events per month",
+                     [(_month_label(m), c) for m, c in sorted(monthly_dist.items())]),
+                    ('table', f"Events ({len(ordered_events):,})", ("Date", "Event", "Type", "Semester"),
+                     [(_event_date(e) or '—', e.get('name') or 'Untitled Event',
+                       e.get('event_type') or 'Unknown', e.get('semester_name') or 'Unassigned')
+                      for e in ordered_events],
+                     {"Date": 110, "Event": 520, "Type": 180, "Semester": 220}),
+                ],
+            }
+            ReportViewDialog(self.dialog, f"Academic Year Report ({selected_year_id})",
+                             report_content, sections)
 
         except PermissionError as perm_err:
             messagebox.showerror(_t('gui.academics.academic_calendar.dialogs_reports.dialogs.permission_denied', default="Permission Denied"), str(perm_err))
@@ -409,20 +617,37 @@ class ReportsDialog:
         """Show statistics report"""
         try:
             stats = self.calendar_manager.get_system_stats()
+            types = _merge_types([{'event_type': k, 'count': v}
+                                  for k, v in stats.get('events_by_type', {}).items()])
+            total = sum(t['count'] for t in types)
 
             report = "CALENDAR STATISTICS\n" + "="*50 + "\n\n"
-
             report += f"Current Academic Year: {stats.get('current_academic_year', 'None')}\n"
             report += f"Current Semester: {stats.get('current_semester', 'None')}\n"
             report += f"Total Academic Years: {stats.get('total_academic_years', 0)}\n"
             report += f"Total Semesters: {stats.get('total_semesters', 0)}\n"
             report += f"Upcoming Events (30 days): {stats.get('upcoming_events', 0)}\n\n"
-
             report += "Events by Type:\n"
-            for event_type, count in stats.get('events_by_type', {}).items():
-                report += f"  {event_type}: {count}\n"
+            for t in types:
+                report += f"  {t['label']}: {t['count']}\n"
 
-            ReportViewDialog(self.dialog, "Statistics Report", report)
+            sections = {
+                'subtitle': "Calendar-wide figures",
+                'stats': [
+                    (f"{total:,}", "Events"),
+                    (stats.get('upcoming_events', 0), "Next 30 days"),
+                    (stats.get('total_academic_years', 0), "Academic years"),
+                    (stats.get('total_semesters', 0), "Semesters"),
+                ],
+                'blocks': [
+                    ('kv', "Current period", [
+                        ("Academic year", stats.get('current_academic_year', 'None')),
+                        ("Semester", stats.get('current_semester', 'None')),
+                    ]),
+                    ('bars', "Events by type", [(t['label'], t['count']) for t in types]),
+                ],
+            }
+            ReportViewDialog(self.dialog, "Statistics Report", report, sections)
 
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Failed to generate statistics: {e}")
@@ -433,45 +658,62 @@ class ReportsDialog:
             current_date = datetime.now().strftime("%Y-%m-%d")
             future_date = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
 
-            events = self.calendar_manager.get_events_by_date_range(current_date, future_date)
+            events = sorted(self.calendar_manager.get_events_by_date_range(current_date, future_date),
+                            key=_event_date)
 
             report = "UPCOMING EVENTS (Next 30 Days)\n" + "="*50 + "\n\n"
-
             if events:
                 for event in events:
-                    event_date = event.get('date') or event.get('date_start')
-                    report += f"{event_date}: {event['name']} ({event['event_type']})\n"
+                    report += f"{_event_date(event)}: {event.get('name') or ''} ({event.get('event_type') or ''})\n"
                     if event.get('description'):
-                        report += f"   {event['description'][:100]}...\n"
+                        report += f"   {_trim(event['description'], 100)}\n"
                     report += "\n"
             else:
                 report += "No upcoming events found."
 
-            ReportViewDialog(self.dialog, "Upcoming Events", report)
+            rows = [(_event_date(e), e.get('name') or '', e.get('event_type') or '',
+                     e.get('location') or '', _trim(e.get('description'), 90))
+                    for e in events]
+            sections = {
+                'subtitle': f"{current_date} to {future_date}",
+                'stats': [
+                    (len(events), "Upcoming events"),
+                    (len({r[2].lower() for r in rows}), "Event types"),
+                    (rows[0][0] if rows else "—", "Next event"),
+                ],
+                'blocks': ([('table', "Next 30 days", ("Date", "Event", "Type", "Location", "Details"), rows,
+                             {"Date": 110, "Event": 380, "Type": 160, "Location": 160, "Details": 420})]
+                           if rows else [('note', "Next 30 days", "No events in the next 30 days.")]),
+            }
+            ReportViewDialog(self.dialog, "Upcoming Events", report, sections)
 
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Failed to get upcoming events: {e}")
 
     def _center_dialog(self):
         """Center dialog on parent"""
-        self.dialog.update_idletasks()
-        x = (self.dialog.winfo_screenwidth() // 2) - (self.dialog.winfo_width() // 2)
-        y = (self.dialog.winfo_screenheight() // 2) - (self.dialog.winfo_height() // 2)
-        self.dialog.geometry(f"+{x}+{y}")
+        _center(self.dialog)
 
 
 class ReportViewDialog:
-    """Dialog for viewing generated reports with save and email functionality"""
+    """Dialog for viewing generated reports with save and email functionality.
 
-    def __init__(self, parent, title, content):
+    *content* is the plain-text version of the report, kept for Save, Copy
+    and Email. When *sections* is given (see ``_render_sections``) the window
+    shows the report as headline figures, cards, bars and tables instead of a
+    wall of monospace text.
+    """
+
+    def __init__(self, parent, title, content, sections=None):
         self.parent = parent
         self.content = content
         self.title_text = title
+        self.sections = sections
 
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(title)
-        self.dialog.geometry("850x650")
-        self.dialog.minsize(600, 400)
+        self.dialog.geometry(_WINDOW_SIZE)
+        self.dialog.minsize(*_WINDOW_MIN)
         self.dialog.transient(parent)
         safe_grab_set(self.dialog, parent)
 
@@ -480,26 +722,28 @@ class ReportViewDialog:
 
     def _create_widgets(self, content):
         """Create dialog widgets"""
-        main_frame = ttk.Frame(self.dialog, padding=20)
+        main_frame = ttk.Frame(self.dialog, padding=8 if self.sections else 20)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Title
-        ttk.Label(main_frame, text=self.title_text,
-                 font=('Arial', 12, 'bold')).pack(pady=(0, 10))
-
-        # Content with scrollbar
-        text_frame = ttk.Frame(main_frame)
-        text_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
-
-        self.text_widget = scrolledtext.ScrolledText(text_frame, wrap=tk.WORD, font=('Consolas', 10))
-        self.text_widget.pack(fill=tk.BOTH, expand=True)
-
-        self.text_widget.insert(1.0, content)
-        self.text_widget.config(state=tk.DISABLED)
-
-        # Buttons frame
+        # Buttons first, against the bottom, so a long report can never push
+        # them out of the window.
         button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill=tk.X)
+        button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(8, 0))
+
+        self.text_widget = None
+        if self.sections:
+            body = tk.Frame(main_frame, bg=_report.BG)
+            body.pack(fill=tk.BOTH, expand=True)
+            _render_sections(_report.scrollable(body), self.title_text, self.sections)
+        else:
+            ttk.Label(main_frame, text=self.title_text,
+                     font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+            text_frame = ttk.Frame(main_frame)
+            text_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
+            self.text_widget = scrolledtext.ScrolledText(text_frame, wrap=tk.WORD, font=('Consolas', 10))
+            self.text_widget.pack(fill=tk.BOTH, expand=True)
+            self.text_widget.insert(1.0, content)
+            self.text_widget.config(state=tk.DISABLED)
 
         # Left side buttons
         left_btns = ttk.Frame(button_frame)
@@ -628,10 +872,7 @@ This report was generated by the Academic Calendar System.
 
     def _center_dialog(self):
         """Center dialog on parent"""
-        self.dialog.update_idletasks()
-        x = (self.dialog.winfo_screenwidth() // 2) - (self.dialog.winfo_width() // 2)
-        y = (self.dialog.winfo_screenheight() // 2) - (self.dialog.winfo_height() // 2)
-        self.dialog.geometry(f"+{x}+{y}")
+        _center(self.dialog)
 
 
 class DataVisualizationDialog:
@@ -659,7 +900,8 @@ class DataVisualizationDialog:
 
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(_("academic_calendar.dialogs.visualization.title"))
-        self.dialog.geometry("900x700")
+        self.dialog.geometry(_WINDOW_SIZE)
+        self.dialog.minsize(*_WINDOW_MIN)
         self.dialog.transient(parent)
         safe_grab_set(self.dialog, parent)
 
@@ -718,6 +960,24 @@ class DataVisualizationDialog:
         """Clear visualization area"""
         for widget in self.viz_frame.winfo_children():
             widget.destroy()
+
+    def _embed(self, fig, parent):
+        """Draw a matplotlib figure into *parent*, keeping the canvas alive."""
+        canvas = self.FigureCanvasTkAgg(fig, master=parent)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill=tk.X, expand=True)
+        self.__dict__.setdefault('_canvases', []).append(canvas)
+        return canvas
+
+    @staticmethod
+    def _style_axes(ax):
+        """Recessive chrome: no box, faint value grid only."""
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_color('#d5d4d0')
+        ax.spines['bottom'].set_color('#d5d4d0')
+        ax.xaxis.grid(True, color='#eceae6', linewidth=0.8)
+        ax.set_axisbelow(True)
 
     def _create_heatmap(self):
         """Create calendar heatmap visualization"""
@@ -806,48 +1066,58 @@ class DataVisualizationDialog:
             messagebox.showerror(_("common.error"), _("academic_calendar.messages.failed_create_heatmap", error=str(e)), parent=self.dialog)
 
     def _create_distribution(self):
-        """Create event distribution pie chart"""
+        """Event counts by type, as sorted bars.
+
+        Bars rather than a pie: one type holds most of the events here, which
+        turns a pie into one huge slice with unreadable slivers.
+        """
         try:
-            events = self.calendar_manager.db_manager.execute_query(
-                "SELECT event_type, COUNT(*) as count FROM academic_calendar_events GROUP BY event_type"
+            rows = self.calendar_manager.db_manager.execute_query(
+                f"SELECT event_type, COUNT(*) AS count FROM {_CALENDAR_EVENTS} GROUP BY event_type"
             )
+            types = _merge_types(rows)
+            total = sum(t['count'] for t in types)
 
             self._clear_viz_area()
+            surface = _report.scrollable(self.viz_frame)
+            _report.stat_strip(surface, [
+                (f"{total:,}", "Calendar events"),
+                (len(types), "Event types"),
+                (types[0]['label'] if types else "—", "Most common type"),
+            ])
 
-            if self.matplotlib_available and events:
-                fig = self.Figure(figsize=(8, 5), dpi=100)
+            if not types:
+                body = _report.card(surface, "Event distribution", accent=_report.MUTED)
+                tk.Label(body, text="No academic calendar events found.", font=(_report.FONT, 9),
+                         bg=_report.CARD, fg=_report.MUTED).pack(anchor="w")
+                return
+
+            if self.matplotlib_available:
+                ordered = list(reversed(types))   # largest at the top
+                labels = [t['label'] for t in ordered]
+                counts = [t['count'] for t in ordered]
+                fig = self.Figure(figsize=(9, max(3.5, 0.45 * len(ordered) + 1.4)), dpi=100)
                 ax = fig.add_subplot(111)
-
-                labels = [e['event_type'] or 'Unknown' for e in events]
-                sizes = [e['count'] for e in events]
-                colors = self.plt.cm.Set3([i/len(labels) for i in range(len(labels))])
-
-                wedges, texts, autotexts = ax.pie(sizes, labels=labels, colors=colors,
-                                                   autopct='%1.1f%%', startangle=90)
-                ax.set_title('Event Type Distribution')
-                ax.axis('equal')
-
+                bars = ax.barh(labels, counts, color='#2a78d6', height=0.65)
+                span = max(counts)
+                for bar, count in zip(bars, counts):
+                    ax.text(bar.get_width() + span * 0.01, bar.get_y() + bar.get_height() / 2,
+                            f"{count:,} ({count / total * 100:.1f}%)", va='center',
+                            fontsize=9, color='#52514e')
+                ax.set_xlim(0, span * 1.22)
+                ax.set_xlabel('Events')
+                ax.set_title(f'Event Distribution by Type ({total:,} events)')
+                self._style_axes(ax)
                 fig.tight_layout()
-
-                canvas = self.FigureCanvasTkAgg(fig, master=self.viz_frame)
-                canvas.draw()
-                canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+                self._embed(fig, _report.card(surface, "Events by type"))
             else:
-                # Text-based visualization
-                text_widget = scrolledtext.ScrolledText(self.viz_frame, wrap=tk.WORD, font=('Consolas', 10))
-                text_widget.pack(fill=tk.BOTH, expand=True)
+                _bar_list(_report.card(surface, "Events by type"),
+                          [(t['label'], t['count']) for t in types])
 
-                report = "EVENT TYPE DISTRIBUTION\n" + "="*50 + "\n\n"
-                total = sum(e['count'] for e in events) if events else 0
-
-                for event in events:
-                    pct = (event['count'] / total * 100) if total > 0 else 0
-                    bar = "#" * int(pct / 2)
-                    report += f"{event['event_type'] or 'Unknown':20s} {bar:25s} {event['count']:4d} ({pct:.1f}%)\n"
-
-                report += f"\n{'='*50}\nTotal Events: {total}"
-                text_widget.insert(tk.END, report)
-                text_widget.config(state=tk.DISABLED)
+            _table_block(surface, "Breakdown", ("Type", "Events", "Share"),
+                         [(t['label'], f"{t['count']:,}", f"{t['count'] / total * 100:.1f}%")
+                          for t in types],
+                         {"Type": 320, "Events": 120, "Share": 120})
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("academic_calendar.messages.failed_create_distribution", error=str(e)), parent=self.dialog)
@@ -969,130 +1239,130 @@ class DataVisualizationDialog:
             messagebox.showerror(_("common.error"), _("academic_calendar.messages.failed_create_timeline", error=str(e)), parent=self.dialog)
 
     def _create_utilization(self):
-        """Create resource utilization chart"""
+        """Resource utilisation across every booking table, plus event locations."""
         try:
-            # Try to get utilization data
-            try:
-                report = self.calendar_manager.advanced_reporting.generate_utilization_report()
-                resources = report.get('resources', []) if report.get('success') else []
-            except Exception:
-                resources = []
+            report = self.calendar_manager.advanced_reporting.generate_utilization_report()
+            if not report.get('success'):
+                raise RuntimeError(report.get('error') or "the utilisation report failed")
+            resources = report.get('resources', [])
+            locations = self.calendar_manager.db_manager.execute_query(
+                "SELECT COALESCE(NULLIF(TRIM(location), ''), 'No location') AS location, "
+                f"COUNT(*) AS count FROM {_CALENDAR_EVENTS} GROUP BY 1 ORDER BY 2 DESC"
+            )
 
             self._clear_viz_area()
+            surface = _report.scrollable(self.viz_frame)
+            total_bookings = sum(r['total_bookings'] for r in resources)
+            total_hours = sum(r['total_hours'] for r in resources)
+            _report.stat_strip(surface, [
+                (len(resources), "Booked resources"),
+                (f"{total_bookings:,}", "Confirmed bookings"),
+                (f"{total_hours:,.1f}", "Hours booked"),
+            ])
 
-            if self.matplotlib_available and resources:
-                fig = self.Figure(figsize=(8, 5), dpi=100)
-                ax = fig.add_subplot(111)
-
-                names = [r['resource_name'] for r in resources[:10]]
-                percentages = [r['utilization_percentage'] for r in resources[:10]]
-                colors = ['#4CAF50' if p > 70 else '#FFC107' if p > 40 else '#F44336' for p in percentages]
-
-                bars = ax.barh(names, percentages, color=colors)
-                ax.set_xlabel('Utilization %')
-                ax.set_title('Resource Utilization')
-                ax.set_xlim(0, 100)
-
-                for bar, pct in zip(bars, percentages):
-                    ax.text(bar.get_width() + 1, bar.get_y() + bar.get_height()/2,
-                           f'{pct:.1f}%', va='center', fontsize=9)
-
-                fig.tight_layout()
-
-                canvas = self.FigureCanvasTkAgg(fig, master=self.viz_frame)
-                canvas.draw()
-                canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-            else:
-                # Text-based visualization
-                text_widget = scrolledtext.ScrolledText(self.viz_frame, wrap=tk.WORD, font=('Consolas', 10))
-                text_widget.pack(fill=tk.BOTH, expand=True)
-
-                report_text = "RESOURCE UTILIZATION REPORT\n" + "="*50 + "\n\n"
-
-                if resources:
-                    for resource in resources:
-                        pct = resource['utilization_percentage']
-                        bar_len = int(pct / 2.5)
-                        bar = "#" * bar_len
-                        report_text += f"{resource['resource_name']:20s} {bar:40s} {pct:.1f}%\n"
-                        report_text += f"  Bookings: {resource['total_bookings']}, Hours: {resource['total_hours']:.1f}\n\n"
+            if resources:
+                if self.matplotlib_available:
+                    ordered = list(reversed(resources))   # busiest at the top
+                    names = [f"{r['resource_name']} ({r['resource_type']})" for r in ordered]
+                    hours = [r['total_hours'] for r in ordered]
+                    fig = self.Figure(figsize=(9, max(3, 0.45 * len(ordered) + 1.4)), dpi=100)
+                    ax = fig.add_subplot(111)
+                    bars = ax.barh(names, hours, color='#16a34a', height=0.6)
+                    span = max(hours) or 1
+                    for bar, r in zip(bars, ordered):
+                        plural = 's' if r['total_bookings'] != 1 else ''
+                        ax.text(bar.get_width() + span * 0.01, bar.get_y() + bar.get_height() / 2,
+                                f"{r['total_bookings']} booking{plural} · {r['total_hours']:g} h",
+                                va='center', fontsize=9, color='#52514e')
+                    ax.set_xlim(0, span * 1.4)
+                    ax.set_xlabel('Hours booked (confirmed bookings)')
+                    ax.set_title('Resource Utilisation')
+                    self._style_axes(ax)
+                    fig.tight_layout()
+                    self._embed(fig, _report.card(surface, "Hours booked by resource"))
                 else:
-                    report_text += "No resource utilization data available.\n"
-                    report_text += "This feature tracks room and resource bookings over time."
+                    _bar_list(_report.card(surface, "Bookings by resource"),
+                              [(r['resource_name'], r['total_bookings']) for r in resources],
+                              colour=_report.OK)
+                _table_block(surface, "All booked resources",
+                             ("Resource", "Type", "Bookings", "Hours", "Avg hours", "Share of a working year"),
+                             [(r['resource_name'], r['resource_type'], r['total_bookings'],
+                               f"{r['total_hours']:g}", f"{r['avg_duration']:g}",
+                               f"{r['utilization_percentage']:.2f}%") for r in resources],
+                             {"Resource": 300, "Type": 110, "Bookings": 90, "Hours": 90,
+                              "Avg hours": 90, "Share of a working year": 170})
+            else:
+                body = _report.card(surface, "Bookings", accent=_report.MUTED)
+                tk.Label(body, text=("No confirmed bookings in resource_bookings, room_bookings "
+                                     "or facility_bookings."),
+                         font=(_report.FONT, 9), bg=_report.CARD, fg=_report.MUTED).pack(anchor="w")
 
-                text_widget.insert(tk.END, report_text)
-                text_widget.config(state=tk.DISABLED)
+            _table_block(surface, "Where calendar events take place", ("Location", "Events"),
+                         [(r['location'], f"{r['count']:,}") for r in locations],
+                         {"Location": 420, "Events": 120})
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("academic_calendar.messages.failed_create_utilization", error=str(e)), parent=self.dialog)
 
     def _create_attendance(self):
-        """Create attendance trends visualization"""
+        """Attendance for every course in the database."""
         try:
-            # Try to get attendance data
-            try:
-                report = self.calendar_manager.advanced_reporting.generate_attendance_report()
-                success = report.get('success', False)
-            except Exception:
-                report = {}
-                success = False
+            report = self.calendar_manager.advanced_reporting.attendance_by_course()
+            if not report.get('success'):
+                raise RuntimeError(report.get('error') or "the attendance report failed")
+            courses = report.get('courses', [])
 
             self._clear_viz_area()
+            surface = _report.scrollable(self.viz_frame)
+            marks = sum(c['marks'] for c in courses)
+            attended = sum(c['attended'] for c in courses)
+            _report.stat_strip(surface, [
+                (len(courses), "Courses"),
+                (sum(1 for c in courses if c['marks']), "With attendance recorded"),
+                (f"{marks:,}", "Attendance marks"),
+                (f"{attended / marks * 100:.1f}%" if marks else "—", "Overall attendance"),
+            ])
 
-            if self.matplotlib_available and success and report.get('course_statistics'):
-                fig = self.Figure(figsize=(8, 5), dpi=100)
+            if courses and self.matplotlib_available:
+                ordered = list(reversed(courses))   # first course code at the top
+                labels = [c['course_code'] for c in ordered]
+                values = [c['marks'] for c in ordered]
+                fig = self.Figure(figsize=(9, max(4, 0.32 * len(ordered) + 1.4)), dpi=100)
                 ax = fig.add_subplot(111)
-
-                course_stats = report['course_statistics']
-                courses = list(course_stats.keys())[:10]
-                attendances = []
-                for course in courses:
-                    stats = course_stats[course]
-                    avg = stats['total_attendance'] / stats['events'] if stats['events'] > 0 else 0
-                    attendances.append(avg)
-
-                ax.bar(courses, attendances, color='#9C27B0')
-                ax.set_xlabel('Course')
-                ax.set_ylabel('Average Attendance')
+                bars = ax.barh(labels, values, color='#9C27B0', height=0.6)
+                span = max(values) or 1
+                for bar, c in zip(bars, ordered):
+                    if c['marks']:
+                        text, colour = f"{c['attended']}/{c['marks']} present · {c['attendance_rate']:g}%", '#52514e'
+                    else:
+                        text, colour = "no attendance recorded", '#9ca3af'
+                    ax.text(bar.get_width() + span * 0.01, bar.get_y() + bar.get_height() / 2,
+                            text, va='center', fontsize=8, color=colour)
+                ax.set_xlim(0, span * 1.6)
+                ax.set_xlabel('Attendance marks recorded')
                 ax.set_title('Attendance by Course')
-                ax.tick_params(axis='x', rotation=45)
-
+                self._style_axes(ax)
                 fig.tight_layout()
+                self._embed(fig, _report.card(surface, "Attendance marks by course"))
+            elif courses:
+                _bar_list(_report.card(surface, "Attendance marks by course"),
+                          [(f"{c['course_code']} — {c['course_name']}", c['marks']) for c in courses],
+                          colour='#9C27B0')
 
-                canvas = self.FigureCanvasTkAgg(fig, master=self.viz_frame)
-                canvas.draw()
-                canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-            else:
-                # Text-based visualization
-                text_widget = scrolledtext.ScrolledText(self.viz_frame, wrap=tk.WORD, font=('Consolas', 10))
-                text_widget.pack(fill=tk.BOTH, expand=True)
-
-                report_text = "ATTENDANCE TRENDS REPORT\n" + "="*50 + "\n\n"
-
-                if success:
-                    report_text += f"Total Events: {report.get('total_events', 0)}\n"
-                    report_text += f"Average Attendance: {report.get('average_attendance', 0)}\n\n"
-                    report_text += "Course Statistics:\n" + "-"*40 + "\n"
-
-                    for course, stats in report.get('course_statistics', {}).items():
-                        avg_attendance = stats['total_attendance'] / stats['events'] if stats['events'] > 0 else 0
-                        report_text += f"  {course}: {avg_attendance:.1f} avg over {stats['events']} events\n"
-                else:
-                    report_text += "No attendance data available.\n"
-                    report_text += "Attendance is tracked when events have attendance records."
-
-                text_widget.insert(tk.END, report_text)
-                text_widget.config(state=tk.DISABLED)
+            _table_block(surface, "Every course",
+                         ("Course", "Name", "Sessions", "Marks", "Present", "Attendance", "Calendar events"),
+                         [(c['course_code'], c['course_name'], c['sessions'], c['marks'], c['attended'],
+                           f"{c['attendance_rate']:g}%" if c['attendance_rate'] is not None else "—",
+                           c['linked_events']) for c in courses],
+                         {"Course": 90, "Name": 300, "Sessions": 90, "Marks": 80, "Present": 80,
+                          "Attendance": 100, "Calendar events": 120})
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("academic_calendar.messages.failed_create_attendance", error=str(e)), parent=self.dialog)
 
     def _center_dialog(self):
         """Center dialog on parent"""
-        self.dialog.update_idletasks()
-        x = (self.dialog.winfo_screenwidth() // 2) - (self.dialog.winfo_width() // 2)
-        y = (self.dialog.winfo_screenheight() // 2) - (self.dialog.winfo_height() // 2)
-        self.dialog.geometry(f"+{x}+{y}")
+        _center(self.dialog)
 
 
 class ProjectMilestonesDialog:
@@ -1217,10 +1487,7 @@ class ProjectMilestonesDialog:
 
     def _center_dialog(self):
         """Center dialog on parent"""
-        self.dialog.update_idletasks()
-        x = (self.dialog.winfo_screenwidth() // 2) - (self.dialog.winfo_width() // 2)
-        y = (self.dialog.winfo_screenheight() // 2) - (self.dialog.winfo_height() // 2)
-        self.dialog.geometry(f"+{x}+{y}")
+        _center(self.dialog)
 
 
 class AddMilestoneDialog:

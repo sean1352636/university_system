@@ -16,7 +16,16 @@ from education_system.systems.university.domains.operations.domain.campus.housin
 # Import email notification functions
 from education_system.systems.university.domains.operations.interfaces.gui.campus.housing.housing_accommodation_gui.email_notifications import (
     send_housing_email,
-    send_maintenance_email
+    send_maintenance_email,
+    send_application_submitted_email,
+    send_application_overwritten_email,
+)
+# Duplicate-application rules and the outcome email live with the domain so
+# the CLI and this GUI behave identically.
+from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.applications import (
+    find_open_applications,
+    send_outcome_notification,
+    supersede_applications,
 )
 
 # Import immutable audit logging if available
@@ -312,50 +321,19 @@ def show_process_application_dialog(gui_instance, application_id):
             conn.commit()
             conn.close()
 
-            # Send email based on decision
-            application_data = {
-                'application_id': application_id,
-                'student_id': student_id,
-                'preferred_room_type': room_type,
-                'requested_move_in_date': move_in_date,
-                'requested_duration_months': duration,
-                'special_requirements': special_req or 'None',
-                'status': decision,
-                'application_date': app_date
-            }
-
-            # Prepare additional variables for email
             reviewer_name = gui_instance.auth.current_user.get('username', 'Housing Administration')
-            additional_vars = {
-                'approval_date': timestamp if decision == 'Approved' else None,
-                'review_date': timestamp,
-                'approved_by': reviewer_name if decision == 'Approved' else None,
-                'reviewed_by': reviewer_name,
-                'approval_reason': notes if decision == 'Approved' else None,
-                'rejection_reason': notes if decision == 'Rejected' else None,
-                'detailed_explanation': notes or 'No additional details provided.',
-                'accommodation_details': 'Room assignment details will be provided separately.' if decision == 'Approved' else None,
-                'housing_fee': 'TBD',
-                'payment_due_date': 'TBD',
-                'move_in_date': move_in_date,
-                'check_in_time': '2:00 PM - 6:00 PM',
-                'check_in_location': 'Housing Office - Main Building',
-                'reservation_expiry': (datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S') + timedelta(days=7)).strftime('%Y-%m-%d') if decision == 'Approved' else None,
-                'documentation_deadline': (datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S') + timedelta(days=14)).strftime('%Y-%m-%d') if decision == 'Approved' else None,
-                'orientation_date': 'TBD',
-                'additional_notes': 'Please contact housing@university.edu if you have any questions.',
-                'appeal_deadline': (datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S') + timedelta(days=10)).strftime('%Y-%m-%d') if decision == 'Rejected' else None
-            }
 
-            # Determine email type
-            if decision == 'Approved':
-                email_sent = send_housing_email('approved', student_id, application_data, additional_vars)
-                email_msg = "\n\nApproval email has been sent to the student." if email_sent else "\n\nNote: Email sending failed."
-            elif decision == 'Rejected':
-                email_sent = send_housing_email('rejected', student_id, application_data, additional_vars)
-                email_msg = "\n\nRejection email has been sent to the student." if email_sent else "\n\nNote: Email sending failed."
+            # Email the student the outcome — for every decision, not just
+            # approve/reject. Reads the committed row (including the room, if
+            # one was assigned) via the same domain helper the CLI uses, so
+            # both interfaces send the same mail through the university email
+            # system.
+            email_sent = send_outcome_notification(application_id)
+            if email_sent:
+                email_msg = ("\n\nAn email explaining this decision has been "
+                             "sent to the student.")
             else:
-                email_msg = ""
+                email_msg = "\n\nNote: the outcome email could not be sent."
 
             # Log activity
             log_update('housing_application', f"Application {decision.lower()} by {reviewer_name} - ID: {application_id}")
@@ -500,23 +478,78 @@ def submit_application(gui_instance):
                 return
             student_id = result[0]
 
-        # Validate inputs
-        room_type = gui_instance.room_type_combo.get()
-        move_in_date = gui_instance.move_in_entry.get()
-        duration = gui_instance.duration_entry.get()
+        # Validate inputs. Name the fields that are actually blank rather than
+        # a generic "fill everything in", and put the cursor back where the
+        # operator has to type — the GUI equivalent of the CLI reprinting the
+        # query it could not accept.
+        room_type = gui_instance.room_type_combo.get().strip()
+        move_in_date = gui_instance.move_in_entry.get().strip()
+        duration = gui_instance.duration_entry.get().strip()
 
-        if not all([room_type, move_in_date, duration]):
-            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields"))
+        missing = [label for label, value in (
+            ("Preferred Room Type", room_type),
+            ("Requested Move-in Date", move_in_date),
+            ("Duration (months)", duration),
+        ) if not value]
+
+        if missing:
+            messagebox.showerror(
+                _t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.error', default="Error"),
+                "These fields cannot be left blank:\n\n"
+                + "\n".join(f"  • {name}" for name in missing))
+            if not room_type:
+                gui_instance.room_type_combo.focus_set()
+            elif not move_in_date:
+                gui_instance.move_in_entry.focus_set()
+            else:
+                gui_instance.duration_entry.focus_set()
             return
 
         try:
             datetime.strptime(move_in_date, '%Y-%m-%d')
+        except ValueError:
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.error', default="Error"),
+                                 f"'{move_in_date}' is not a valid date. Use YYYY-MM-DD.")
+            gui_instance.move_in_entry.focus_set()
+            return
+
+        try:
             duration_months = int(duration)
             if duration_months <= 0:
                 raise ValueError()
         except ValueError:
-            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.please_enter_valid_date_yyyy_mm_dd_and_duration', default="Please enter valid date (YYYY-MM-DD) and duration"))
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.error', default="Error"),
+                                 f"'{duration}' is not a valid duration. Enter a whole number of months greater than 0.")
+            gui_instance.duration_entry.focus_set()
             return
+
+        # One open application per student. If any exist, the operator decides
+        # whether to keep them or replace them — answering "No" leaves the
+        # existing application untouched.
+        conn = get_connection()
+        cursor = conn.cursor()
+        existing_applications = find_open_applications(cursor, student_id)
+        conn.close()
+
+        overriding = False
+        if existing_applications:
+            listing = "\n".join(
+                f"  • {row['application_id']} ({row['status']}), submitted "
+                f"{row['application_date']}, {row['room_type']} from "
+                f"{row['move_in_date']} for {row['duration_months']} month(s)"
+                for row in existing_applications)
+            overriding = messagebox.askyesno(
+                "Existing application found",
+                f"{student_id} already has {len(existing_applications)} open "
+                f"application(s):\n\n{listing}\n\n"
+                "Replace them with this new application?\n\n"
+                "Yes — withdraw the old one(s) and submit this.\n"
+                "No — keep the existing application and discard this one.")
+            if not overriding:
+                messagebox.showinfo(
+                    _t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.success', default="Success"),
+                    "Keeping the existing application. Nothing has been changed.")
+                return
 
         # Get building preference
         building_pref = gui_instance.building_combo.get()
@@ -537,6 +570,14 @@ def submit_application(gui_instance):
         application_id = generate_id('APP')
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         special_req = gui_instance.requirements_text.get('1.0', tk.END).strip() or None
+        actor = 'housing'
+        if getattr(gui_instance, 'auth', None) and gui_instance.auth.current_user:
+            actor = gui_instance.auth.current_user.get('username', 'housing')
+
+        # Withdraw the old application(s) in the same transaction as the new
+        # one, so the student is never left holding none at all.
+        if overriding:
+            supersede_applications(cursor, existing_applications, actor, timestamp)
 
         cursor.execute('''
         INSERT INTO housing_applications (
@@ -549,23 +590,47 @@ def submit_application(gui_instance):
             move_in_date, duration_months, special_req, 'Pending', timestamp, timestamp
         ))
 
+        cursor.execute('''
+        SELECT first_name, last_name, email_address FROM students WHERE student_id = ?
+        ''', (student_id,))
+        student_row = cursor.fetchone()
+
         conn.commit()
         conn.close()
 
-        # Send receipt email to student
-        application_data = {
+        # Email the student through the university email system, after the
+        # commit so nothing is promised that was rolled back. Same helper the
+        # CLI uses, so the wording matches exactly.
+        email_payload = {
             'application_id': application_id,
             'student_id': student_id,
-            'preferred_room_type': room_type,
-            'requested_move_in_date': move_in_date,
-            'requested_duration_months': duration_months,
+            'student_name': (f"{student_row[0] or ''} {student_row[1] or ''}".strip()
+                             if student_row else ''),
+            'email_address': student_row[2] if student_row else '',
+            'submission_date': timestamp,
+            'submitted_by': actor,
+            'preferred_building': building_pref,
+            'room_type': room_type,
+            'move_in_date': move_in_date,
+            'duration_months': duration_months,
             'special_requirements': special_req,
             'status': 'Pending',
-            'application_date': timestamp
         }
-        send_housing_email('receipt', student_id, application_data)
 
-        messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.success', default="Success"), f"Application submitted successfully!\nApplication ID: {application_id}\n\nA confirmation email has been sent to your registered email address.")
+        if overriding:
+            emailed = send_application_overwritten_email(email_payload, existing_applications)
+            headline = (f"Application submitted, replacing "
+                        f"{len(existing_applications)} previous application(s).")
+        else:
+            emailed = send_application_submitted_email(email_payload)
+            headline = "Application submitted successfully!"
+
+        note = ("\n\nA confirmation email has been sent to the student's "
+                "registered email address."
+                if emailed else
+                "\n\nNote: the confirmation email could not be sent.")
+
+        messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.success', default="Success"), f"{headline}\nApplication ID: {application_id}{note}")
 
         # Log activity
         log_create('housing_application', application_id, f"Student {student_id} submitted housing application")

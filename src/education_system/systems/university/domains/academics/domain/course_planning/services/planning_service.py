@@ -3,6 +3,9 @@ Course Planning Assistant Service
 
 Helps students plan multi-semester course schedules with prerequisite tracking.
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
@@ -144,9 +147,10 @@ class PlanningService:
                 ('prerequisite_type', "TEXT DEFAULT 'Required'"),
             ]:
                 try:
+                    # db-audit: ignore[DBW001] - loop over a literal table
                     conn.execute(f"ALTER TABLE course_prerequisites ADD COLUMN {col} {col_def}")
                 except Exception:
-                    pass  # Column already exists
+                    logger.debug("Suppressed exception", exc_info=True)
 
             # Course Corequisites table
             conn.execute("""
@@ -639,7 +643,7 @@ class PlanningService:
                 """, (course_id, json.dumps(all_prereqs_list), len(all_prereqs_list)))
                 conn.execute("PRAGMA foreign_keys = ON")
         except Exception:
-            pass  # Cache failure is non-critical
+            logger.debug("Suppressed exception", exc_info=True)
 
         return all_prereqs_list
 
@@ -1176,16 +1180,21 @@ class PlanningService:
             """, (student_id, student_id)).fetchall()
             completed_ids = {row['course_id'] for row in completed if row['course_id']}
 
-            # Get student's current enrollments (if lms_student_enrollment exists)
+            # Current enrolments come from student_modules, the table
+            # registration actually writes to. This read used to go through
+            # lms_student_enrollment, which held a single test row and was
+            # wrapped in a bare except — so it silently reported "enrolled in
+            # nothing" for every student.
             try:
                 current = conn.execute("""
-                    SELECT c.code as course_id
-                    FROM lms_student_enrollment lse
-                    JOIN courses c ON c.id = lse.lms_course_id
-                    WHERE lse.student_id = ? AND lse.is_active = 1
+                    SELECT DISTINCT module_code AS course_id
+                    FROM student_modules
+                    WHERE student_id = ?
+                      AND LOWER(COALESCE(status, 'enrolled')) IN ('enrolled', 'active')
                 """, (student_id,)).fetchall()
                 current_ids = {row['course_id'] for row in current if row['course_id']}
             except Exception:
+                logger.debug("current enrolment lookup failed", exc_info=True)
                 current_ids = set()
 
             # Get student's program

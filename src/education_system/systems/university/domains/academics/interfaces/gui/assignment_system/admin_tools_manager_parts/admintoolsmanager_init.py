@@ -130,7 +130,7 @@ class AdminToolsManager:
 
     def show_sis_sync(self):
         """SIS sync dashboard with import/export"""
-        if not self._check_permission('manage_sis'):
+        if not self._check_permission('manage_integrations'):
             messagebox.showerror(_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_init.dialogs.access_denied', default="Access Denied"), _t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_init.dialogs.you_do_not_have_permission_to_manage_sis_sync', default="You do not have permission to manage SIS sync."))
             return
 
@@ -194,7 +194,7 @@ class AdminToolsManager:
 
     def import_roster_csv(self):
         """Import student roster from CSV file"""
-        if not self._check_permission('manage_sis'):
+        if not self._check_permission('manage_integrations'):
             messagebox.showerror(_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_init.dialogs.access_denied', default="Access Denied"), _t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_init.dialogs.you_do_not_have_permission_to_import_rosters', default="You do not have permission to import rosters."))
             return
 
@@ -238,14 +238,15 @@ class AdminToolsManager:
                             errors.append(f"Row {row_num}: Missing required fields")
                             continue
 
-                        # Upsert student record
+                        # Upsert student record. The CSV column is "email";
+                        # the table column is email_address.
                         cursor.execute('''
-                            INSERT INTO students (student_id, first_name, last_name, email)
+                            INSERT INTO students (student_id, first_name, last_name, email_address)
                             VALUES (?, ?, ?, ?)
                             ON CONFLICT(student_id) DO UPDATE SET
                                 first_name = excluded.first_name,
                                 last_name = excluded.last_name,
-                                email = excluded.email
+                                email_address = excluded.email_address
                         ''', (student_id, first_name, last_name, email))
 
                         # Enroll in module if provided
@@ -290,7 +291,7 @@ class AdminToolsManager:
 
     def sync_roster(self):
         """Trigger manual sync with SIS"""
-        if not self._check_permission('manage_sis'):
+        if not self._check_permission('manage_integrations'):
             messagebox.showerror(_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_init.dialogs.access_denied', default="Access Denied"), _t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_init.dialogs.you_do_not_have_permission_to_sync_rosters', default="You do not have permission to sync rosters."))
             return
 
@@ -348,7 +349,7 @@ class AdminToolsManager:
 
     def show_integrity_cases(self):
         """Academic integrity case management dashboard"""
-        if not self._check_permission('manage_integrity'):
+        if not self._check_permission('manage_plagiarism_system'):
             messagebox.showerror(_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_init.dialogs.access_denied', default="Access Denied"), _t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_init.dialogs.you_do_not_have_permission_to_manage_integrity_cases', default="You do not have permission to manage integrity cases."))
             return
 

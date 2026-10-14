@@ -1,9 +1,14 @@
 """Assessment management"""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 import os
 import shutil
 import threading
@@ -17,6 +22,7 @@ from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system import paths
 from education_system.systems.university.domains.academics.domain.services.assessment_service import AssessmentAssignmentService
 from collections import deque
+from education_system.systems.university.domains.academics.interfaces.gui._field_pickers import attach_combo, attach_date, time_values
 
 
 
@@ -57,6 +63,178 @@ class AssessmentManager:
 
         except Exception as e:
             messagebox.showerror(_t('gui.academics.assignment_system.assessment_manager.dialogs.error', default="Error"), f"Failed to load modules: {e}")
+
+    # ------------------------------------------------------------------
+    # Exam scheduling integration
+    #
+    # An assessment of type 'exam' is also a scheduled exam: it needs a row
+    # in `exams` so it shows up in the Exam Scheduling GUI, the academic
+    # calendar and the shared room_bookings table. Rather than duplicate
+    # that write path, this reuses the exam module's DataManager, which owns
+    # the schema, the conflict checks and the calendar/room side effects.
+    # ------------------------------------------------------------------
+
+    EXAM_TYPE = "exam"
+
+    def _exam_data_manager(self):
+        """Return the exam DataManager, or None when it is unavailable.
+
+        Built lazily and cached: constructing it loads every exam and room
+        from the database, which is too slow to do while drawing the form.
+        """
+        if getattr(self, '_exam_dm', None) is not None:
+            return self._exam_dm
+        try:
+            from education_system.systems.university.domains.academics.interfaces.gui.exam_management.data_manager import (
+                DataManager as ExamDataManager,
+            )
+            self._exam_dm = ExamDataManager()
+        except Exception as exc:
+            self._exam_dm = None
+            self._exam_dm_error = str(exc)
+        return self._exam_dm
+
+    def _room_label(self, room):
+        """Match the Exam Scheduling room dropdown exactly."""
+        return f"{room.name} ({room.building}) - Cap: {room.capacity}"
+
+    def _selected_exam_room(self):
+        """Room name from the dropdown label, or '' when nothing is picked."""
+        selection = self.exam_room_var.get() if hasattr(self, 'exam_room_var') else ""
+        return selection.split(' (')[0] if selection else ""
+
+    def _selected_exam_instructor(self):
+        """Return ``(instructor_id, display_name)`` for the chosen entry."""
+        label = self.exam_instructor_var.get() if hasattr(self, 'exam_instructor_var') else ""
+        if not label:
+            return None, ""
+        for inst in getattr(self, '_exam_instructors', []):
+            if f"{inst['display_name']} ({inst['department'] or 'N/A'})" == label:
+                return inst['id'], inst['display_name']
+        # Fall back to free text when the instructors table is empty and the
+        # combo was left editable.
+        return None, label
+
+    def _build_exam_details_frame(self, parent):
+        """Build the exam-only scheduling fields. Hidden unless type == exam."""
+        frame = ttk.LabelFrame(
+            parent,
+            text=_t('gui.academics.assignment_system.assessment_manager.labels.exam_scheduling',
+                    default="Exam Scheduling"),
+            padding=20,
+        )
+
+        hint = ttk.Label(
+            frame,
+            text=_t('gui.academics.assignment_system.assessment_manager.labels.exam_hint',
+                    default="Exams are also scheduled: this books the room and adds the exam "
+                            "to the calendar."),
+        )
+        hint.grid(row=0, column=0, columnspan=2, sticky='w', pady=(0, 10))
+
+        # Exam date — defaults to the assessment due date so the common case
+        # (sit the exam on the due date) needs no extra typing.
+        ttk.Label(frame, text=_t('gui.academics.assignment_system.assessment_manager.labels.exam_date',
+                                 default="Exam Date:")).grid(row=1, column=0, sticky='w', pady=5)
+        self.exam_date_var = tk.StringVar(value=self.assessment_due_date_var.get())
+        attach_date(frame, id_var=self.exam_date_var).grid(
+            row=1, column=1, sticky='w', pady=5, padx=(10, 0))
+
+        ttk.Label(frame, text=_t('gui.academics.assignment_system.assessment_manager.labels.start_time',
+                                 default="Start Time:")).grid(row=2, column=0, sticky='w', pady=5)
+        self.exam_start_time_var = tk.StringVar(value="09:00")
+        attach_combo(frame, time_values(), textvariable=self.exam_start_time_var,
+                     width=7).grid(row=2, column=1, sticky='w', pady=5, padx=(10, 0))
+
+        ttk.Label(frame, text=_t('gui.academics.assignment_system.assessment_manager.labels.end_time',
+                                 default="End Time:")).grid(row=3, column=0, sticky='w', pady=5)
+        self.exam_end_time_var = tk.StringVar(value="11:00")
+        attach_combo(frame, time_values(), textvariable=self.exam_end_time_var,
+                     width=7).grid(row=3, column=1, sticky='w', pady=5, padx=(10, 0))
+
+        ttk.Label(frame, text=_t('gui.academics.assignment_system.assessment_manager.labels.location',
+                                 default="Location (Room):")).grid(row=4, column=0, sticky='w', pady=5)
+        self.exam_room_var = tk.StringVar()
+        self.exam_room_combo = ttk.Combobox(
+            frame, textvariable=self.exam_room_var, width=32, state='readonly')
+        self.exam_room_combo.grid(row=4, column=1, sticky='w', pady=5, padx=(10, 0))
+
+        ttk.Label(frame, text=_t('gui.academics.assignment_system.assessment_manager.labels.invigilator',
+                                 default="Instructor:")).grid(row=5, column=0, sticky='w', pady=5)
+        self.exam_instructor_var = tk.StringVar()
+        self.exam_instructor_combo = ttk.Combobox(
+            frame, textvariable=self.exam_instructor_var, width=32, state='readonly')
+        self.exam_instructor_combo.grid(row=5, column=1, sticky='w', pady=5, padx=(10, 0))
+
+        link_frame = ttk.Frame(frame)
+        link_frame.grid(row=6, column=0, columnspan=2, sticky='w', pady=(12, 0))
+        ttk.Button(
+            link_frame,
+            text=_t('gui.academics.assignment_system.assessment_manager.buttons.open_exam_scheduling',
+                    default="Open Exam Scheduling"),
+            command=self.open_exam_scheduling,
+        ).pack(side='left')
+
+        return frame
+
+    def populate_exam_choices(self):
+        """Fill the room and instructor dropdowns from the exam database."""
+        dm = self._exam_data_manager()
+        if dm is None:
+            self.show_assessment_status(
+                "Exam scheduling is unavailable: "
+                f"{getattr(self, '_exam_dm_error', 'exam module failed to load')}. "
+                "The assessment can still be saved without a scheduled exam.",
+                "warning",
+            )
+            return
+
+        self.exam_room_combo['values'] = [self._room_label(r) for r in dm.rooms]
+
+        self._exam_instructors = dm.get_instructors()
+        if self._exam_instructors:
+            self.exam_instructor_combo['values'] = [
+                f"{i['display_name']} ({i['department'] or 'N/A'})"
+                for i in self._exam_instructors
+            ]
+        else:
+            # Mirror the Exam Scheduling GUI: with no instructors on file the
+            # combo becomes free text rather than an empty readonly dropdown.
+            self.exam_instructor_combo['state'] = 'normal'
+            self.exam_instructor_combo['values'] = []
+
+    def on_assessment_type_change(self, event=None):
+        """Show the scheduling fields only for an assessment of type 'exam'."""
+        if not hasattr(self, 'exam_details_frame'):
+            return
+
+        is_exam = self.assessment_type_var.get() == self.EXAM_TYPE
+        if is_exam:
+            # `before=` keeps the section in place between the details form and
+            # the description box across repeated hide/show cycles.
+            self.exam_details_frame.pack(
+                fill='x', pady=(0, 20), before=self.assessment_desc_frame)
+            if not getattr(self, '_exam_choices_loaded', False):
+                self.populate_exam_choices()
+                self._exam_choices_loaded = True
+        else:
+            self.exam_details_frame.pack_forget()
+
+    def open_exam_scheduling(self):
+        """Open the Exam Scheduling GUI, pre-filtered to this module."""
+        from education_system.systems.university.domains.academics.interfaces.gui._cross_launchers import (
+            AcademicContext, open_exam_gui,
+        )
+        module_label = getattr(self, 'assessment_module_var', tk.StringVar()).get()
+        module_code = self.module_map.get(module_label) if hasattr(self, 'module_map') else None
+        open_exam_gui(
+            self.root,
+            getattr(self, 'auth', None),
+            context=AcademicContext(
+                module_code=module_code,
+                exam_id=getattr(self, 'last_created_exam_id', None),
+            ),
+        )
 
     def create_assessment(self):
         """Create a new assessment"""
@@ -115,6 +293,8 @@ class AssessmentManager:
             state='readonly'
         )
         type_combo.grid(row=2, column=1, sticky='w', pady=5, padx=(10, 0))
+        # Selecting 'exam' reveals the date/time/location fields below.
+        type_combo.bind('<<ComboboxSelected>>', self.on_assessment_type_change)
 
         # Due date/time
         ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assessment_manager.labels.due_date', default="Due Date:")).grid(row=3, column=0, sticky='w', pady=5)
@@ -152,9 +332,14 @@ class AssessmentManager:
         )
         status_combo.grid(row=7, column=1, sticky='w', pady=5, padx=(10, 0))
 
+        # Exam-only scheduling fields. Built now so the widgets exist, but only
+        # packed when the type is 'exam' (see on_assessment_type_change).
+        self.exam_details_frame = self._build_exam_details_frame(self.gui.layout.content_area)
+
         # Description
         desc_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.assessment_manager.labels.description_notes', default="Description & Notes"), padding=10)
         desc_frame.pack(fill='both', expand=True, pady=(0, 20))
+        self.assessment_desc_frame = desc_frame
         self.assessment_description_text = scrolledtext.ScrolledText(desc_frame, height=6)
         self.assessment_description_text.pack(fill='both', expand=True)
 
@@ -169,6 +354,13 @@ class AssessmentManager:
         self.assessment_status_frame = ttk.Frame(self.gui.layout.content_area)
         self.assessment_status_frame.pack(fill='x', pady=(10, 0))
         self.show_assessment_status("Fill in the details and click 'Save Assessment'.", "info")
+
+        # Last: the type defaults to 'exam', so reveal the scheduling fields on
+        # open. Runs after the status frame exists so that populate_exam_choices
+        # can report an unavailable exam scheduler, and after the default status
+        # message so that warning is not immediately overwritten.
+        self._exam_choices_loaded = False
+        self.on_assessment_type_change()
 
 
     def show_assessment_status(self, message, level="info"):
@@ -221,6 +413,21 @@ class AssessmentManager:
             self.assessment_status_var.set("Active")
         if hasattr(self, 'assessment_description_text'):
             self.assessment_description_text.delete("1.0", tk.END)
+
+        # Exam-only fields. The date follows the due date, as it does on build.
+        if hasattr(self, 'exam_date_var'):
+            self.exam_date_var.set(default_date)
+        if hasattr(self, 'exam_start_time_var'):
+            self.exam_start_time_var.set("09:00")
+        if hasattr(self, 'exam_end_time_var'):
+            self.exam_end_time_var.set("11:00")
+        if hasattr(self, 'exam_room_var'):
+            self.exam_room_var.set("")
+        if hasattr(self, 'exam_instructor_var'):
+            self.exam_instructor_var.set("")
+        # The type resets to 'exam', so re-run the toggle to match.
+        self.on_assessment_type_change()
+
         self.show_assessment_status("Form cleared.", "info")
 
 
@@ -269,6 +476,46 @@ class AssessmentManager:
             self.show_assessment_status("Duration must be a positive integer.", "error")
             return False
 
+        if self.assessment_type_var.get() == self.EXAM_TYPE and not self.validate_exam_fields():
+            return False
+
+        return True
+
+    def validate_exam_fields(self):
+        """Validate the exam-only scheduling fields.
+
+        Mirrors the Exam Scheduling GUI's validate_exam_form: the same date and
+        time formats, and a room is required. Reported inline through the
+        status strip rather than a messagebox, to match this form.
+        """
+        try:
+            exam_date = datetime.strptime(self.exam_date_var.get().strip(), "%Y-%m-%d")
+        except ValueError:
+            self.show_assessment_status("Invalid exam date. Use YYYY-MM-DD.", "error")
+            return False
+
+        times = {}
+        for label, var in (("start", self.exam_start_time_var), ("end", self.exam_end_time_var)):
+            try:
+                times[label] = datetime.strptime(var.get().strip(), "%H:%M")
+            except ValueError:
+                self.show_assessment_status(
+                    f"Invalid exam {label} time. Use HH:MM.", "error")
+                return False
+
+        if times["end"] <= times["start"]:
+            self.show_assessment_status(
+                "Exam end time must be after the start time.", "error")
+            return False
+
+        if exam_date.date() < datetime.now().date():
+            self.show_assessment_status("Exam date must not be in the past.", "error")
+            return False
+
+        if not self._selected_exam_room():
+            self.show_assessment_status("Please select a room for the exam.", "error")
+            return False
+
         return True
 
 
@@ -293,6 +540,12 @@ class AssessmentManager:
 
         if not module_code:
             self.show_assessment_status("Selected module is invalid.", "error")
+            return
+
+        # For an exam, check the room/time clash before writing anything, so a
+        # conflict cannot leave an assessment row behind with no exam.
+        is_exam = assessment_type == self.EXAM_TYPE
+        if is_exam and not self.check_exam_availability(module_code):
             return
 
         try:
@@ -322,7 +575,19 @@ class AssessmentManager:
             conn.commit()
             conn.close()
 
-            self.show_assessment_status(f"Assessment '{title}' created successfully (ID: {assessment_id}).", "success")
+            message = f"Assessment '{title}' created successfully (ID: {assessment_id})."
+            level = "success"
+
+            if is_exam:
+                exam_id, exam_note = self.schedule_exam_for_assessment(
+                    assessment_id, module_code, title)
+                message += exam_note
+                if exam_id is None:
+                    # The assessment saved but the exam did not. Say so plainly
+                    # rather than reporting an unqualified success.
+                    level = "warning"
+
+            self.show_assessment_status(message, level)
             self.clear_assessment_form()
 
             # Refresh manage view if open
@@ -331,6 +596,141 @@ class AssessmentManager:
         except Exception as exc:
             self.show_assessment_status(f"Failed to save assessment: {exc}", "error")
 
+
+    def check_exam_availability(self, module_code):
+        """Check the room/time slot before committing anything.
+
+        Returns True when it is safe to proceed. Same two checks the Exam
+        Scheduling GUI runs on Add Exam: the exam table's own clash check, then
+        the shared room_bookings / lecture timetable cross-check, which is a
+        confirmable warning rather than a hard stop.
+        """
+        dm = self._exam_data_manager()
+        if dm is None:
+            # Availability cannot be established. Let the operator decide
+            # rather than silently skipping the check.
+            return messagebox.askyesno(
+                _t('gui.academics.assignment_system.assessment_manager.dialogs.exam_unavailable',
+                    default="Exam scheduling unavailable"),
+                "The exam scheduler could not be loaded, so the room and time "
+                "cannot be checked for clashes.\n\nSave the assessment without "
+                "scheduling an exam?",
+            )
+
+        date = self.exam_date_var.get().strip()
+        start = self.exam_start_time_var.get().strip()
+        end = self.exam_end_time_var.get().strip()
+        room = self._selected_exam_room()
+
+        if dm.check_conflict(date, start, end, room):
+            self.show_assessment_status(
+                f"Scheduling conflict: {room} is already booked for an exam "
+                f"on {date} between {start} and {end}.", "error")
+            return False
+
+        try:
+            external = dm.find_external_room_conflicts(date, start, end, room)
+        except Exception:
+            external = None
+        if external:
+            detail = "\n".join(f"  • {item}" for item in external)
+            return messagebox.askyesno(
+                _t('gui.academics.assignment_system.assessment_manager.dialogs.room_in_use',
+                    default="Room already booked"),
+                f"{room} has other bookings in that slot:\n\n{detail}\n\n"
+                f"Schedule the exam anyway?",
+            )
+
+        return True
+
+    def schedule_exam_for_assessment(self, assessment_id, module_code, title):
+        """Create the `exams` row for a saved assessment.
+
+        Returns ``(exam_id, note)``. ``exam_id`` is None when the exam could
+        not be created — the assessment itself is already saved by then, so the
+        note explains what is missing rather than the failure being swallowed.
+        """
+        dm = self._exam_data_manager()
+        if dm is None:
+            return None, "\n\nNo exam was scheduled: the exam scheduler is unavailable."
+
+        try:
+            from education_system.systems.university.domains.academics.interfaces.gui.exam_management.models import Exam
+
+            module = dm.lookup_module(module_code) or {}
+            instructor_id, instructor_name = self._selected_exam_instructor()
+
+            # Derive the roster at save time so the snapshot matches current
+            # enrolment, exactly as the Exam Scheduling GUI does.
+            roster_ids = [s['student_id'] for s in dm.get_enrolled_students(module_code)]
+
+            exam = Exam(
+                id=dm.get_next_exam_id(),
+                module_code=module_code,
+                module_name=module.get('module_name') or title,
+                date=self.exam_date_var.get().strip(),
+                start_time=self.exam_start_time_var.get().strip(),
+                end_time=self.exam_end_time_var.get().strip(),
+                room=self._selected_exam_room(),
+                instructor_id=instructor_id,
+                instructor_name=instructor_name,
+                students_enrolled=len(roster_ids),
+                enrolled_student_ids=roster_ids,
+            )
+            dm.add_exam(exam)
+        except Exception as exc:
+            return None, f"\n\nThe assessment was saved, but the exam could not be scheduled: {exc}"
+
+        self.last_created_exam_id = exam.id
+        note = f"\n\n✓ Exam scheduled in {exam.room} on {exam.date} at {exam.start_time}."
+
+        # Link the two rows so the assessment knows which exam it created.
+        try:
+            link_conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            with link_conn:
+                link_conn.execute(
+                    "UPDATE assessments SET exam_id = ? WHERE assessment_id = ?",
+                    (exam.id, assessment_id),
+                )
+            link_conn.close()
+        except Exception as exc:
+            note += f"\n⚠ Could not link the assessment to exam {exam.id}: {exc}"
+
+        # The remaining steps are the same side effects Add Exam performs.
+        # Each is best-effort: a failure here must not undo a scheduled exam.
+        try:
+            from education_system.systems.university.infrastructure.event_bus import (
+                publish, EVENT_EXAM_CHANGED, EVENT_CALENDAR_CHANGED,
+            )
+        except Exception:
+            publish = None
+
+        if publish is not None:
+            try:
+                publish(EVENT_EXAM_CHANGED, exam_id=exam.id,
+                        module_code=module_code, action="create")
+            except Exception:
+                logger.debug("Suppressed exception", exc_info=True)
+
+        try:
+            if dm.add_exam_to_calendar(exam):
+                note += "\n✓ Added to the academic calendar."
+                if publish is not None:
+                    try:
+                        publish(EVENT_CALENDAR_CHANGED, event_type="Exam",
+                                source_id=exam.id, action="create")
+                    except Exception:
+                        logger.debug("Suppressed exception", exc_info=True)
+        except Exception:
+            logger.debug("Suppressed exception", exc_info=True)
+
+        try:
+            if dm.reserve_room_for_exam(exam):
+                note += "\n✓ Room reserved in shared bookings."
+        except Exception:
+            logger.debug("Suppressed exception", exc_info=True)
+
+        return exam.id, note
 
     def show_manage_assessments(self):
         """Show assessment management interface"""
@@ -459,7 +859,7 @@ class AssessmentManager:
             messagebox.showerror(_t('gui.academics.assignment_system.assessment_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.assessment_manager.dialogs.selected_assessment_no_longer_exists', default="Selected assessment no longer exists."))
             return
 
-        editor = tk.Toplevel(self.root)
+        editor = make_toplevel(self.root)
         editor.title(f"Edit Assessment - {record['assessment_name']}")
         editor.geometry("500x520")
         editor.transient(self.root)
@@ -499,8 +899,9 @@ class AssessmentManager:
         due_date_var = tk.StringVar(value=due_date_default)
         due_time_var = tk.StringVar(value=due_time_default)
         ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assessment_manager.labels.due_date', default="Due Date:")).grid(row=3, column=0, sticky='w', pady=5)
-        ttk.Entry(form_frame, textvariable=due_date_var, width=14).grid(row=3, column=1, sticky='w', pady=5, padx=(10, 0))
-        ttk.Entry(form_frame, textvariable=due_time_var, width=8).grid(row=3, column=1, sticky='w', pady=5, padx=(120, 0))
+        attach_date(form_frame, id_var=due_date_var).grid(row=3, column=1, sticky='w', pady=5, padx=(10, 0))
+        attach_combo(form_frame, time_values(step_minutes=15, start_hour=0, end_hour=23),
+                     textvariable=due_time_var, width=7).grid(row=3, column=2, sticky='w', pady=5, padx=(10, 0))
 
         max_points_var = tk.StringVar(value=str(record['max_points']))
         ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assessment_manager.labels.max_points', default="Max Points:")).grid(row=4, column=0, sticky='w', pady=5)
@@ -659,7 +1060,7 @@ class AssessmentManager:
             submission_stats = cursor.fetchone()
             conn.close()
 
-            window = tk.Toplevel(self.root)
+            window = make_toplevel(self.root)
             window.title(f"Assessment Details - {record['assessment_name']}")
             window.geometry("520x420")
             window.transient(self.root)

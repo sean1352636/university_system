@@ -46,6 +46,10 @@ NAVIGATION: dict[str, list[tuple[str, list[tuple[str, str]]]]] = {
         ]),
         ("People", [
             ("students", "Learners"),
+            ("pathways", "Sixth Form referrals"),
+            ("apprenticeship_progression", "Apprenticeship progression"),
+            ("university_progression", "University progression"),
+            ("learner_journey", "Learner journey (360)"),
             ("staff", "Staff"),
             ("users", "Users & access"),
         ]),
@@ -75,6 +79,7 @@ NAVIGATION: dict[str, list[tuple[str, list[tuple[str, str]]]]] = {
         ]),
         ("Learners", [
             ("student_records", "Learner records"),
+            ("learner_journey", "Learner journey (360)"),
         ]),
         ("Communication", [
             ("email", "Email centre"),
@@ -97,6 +102,12 @@ NAVIGATION: dict[str, list[tuple[str, list[tuple[str, str]]]]] = {
         ]),
     ],
 }
+
+for _sections in NAVIGATION.values():
+    _sections.append(("Account", [
+        ("shared_change_password", "Change password"),
+        ("shared_mfa", "Multi-factor authentication"),
+    ]))
 
 
 class CollegeGUI:
@@ -193,11 +204,36 @@ class CollegeGUI:
         canvas.grid(row=1, column=0, sticky="nsew")
         scroll.grid(row=1, column=1, sticky="ns")
 
-        def _on_wheel(event):
-            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        def _on_wheel(event: tk.Event) -> str | None:
+            """Scroll only when the pointer event came from this navigation pane."""
+            widget = event.widget
+            while widget is not None and widget is not canvas:
+                try:
+                    widget = widget.nametowidget(widget.winfo_parent())
+                except (KeyError, tk.TclError):
+                    widget = None
+            if widget is not canvas:
+                return None
 
-        canvas.bind("<Enter>", lambda _e: canvas.bind_all("<MouseWheel>", _on_wheel))
-        canvas.bind("<Leave>", lambda _e: canvas.unbind_all("<MouseWheel>"))
+            if getattr(event, "num", None) == 4:
+                units = -1
+            elif getattr(event, "num", None) == 5:
+                units = 1
+            else:
+                delta = getattr(event, "delta", 0)
+                if not delta:
+                    return None
+                units = -1 if delta > 0 else 1
+            canvas.yview_scroll(units, "units")
+            return "break"
+
+        # The toplevel is in every descendant widget's bind tags, so wheel
+        # events over labels and buttons scroll too.  Keep the bindings local
+        # to this window rather than using bind_all/unbind_all, which can
+        # accidentally remove another feature's global bindings.
+        self.root.bind("<MouseWheel>", _on_wheel, add="+")
+        self.root.bind("<Button-4>", _on_wheel, add="+")
+        self.root.bind("<Button-5>", _on_wheel, add="+")
 
         search_frame = ttk.Frame(nav)
         search_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 6))
@@ -344,6 +380,27 @@ class CollegeGUI:
         A screen that fails to load must not take the shell with it — the error
         is shown in the content pane so the user can navigate somewhere else.
         """
+        if key == "shared_change_password":
+            from education_system.platform.delivery.gui.change_password_gui import (
+                ChangePasswordFrame,
+            )
+
+            self.clear_content()
+            ChangePasswordFrame(self.content_frame, auth=self.auth).pack(
+                fill="both", expand=True
+            )
+            self.set_status("Account security · Change password")
+            return
+        if key == "shared_mfa":
+            # The shared multi-method wizard (authenticator app / SMS /
+            # email / recovery codes), not the old TOTP-only settings frame.
+            from education_system.platform.delivery.gui import mfa_setup_gui
+
+            self.clear_content()
+            mfa_setup_gui.open_mfa(self, auth=self.auth)
+            self.set_status("Account security · Multi-factor authentication")
+            return
+
         module_path = (
             "education_system.systems.fe_college.interfaces.gui.windows."
             f"{self.ctl.view}.{key}"
@@ -459,7 +516,7 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
     if shared_auth is None or not getattr(shared_auth, "current_user", None):
         logger.error("FE College GUI invoked without a shared_auth session")
         raise RuntimeError(
-            "The FE College GUI must be launched via run.py — "
+            "The FE College GUI must be launched via python -m education_system — "
             "no standalone login is available."
         )
     current = shared_auth.current_user or {}
@@ -482,5 +539,5 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
 
 
 if __name__ == "__main__":
-    print("Launch via: python run.py --fecollege --gui")
+    print("Launch via: python -m education_system --fecollege --gui")
     raise SystemExit(2)

@@ -15,8 +15,8 @@ import re
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]   # …/program
-SYS = ROOT / "education_system/systems"
+ROOT = Path(__file__).resolve().parents[2]   # repo root
+SYS = ROOT / "src/education_system/systems"
 
 out: dict = {"menus": {}, "university": {}, "api": {}}
 
@@ -51,39 +51,64 @@ for key, path in {
 out["menus"]["nursery_gui_matches_cli"] = True  # single shared NAV_CATEGORIES
 
 # ── 2. University: feature modules per domain area ───────────────────────
-def features(base: Path) -> dict[str, dict[str, list[str]]]:
-    """domain -> feature -> [sub-features], two levels deep."""
+def feature_map(domain: Path) -> dict[str, list[str]]:
+    """feature -> [sub-features] for one domain directory, two levels deep."""
+    feats: dict[str, list[str]] = {}
+    if not domain.is_dir():
+        return feats
+    for child in sorted(domain.iterdir()):
+        if child.name.startswith("_"):
+            continue
+        if child.is_dir():
+            subs = sorted({
+                (g.name if g.is_dir() else g.stem)
+                for g in child.iterdir()
+                if not g.name.startswith("_")
+                and (g.is_dir() or g.suffix == ".py")
+            })
+            feats[child.name] = subs
+        elif child.suffix == ".py":
+            feats.setdefault(child.stem, [])
+    return feats
+
+
+UNI = SYS / "university"
+SLICES = sorted(p for p in (UNI / "domains").iterdir() if p.is_dir()) if (UNI / "domains").is_dir() else []
+
+
+def features(kind: str) -> dict[str, dict[str, list[str]]]:
+    """domain -> feature -> [sub-features], read from the vertical slices.
+
+    The university's user-facing modules live at ``domains/<domain>/interfaces/<kind>/``
+    since the slice migration, so the domain level is the slice name rather than a
+    subdirectory of a single shared ``interfaces/`` tree.
+    """
     result: dict[str, dict[str, list[str]]] = {}
-    if not base.is_dir():
-        return result
-    for domain in sorted(p for p in base.iterdir() if p.is_dir()):
-        feats: dict[str, list[str]] = {}
-        for child in sorted(domain.iterdir()):
-            if child.name.startswith("_"):
-                continue
-            if child.is_dir():
-                subs = sorted({
-                    (g.name if g.is_dir() else g.stem)
-                    for g in child.iterdir()
-                    if not g.name.startswith("_")
-                    and (g.is_dir() or g.suffix == ".py")
-                })
-                feats[child.name] = subs
-            elif child.suffix == ".py":
-                feats.setdefault(child.stem, [])
+    for slice_dir in SLICES:
+        feats = feature_map(slice_dir / "interfaces" / kind)
         if feats:
-            result[domain.name] = feats
+            result[slice_dir.name] = feats
     return result
 
 
-uni = SYS / "university/interfaces"
-out["university"]["gui"] = features(uni / "gui")
-out["university"]["cli"] = features(uni / "cli")
+def module_count(kind: str) -> int:
+    """Every university module of one interface kind, shell and slices together."""
+    total = len(list((UNI / "shell" / kind).rglob("*.py")))
+    return total + sum(len(list((s / "interfaces" / kind).rglob("*.py"))) for s in SLICES)
+
+
+out["university"]["gui"] = features("gui")
+out["university"]["cli"] = features("cli")
+# The shell is the system-wide chrome (menus, session, launcher) that is not owned
+# by any one domain; it is reported separately so it is not mistaken for a domain.
+out["university"]["shell"] = {
+    kind: feature_map(UNI / "shell" / kind) for kind in ("gui", "cli", "api")
+}
 out["university"]["counts"] = {
-    "gui_modules": len(list((uni / "gui").rglob("*.py"))),
-    "cli_modules": len(list((uni / "cli").rglob("*.py"))),
-    "domain_modules": len(list((SYS / "university/domain").rglob("*.py"))),
-    "total": len(list((SYS / "university").rglob("*.py"))),
+    "gui_modules": module_count("gui"),
+    "cli_modules": module_count("cli"),
+    "domain_modules": sum(len(list((s / "domain").rglob("*.py"))) for s in SLICES),
+    "total": len(list(UNI.rglob("*.py"))),
 }
 
 # per-system source counts

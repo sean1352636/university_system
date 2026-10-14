@@ -338,6 +338,7 @@ class BursaryService:
         )
         try:
             with self._conn() as conn:
+                # db-audit: ignore[DBW001] - conditional between literals
                 conn.execute(
                     f"""UPDATE bursary_applications
                         SET status = ?, decision_notes = ?,

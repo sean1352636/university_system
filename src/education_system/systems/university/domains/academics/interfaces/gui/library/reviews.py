@@ -92,15 +92,11 @@ except ImportError:
     FINANCE_ACCOUNT_AVAILABLE = False
     print("Warning: Student finance account integration not available")
 
-# Import matplotlib for library finance charts
-try:
-    import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-    from matplotlib.figure import Figure
-    MATPLOTLIB_AVAILABLE = True
-except ImportError:
-    MATPLOTLIB_AVAILABLE = False
-    print("Warning: Matplotlib not available for library finance charts")
+# Matplotlib is imported lazily by finance_shared, the one module in this
+# package whose names are actually read (by the two chart dialogs under
+# finance_parts/). This module carried an identical eager copy of that import
+# and never used any of it — importing matplotlib.pyplot costs ~1.3s and was
+# paid by anything that touched the library package at all.
 
 # Import email service for library finance notifications
 try:
@@ -116,6 +112,9 @@ _AUDIT_LOG_COLUMNS_CACHE: Optional[List[str]] = None
 _STUDENT_COLUMNS_CACHE: Optional[List[str]] = None
 
 from education_system.systems.university.domains.academics.interfaces.gui.library.base import LibraryGUI
+
+from education_system.systems.university.domains.academics.interfaces.gui.library._pickers import attach_picker
+
 
 def show_reviews(self):
     """Show reviews and ratings interface"""
@@ -248,9 +247,9 @@ def write_review_dialog(self):
     main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     # Book selection
-    ttk.Label(main_frame, text=_t('gui.academics.library.reviews.labels.book_id', default="Book ID:")).pack(anchor='w', pady=(0, 5))
-    book_id_var = tk.StringVar()
-    ttk.Entry(main_frame, textvariable=book_id_var, width=30).pack(anchor='w', pady=(0, 10))
+    ttk.Label(main_frame, text=_t('gui.academics.library.reviews.labels.book', default="Book:")).pack(anchor='w', pady=(0, 5))
+    book_picker = attach_picker(main_frame, "book", width=48)
+    book_picker.pack(anchor='w', pady=(0, 10))
 
     # Rating selection
     ttk.Label(main_frame, text=_t('gui.academics.library.reviews.labels.rating', default="Rating:")).pack(anchor='w', pady=(0, 5))
@@ -272,7 +271,7 @@ def write_review_dialog(self):
     button_frame.pack(pady=10)
 
     def submit_review():
-        book_id = book_id_var.get().strip()
+        book_id = book_picker.get()
         rating = int(rating_var.get())
         review_content = review_text.get("1.0", tk.END).strip()
 
@@ -476,11 +475,18 @@ def rate_and_review_book_gui(self, book_id=None):
     book_id_var = tk.StringVar(value=book_id or "")
     book_info_var = tk.StringVar(value=_t('gui.academics.library.reviews.values.no_book_selected', default="No book selected"))
 
-    ttk.Label(book_frame, text=_t('gui.academics.library.reviews.labels.book_id', default="Book ID:")).grid(row=0, column=0, sticky=tk.W, pady=5)
-    ttk.Entry(book_frame, textvariable=book_id_var, width=30).grid(row=0, column=1, padx=10, pady=5)
+    ttk.Label(book_frame, text=_t('gui.academics.library.reviews.labels.book', default="Book:")).grid(row=0, column=0, sticky=tk.W, pady=5)
+
+    # Pick the book from the catalogue rather than typing its ID: the IDs
+    # are opaque codes, and a typo here just produced "Book not found".
+    book_picker = attach_picker(book_frame, "book", width=44)
+    book_picker.grid(row=0, column=1, padx=10, pady=5)
+    if book_id:
+        book_picker.set(book_id)
 
     def lookup_book():
-        bid = book_id_var.get().strip()
+        bid = book_picker.get()
+        book_id_var.set(bid)
         if not bid:
             return
 
@@ -499,6 +505,7 @@ def rate_and_review_book_gui(self, book_id=None):
         except (sqlite3.Error, DatabaseError) as e:
             messagebox.showerror(_("common.error"), f"Failed to lookup book: {str(e)}")
 
+    book_picker.combo.bind("<<ComboboxSelected>>", lambda _e: lookup_book(), add="+")
     ttk.Button(book_frame, text=_t('gui.academics.library.reviews.buttons.lookup', default="Lookup"), command=lookup_book).grid(row=0, column=2, padx=5)
     ttk.Label(book_frame, textvariable=book_info_var, foreground='blue').grid(
         row=1, column=0, columnspan=3, pady=10, sticky=tk.W)
@@ -530,7 +537,8 @@ def rate_and_review_book_gui(self, book_id=None):
     review_text.pack(fill=tk.BOTH, expand=True)
 
     def submit_review():
-        bid = book_id_var.get().strip()
+        bid = book_picker.get()
+        book_id_var.set(bid)
         if not bid:
             messagebox.showerror(_("common.error"), _t('gui.academics.library.reviews.dialogs.please_select_a_book', default="Please select a book"))
             return

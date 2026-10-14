@@ -1,5 +1,8 @@
 """RoomsMixin — extracted from chat.py."""
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.email.admin._imports import (
     datetime,
@@ -557,6 +560,7 @@ class RoomsMixin:
             if not sets:
                 return True
             params.append(room_id)
+            # db-audit: ignore[DBW001] - join over a code-controlled list
             cursor.execute(
                 f"UPDATE chat_rooms SET {', '.join(sets)} WHERE id = ?", params,
             )
@@ -629,9 +633,10 @@ class RoomsMixin:
                 'chat_message_reads', 'chat_typing', 'chat_presence',
             ):
                 try:
+                    # db-audit: ignore[DBW001] - literal collection
                     cursor.execute(f'DELETE FROM {table} WHERE room_id = ?', (room_id,))
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
             cursor.execute('DELETE FROM chat_rooms WHERE id = ?', (room_id,))
             self._log_communication_action(
                 user_id, "delete_chat_room",

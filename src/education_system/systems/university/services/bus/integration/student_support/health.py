@@ -154,5 +154,5 @@ def _has_class_at(student_id: str, day_of_week: str,
                 except Exception:
                     continue
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return None

@@ -1,6 +1,7 @@
 """
 Report generation mixin for AdminPortal.
 """
+from education_system.systems.university.shell.gui import report_view as _rv
 
 from education_system.systems.university.domains.finance.interfaces.gui.financial_aid.admin_portal._imports import (
     tk, ttk, scrolledtext, logging, datetime,
@@ -91,7 +92,7 @@ class ReportsMixin:
         report_frame = ttk.Frame(report_window)
         report_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        report_text = scrolledtext.ScrolledText(report_frame, width=100, height=35, wrap='word', font=('Courier', 10))
+        report_text = _rv.TextReportView(report_frame, width=100, height=35, wrap='word', font=('Courier', 10))
         report_text.pack(fill='both', expand=True)
 
         try:
@@ -206,7 +207,7 @@ class ReportsMixin:
         report_frame = ttk.Frame(report_window)
         report_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        report_text = scrolledtext.ScrolledText(report_frame, width=100, height=35, wrap='word', font=('Courier', 10))
+        report_text = _rv.TextReportView(report_frame, width=100, height=35, wrap='word', font=('Courier', 10))
         report_text.pack(fill='both', expand=True)
 
         try:
@@ -308,7 +309,7 @@ class ReportsMixin:
         report_frame = ttk.Frame(report_window)
         report_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        report_text = scrolledtext.ScrolledText(report_frame, width=100, height=35, wrap='word', font=('Courier', 10))
+        report_text = _rv.TextReportView(report_frame, width=100, height=35, wrap='word', font=('Courier', 10))
         report_text.pack(fill='both', expand=True)
 
         try:
@@ -427,7 +428,7 @@ class ReportsMixin:
         report_frame = ttk.Frame(report_window)
         report_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        report_text = scrolledtext.ScrolledText(report_frame, width=100, height=35, wrap='word', font=('Courier', 10))
+        report_text = _rv.TextReportView(report_frame, width=100, height=35, wrap='word', font=('Courier', 10))
         report_text.pack(fill='both', expand=True)
 
         try:
@@ -663,7 +664,7 @@ class ReportsMixin:
         report_frame = ttk.Frame(report_window)
         report_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        report_text = scrolledtext.ScrolledText(report_frame, width=100, height=35, wrap='word', font=('Courier', 10))
+        report_text = _rv.TextReportView(report_frame, width=100, height=35, wrap='word', font=('Courier', 10))
         report_text.pack(fill='both', expand=True)
 
         try:
@@ -918,7 +919,7 @@ class ReportsMixin:
         report_frame = ttk.Frame(report_window)
         report_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        report_text = scrolledtext.ScrolledText(report_frame, width=100, height=35, wrap='word', font=('Courier', 10))
+        report_text = _rv.TextReportView(report_frame, width=100, height=35, wrap='word', font=('Courier', 10))
         report_text.pack(fill='both', expand=True)
 
         try:
@@ -1065,7 +1066,7 @@ class ReportsMixin:
         report_frame = ttk.Frame(report_window)
         report_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        report_text = scrolledtext.ScrolledText(report_frame, width=100, height=35, wrap='word', font=('Courier', 10))
+        report_text = _rv.TextReportView(report_frame, width=100, height=35, wrap='word', font=('Courier', 10))
         report_text.pack(fill='both', expand=True)
 
         try:

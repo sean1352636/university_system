@@ -14,9 +14,9 @@ def generate_student_health_summary(auth):
     conn = get_connection()
     c = conn.cursor()
     try:
-        sid = input(get_text("health.reports.enter_student_id")).strip()
+        sid = input(get_text("health.reports.enter_student_id", default="Enter Student ID: ")).strip()
         if not sid:
-            print(get_text("health.reports.student_id_required"))
+            print(get_text("health.reports.student_id_required", default="A student ID is required."))
             return
 
         # Student name
@@ -24,7 +24,7 @@ def generate_student_health_summary(auth):
         row = c.fetchone()
         name = f"{(row[0] or '').strip()} {(row[1] or '').strip()}".strip() if row else sid
 
-        print("\n" + get_text("health.reports.student_summary_title", name=name, sid=sid))
+        print("\n" + get_text("health.reports.student_summary_title", name=name, sid=sid, default="===== STUDENT SUMMARY ===== {name} {sid}"))
 
         # Vaccinations
         c.execute("""
@@ -34,7 +34,7 @@ def generate_student_health_summary(auth):
             FROM vaccination_records WHERE student_id = ?
         """, (sid,))
         total, verified, adverse = c.fetchone()
-        print(get_text("health.reports.vaccinations_summary", total=total or 0, verified=verified or 0, adverse=adverse or 0))
+        print(get_text("health.reports.vaccinations_summary", total=total or 0, verified=verified or 0, adverse=adverse or 0, default="Vaccinations Summary: {adverse} {total} {verified}"))
 
         # Upcoming appointments (next 30 days)
         # health_appointments schema: appointment_date TEXT, appointment_time TEXT, provider, status
@@ -49,12 +49,12 @@ def generate_student_health_summary(auth):
         """, (sid,))
         appts = c.fetchall()
         if appts:
-            print("\n" + get_text("health.reports.upcoming_appointments_header"))
+            print("\n" + get_text("health.reports.upcoming_appointments_header", default="Upcoming Appointments:"))
             for d, t, prov, status, atype in appts[:10]:
                 t_disp = t or "--:--"
-                print(get_text("health.reports.appointment_item", date=d, time=t_disp, provider=prov or get_text("common.unknown").upper(), atype=atype or "general", status=status or "scheduled"))
+                print(get_text("health.reports.appointment_item", date=d, time=t_disp, provider=prov or get_text("common.unknown").upper(), atype=atype or "general", status=status or "scheduled", default="Appointment Item: {atype} {date} {provider} {status} {time}"))
         else:
-            print("\n" + get_text("health.reports.upcoming_appointments_none"))
+            print("\n" + get_text("health.reports.upcoming_appointments_none", default="Upcoming Appointments None"))
 
         # Latest vitals
         c.execute("""
@@ -68,13 +68,13 @@ def generate_student_health_summary(auth):
         if v:
             mdate, sys, dia, hr, bmi, w, h = v
             bp = f"{sys}/{dia}" if sys and dia else get_text("common.na")
-            print("\n" + get_text("health.reports.latest_vitals_header"))
-            print(get_text("health.reports.vitals_date", date=mdate or "-"))
-            print(get_text("health.reports.vitals_bp_hr_bmi", bp=bp, hr=hr or "-", bmi=round(bmi, 1) if bmi else "-"))
+            print("\n" + get_text("health.reports.latest_vitals_header", default="Latest Vitals:"))
+            print(get_text("health.reports.vitals_date", date=mdate or "-", default="Vitals Date: {date}"))
+            print(get_text("health.reports.vitals_bp_hr_bmi", bp=bp, hr=hr or "-", bmi=round(bmi, 1) if bmi else "-", default="Vitals BP HR BMI: {bmi} {bp} {hr}"))
             if w or h:
-                print(get_text("health.reports.vitals_weight_height", weight=w or "-", height=h or "-"))
+                print(get_text("health.reports.vitals_weight_height", weight=w or "-", height=h or "-", default="Vitals Weight Height: {height} {weight}"))
         else:
-            print("\n" + get_text("health.reports.latest_vitals_none"))
+            print("\n" + get_text("health.reports.latest_vitals_none", default="Latest Vitals None"))
 
         # Recent health records (last 90 days)
         c.execute("""
@@ -87,11 +87,11 @@ def generate_student_health_summary(auth):
         """, (sid,))
         recs = c.fetchall()
         if recs:
-            print("\n" + get_text("health.reports.recent_records_header"))
+            print("\n" + get_text("health.reports.recent_records_header", default="Recent Records:"))
             for rtype, n in recs:
-                print(get_text("health.reports.record_item", rtype=rtype or get_text("health.reports.unspecified"), count=n))
+                print(get_text("health.reports.record_item", rtype=rtype or get_text("health.reports.unspecified", default="Unspecified"), count=n, default="Record Item: {count} {rtype}"))
         else:
-            print("\n" + get_text("health.reports.recent_records_none"))
+            print("\n" + get_text("health.reports.recent_records_none", default="Recent Records None"))
 
         # Audit
         try:
@@ -104,14 +104,14 @@ def generate_student_health_summary(auth):
             conn.close()
         except Exception as e:
             logger.debug(f"Could not close database connection: {e}")
-    input("\n" + get_text("health.reports.press_enter_return"))
+    input("\n" + get_text("health.reports.press_enter_return", default="\nPress Enter to return..."))
 
 def generate_vaccination_status_report(auth):
     """Vaccination coverage/verification/adverse reactions; optional filter by vaccine."""
     conn = get_connection()
     c = conn.cursor()
     try:
-        vaccine = input(get_text("health.reports.filter_by_vaccine")).strip()
+        vaccine = input(get_text("health.reports.filter_by_vaccine", default="By Vaccine")).strip()
 
         where = ""
         params = ()
@@ -129,9 +129,9 @@ def generate_vaccination_status_report(auth):
         total, verified, adverse = c.fetchone()
         total = total or 0; verified = verified or 0; adverse = adverse or 0
 
-        print("\n" + get_text("health.reports.vaccination_status_title"))
-        if vaccine: print(get_text("health.reports.vaccine_filter", vaccine=vaccine))
-        print(get_text("health.reports.vaccination_totals", total=total, verified=verified, adverse=adverse))
+        print("\n" + get_text("health.reports.vaccination_status_title", default="===== VACCINATION STATUS ====="))
+        if vaccine: print(get_text("health.reports.vaccine_filter", vaccine=vaccine, default="Vaccine Filter: {vaccine}"))
+        print(get_text("health.reports.vaccination_totals", total=total, verified=verified, adverse=adverse, default="Vaccination Totals: {adverse} {total} {verified}"))
 
         # Expired / expiring soon
         c.execute(
@@ -148,7 +148,7 @@ def generate_vaccination_status_report(auth):
             params)
         expiring_30 = c.fetchone()[0] or 0
 
-        print(get_text("health.reports.expired_expiring", expired=expired, expiring_30=expiring_30))
+        print(get_text("health.reports.expired_expiring", expired=expired, expiring_30=expiring_30, default="Expired Expiring: {expired} {expiring_30}"))
 
         # Top vaccines
         c.execute(
@@ -160,9 +160,9 @@ def generate_vaccination_status_report(auth):
             params)
         rows = c.fetchall()
         if rows:
-            print("\n" + get_text("health.reports.top_vaccines_header"))
+            print("\n" + get_text("health.reports.top_vaccines_header", default="Top Vaccines:"))
             for vname, n in rows:
-                print(get_text("health.reports.vaccine_count_item", vname=vname or get_text("health.reports.unknown"), count=n))
+                print(get_text("health.reports.vaccine_count_item", vname=vname or get_text("health.reports.unknown", default="Unknown"), count=n, default="Vaccine Count Item: {count} {vname}"))
 
         try:
             log_audit_event(auth.current_user['id'], 'generate_vaccination_status_report', 'vaccination_records', 'report')
@@ -173,7 +173,7 @@ def generate_vaccination_status_report(auth):
             conn.close()
         except Exception as e:
             logger.debug(f"Could not close database connection: {e}")
-    input("\n" + get_text("health.reports.press_enter_return"))
+    input("\n" + get_text("health.reports.press_enter_return", default="\nPress Enter to return..."))
 
 def generate_appointment_schedule_report(auth):
     """Schedules/loads for a date range, grouped by provider and status."""

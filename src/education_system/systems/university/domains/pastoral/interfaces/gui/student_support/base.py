@@ -1,7 +1,13 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+
+from ._dialogs import make_toplevel, messagebox
 import tkinter.font as tkFont
 from datetime import datetime, timedelta
 import json
@@ -68,7 +74,7 @@ def _patched_sqlite_connect(database, *args, **kwargs):
         if not database or db_name == str(DEFAULT_DB_PATH):
             return _original_sqlite3_connect(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return _original_sqlite3_connect(database, *args, **kwargs)
 
 sqlite3.connect = _patched_sqlite_connect
@@ -227,7 +233,7 @@ class StudentSupportGUIBase:
             print(f"✗ Student Support GUI: Authentication failed - auth={self.auth}, current_user={getattr(self.auth, 'current_user', None) if self.auth else None}")
             messagebox.showerror(_t('gui.pastoral.student_support.base.dialogs.authentication_required', default="Authentication Required"),
                 _t('gui.pastoral.student_support.base.dialogs.please_log_in_through_the_main_university_system_gui_run_python', default="Please log in through the main University System GUI.\n\n"
-                "Run: python run.py --gui"))
+                "Run: python -m education_system --gui"))
             self.root.destroy()
             return
 
@@ -407,6 +413,9 @@ class StudentSupportGUIBase:
         # Create status bar
         self.create_status_bar()
 
+        # Keep the placed homescreen button above the gridded main frame
+        return_btn.lift()
+
     def create_sidebar(self):
         """Create scrollable navigation sidebar"""
         # Create sidebar container
@@ -537,7 +546,6 @@ class StudentSupportGUIBase:
         refresh_frame = ttk.Frame(self.sidebar, padding="10")
         refresh_frame.pack(side="bottom", fill="x")
         ttk.Button(refresh_frame, text=_t("common.refresh"), command=self.refresh_data).pack(fill="x")
-        ttk.Button(refresh_frame, text=_t("common.return_to_homescreen"), command=self.return_to_main_menu).pack(fill="x", pady=(8, 0))
 
         # Force scroll region update after all content is added
         self.sidebar.update_idletasks()
@@ -655,9 +663,25 @@ class StudentSupportGUIBase:
         help_menu.add_command(label=_t("student_support.menu.about"), command=self.show_about)
 
     def clear_content(self):
-        """Clear all notebook tabs"""
+        """Remove every notebook tab and destroy the widgets behind it.
+
+        ``forget()`` detaches a tab but leaves the frame — and everything in
+        it — alive as a child of the notebook. Every navigation click built a
+        fresh screen and abandoned the previous one, so widgets accumulated
+        for the life of the session until the X server ran out of pixmaps
+        ("BadAlloc ... X_CreatePixmap"). Destroying the frame frees them.
+        """
         for tab in self.notebook.tabs():
+            try:
+                widget = self.notebook.nametowidget(tab)
+            except KeyError:
+                widget = None
             self.notebook.forget(tab)
+            if widget is not None:
+                try:
+                    widget.destroy()
+                except tk.TclError:
+                    pass
 
     def update_status(self, message):
         """Update status bar message"""
@@ -667,7 +691,7 @@ class StudentSupportGUIBase:
                 self.root.update_idletasks()
         except Exception:
             # If status_var doesn't exist yet, just ignore the update
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
 
 def _patched_sqlite_connect(database, *args, **kwargs):
@@ -678,5 +702,5 @@ def _patched_sqlite_connect(database, *args, **kwargs):
         if not database or db_name == str(DEFAULT_DB_PATH):
             return _original_sqlite3_connect(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return _original_sqlite3_connect(database, *args, **kwargs)

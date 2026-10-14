@@ -1,4 +1,7 @@
 """Exam management tab for the Exam Scheduling System."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -47,8 +50,12 @@ class ExamsTabMixin:
         form_container = ttk.LabelFrame(paned, text=_("exam_scheduler.frames.exam_details"), padding="5")
         paned.add(form_container, weight=1)
 
-        # Create canvas and scrollbar for the form
-        form_canvas = tk.Canvas(form_container, highlightthickness=0)
+        # Create canvas and scrollbar for the form.
+        # An explicit width gives the pane a sensible natural size: without it
+        # the sash can squeeze the form to almost nothing, which is the other
+        # half of why this tab looked broken when the window was resized. The
+        # form scrolls vertically, so a fixed width costs nothing.
+        form_canvas = tk.Canvas(form_container, highlightthickness=0, width=380)
         form_scrollbar = ttk.Scrollbar(form_container, orient=tk.VERTICAL, command=form_canvas.yview)
 
         # Create frame inside canvas for form content
@@ -166,17 +173,31 @@ class ExamsTabMixin:
         room_frame = ttk.Frame(form_frame)
         room_frame.grid(row=current_row, column=1, sticky=tk.EW, pady=5, padx=(10, 0))
         self.room_var = tk.StringVar()
-        self.room_combo = ttk.Combobox(room_frame, textvariable=self.room_var, width=27, state='readonly')
-        self.room_combo.pack(side=tk.LEFT)
+        self.room_combo = ttk.Combobox(room_frame, textvariable=self.room_var, state='readonly')
+        # fill=X + expand so the dropdown tracks the pane instead of holding a
+        # fixed 27-character width that forced the form wider than its half.
+        self.room_combo.pack(side=tk.LEFT, fill=tk.X, expand=True)
         self.update_room_combo()
         current_row += 1
 
-        # Room helper buttons
+        # Room helper buttons — same wrapping-grid treatment as the main
+        # button bar. Three fixed-width buttons in a packed row overflowed the
+        # pane in exactly the same way.
         room_btns_frame = ttk.Frame(form_frame)
-        room_btns_frame.grid(row=current_row, column=1, sticky=tk.W, pady=2, padx=(10, 0))
-        ttk.Button(room_btns_frame, text=_t('gui.academics.exam_management.tabs.exams_tab.buttons.suggest_rooms', default="Suggest Rooms"), command=self.suggest_available_rooms, width=13).pack(side=tk.LEFT, padx=1)
-        ttk.Button(room_btns_frame, text=_t('gui.academics.exam_management.tabs.exams_tab.buttons.check_available', default="Check Available"), command=self.check_room_availability, width=13).pack(side=tk.LEFT, padx=1)
-        ttk.Button(room_btns_frame, text=_t('gui.academics.exam_management.tabs.exams_tab.buttons.check_capacity', default="Check Capacity"), command=self.validate_room_capacity, width=13).pack(side=tk.LEFT, padx=1)
+        room_btns_frame.grid(row=current_row, column=1, sticky=tk.EW,
+                             pady=2, padx=(10, 0))
+        room_buttons = (
+            (_t('gui.academics.exam_management.tabs.exams_tab.buttons.suggest_rooms', default="Suggest Rooms"),
+             self.suggest_available_rooms),
+            (_t('gui.academics.exam_management.tabs.exams_tab.buttons.check_available', default="Check Available"),
+             self.check_room_availability),
+            (_t('gui.academics.exam_management.tabs.exams_tab.buttons.check_capacity', default="Check Capacity"),
+             self.validate_room_capacity),
+        )
+        for index, (label, command) in enumerate(room_buttons):
+            ttk.Button(room_btns_frame, text=label, command=command).grid(
+                row=0, column=index, sticky=tk.EW, padx=1)
+            room_btns_frame.columnconfigure(index, weight=1, uniform="room_btn")
         current_row += 1
 
         # Students Enrolled Section
@@ -209,23 +230,47 @@ class ExamsTabMixin:
         self.enrolled_student_ids = []
         current_row += 1
 
-        # Buttons
+        # Buttons — a wrapping grid, not one packed row.
+        #
+        # These were six buttons packed side by side. This form sits in the
+        # narrow half of the paned window (weight 1 against the list's 2), so
+        # the row was wider than the pane and the last buttons were simply cut
+        # off the edge; packing also never reflows, so resizing the window
+        # changed nothing. A grid wraps them and each cell stretches with the
+        # pane, so nothing is ever unreachable at any window size.
         btn_frame = ttk.Frame(form_frame)
-        btn_frame.grid(row=current_row, column=0, columnspan=2, pady=15)
+        btn_frame.grid(row=current_row, column=0, columnspan=2,
+                       pady=15, sticky=tk.EW)
 
-        ttk.Button(btn_frame, text=_("exam_scheduler.buttons.add_exam"), command=self.add_exam, style='Accent.TButton').pack(side=tk.LEFT, padx=3)
-        ttk.Button(btn_frame, text=_("exam_scheduler.buttons.update"), command=self.update_exam).pack(side=tk.LEFT, padx=3)
-        ttk.Button(btn_frame, text=_("exam_scheduler.buttons.duplicate"), command=self.duplicate_exam).pack(side=tk.LEFT, padx=3)
-        ttk.Button(btn_frame, text=_("exam_scheduler.buttons.delete"), command=self.delete_exam).pack(side=tk.LEFT, padx=3)
-        ttk.Button(btn_frame, text=_("exam_scheduler.buttons.clear"), command=self.clear_exam_form).pack(side=tk.LEFT, padx=3)
-        ttk.Button(btn_frame, text=_t('gui.academics.exam_management.tabs.exams_tab.buttons.external_examiners', default="External examiners…"),
-                   command=self.open_external_examiners_dialog).pack(
-                       side=tk.LEFT, padx=3)
+        exam_buttons = (
+            (_("exam_scheduler.buttons.add_exam"), self.add_exam, 'Accent.TButton'),
+            (_("exam_scheduler.buttons.update"), self.update_exam, None),
+            (_("exam_scheduler.buttons.duplicate"), self.duplicate_exam, None),
+            (_("exam_scheduler.buttons.delete"), self.delete_exam, None),
+            (_("exam_scheduler.buttons.clear"), self.clear_exam_form, None),
+            (_t('gui.academics.exam_management.tabs.exams_tab.buttons.external_examiners',
+                default="External examiners…"),
+             self.open_external_examiners_dialog, None),
+        )
+        button_columns = 3
+        for index, (label, command, style) in enumerate(exam_buttons):
+            extra = {"style": style} if style else {}
+            ttk.Button(btn_frame, text=label, command=command, **extra).grid(
+                row=index // button_columns, column=index % button_columns,
+                sticky=tk.EW, padx=3, pady=3)
+        for column in range(button_columns):
+            # uniform= keeps the columns equal, so the buttons stay aligned
+            # instead of one long label stretching its column.
+            btn_frame.columnconfigure(column, weight=1, uniform="exam_btn")
 
-        # Note about automatic actions
+        # Note about automatic actions. wraplength stops this single long line
+        # setting the form's minimum width and forcing the pane wider than the
+        # window.
         note_label = ttk.Label(form_frame, text=_("exam_scheduler.labels.auto_notifications_note"),
-                              font=('Helvetica', 8, 'italic'), foreground='gray')
-        note_label.grid(row=current_row + 1, column=0, columnspan=2, pady=(10, 0))
+                              font=('Helvetica', 8, 'italic'), foreground='gray',
+                              wraplength=320, justify=tk.LEFT)
+        note_label.grid(row=current_row + 1, column=0, columnspan=2,
+                        pady=(10, 0), sticky=tk.EW)
 
         self.selected_exam_id = None
         self.selected_instructor_id = None
@@ -552,7 +597,7 @@ class ExamsTabMixin:
                     f"(or leave blank to set later):",
                 ) or None
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         exam = Exam(
             id=self.data_manager.get_next_exam_id(),
@@ -569,7 +614,16 @@ class ExamsTabMixin:
             overflow_room=overflow_room,
         )
 
-        self.data_manager.add_exam(exam)
+        # The data manager enforces calendar rules (exam window, holidays)
+        # by raising. Uncaught, that escapes as a Tk callback traceback:
+        # the console shows a stack trace and the user sees nothing at
+        # all, with the form still open and apparently working.
+        try:
+            self.data_manager.add_exam(exam)
+        except RuntimeError as exc:
+            messagebox.showerror(
+                _("exam_scheduler.dialogs.validation_error"), str(exc))
+            return
 
         # Notify any open sibling GUIs (Grade tracking, Module scheduling,
         # Course mgmt) so their views can refresh without manual reload.
@@ -580,7 +634,7 @@ class ExamsTabMixin:
             publish(EVENT_EXAM_CHANGED,
                     exam_id=exam.id, module_code=module_code, action="create")
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Automatically add to calendar
         calendar_added = False
@@ -591,7 +645,7 @@ class ExamsTabMixin:
                     publish(EVENT_CALENDAR_CHANGED,
                             event_type="Exam", source_id=exam.id, action="create")
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
         # Reserve the room in the shared room_bookings table so other
         # systems (lectures, society events, facilities) see it as taken.
@@ -678,7 +732,12 @@ class ExamsTabMixin:
             enrolled_student_ids=roster_ids,
         )
 
-        self.data_manager.update_exam(exam)
+        try:
+            self.data_manager.update_exam(exam)
+        except RuntimeError as exc:
+            messagebox.showerror(
+                _("exam_scheduler.dialogs.validation_error"), str(exc))
+            return
 
         # Mirror the change onto the academic calendar so students/staff
         # see the updated time, room, and instructor.
@@ -694,7 +753,7 @@ class ExamsTabMixin:
             publish(EVENT_EXAM_CHANGED,
                     exam_id=exam.id, module_code=exam.module_code, action="update")
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Refresh the shared room reservation (room or time may have changed).
         room_reserved = self.data_manager.reserve_room_for_exam(exam)
@@ -742,7 +801,7 @@ class ExamsTabMixin:
                         module_code=getattr(exam_obj, "module_code", None),
                         action="delete")
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             if HAS_CALENDAR:
                 self.data_manager.remove_exam_from_calendar(exam_id)
             self.data_manager.release_room_for_exam(exam_id)
@@ -787,7 +846,7 @@ class ExamsTabMixin:
                 if start:
                     self.exam_vars['date'].set(start[:10])
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def on_exam_select(self, event):
         """Handle exam selection in the tree."""
@@ -815,7 +874,7 @@ class ExamsTabMixin:
                 source="exam_scheduler",
             )
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Set module dropdown
         # Find matching module in dropdown options
@@ -993,7 +1052,7 @@ class ExternalExaminersDialog(tk.Toplevel):
                 for ex in find_examiners_for_module(exam_obj.module_code):
                     appointed_ids.add(ex["examiner_id"])
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         self._examiner_lookup = {}
         # Order: appointed first, then everyone else, both alphabetical.

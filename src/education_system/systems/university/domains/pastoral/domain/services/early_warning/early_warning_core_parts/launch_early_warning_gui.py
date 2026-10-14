@@ -53,7 +53,7 @@ def launch_early_warning_gui(root, auth):
             header_frame = ttk.Frame(self.root)
             header_frame.pack(fill=tk.X, padx=10, pady=10)
 
-            ttk.Label(header_frame, text=_t("early_warning.title", default="Student Success Early Warning System"),
+            ttk.Label(header_frame, text=_t("early_warning.title", default="===== EARLY WARNING ====="),
                      font=('Arial', 16, 'bold')).pack(side=tk.LEFT)
 
             ttk.Button(header_frame, text=_t("common.return_to_main_menu", default="Return to Homescreen"),

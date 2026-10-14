@@ -9,8 +9,8 @@ independent assessment organisation standing outside the training
 provider, and almost every design decision below follows from that.
 
 ```bash
-python run.py --apprenticeships --gui
-python run.py --apprenticeships --cli
+python -m education_system --apprenticeships --gui
+python -m education_system --apprenticeships --cli
 ```
 
 There is no per-system login. The launcher authenticates against the
@@ -138,20 +138,74 @@ because completion is the event the provider is paid for.
 ```
 education_system/systems/apprenticeships/
 ├── config.py                 # Roles, permissions and every closed vocabulary
-├── domain/                   # Pure rules: apprentices, training, portfolio,
-│                             #   reviews, gateway, EPA, funding, compliance
+├── manifest.py               # Key, display name, interfaces
+├── domain/                   # Pure rules, one package per area: apprentices,
+│                             #   admissions, programmes, employers, training,
+│                             #   portfolio, reviews, progress, learner_support,
+│                             #   records, quality, workspace, end_point_assessment,
+│                             #   funding, compliance, staff, degree_apprenticeships
 ├── services/                 # Actor-first orchestration; the only write path
 ├── infrastructure/
-│   └── persistence/          # One SQLite file, schema.py, repositories/
+│   ├── persistence/          # One SQLite file, schema.py, repositories/
+│   ├── storage/              # Uploaded documents, under var/ (never in git)
+│   └── integrations/         # Cross-system handover, degree events,
+│                             #   read-only university gateway
 ├── interfaces/
 │   ├── cli/                  # shell, menus, prompts, commands/
-│   ├── gui/                  # gui_main, widgets, windows/<role>/
-│   ├── api/                  # scaffolding only — nothing imports it
-│   └── portals/              # scaffolding only — nothing imports it
-├── pathways/                 # Intermediate / advanced / higher / degree rules
-├── integrations/             # Employer, EPAO, funding and university gateways
+│   └── gui/                  # gui_main, session, widgets,
+│                             #   windows/<role>/ and windows/shared/
 └── assets/templates/email/
 ```
+
+The launcher starts `interfaces/cli/shell.run` and
+`interfaces/gui/gui_main.run` directly; there are no top-level
+`cli_main.py` / `gui_main.py` modules.
+
+### Feature map
+
+Every feature follows the same four layers, and every one is reachable
+from both interfaces. A screen used by more than one role lives once in
+`windows/shared/`; the service decides what each role may see and do.
+
+| Feature | Domain | Service | GUI | CLI |
+|---|---|---|---|---|
+| Attendance and absence | `training/attendance.py` | `training_service` | staff register, dashboards | `training` |
+| Individual learning plan | `training/learning_plan.py` | `learning_plan_service` | `shared.learning_plan` | `learning_plan` |
+| Action plans | `reviews/action_plans.py` | `action_plan_service` | `shared.actions` | `actions` |
+| Assignments | `progress/assignments.py` | `assignment_service` | `shared.assignments` | `assignments` |
+| Skills (KSB) matrix | `progress/skills_matrix.py` | `skills_matrix_service` | `shared.skills_matrix` | `skills_matrix` |
+| Functional-skills assessments | `learner_support/skills_assessments.py` | `skills_service` | `shared.functional_skills` | `functional_skills` |
+| Qualifications | `learner_support/qualifications.py` | `qualification_service` | `shared.qualifications` | `qualifications` |
+| Support and adjustments | `learner_support/support_arrangements.py` | `support_service` | `shared.support` | `support` |
+| Welfare and risk | `learner_support/welfare.py` | `welfare_service` | `shared.welfare` | `welfare` |
+| Documents | `records/documents.py` | `document_service` | `shared.documents` | `documents` |
+| Signatures | `records/signatures.py` | `signature_service` | `shared.signatures` | `signatures` |
+| Audit (before → after) | `records/audit.py` | `compliance_service` | `admin.audit_log` | `audit` |
+| Employer contacts and commitments | `employers/contacts.py` | `employer_contact_service` | `shared.employer_contacts` | `employer_contacts` |
+| Employer risk | `employers/risk.py` | `employer_risk_service` | `admin.employer_risk` | `employer_risk` |
+| Curriculum and programme versions | `programmes/curriculum.py`, `versions.py` | `programme_service` | `admin.programmes` | `programmes` |
+| Admissions stages | `admissions/stages.py` | `admissions_service` | `shared.admissions` | `admissions` |
+| Complaints, appeals, surveys | `quality/` | `complaint_`, `appeal_`, `survey_service` | `shared.complaints`, `.appeals`, `.surveys` | same names |
+| Tasks, calendar, workload, search | `workspace/items.py` | `task_`, `calendar_`, `workload_`, `search_service` | `shared.tasks`, `.calendar`, `.workload`, `.search` | same names |
+
+The tasks, calendar, workload and search services pull from the others
+through small provider functions; a provider that fails is logged and
+skipped rather than emptying the list. Rules worth knowing before
+changing any of them:
+
+- **EPA independence carries through.** Appeals against an EPA result
+  are visible to and decided by the end-point assessor only; the
+  provider admin can neither see nor decide them.
+- **Welfare is provider-only twice over**: by permission, and by a role
+  check in the service, so a mistaken grant in `config.py` still would
+  not open it to apprentices, employers or the EPAO. Task lists show a
+  concern's severity and category, never its description.
+- **Survey results are withheld below three responses**, because an
+  average of one or two answers identifies the person.
+- **A superseded programme version takes no new starts**, but its
+  apprentices keep it and it stays schedulable for training.
+- **Admission stages** (Application → Offer → Enrolment) live inside
+  admissions; the apprentice status stays `Applicant` until accepted.
 
 Every service function takes `actor` first. That is not decoration:
 reads are scoped, writes are refused, and the approval queue an employer
@@ -165,13 +219,18 @@ shape, so an apprentice talked through a task over the phone finds the
 same options in the same groups whichever interface they are in.
 
 Both build on one toolkit rather than per-module copies — `widgets.py`
-for Tk, `prompts.py` for the terminal — because at forty-five windows
-the duplication would be the dominant cost.
+for Tk, `prompts.py` for the terminal — because at sixty windows the
+duplication would be the dominant cost. A screen more than one role
+opens lives once in `windows/shared/`; the service scopes what each
+role sees in it.
 
-`interfaces/api/` and `interfaces/portals/` are directory scaffolding:
-empty modules, no route registration, nothing importing them. This
-system is therefore **absent from the unified REST API and the web
-portal**. Building either is outstanding work, not a wiring bug.
+There is no web portal. The HTTP routes live outside this package, in
+`src/education_system/api/apprenticeships/`: generated from the menu
+tree, each answers 501 until it is backed by a service.
+
+`tests/unit/systems/apprenticeships/test_layout.py` keeps star
+re-export shims and docstring-only placeholder modules out of the
+package. A planned module belongs in these docs until it has code.
 
 ---
 
@@ -204,6 +263,34 @@ Note that `RoleManager.grant_system_access` validates against the school
 role hierarchy, which has no entry for apprentice, employer or
 end-point assessor — so `services/account_service.py` writes
 `user_systems` directly rather than going through it.
+
+### Login ↔ learner record
+
+An apprentice's login is linked to their platform learner record
+(`users.journey_id`) automatically. The rules are the platform's
+(`platform/cross_system/login_links.py`), and they apply to every system.
+This system supplies two things:
+
+- **The pairing:** `ApprenticeshipsAdapter.learner_ids_for_login` matches
+  the apprentice record whose `username` is the login's, the same rule
+  sign-in uses.
+- **The hooks:** `services/login_links.py` calls the platform at the
+  moments that pairing can change.
+
+- **When it runs:**
+  - an apprentice is created, or their username changes;
+  - a login is granted the apprentice role, or linked to a record;
+  - degree-apprenticeship access is granted;
+  - at sign-in;
+  - once at every launch (`sync_all`), which catches up older accounts.
+- **What it will not do:**
+  - link a login that doesn't hold the apprentice role;
+  - link when two apprentice records with the same username belong to
+    different learners (it removes an earlier automatic link instead);
+  - overwrite or remove a link someone set by hand.
+- **Audit:** every change is recorded in `security_audit_log` under the
+  actor `apprenticeships:auto-link`.
+- **Revoking access:** this leaves the link in place.
 
 ---
 
@@ -238,6 +325,13 @@ services. Each test runs against a throwaway database — the `db` fixture
 repoints `schema.DB_PATH` *and* resets its ready flag, because doing
 only the first leaves the next `init_db()` short-circuiting on a stale
 cache and the tests writing to the real file.
+
+Creating an apprentice also writes to the platform's shared `auth.db`:
+it registers the learner and links their login. The autouse
+`platform_auth_db` fixture in the package conftest points that at a temp
+file for every test. It repoints `auth.db.PLATFORM_AUTH_DB_FILE` and
+resets the cross-system "schema ready" caches, for the same stale-cache
+reason as above.
 
 ## See also
 

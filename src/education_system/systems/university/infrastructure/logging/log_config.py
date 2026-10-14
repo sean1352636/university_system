@@ -31,7 +31,7 @@ def configure_logging(level=logging.INFO, name=None):
                 continue
 
     # Only create the file handler if it doesn't exist. The console is owned
-    # solely by the application entry point (setup_structured_logging / run.py)
+    # solely by the application entry point (setup_structured_logging / python -m education_system)
     # so output stays a single consistent "datetime - message" stream; this
     # helper only adds the persistent rotating app.log file handler.
     if not existing:

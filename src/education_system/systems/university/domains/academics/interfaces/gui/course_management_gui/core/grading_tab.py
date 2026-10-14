@@ -166,7 +166,7 @@ class GradingTabMixin:
                     if r[0]:
                         codes.add(r[0])
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
         return codes
 
     def _gr_refresh_gradebook_summary(self):
@@ -191,12 +191,15 @@ class GradingTabMixin:
                     return
                 ph = ",".join("?" * len(mods))
                 cur = conn.cursor()
+                # db-audit: ignore[DBW001] - join of placeholders
                 assessments = cur.execute(
                     f"SELECT COUNT(*) FROM assessments WHERE module_code IN ({ph})",
                     list(mods)).fetchone()[0]
+                # db-audit: ignore[DBW001] - join of placeholders
                 total = cur.execute(
                     f"SELECT COUNT(*) FROM module_grades WHERE module_code IN ({ph}) "
                     f"AND final_score IS NOT NULL", list(mods)).fetchone()[0]
+                # db-audit: ignore[DBW001] - join of placeholders
                 passed = cur.execute(
                     f"SELECT COUNT(*) FROM module_grades WHERE module_code IN ({ph}) "
                     f"AND final_score >= ?", list(mods) + [pass_mark]).fetchone()[0]

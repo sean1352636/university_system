@@ -42,7 +42,7 @@ class DocumentationGUI:
 
                 self.auth = get_auth()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         self.student_id = self._resolve_student_id()
         self.is_staff = self._is_staff()

@@ -236,7 +236,7 @@ def display_ai_features_menu(auth):
 def launch_ai_features_gui(root, auth):
     """Launch the AI-Powered Features GUI"""
     try:
-        from education_system.systems.university.interfaces.gui.shell.ai_features.ai_features_gui import (
+        from education_system.systems.university.shell.gui.ai_features.ai_features_gui import (
             launch_ai_features_gui as launch_gui
         )
         launch_gui(root, auth)

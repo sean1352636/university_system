@@ -6,6 +6,7 @@ import logging
 from typing import Callable
 
 from education_system.systems.university.domains.admissions.domain.ucas import (
+    offer_terms as terms_data,
     ucas as data,
     ucas_links as links_data,
 )
@@ -26,6 +27,33 @@ logger = logging.getLogger(__name__)
 
 class _UserAbort(Exception):
     pass
+
+
+def _current_officer() -> str | None:
+    """Who is recording this decision, or ``None`` if we cannot tell.
+
+    An offer that cannot be traced to the person who made it is the thing
+    this is here to stop, but a login that cannot be read must not block
+    the decision itself — an unattributed offer still beats no offer.
+    """
+    try:
+        from education_system.systems.university.infrastructure.auth.core_utils import (
+            get_current_username,
+        )
+        return get_current_username() or None
+    except Exception:
+        logger.debug("Could not resolve the current user", exc_info=True)
+        return None
+
+
+def _existing_terms(choice_id: int):
+    """Terms already issued for this choice, so re-deciding does not make
+    an officer retype a deadline that has not changed."""
+    try:
+        return terms_data.get_terms(choice_id)
+    except Exception:
+        logger.debug("Could not read existing offer terms", exc_info=True)
+        return None
 
 
 def _input(prompt: str, *, default: str = "",
@@ -233,10 +261,45 @@ def record_decision_flow() -> None:
                 default=offer_terms)
         notes = _input("Decision notes (optional)",
                           default=a.choice_notes or "")
+
+        # The rest of what an offer says. Asked for only when there is an
+        # offer to attach it to — a rejection has no reply deadline.
+        terms: dict | None = None
+        if decision in ("Conditional Offer", "Unconditional Offer"):
+            existing = _existing_terms(a.choice_id)
+            terms = {
+                "grade_requirement": _input(
+                    "Grade requirement",
+                    default=(existing.grade_requirement if existing
+                             else offer_terms)),
+                "grade_alternative": _input(
+                    "Alternative pathway (optional)",
+                    default=(existing.grade_alternative if existing else "")
+                            or ""),
+                "reply_deadline": _input(
+                    "Reply deadline (YYYY-MM-DD, optional)",
+                    default=(existing.reply_deadline if existing else "") or ""),
+                "expiry_date": _input(
+                    "Offer expires (YYYY-MM-DD, optional)",
+                    default=(existing.expiry_date if existing else "") or ""),
+                "scholarship": _input(
+                    "Scholarship (optional)",
+                    default=(existing.scholarship if existing else "") or ""),
+                "accommodation_guaranteed": _input(
+                    "Accommodation guaranteed? (y/n)",
+                    default=("y" if existing
+                             and existing.accommodation_guaranteed else "n"),
+                ).strip().lower() in ("y", "yes"),
+                "notes": notes,
+            }
+
+        issued_by = _current_officer()
         out = data.record_decision(
             a.choice_id, decision,
             offer_terms=offer_terms or None,
             notes=notes or None,
+            terms=terms,
+            issued_by=issued_by,
         )
         print(f"\n  ✓ Decision recorded: {out.decision_status}"
               f" (terms: {out.offer_terms or '—'})")

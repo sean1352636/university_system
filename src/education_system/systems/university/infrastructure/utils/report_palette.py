@@ -1,5 +1,9 @@
 # refactored/utils/report_palette.py
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
+
 from typing import List, Optional
 
 DEFAULT_PALETTE: List[str] = [
@@ -21,7 +25,7 @@ def get_report_palette(n: Optional[int] = None) -> List[str]:
             if pal:
                 palette = pal
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
     if not palette:
         palette = list(DEFAULT_PALETTE)

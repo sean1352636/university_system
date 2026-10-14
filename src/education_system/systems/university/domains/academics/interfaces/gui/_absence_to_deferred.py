@@ -50,7 +50,7 @@ def _parse_ids(raw: Any) -> list[str]:
         if isinstance(parsed, list):
             return [str(x) for x in parsed]
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return [s.strip() for s in str(raw).split(",") if s.strip()]
 
 
@@ -180,7 +180,7 @@ def defer_exam_for_authorised_absence(
                         orig_st, orig_et, acc
                     )
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
             existing = _existing_resit(conn, orig_id)
             if auto_attach and existing:
@@ -209,7 +209,7 @@ def defer_exam_for_authorised_absence(
                             sid, orig_id, existing["id"]
                         )
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
                 results.append({
                     "original_exam_id": orig_id,
                     "resit_exam_id": existing["id"],
@@ -241,7 +241,7 @@ def defer_exam_for_authorised_absence(
                         sid, orig_id, new_id
                     )
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
             results.append({
                 "original_exam_id": orig_id,
                 "resit_exam_id": new_id,
@@ -258,7 +258,7 @@ def defer_exam_for_authorised_absence(
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     # Broadcast on the cross-GUI bus so any open Exam scheduler reloads.
     if results:
@@ -273,7 +273,7 @@ def defer_exam_for_authorised_absence(
                             module_code=module_code,
                             action=f"resit_{r['action']}")
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     # Bill the resit fee. Only on freshly created resits — re-attaching
     # to an existing resit means the student was already billed once.

@@ -34,6 +34,10 @@ from education_system.systems.university.infrastructure.email.admin.menus import
     display_preferences_menu,
     display_admin_message_management_menu,
     display_communication_dashboard,
+    # Callers import these from the package, not from menus; menus already
+    # pulls them in from email.announcements / email.chat_rooms.
+    display_announcements_menu,
+    display_chat_rooms_menu,
 )
 from education_system.systems.university.infrastructure.email.admin.initialization import (
     integrate_communication_dashboard_with_main,
@@ -113,6 +117,8 @@ __all__ = [
     'display_preferences_menu',
     'display_admin_message_management_menu',
     'display_communication_dashboard',
+    'display_announcements_menu',
+    'display_chat_rooms_menu',
     # Initialization functions
     'integrate_communication_dashboard_with_main',
     'set_auth',

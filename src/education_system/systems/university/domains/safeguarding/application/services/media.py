@@ -22,7 +22,7 @@ def quick_exit():
     try:
         webbrowser.open_new_tab(_QUICK_EXIT_URL)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     try:
         for w in tk._default_root.winfo_children() if tk._default_root else []:
             try:
@@ -32,7 +32,7 @@ def quick_exit():
         if tk._default_root is not None:
             tk._default_root.destroy()
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     os._exit(0)
 
 

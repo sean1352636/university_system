@@ -1,18 +1,13 @@
-"""
-Takeaway System Module
-Campus food ordering and delivery service
-"""
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.domain.services.takeaway`` (campus commerce plugin).
 
-from education_system.systems.university.domains.operations.domain.commerce.services.takeaway.takeaway_service import (
-    init_takeaway_db,
-    setup_takeaway_permissions,
-    display_takeaway_menu,
-    set_auth,
-)
+A mirror, not an alias: an aliased package would resolve this package's
+submodules through the new ``__path__`` and load each one a second time.
+Submodules are aliased individually; this copies the package's names.
+"""
+# layout-shim: education_system.systems.university.plugins.campus_commerce.domain.services.takeaway
+import importlib as _importlib
 
-__all__ = [
-    'init_takeaway_db',
-    'setup_takeaway_permissions',
-    'display_takeaway_menu',
-    'set_auth',
-]
+_new = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.domain.services.takeaway")
+globals().update({k: v for k, v in vars(_new).items()
+                  if not (k.startswith("__") and k.endswith("__"))})
+del _importlib, _new

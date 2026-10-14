@@ -1,4 +1,5 @@
 """Financial reports and analytics"""
+from education_system.systems.university.shell.gui import report_view as _rv
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -158,7 +159,7 @@ class ReportManager:
         display_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance.report_manager.labels.report_output', default="Report Output"), padding=15)
         display_frame.pack(fill='both', expand=True)
 
-        self.report_text = ScrolledText(display_frame, height=20, width=80, font=('Courier', 10))
+        self.report_text = _rv.TextReportView(display_frame, height=20, width=80, font=('Courier', 10))
         self.report_text.pack(fill='both', expand=True)
 
         # Export buttons
@@ -1047,7 +1048,7 @@ class ReportManager:
         window.geometry("800x600")
         window.transient(self.root)
 
-        text_widget = ScrolledText(window, font=('Courier', 10))
+        text_widget = _rv.TextReportView(window, font=('Courier', 10))
         text_widget.pack(fill='both', expand=True, padx=10, pady=10)
         text_widget.insert('1.0', content)
 

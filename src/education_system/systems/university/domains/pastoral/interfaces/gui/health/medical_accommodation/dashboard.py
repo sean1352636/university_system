@@ -486,7 +486,7 @@ class StatisticsDialog:
                     if row:
                         admin_email = row[0]
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             if not admin_email:
                 # Ask for email address

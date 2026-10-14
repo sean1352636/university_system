@@ -19,7 +19,7 @@ class BackupRecoverySystem:
 
         # Get the correct database path
         try:
-            from education_system.systems.university.interfaces.cli.shell.cli_main import DB_PATH
+            from education_system.systems.university.shell.cli.cli_main import DB_PATH
             self.db_path = DB_PATH
         except ImportError:
             # Fallback to centralized path

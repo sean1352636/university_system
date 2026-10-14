@@ -1,0 +1,15 @@
+{
+    "subject": "🩺 Reminder: your $screening_label is due on $due_date",
+    "body": "Dear $student_name,\n\nThis is a reminder that a health screening is coming up for you. Screenings are quick, routine and free to students — they are how we catch things early, while they are easy to treat.\n\n=== YOUR SCREENING ===\nScreening: $screening_type\nDue Date: $due_date\n$due_line\nReference: $screening_id\nStudent ID: $student_id\nProvider: $provider\n\n=== HOW TO BOOK ===\n1. Log in to the Health Portal and choose Appointments, or\n2. Call the Health Centre on (555) 123-4567, or\n3. Drop in during open clinic hours.\n\nAppointments usually take 15-20 minutes.\n\n=== IF YOU HAVE ALREADY HAD THIS DONE ===\nIf you have had this screening elsewhere — at your GP, at home, or at another university — let us know and we will update your record so you stop receiving reminders. Send the date and where it was done to health@university.edu.\n\n=== IF YOU DO NOT WANT THIS SCREENING ===\nScreenings are offered, not required. If you would rather not have it, tell the Health Centre and we will note that on your record.\n\n=== CONTACT INFORMATION ===\nHealth Centre: health@university.edu\nPhone: (555) 123-4567\nOffice Hours: Monday-Friday, 9:00 AM - 5:00 PM\n\nBest regards,\nUniversity Health Centre\n\n$signature",
+    "variables": {
+        "provider": {
+            "default": "To be assigned"
+        },
+        "due_line": {
+            "default": ""
+        },
+        "screening_label": {
+            "default": "screening"
+        }
+    }
+}

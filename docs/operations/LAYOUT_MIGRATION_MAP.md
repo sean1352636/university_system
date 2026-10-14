@@ -8,6 +8,15 @@ directory skeleton at `program/` in the repository root was generated from this 
 `var/` top-level layout) —
 every directory in it exists because at least one real file maps into it.
 
+> **This is a historical record, not a description of the current tree.** The destination
+> column describes the layout as it stood at the ADR 0018 migration. Three later moves have
+> superseded parts of it: `program/` → `src/`, the decomposition of the university into
+> `systems/university/domains/<domain>/` vertical slices, and the extraction of the delivery
+> shell from `interfaces/{cli,gui}/shell/` to `systems/university/shell/{cli,gui}/`. Rows
+> naming those paths record where a file went *then*. For the current layout see
+> [PROJECT_STRUCTURE.md](../reference/PROJECT_STRUCTURE.md); this file is kept to trace a
+> file back to its pre-consolidation home.
+
 **Coverage as of 2026-07-25:** 8,413 files under `education_system/` classified, **0 unmapped**,
 producing 1,706 destination directories and 1,597 distinct source-directory → destination-directory
 pairs. The full pair list is in [`layout-migration-map.tsv`](layout-migration-map.tsv).
@@ -217,9 +226,9 @@ Three places where this mapping had moved past the ADR are now closed — ADR 00
 1. The canonical per-system shape gains the `services/` pillar and states the no-exceptions rule
    for interface code.
 2. The shared domain vocabulary gains `learners`, taking it from ten areas to eleven.
-3. The target tests tree matches what is built: `tests/{platform, systems/*, tools, launcher,
-   migrations}`, with `integration/` and `smoke/` inside each system rather than at the root, and
-   no `e2e/`.
+3. The target test tree is scope-first: `tests/{unit,integration,contract,end_to_end,smoke,
+   security,performance}`. Each scope then identifies its owner, such as
+   `unit/systems/university` or `integration/platform`.
 
 ---
 
@@ -230,11 +239,11 @@ The 589 test files are the one case where a directory-level mapping was not enou
 describing a structure the code no longer has — `tests/domain/academics/grading/` next to
 `domain/assessment/grading/`, and 27 top-level `tests/domain/` children against 11 code areas.
 
-**The rule is: the test tree mirrors the code tree, one level for one level.** A module at
-`domain/<area>/<feature>/` has its tests at `tests/unit/systems/university/domain/<area>/<feature>/`.
-Cross-cutting suites (`integration/`, `smoke/`, `_support/`) stay as top-level siblings because they
-belong to no single module. GUI and CLI tests follow the code into `interfaces/`, which is what
-keeps the ADR 0007 split honest on the test side too.
+**The rule is: scope first, then mirror the code tree one level for one level.** A module at
+`domains/<area>/domain/<feature>/` has its unit tests below
+`tests/unit/systems/university/domains/<area>/<feature>/`. Domain-owned GUI and CLI tests follow
+the code below that domain's `interfaces/`; application-wide adapters follow `shell/`. Cross-cutting
+suites live in their top-level scope and identify the university as their owner.
 
 Twelve source directories held loose, unrelated test files and split across destinations, so they
 appear on several rows in the TSV. The largest splits:

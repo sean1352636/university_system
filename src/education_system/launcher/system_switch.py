@@ -27,7 +27,7 @@ SUPERADMIN_LABEL = "Superadmin Dashboard"
 # circular import.
 # Derived from the per-system manifests. This table was the source of the
 # "Sixth Form College" spelling that disagreed with the other two registries.
-from education_system.systems.registry import display_names
+from education_system.systems.registry import SYSTEM_KEYS, display_names
 
 SYSTEM_LABELS: dict[str, str] = display_names()
 
@@ -35,15 +35,22 @@ SYSTEM_LABELS: dict[str, str] = display_names()
 def available_targets(user_info: dict[str, Any] | None,
                       current_system: str) -> list[tuple[str, str]]:
     """Return ``[(system_key, label)]`` for every system the user has
-    access to (other than the one they're already in)."""
+    access to (other than the one they're already in).
+
+    Filtered against the registry, and ordered by it. A ``user_systems`` row
+    can outlive the system it names — superadmin still carries rows for the
+    retired ``playgroup``/``fecollege``/``apprenticeship`` dashboards — and an
+    unfiltered list offered those as switch targets under a ``.title()`` of
+    their key ("Fecollege"), leading to a dispatch that cannot succeed.
+    """
     if not user_info:
         return []
     systems = user_info.get("systems") or []
-    keys = sorted({
+    granted = {
         s["system_key"] for s in systems
         if s.get("system_key") and s["system_key"] != current_system
-    })
-    return [(k, SYSTEM_LABELS.get(k, k.title())) for k in keys]
+    }
+    return [(k, SYSTEM_LABELS[k]) for k in SYSTEM_KEYS if k in granted]
 
 
 def pick_system_cli(user_info: dict[str, Any] | None,

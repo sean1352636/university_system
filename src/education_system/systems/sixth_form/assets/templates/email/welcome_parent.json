@@ -1,0 +1,11 @@
+{
+  "template_id": "welcome_parent",
+  "description": "Sent automatically when a parent portal account is created. Gives the guardian their sign-in details, tells them what the portal does and does not show, and sets the expectation that the college contacts them here rather than by scattered letters.",
+  "channel": "Email",
+  "category": "General",
+  "priority": "Normal",
+  "from_name": "Sixth Form Parent Portal",
+  "from_address": "parents@sixthform.ac.uk",
+  "subject": "Your {{system_name}} parent account is ready",
+  "body": "Hi {{full_name}},\n\nWe have set up your parent account for {{system_name}}. You can now sign in and follow {{children}} through the year.\n\nYour sign-in details\n--------------------\n  Sign-in name: {{username}}\n  Password:     {{password}}\n\nPlease change your password the first time you sign in — the one above was typed in by a member of staff, so it is not private to you until you do.\n\nWhat you will see\n-----------------\n  - Attendance, including every session missed or arrived late for.\n  - Predicted, target and forecast grades for each subject.\n  - The behaviour record, good and bad.\n  - Coursework that has been set and handed in. Marks appear once they have been released to your child, not before.\n\nWhat you will not see\n---------------------\nThe portal is deliberately limited to the above. Pastoral, medical and safeguarding records are not shown, and nothing you see here is editable — it is a window onto your child's record, not a copy of it.\n\nIf something looks wrong\n------------------------\nSpeak to the college office rather than acting on it. Registers are corrected all the time, and an absence that looks unexplained this morning is often authorised by the afternoon.\n\nIf you were not expecting this email, please contact us straight away so we can remove the account.\n\nThe Parent Portal Team\n{{system_name}}"
+}

@@ -42,6 +42,18 @@ class Programme:
     status: str = "Draft"
     created_at: str = ""
     updated_at: str = ""
+    # Versions of one standard share the reference; see domain/programmes/versions.
+    version: str = config.PROGRAMME_DEFAULT_VERSION
+    supersedes_programme_id: int | None = None
+
+    @property
+    def is_superseded(self) -> bool:
+        return self.status == "Superseded"
+
+    @property
+    def label(self) -> str:
+        """Reference, version and title — how a picker should show it."""
+        return f"{self.reference} v{self.version} — {self.title}"
 
     @property
     def level_label(self) -> str:

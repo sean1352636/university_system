@@ -48,7 +48,6 @@ python -m education_system --nursery --gui      # Nursery / Early Years GUI
 python -m education_system --university --api   # Unified REST API server
 
 # Installing the project also provides an `education-system` console script.
-# `python run.py` still works but is deprecated and will be removed.
 
 # Common operations
 make test                  # Run all tests
@@ -154,7 +153,6 @@ docs/                        # Centralised documentation (150+ files)
 tools/
 var/                         # Runtime data, logs, backups, secrets (never committed)
 
-run.py                       # Deprecated shim -> education_system.launcher.main
 Makefile                     # Development commands (30+ targets)
 ```
 
@@ -223,15 +221,15 @@ Key variables: `API_HOST`, `API_PORT`, `JWT_SECRET_KEY`, `SMTP_*`, `DB_*`. See [
 ### Unified Launcher
 
 ```bash
-python run.py                       # Interactive menu
-python run.py --university --gui    # Direct launch
-python run.py --college --api       # Start API server
+python -m education_system                       # Interactive menu
+python -m education_system --university --gui    # Direct launch
+python -m education_system --college --api       # Start API server
 ```
 
 ### REST API & Web Portal
 
 ```bash
-python run.py --college --api       # Starts unified API on http://0.0.0.0:5000
+python -m education_system --college --api       # Starts unified API on http://0.0.0.0:5000
 ```
 
 | URL | Description |

@@ -217,6 +217,7 @@ class ExamPortalService:
         else:
             where_exam = "exam_id IS NULL"
 
+        # db-audit: ignore[DBW001] - join of placeholders; string literal
         rows = conn.execute(
             f"SELECT extended_time, separate_room, reader_scribe, "
             f"       assistive_technology, exam_id "
@@ -287,7 +288,7 @@ class ExamPortalService:
                         if diff > 0:
                             duration = diff
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
 
                     # Build start/end datetime strings
                     start_dt = f"{date} {start_time}" if date and start_time else None
@@ -363,6 +364,7 @@ class ExamPortalService:
         fields.append("updated_at = datetime('now')")
         values.append(exam_id)
         with get_connection() as conn:
+            # db-audit: ignore[DBW001] - join over a code-controlled list
             conn.execute(
                 f"UPDATE exam_portal_exams SET {', '.join(fields)} WHERE id = ?",
                 values,
@@ -374,6 +376,20 @@ class ExamPortalService:
         exam = self.get_exam(exam_id)
         if not exam:
             return False
+
+        # An exam with no questions is not sittable, and publishing one is
+        # actively harmful: a student can start it, submit_attempt scores 0
+        # out of the exam's total_marks, and the result now propagates to
+        # student_grades as a fail. Refuse rather than let that happen.
+        with get_connection() as conn:
+            question_count = conn.execute(
+                "SELECT COUNT(*) FROM exam_portal_questions WHERE exam_id = ?",
+                (exam_id,)).fetchone()[0]
+        if not question_count:
+            logger.warning(
+                "Refusing to publish exam %s: it has no questions", exam_id)
+            return False
+
         try:
             from education_system.systems.university.services.bus.integration_bus import (
                 is_exam_within_term,
@@ -381,7 +397,7 @@ class ExamPortalService:
             if not is_exam_within_term(exam.get("start_time"), exam.get("end_time")):
                 return False
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         with get_connection() as conn:
             conn.execute(
                 "UPDATE exam_portal_exams SET status = 'published', "
@@ -402,7 +418,7 @@ class ExamPortalService:
                 pass_mark=exam.get("pass_mark"),
             )
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return True
 
     def unpublish_exam(self, exam_id: int) -> bool:
@@ -509,6 +525,7 @@ class ExamPortalService:
             return False
         values.append(question_id)
         with get_connection() as conn:
+            # db-audit: ignore[DBW001] - join over a code-controlled list
             conn.execute(
                 f"UPDATE exam_portal_questions SET {', '.join(fields)} WHERE id = ?",
                 values,
@@ -567,7 +584,7 @@ class ExamPortalService:
             if not allowed:
                 return {"error": "blocked", "reason": reason}
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Check for existing in-progress attempt first, then limit
         with get_connection() as conn:
@@ -764,6 +781,11 @@ class ExamPortalService:
                 "needs_manual_grading": needs_manual,
             }
         if graded_status == "graded":
+            # Fully auto-marked: this attempt never passes through
+            # finalise_grading, so the gradebook writeback has to happen here
+            # too or these results would never leave the portal.
+            self._write_result_to_gradebook(attempt_id, "auto_grader")
+
             try:
                 from education_system.systems.university.services.bus.integration_bus import (
                     publish_exam_event,
@@ -777,7 +799,7 @@ class ExamPortalService:
                     percentage=round(percentage, 1), passed=bool(passed),
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
         return result
 
     def update_time_remaining(self, attempt_id: int, seconds: int):
@@ -837,6 +859,11 @@ class ExamPortalService:
             ).fetchone()
             conn.commit()
 
+        # Carry the result into the gradebook. Runs after the commit above and
+        # on its own connection, so a gradebook problem cannot roll back a
+        # grading decision that is already saved on the portal side.
+        self._write_result_to_gradebook(attempt_id, graded_by)
+
         try:
             from education_system.systems.university.services.bus.integration_bus import (
                 publish_exam_event,
@@ -851,8 +878,26 @@ class ExamPortalService:
                     percentage=round(percentage, 1), passed=bool(passed),
                 )
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return {"score": total_score, "percentage": round(percentage, 1), "passed": bool(passed)}
+
+    @staticmethod
+    def _write_result_to_gradebook(attempt_id: int, graded_by: str) -> None:
+        """Propagate a graded attempt to student_grades / student_modules.
+
+        Called from both places an attempt can reach 'graded': here after
+        manual marking, and from submit_attempt when the paper is entirely
+        auto-marked and never needs a human. Hooking only one would leave
+        half the online exams missing from the gradebook.
+        """
+        try:
+            from education_system.systems.university.domains.academics.domain.services.exam_management.grade_writeback import (
+                apply_attempt_result,
+            )
+            apply_attempt_result(attempt_id, graded_by=graded_by)
+        except Exception as exc:
+            logger.warning("Gradebook writeback skipped for attempt %s: %s",
+                           attempt_id, exc)
 
     # ── Results ─────────────────────────────────────────────────────
 

@@ -1,7 +1,13 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+
+from ._dialogs import make_toplevel, messagebox
 import tkinter.font as tkFont
 from datetime import datetime, timedelta
 import json
@@ -68,7 +74,7 @@ def _patched_sqlite_connect(database, *args, **kwargs):
         if not database or db_name == str(DEFAULT_DB_PATH):
             return _original_sqlite3_connect(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return _original_sqlite3_connect(database, *args, **kwargs)
 
 sqlite3.connect = _patched_sqlite_connect
@@ -168,7 +174,7 @@ class DashboardMixin:
             else:
                 # Running standalone, need to create main GUI
                 root_widget.destroy()
-                from education_system.systems.university.interfaces.gui.shell.main import UnifiedManagementGUI
+                from education_system.systems.university.shell.gui.main import UnifiedManagementGUI
                 app = UnifiedManagementGUI(self.auth)
                 app.run()
         except Exception as e:
@@ -182,10 +188,9 @@ class DashboardMixin:
             from education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk import HelpdeskGUI
 
             # Create a new Toplevel window for Helpdesk
-            helpdesk_window = tk.Toplevel(self.root)
+            helpdesk_window = make_toplevel(self.root)
             helpdesk_window.title(_t('gui.pastoral.student_support.dashboard.windows.it_helpdesk_system', default="IT Helpdesk System"))
             helpdesk_window.geometry("1200x800")
-            helpdesk_window.transient(self.root)
 
             # Initialize the Helpdesk GUI in the new window
             HelpdeskGUI(helpdesk_window, self.auth)
@@ -541,6 +546,18 @@ class DashboardMixin:
         except Exception as e:
             ttk.Label(self.notifications_display_frame, text=f"❌ Error loading notifications: {e}").pack(pady=20)
 
+    @staticmethod
+    def _preview(text, limit):
+        """One-line, length-capped preview of a message or subject.
+
+        Newlines are collapsed so a short-but-tall body cannot stretch the
+        row, and the cap keeps the whole list a sane height.
+        """
+        if not text:
+            return ""
+        flat = " ".join(str(text).split())
+        return flat if len(flat) <= limit else flat[:limit - 1].rstrip() + "…"
+
     def create_notification_item(self, parent, notification):
         """Create a notification item"""
         # Frame with background color based on read status
@@ -557,17 +574,23 @@ class DashboardMixin:
         header_frame.pack(fill="x")
 
         status_icon = "📫" if notification.get('is_read') else "📬"
-        title_text = f"{status_icon} {notification['title']}"
+        title_text = f"{status_icon} {self._preview(notification.get('title'), 90)}"
 
         ttk.Label(header_frame, text=title_text, font=('Segoe UI', 10, 'bold')).pack(side="left")
 
         # Timestamp
-        ttk.Label(header_frame, text=notification['created'], font=('Segoe UI', 9),
+        ttk.Label(header_frame, text=notification.get('created', ''), font=('Segoe UI', 9),
                  foreground=self.colors['text_secondary']).pack(side="right")
 
-        # Message
-        if notification.get('message'):
-            ttk.Label(content_frame, text=notification['message'], wraplength=700).pack(anchor="w", pady=(5, 0))
+        # Message — a preview, not the whole body. These are real emails now:
+        # one in the live data is 29k characters, and a wrapping label that
+        # size makes the scrollable canvas tens of thousands of pixels tall,
+        # which the X server cannot allocate a pixmap for ("BadAlloc ...
+        # X_CreatePixmap"). The full text is one click away in the message.
+        body = self._preview(notification.get('message'), 240)
+        if body:
+            ttk.Label(content_frame, text=body, wraplength=700,
+                      justify="left").pack(anchor="w", pady=(5, 0))
 
         # Actions
         action_frame = ttk.Frame(content_frame)
@@ -597,22 +620,10 @@ class DashboardMixin:
             return
 
         try:
-            success = False
-            if self.support and hasattr(self.support, 'mark_notification_read'):
-                success = self.support.mark_notification_read(notification_id, user_id=user_id)
-            else:
-                def update_notification(conn):
-                    cursor = conn.cursor()
-                    cursor.execute(
-                        '''
-                        UPDATE notifications
-                        SET is_read = 1, read_datetime = ?
-                        WHERE notification_id = ? AND user_id = ?
-                        ''',
-                        (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), notification_id, user_id)
-                    )
-                    return cursor.rowcount
-                success = self._safe_db_call(update_notification) > 0
+            # Same retired-table fallback as above, removed for the same
+            # reason: it could only ever match zero rows.
+            success = bool(self.support) and self.support.mark_notification_read(
+                notification_id, user_id=user_id)
 
             if not success:
                 messagebox.showwarning(_t('gui.pastoral.student_support.dashboard.dialogs.notification', default="Notification"), _t('gui.pastoral.student_support.dashboard.dialogs.notification_was_already_marked_as_read_or_no_longer_exists', default="Notification was already marked as read or no longer exists."))
@@ -628,10 +639,9 @@ class DashboardMixin:
     def view_notification_email(self, notification):
         """View the email notification that was sent"""
         # Create a new window to display the email content
-        email_window = tk.Toplevel(self.root)
+        email_window = make_toplevel(self.root)
         email_window.title(f"📧 Email Notification - {notification.get('title', 'Notification')}")
         email_window.geometry("900x700")
-        email_window.transient(self.root)
 
         # Main frame
         main_frame = ttk.Frame(email_window, padding="15")
@@ -775,28 +785,16 @@ class DashboardMixin:
             return
 
         try:
-            def bulk_update(conn):
-                cursor = conn.cursor()
-                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                cursor.execute(
-                    '''
-                    UPDATE notifications
-                    SET is_read = 1,
-                        read_datetime = COALESCE(read_datetime, ?)
-                    WHERE user_id = ? AND is_read = 0
-                    ''',
-                    (timestamp, user_id)
-                )
-                return cursor.rowcount
-
+            # The old fallback here wrote straight to the `notifications`
+            # table, which the Hub redesign retired — it matched zero rows and
+            # reported success. The service reads and writes the mailbox now.
             updated = 0
-            if self.support and hasattr(self.support, 'get_user_notifications'):
-                notifications = self.support.get_user_notifications(user_id=user_id, unread_only=True)
-                for notif in notifications:
-                    if self.support.mark_notification_read(notif['notification_id'], user_id=user_id):
-                        updated += 1
-            else:
-                updated = self._safe_db_call(bulk_update)
+            notifications = self.support.get_user_notifications(
+                user_id=user_id, unread_only=True) if self.support else []
+            for notif in notifications:
+                if self.support.mark_notification_read(
+                        notif['notification_id'], user_id=user_id):
+                    updated += 1
 
             self.load_dashboard()
             self.load_notifications()

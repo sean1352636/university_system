@@ -258,6 +258,8 @@ def _add_manager(actor: Actor) -> None:
     summary = _pick(actor)
     payload = {
         "full_name": prompts.ask("Contact name", required=True),
+        "contact_role": prompts.choose("Role (blank for none)", config.EMPLOYER_CONTACT_ROLES,
+                                       allow_blank=True),
         "job_title": prompts.ask("Job title"),
         "email": prompts.ask("Email"),
         "phone": prompts.ask("Phone"),
@@ -271,8 +273,12 @@ def _add_manager(actor: Actor) -> None:
 
 def _edit_manager(actor: Actor) -> None:
     summary, manager = _pick_manager(actor)
+    prompts.note(f"Role now: {manager.contact_role or prompts.EMPTY}")
+    role = prompts.choose("Role (blank keeps it)", config.EMPLOYER_CONTACT_ROLES,
+                          allow_blank=True)
     payload = {
         "full_name": prompts.ask("Contact name", default=manager.full_name, required=True),
+        "contact_role": role or manager.contact_role,
         "job_title": prompts.ask("Job title", default=manager.job_title or ""),
         "email": prompts.ask("Email", default=manager.email or ""),
         "phone": prompts.ask("Phone", default=manager.phone or ""),
@@ -362,9 +368,10 @@ def _workplace_table(workplaces: list) -> None:
 
 def _manager_table(managers: list) -> None:
     prompts.table(
-        (("Name", 24), ("Job title", 22), ("Email", 26), ("Login", 14),
+        (("Name", 22), ("Role", 20), ("Job title", 18), ("Email", 24), ("Login", 12),
          ("Primary", 8), ("Active", 7)),
         managers,
-        lambda m: (m.full_name, m.job_title, m.email, m.username, m.is_primary, m.active),
+        lambda m: (m.full_name, m.contact_role, m.job_title, m.email, m.username,
+                   m.is_primary, m.active),
         noun="contact",
     )

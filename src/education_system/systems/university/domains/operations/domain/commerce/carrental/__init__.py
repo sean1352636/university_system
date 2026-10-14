@@ -1,50 +1,13 @@
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.domain.carrental`` (campus commerce plugin).
+
+A mirror, not an alias: an aliased package would resolve this package's
+submodules through the new ``__path__`` and load each one a second time.
+Submodules are aliased individually; this copies the package's names.
 """
-Car Rental System Module
+# layout-shim: education_system.systems.university.plugins.campus_commerce.domain.carrental
+import importlib as _importlib
 
-Provides comprehensive car rental management including
-vehicles, reservations, returns, and transaction management
-with email and finance integration.
-"""
-
-from education_system.systems.university.domains.operations.domain.commerce.carrental.services.carrental_core import (
-    VehicleManager,
-    RentalManager,
-    TransactionManager,
-    ReportManager,
-    init_carrental_db,
-    VEHICLE_CATEGORIES,
-    RENTAL_STATUSES,
-    VEHICLE_STATUSES
-)
-
-__all__ = [
-    'CarRentalGUI',
-    'launch_carrental_gui',
-    'VehicleManager',
-    'RentalManager',
-    'TransactionManager',
-    'ReportManager',
-    'init_carrental_db',
-    'VEHICLE_CATEGORIES',
-    'RENTAL_STATUSES',
-    'VEHICLE_STATUSES'
-]
-
-# The GUI classes live in the interfaces layer, which imports back into this
-# domain package, so an eager re-export here is a circular import. PEP 562
-# lazy lookup keeps these names on the package's public surface without the
-# cycle: the interfaces module is only imported on first attribute access.
-_LAZY_GUI_EXPORTS = {
-    "CarRentalGUI": "education_system.systems.university.domains.operations.interfaces.gui.commerce.carrental.carrental_gui",
-    "launch_carrental_gui": "education_system.systems.university.domains.operations.interfaces.gui.commerce.carrental.carrental_gui",
-}
-
-
-def __getattr__(name: str):
-    module_path = _LAZY_GUI_EXPORTS.get(name)
-    if module_path is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    value = getattr(importlib.import_module(module_path), name)
-    globals()[name] = value  # cache so subsequent access skips __getattr__
-    return value
+_new = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.domain.carrental")
+globals().update({k: v for k, v in vars(_new).items()
+                  if not (k.startswith("__") and k.endswith("__"))})
+del _importlib, _new

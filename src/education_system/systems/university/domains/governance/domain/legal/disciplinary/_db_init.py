@@ -121,6 +121,7 @@ def ensure_disciplinary_schema(db_path=None) -> None:
 def _add_extra_columns(conn) -> None:
     for table, col_def in _EXTRA_COLUMNS:
         try:
+            # db-audit: ignore[DBW001] - module constant
             conn.execute(f"ALTER TABLE {table} ADD COLUMN {col_def}")
             conn.commit()
         except sqlite3.OperationalError:

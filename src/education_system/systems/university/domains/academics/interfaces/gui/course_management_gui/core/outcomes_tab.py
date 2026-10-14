@@ -80,9 +80,9 @@ class OutcomesTabMixin:
             ttk.Button(bar, text=_("common.delete", default="Delete"),
                        command=self._delete_outcome).pack(side=tk.LEFT, padx=5)
 
-        cols = ("ID", "Code", "Description")
+        cols = ("ID", "Code", "Bloom", "Description")
         self._clo_tree = ttk.Treeview(pane, columns=cols, show="headings", height=14)
-        for c, w in (("ID", 45), ("Code", 80), ("Description", 360)):
+        for c, w in (("ID", 45), ("Code", 80), ("Bloom", 90), ("Description", 300)):
             self._clo_tree.heading(c, text=c)
             self._clo_tree.column(c, width=w)
         self._clo_tree.bind("<<TreeviewSelect>>", self._reload_mappings)
@@ -91,6 +91,28 @@ class OutcomesTabMixin:
         self._clo_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
         return pane
+
+    def _ensure_bloom_column(self):
+        """Add ``course_learning_outcomes.bloom_level`` if it is missing.
+
+        Guarded ALTER rather than a migration, matching how the rest of this
+        codebase adds a late column. Without it the Bloom dropdown would be a
+        control that silently discarded whatever you chose.
+        """
+        if getattr(self, "_bloom_column_ready", False):
+            return True
+        try:
+            with self._ext_db(write=True) as conn:
+                cols = {r[1] for r in conn.execute(
+                    "PRAGMA table_info(course_learning_outcomes)").fetchall()}
+                if "bloom_level" not in cols:
+                    conn.execute("ALTER TABLE course_learning_outcomes "
+                                 "ADD COLUMN bloom_level TEXT")
+            self._bloom_column_ready = True
+        except Exception:
+            logger.debug("could not add bloom_level column", exc_info=True)
+            self._bloom_column_ready = False
+        return self._bloom_column_ready
 
     def _reload_outcomes(self, *_a):
         if not hasattr(self, "_clo_tree"):
@@ -104,8 +126,10 @@ class OutcomesTabMixin:
         try:
             with self._ext_db() as conn:
                 cur = conn.cursor()
+                self._ensure_bloom_column()
                 cur.execute(
-                    "SELECT id, outcome_code, description FROM course_learning_outcomes "
+                    "SELECT id, outcome_code, COALESCE(bloom_level, ''), description "
+                    "FROM course_learning_outcomes "
                     "WHERE course_code=? ORDER BY outcome_code, id", (code,))
                 rows = cur.fetchall()
             for row in rows:
@@ -114,11 +138,65 @@ class OutcomesTabMixin:
         except Exception as exc:
             self._ext_report_error("load learning outcomes", exc)
 
-    def _outcome_fields(self, data=None):
+    #: Bloom's taxonomy levels, with the verbs a learning outcome usually
+    #: opens with. Offered as a dropdown so a CLO reads consistently rather
+    #: than however the author happened to phrase it.
+    BLOOM_LEVELS = [
+        "Remember — define, list, recall, name",
+        "Understand — describe, explain, summarise",
+        "Apply — apply, demonstrate, implement, use",
+        "Analyse — analyse, compare, differentiate, examine",
+        "Evaluate — appraise, critique, justify, defend",
+        "Create — design, construct, develop, formulate",
+    ]
+
+    def _next_outcome_code(self, course_code):
+        """The next unused ``CLOn`` for *course_code*."""
+        used = set()
+        try:
+            with self._ext_db() as conn:
+                for (code,) in conn.execute(
+                        "SELECT outcome_code FROM course_learning_outcomes "
+                        "WHERE course_code = ?", (course_code,)).fetchall():
+                    used.add(str(code or "").strip().upper())
+        except Exception:
+            logger.debug("could not read existing outcome codes", exc_info=True)
+        for n in range(1, 41):
+            if f"CLO{n}" not in used:
+                return f"CLO{n}"
+        return "CLO1"
+
+    def _outcome_codes(self, course_code, current=""):
+        """Dropdown values: every CLOn up to a sensible ceiling.
+
+        The code used to be a free-text box labelled "Code (e.g. CLO1)", so
+        anything at all was accepted — the one outcome in this database is
+        coded ``ACC``, which is a course code, not an outcome code.
+        """
+        codes = [f"CLO{n}" for n in range(1, 21)]
+        current = (current or "").strip()
+        if current and current not in codes:
+            # Keep an existing non-standard code selectable so editing an old
+            # row doesn't silently renumber it.
+            codes.insert(0, current)
+        return codes
+
+    def _outcome_fields(self, data=None, course_code=None):
         data = data or {}
+        current = data.get("outcome_code", "")
+        default = current or (self._next_outcome_code(course_code) if course_code else "CLO1")
         return [
-            ("outcome_code", "Code (e.g. CLO1):",
-             {"default": data.get("outcome_code", ""), "width": 20}),
+            ("outcome_code", "Code:",
+             {"type": "combo", "values": self._outcome_codes(course_code, current),
+              "default": default, "width": 20}),
+            ("bloom_level", "Bloom's level:",
+             {"type": "combo", "values": [""] + self.BLOOM_LEVELS,
+              # Stored as the bare level ("Apply"); match it back to the full
+              # dropdown entry so editing shows the current choice selected.
+              "default": next((b for b in self.BLOOM_LEVELS
+                               if b.split(" — ")[0] == str(data.get("bloom_level", "")).strip()),
+                              ""),
+              "width": 44}),
             ("description", "Description:",
              {"type": "text", "default": data.get("description", ""), "height": 6}),
         ]
@@ -140,12 +218,14 @@ class OutcomesTabMixin:
                 return False
             try:
                 with self._ext_db(write=True) as conn:
+                    self._ensure_bloom_column()
                     conn.execute(
                         "INSERT INTO course_learning_outcomes "
-                        "(course_code, outcome_code, description, created_at, updated_at) "
-                        "VALUES (?, ?, ?, ?, ?)",
-                        (code, values["outcome_code"], desc,
-                         self._ext_now(), self._ext_now()))
+                        "(course_code, outcome_code, bloom_level, description, "
+                        " created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+                        (code, values["outcome_code"],
+                         (values.get("bloom_level") or "").split(" — ")[0],
+                         desc, self._ext_now(), self._ext_now()))
             except Exception as exc:
                 self._ext_report_error("add learning outcome", exc)
                 return False
@@ -155,7 +235,7 @@ class OutcomesTabMixin:
             return True
 
         ExtFormDialog(self.root, self, f"Add Learning Outcome for {code}",
-                      self._outcome_fields(), submit,
+                      self._outcome_fields(course_code=code), submit,
                       submit_label="Add", geometry="520x320")
 
     def _selected_outcome(self):
@@ -173,7 +253,10 @@ class OutcomesTabMixin:
         if not vals:
             return
         clo_id = vals[0]
-        data = {"outcome_code": vals[1], "description": vals[2]}
+        # Column order is (ID, Code, Bloom, Description).
+        data = {"outcome_code": vals[1], "bloom_level": vals[2],
+                "description": vals[3]}
+        code = self._current_clo_course()
 
         def submit(values):
             desc = (values.get("description") or "").strip()
@@ -183,10 +266,13 @@ class OutcomesTabMixin:
                 return False
             try:
                 with self._ext_db(write=True) as conn:
+                    self._ensure_bloom_column()
                     conn.execute(
                         "UPDATE course_learning_outcomes SET outcome_code=?, "
-                        "description=?, updated_at=? WHERE id=?",
-                        (values["outcome_code"], desc, self._ext_now(), clo_id))
+                        "bloom_level=?, description=?, updated_at=? WHERE id=?",
+                        (values["outcome_code"],
+                         (values.get("bloom_level") or "").split(" — ")[0],
+                         desc, self._ext_now(), clo_id))
             except Exception as exc:
                 self._ext_report_error("update learning outcome", exc)
                 return False
@@ -195,7 +281,7 @@ class OutcomesTabMixin:
             return True
 
         ExtFormDialog(self.root, self, "Edit Learning Outcome",
-                      self._outcome_fields(data), submit,
+                      self._outcome_fields(data, course_code=code), submit,
                       submit_label="Save", geometry="520x320")
 
     def _delete_outcome(self):
@@ -308,10 +394,27 @@ class OutcomesTabMixin:
             [("standard_type", "Standard type:",
               {"type": "combo", "values": STANDARD_TYPES,
                "default": "Program Outcome"}),
-             ("standard_code", "Standard code:", {"width": 25}),
+             # Editable combo: pick a standard already in use, or type a new
+             # one. A plain entry gave no hint that these codes repeat.
+             ("standard_code", "Standard code:",
+              {"type": "combo", "values": self._known_standard_codes(),
+               "state": "normal", "width": 25}),
              ("standard_description", "Standard description:",
               {"type": "text", "height": 4})],
             submit, submit_label="Add", geometry="520x340")
+
+    def _known_standard_codes(self):
+        """Standard codes already mapped anywhere, for the dropdown."""
+        try:
+            with self._ext_db() as conn:
+                rows = conn.execute(
+                    "SELECT DISTINCT standard_code FROM outcome_program_mappings "
+                    "WHERE COALESCE(TRIM(standard_code), '') <> '' "
+                    "ORDER BY standard_code").fetchall()
+            return [r[0] for r in rows]
+        except Exception:
+            logger.debug("could not read standard codes", exc_info=True)
+            return []
 
     def _delete_mapping(self):
         if not self._ext_can_edit():

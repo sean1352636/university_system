@@ -476,7 +476,7 @@ def part_1(g, counts):
     )
     g.shot_box(
         "First run in a terminal",
-        "In a clean copy of the software, run python run.py for the first time and capture "
+        "In a clean copy of the software, run python -m education_system for the first time and capture "
         "from the command through to the launcher menu appearing.",
         "first-run",
         "the runtime folders being created and the database prepared. Capture this before "
@@ -510,11 +510,11 @@ def part_1(g, counts):
         "accounts are weak by design and their credentials are published in the repository."
     )
     g.p("To add example learners as well as accounts:")
-    g.code(["python run.py --seed 50            # create 50 demonstration students"])
+    g.code(["python -m education_system --seed 50            # create 50 demonstration students"])
 
     g.h("1.5 Starting the platform", 2)
     g.p("Everything starts from one command. With no arguments it asks two questions:")
-    g.code(["python run.py"])
+    g.code(["python -m education_system"])
     g.step(1, "Choose an interface: CLI, GUI, API, Web, or one of the two test options. "
               "0 leaves.")
     g.step(2, "Choose a system: University, Sixth Form College, Secondary School, Primary "
@@ -529,18 +529,18 @@ def part_1(g, counts):
     g.table(
         ["To open", "Command"],
         [
-            ["Nursery, desktop", "python run.py --nursery --gui"],
-            ["Nursery, command line", "python run.py --nursery --cli"],
-            ["Primary School, desktop", "python run.py --primary --gui"],
-            ["Primary School, command line", "python run.py --primary --cli"],
-            ["Secondary School, desktop", "python run.py --secondary --gui"],
-            ["Secondary School, command line", "python run.py --secondary --cli"],
-            ["Sixth Form College, desktop", "python run.py --sixthform --gui"],
-            ["Sixth Form College, command line", "python run.py --sixthform --cli"],
-            ["University, desktop", "python run.py --university --gui"],
-            ["University, command line", "python run.py --university --cli"],
-            ["The API server (all five systems)", "python run.py --university --api"],
-            ["The static web portal", "python run.py --web"],
+            ["Nursery, desktop", "python -m education_system --nursery --gui"],
+            ["Nursery, command line", "python -m education_system --nursery --cli"],
+            ["Primary School, desktop", "python -m education_system --primary --gui"],
+            ["Primary School, command line", "python -m education_system --primary --cli"],
+            ["Secondary School, desktop", "python -m education_system --secondary --gui"],
+            ["Secondary School, command line", "python -m education_system --secondary --cli"],
+            ["Sixth Form College, desktop", "python -m education_system --sixthform --gui"],
+            ["Sixth Form College, command line", "python -m education_system --sixthform --cli"],
+            ["University, desktop", "python -m education_system --university --gui"],
+            ["University, command line", "python -m education_system --university --cli"],
+            ["The API server (all five systems)", "python -m education_system --university --api"],
+            ["The static web portal", "python -m education_system --web"],
         ],
         widths=[2.6, 3.9],
     )
@@ -550,7 +550,7 @@ def part_1(g, counts):
     )
     g.shot_box(
         "The launcher",
-        "Run python run.py with no arguments and capture both menus — the interface menu and "
+        "Run python -m education_system with no arguments and capture both menus — the interface menu and "
         "the system menu.",
         "launcher",
         "the single entry point. Five systems and four interfaces sit behind one command, "
@@ -1173,7 +1173,7 @@ def part_3_interfaces(g, api):
         "export JWT_SECRET_KEY='<a different long random string>'",
         "export API_CORS_ORIGINS='https://app.example.com'",
         "",
-        "python run.py --university --api",
+        "python -m education_system --university --api",
     ])
     g.p(
         "It listens on port 5000 by default; API_HOST and API_PORT change that. Endpoints are "
@@ -1468,14 +1468,14 @@ def part_4_systems(g, menus, api, counts, inv):
         # ── worked task ───────────────────────────────────────────
         title, steps = WORKED_TASKS[key]
         g.h(f"4.{idx}.2 Worked task — {title.lower()}", 3)
-        g.p(f"Start with python run.py {flag} --gui (or --cli; the steps are the same).")
+        g.p(f"Start with python -m education_system {flag} --gui (or --cli; the steps are the same).")
         for n, (where, what) in enumerate(steps, start=1):
             g.step(n, f"{where}. {what}".strip())
         g.p()
 
         g.shot_box(
             f"{label} — desktop application",
-            f"Open {label} with python run.py {flag} --gui and capture the dashboard with the "
+            f"Open {label} with python -m education_system {flag} --gui and capture the dashboard with the "
             f"navigation panel visible.",
             f"{key}-gui",
             f"the home screen for {label}, and the categories listed in §4.{idx}.1 as they "
@@ -1483,7 +1483,7 @@ def part_4_systems(g, menus, api, counts, inv):
         )
         g.shot_box(
             f"{label} — command line",
-            f"Run python run.py {flag} --cli and capture the main menu together with one "
+            f"Run python -m education_system {flag} --cli and capture the main menu together with one "
             f"completed action.",
             f"{key}-cli",
             "the same categories as a numbered menu, and one action carried through to its "

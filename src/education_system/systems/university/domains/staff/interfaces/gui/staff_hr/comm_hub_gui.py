@@ -10,6 +10,9 @@ Provides interface for:
 """
 
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -210,7 +213,7 @@ class CommHubGUI:
                     t['_forum_name'] = f.get('name', '')
                 all_threads.extend(threads)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         # Sort by most recent activity and take top 10
         all_threads.sort(
@@ -540,7 +543,7 @@ class CommHubGUI:
         try:
             CommHubManager.increment_view_count(thread_id)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         dialog = tk.Toplevel(self.root)
         dialog.title(f"Thread: {thread.get('title', '')}")
@@ -770,7 +773,7 @@ class CommHubGUI:
                 results = CommHubManager.get_poll_results(poll_id)
                 total_votes = results.get('total_votes', 0)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             self.polls_tree.insert('', tk.END, iid=str(poll_id), values=(
                 poll_id,
@@ -1662,7 +1665,7 @@ class CommHubGUI:
             for f in forums:
                 forum_names[f.get('forum_id')] = f.get('name', '')
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Build thread forum map for replies
         thread_forum_map = {}
@@ -1682,7 +1685,7 @@ class CommHubGUI:
                 if t:
                     thread_forum_map[tid] = t.get('forum_id')
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         total_results = 0
 

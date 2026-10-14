@@ -21,6 +21,9 @@ try:
 except Exception:  # pragma: no cover - optional dependency
     AcademicCalendarManager = None
 from education_system.systems.university.infrastructure.institution_settings import get_elections_phone
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.identity import (
+    current_student_id as _current_student_id,
+)
 
 # --- Shared auth wiring ---
 try:
@@ -168,14 +171,12 @@ def nominate_for_election(cursor, conn):
 
     try:
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, auth)
 
-        if not result:
+        if not student_id:
             print("No student record is associated with your account.")
             return
 
-        student_id = result[0]
 
         # Get student information
         cursor.execute('SELECT first_name, last_name, course FROM students WHERE student_id = ?', (student_id,))
@@ -286,14 +287,12 @@ def vote_in_election(cursor, conn):
 
     try:
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, auth)
 
-        if not result:
+        if not student_id:
             print("No student record is associated with your account.")
             return
 
-        student_id = result[0]
 
         # Get student course for eligibility
         cursor.execute('SELECT course FROM students WHERE student_id = ?', (student_id,))
@@ -724,14 +723,12 @@ def submit_campaign_materials(cursor, conn):
         global auth
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, auth)
 
-        if not result:
+        if not student_id:
             print("No student record found.")
             return
 
-        student_id = result[0]
 
         # Get candidate's active elections
         cursor.execute('''
@@ -801,9 +798,12 @@ def track_campaign_expenses(cursor, conn):
         global auth
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
-        student_id = result[0]
+        student_id = _current_student_id(cursor, auth)
+
+        if not student_id:
+            print("No student record found.")
+            return
+
 
         # Get candidate's active elections
         cursor.execute('''
@@ -922,6 +922,7 @@ def track_campaign_expenses(cursor, conn):
 
             candidate_ids = [c[0] for c in candidacies]
             placeholders = ','.join('?' * len(candidate_ids))
+            # db-audit: ignore[DBW001] - join of placeholders
             cursor.execute(f'''
             SELECT expense_id, amount, description, expense_date, receipt_path
             FROM campaign_expenses
@@ -1438,18 +1439,29 @@ def display_election_menu():
 
         choice = input("\nEnter your choice: ")
 
-        if choice == '1':
-            # View Elections
-            view_elections()
-        elif choice == '2':
-            # View Results
-            view_election_results()
-        elif choice == '3' and auth.check_permission('vote_in_elections'):
-            # Vote
-            vote_in_election()
-        elif choice == '4' and max_option >= 5:
-            # Submit Nomination
-            nominate_for_election()
+        # Every screen below works against a cursor; calling them bare raised
+        # "missing positional argument" for whichever option was picked.
+        if choice in ('1', '2', '3', '4'):
+            conn = None
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                if choice == '1':
+                    view_elections(cursor)
+                elif choice == '2':
+                    view_election_results(cursor, conn)
+                elif choice == '3' and auth.check_permission('vote_in_elections'):
+                    vote_in_election(cursor, conn)
+                elif choice == '4' and max_option >= 5:
+                    nominate_for_election(cursor, conn)
+                else:
+                    print("Invalid choice. Please try again.")
+            except sqlite3.Error as e:
+                print(f"Database error: {e}")
+            finally:
+                if conn:
+                    conn.close()
         elif choice == str(max_option):
             # Return to Student Union Menu
             return

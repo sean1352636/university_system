@@ -6,7 +6,12 @@ from education_system.systems.university.domains.pastoral.domain.student_life.st
     send_confirmation_email, set_auth_instance, sqlite3, string,
 )
 from education_system.systems.university.domains.pastoral.interfaces.cli.student_union_events.context import auth
-from education_system.systems.university.domains.pastoral.interfaces.cli.student_union_events.context import auth
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.calendar_bridge import (
+    mirror as _mirror_to_calendar,
+)
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.identity import (
+    current_student_id as _current_student_id,
+)
 
 def manage_virtual_events():
     """Manage virtual and hybrid events"""
@@ -162,11 +167,7 @@ def create_virtual_event(cursor, conn):
         organizer_id = None
         try:
             if auth and auth.current_user:
-                cursor.execute('SELECT student_id FROM users WHERE id = ?',
-                               (auth.current_user['id'],))
-                row = cursor.fetchone()
-                if row:
-                    organizer_id = row[0]
+                organizer_id = _current_student_id(cursor, auth)
         except Exception:
             organizer_id = None
 
@@ -178,11 +179,9 @@ def create_virtual_event(cursor, conn):
         full_description = f"{description}\n{detail_suffix}".strip()
 
         cursor.execute('''
-            INSERT INTO union_events (
-                event_name, description, organizer_id, event_date,
-                start_time, end_time, location, category, max_attendees,
-                status, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'virtual', ?, 'upcoming', ?)
+            INSERT INTO unified_events (
+                title, description, organizer_id, event_date, start_time, end_time, location, event_category, max_capacity, status, created_at, source_type
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'virtual', ?, 'upcoming', ?, 'union')
         ''', (event_name, full_description, organizer_id, event_date,
               start_time, end_time, platform, max_attendees,
               datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
@@ -192,6 +191,16 @@ def create_virtual_event(cursor, conn):
         print("Virtual event created successfully!")
         print(f"Event ID: {new_event_id}")
         print("Virtual meeting link will be generated and shared with registrants.")
+
+        if _mirror_to_calendar(
+            name=f"SU Virtual Event: {event_name}", kind="virtual_event",
+            date=event_date, start_time=start_time or None,
+            end_time=end_time or None, location=platform,
+            description=full_description, created_by=organizer_id,
+            source_table="union_events", source_id=new_event_id,
+            conn=conn,
+        ):
+            print("Added to the university academic calendar.")
 
     except sqlite3.Error as e:
         print(f"Database error: {e}")

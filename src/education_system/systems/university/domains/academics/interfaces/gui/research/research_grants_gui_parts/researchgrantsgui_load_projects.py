@@ -1,4 +1,7 @@
 """Methods _load_projects through _load_staff_list."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -219,7 +222,7 @@ class ResearchGrantsGUI:
                 departments = [row[0] for row in cursor.fetchall()]
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         # Always include common university departments as fallback
         defaults = [
             'Computer Science', 'Engineering', 'Mathematics', 'Physics', 'Chemistry',
@@ -375,5 +378,5 @@ class ResearchGrantsGUI:
                 staff_id_map[display] = str(uname)
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return staff, staff_id_map

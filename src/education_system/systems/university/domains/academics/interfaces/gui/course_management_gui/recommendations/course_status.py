@@ -44,7 +44,7 @@ class CourseStatusMixin:
         ttk.Label(status_frame, text=_t('gui.academics.course_management_gui.recommendations.course_status.labels.new_status', default="New Status:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         status_var = tk.StringVar()
         status_combo = ttk.Combobox(status_frame, textvariable=status_var,
-                                   values=["Active", "Inactive", "Archived", "Cancelled"],
+                                   values=["active", "inactive", "archived", "cancelled"],
                                    state='readonly', width=25)
         status_combo.grid(row=0, column=1, sticky=tk.W, pady=5, padx=5)
 
@@ -100,18 +100,28 @@ class CourseStatusMixin:
             if messagebox.askyesno(_t('gui.academics.course_management_gui.recommendations.course_status.dialogs.confirm_status_change', default="Confirm Status Change"),
                                   f"Change course status from {current} to {new}?"):
                 try:
-                    course_id = int(course_var.get().split("ID: ")[1].rstrip(")"))
+                    # courses.id is TEXT (the course code), so the old int()
+                    # cast raised on every real row and the status silently
+                    # never changed.
+                    course_id = course_var.get().split("ID: ")[1].rstrip(")").strip()
 
-                    conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-                    cursor = conn.cursor()
-
-                    cursor.execute("""
-                        UPDATE courses SET status = ?, updated_at = ?
-                        WHERE id = ?
-                    """, (new, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), course_id))
-
-                    conn.commit()
-                    conn.close()
+                    from education_system.systems.university.application.course_lifecycle_service import (
+                        CourseLifecycleService,
+                        CourseValidationError,
+                    )
+                    actor = str((getattr(self, 'auth', None)
+                                 and getattr(self.auth, 'current_user', {}) or {}).get('id', 'unknown'))
+                    try:
+                        new = CourseLifecycleService().set_status(
+                            course_id, new, actor_id=actor,
+                            reason="Status changed in Course Management",
+                        ).status
+                    except CourseValidationError as exc:
+                        messagebox.showerror(
+                            _("common.validation_error"),
+                            "\n".join(f"{field}: {message}"
+                                       for field, message in exc.errors.items()))
+                        return
 
                     messagebox.showinfo(_("common.success"), f"Course status updated to {new}")
                     self.update_status(f"Course status changed to {new}")

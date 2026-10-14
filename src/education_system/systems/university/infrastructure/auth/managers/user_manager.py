@@ -64,6 +64,7 @@ def _overlay_shared_last_login(users: List[Dict]) -> None:
     try:
         with _shared_connect() as conn:
             placeholders = ",".join("?" for _ in usernames)
+            # db-audit: ignore[DBW001] - string literal
             rows = conn.execute(
                 f"SELECT username, last_login FROM users "
                 f"WHERE username IN ({placeholders})",  # nosec B608

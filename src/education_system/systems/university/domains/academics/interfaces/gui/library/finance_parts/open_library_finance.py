@@ -15,13 +15,21 @@ def open_library_finance(self):
         # Create new window for Library Finance
         finance_window = tk.Toplevel(self.master)
         finance_window.title(_t('gui.academics.library.finance_parts.open_library_finance.windows.library_finance_management', default="Library Finance Management"))
-        finance_window.geometry("1400x900")
+        # 1400x900 does not fit a 1366x768 display; center() clamps it to
+        # the screen and positions it, instead of leaving the window
+        # oversized and pinned to a corner.
+        try:
+            from education_system.platform.delivery.gui.window_sizing import center
+            center(finance_window, 1400, 900, minsize=(1100, 650))
+        except Exception:
+            finance_window.geometry("1400x900")
         finance_window.transient(self.master)
 
-        # Create and initialize the LibraryFinanceManager
-        library_finance_manager = LibraryFinanceManager(finance_window, self.auth)
-
-        # Add close button at the bottom
+        # The close bar is packed BEFORE the manager fills the window.
+        # LibraryFinanceManager.__init__ packs its content frame with
+        # fill='both', expand=True, so a bar added afterwards was given
+        # whatever height was left — nothing, once the window was clamped
+        # to the screen — and the Close button was invisible.
         close_frame = tk.Frame(finance_window, bg='white')
         close_frame.pack(fill='x', side='bottom', pady=10)
         tk.Button(
@@ -34,6 +42,9 @@ def open_library_finance(self):
             padx=30,
             pady=8
         ).pack()
+
+        # Create and initialize the LibraryFinanceManager
+        library_finance_manager = LibraryFinanceManager(finance_window, self.auth)
 
     except Exception as e:
         messagebox.showerror(

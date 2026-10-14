@@ -14,6 +14,9 @@ Features:
 """
 
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
@@ -264,7 +267,7 @@ class BudgetManager:
             try:
                 log_activity('create', 'student_budget', details={'budget_id': budget_id, 'student_id': student_id, 'name': budget_name})
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             return budget_id
 
         except sqlite3.Error as e:
@@ -380,7 +383,7 @@ class ExpenseManager:
             try:
                 log_activity('create', 'student_expense', details={'expense_id': expense_id, 'student_id': student_id, 'amount': amount})
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             return expense_id
 
         except sqlite3.Error as e:
@@ -430,6 +433,7 @@ class ExpenseManager:
             except Exception:
                 color_col = "NULL as color_code"
 
+            # db-audit: ignore[DBW001] - string literal
             cursor = conn.execute(f'''
                 SELECT
                     COALESCE(c.category_name, e.merchant_name, 'Uncategorized') as category_name,
@@ -580,7 +584,7 @@ class IncomeManager:
             try:
                 log_activity('create', 'student_income', details={'income_id': income_id, 'student_id': student_id, 'amount': amount})
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             return income_id
 
         except sqlite3.Error as e:
@@ -981,7 +985,7 @@ class SavingsGoalManager:
             try:
                 log_activity('create', 'savings_goal', details={'goal_id': goal_id, 'student_id': student_id, 'goal': goal_name})
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             return goal_id
 
         except sqlite3.Error as e:

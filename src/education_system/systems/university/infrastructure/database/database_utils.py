@@ -21,6 +21,7 @@ from education_system.systems.university.infrastructure.database.db import sqlit
 
 # Import i18n for translations
 from education_system.systems.university.infrastructure.i18n import get_text as _t
+from education_system.systems.university.infrastructure.database.schemas.students_table import ensure_students_table
 
 class DatabaseManager:
     """
@@ -212,6 +213,7 @@ def init_db():
                     "notification_preferences", "digests",
                     "notifications", "notifications_old",
                 ):
+                    # db-audit: ignore[DBW001] - literal collection
                     conn.execute(f"DROP TABLE IF EXISTS {_tbl}")
                 conn.commit()
             finally:
@@ -241,23 +243,7 @@ def init_db_parking():
                 print(_t("database.users_table_not_found"))
 
             # Create students table
-            db.execute('''
-            CREATE TABLE IF NOT EXISTS students (
-                student_id TEXT PRIMARY KEY,
-                email_address TEXT,
-                title TEXT,
-                first_name TEXT,
-                middle_name TEXT,
-                last_name TEXT,
-                gender TEXT,
-                dob TEXT,
-                age INTEGER,
-                course TEXT,
-                registration_datetime TEXT,
-                status TEXT DEFAULT 'Active',
-                enrollment_date TEXT
-            )
-            ''')
+            ensure_students_table(db)
 
             # Create payments table
             db.execute('''

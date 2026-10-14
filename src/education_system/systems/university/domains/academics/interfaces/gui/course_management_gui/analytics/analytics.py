@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 # gui_course_management.py
 import tkinter as tk
@@ -30,13 +34,16 @@ _CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 _original_sqlite_connect = sqlite3.connect
 
+from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui import report_widgets as _report
+
+
 def _patched_sqlite_connect(database, *args, **kwargs):
     try:
         db_name = os.path.basename(str(database)) if database else ""
         if not database or db_name in (str(DEFAULT_DB_PATH), "courses.db"):
             return _original_sqlite_connect(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return _original_sqlite_connect(database, *args, **kwargs)
 
 sqlite3.connect = _patched_sqlite_connect
@@ -48,23 +55,35 @@ from typing import List, Dict, Optional, Tuple
 import threading
 import logging
 
-# Import chart generation utility
-try:
-    import matplotlib
-    matplotlib.use('TkAgg')
-    import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-    from matplotlib.figure import Figure
-    import seaborn as sns
-    import numpy as np
-    CHARTS_AVAILABLE = True
-except ImportError:
-    CHARTS_AVAILABLE = False
-    plt = None
-    Figure = None
-    FigureCanvasTkAgg = None
-    sns = None
-    np = None
+# Chart generation utilities — deferred, see _lazy_charts. This module is
+# imported whenever Course Management opens (for the analytics dialog classes),
+# so the eager seaborn import here was ~4.7s of the window's open time.
+from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui._lazy_charts import (
+    CHARTS_AVAILABLE, plt, Figure, FigureCanvasTkAgg, sns, np,
+)
+
+# Course occupancy is read through the bridge views (``services.bus.
+# course_bridge``): the reports below join ``v_course_occupancy`` rather than
+# matching a course code against a module code, which matched nothing.
+from education_system.systems.university.services.bus.course_bridge import (
+    install_views as _install_bridge_views,
+)
+
+
+def _ensure_bridge_views(conn_or_cursor):
+    """Create the bridge views if this database has not got them yet.
+
+    Accepts a connection or a cursor: the chart builders are handed a cursor.
+    Best-effort — a report that cannot install them still runs, it just shows
+    the empty occupancy the LEFT JOIN yields.
+    """
+    try:
+        conn = getattr(conn_or_cursor, "connection", conn_or_cursor)
+        _install_bridge_views(conn)
+    except Exception:
+        logging.getLogger(__name__).warning(
+            "could not install course bridge views", exc_info=True)
+
 
 # Import email service
 try:
@@ -140,6 +159,7 @@ def generate_analytics(self):
     try:
         with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
             cursor = conn.cursor()
+            _ensure_bridge_views(conn)
 
             analytics_text = "COURSE ANALYTICS DASHBOARD\n"
             analytics_text += "=" * 50 + "\n\n"
@@ -179,9 +199,9 @@ def generate_analytics(self):
             SELECT
                 COALESCE(c.department, 'Unknown') as dept,
                 COUNT(DISTINCT c.id) as course_count,
-                COUNT(DISTINCT sm.student_id) as total_students
+                SUM(COALESCE(occ.headcount, 0)) as total_students
             FROM courses c
-            LEFT JOIN student_modules sm ON sm.module_code = COALESCE(c.course_code, c.code) AND sm.status = 'Enrolled'
+            LEFT JOIN v_course_occupancy occ ON occ.course_code = COALESCE(NULLIF(TRIM(c.course_code), ''), c.code)
             WHERE COALESCE(c.course_code, c.code) IS NOT NULL
               AND COALESCE(c.course_name, c.name) IS NOT NULL
               AND LOWER(COALESCE(c.status, 'active')) = 'active'
@@ -201,9 +221,9 @@ def generate_analytics(self):
             # Most popular courses
             cursor.execute("""
             SELECT COALESCE(c.course_code, c.code), COALESCE(c.course_name, c.name),
-                   COUNT(sm.student_id) as enrolled
+                   COALESCE(occ.headcount, 0) as enrolled
             FROM courses c
-            LEFT JOIN student_modules sm ON sm.module_code = COALESCE(c.course_code, c.code) AND sm.status = 'Enrolled'
+            LEFT JOIN v_course_occupancy occ ON occ.course_code = COALESCE(NULLIF(TRIM(c.course_code), ''), c.code)
             WHERE COALESCE(c.course_code, c.code) IS NOT NULL
               AND COALESCE(c.course_name, c.name) IS NOT NULL
               AND LOWER(COALESCE(c.status, 'active')) = 'active'
@@ -289,6 +309,7 @@ def generate_enrollment_report(self, report_type):
     try:
         with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
             cursor = conn.cursor()
+            _ensure_bridge_views(conn)
 
             report_text = f"ENROLLMENT REPORT - {report_type.upper()}\n"
             report_text += f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
@@ -322,10 +343,10 @@ def generate_enrollment_report(self, report_type):
                 SELECT
                     COALESCE(c.department, 'Unknown') as dept,
                     COUNT(DISTINCT c.id) as course_count,
-                    COUNT(DISTINCT sm.student_id) as total_students,
+                    SUM(COALESCE(occ.headcount, 0)) as total_students,
                     SUM(COALESCE(c.max_enrollment, 0)) as total_capacity
                 FROM courses c
-                LEFT JOIN student_modules sm ON sm.module_code = COALESCE(c.course_code, c.code) AND sm.status = 'Enrolled'
+                LEFT JOIN v_course_occupancy occ ON occ.course_code = COALESCE(NULLIF(TRIM(c.course_code), ''), c.code)
                 WHERE COALESCE(c.course_code, c.code) IS NOT NULL
                   AND COALESCE(c.course_name, c.name) IS NOT NULL
                   AND LOWER(COALESCE(c.status, 'active')) = 'active'
@@ -345,9 +366,9 @@ def generate_enrollment_report(self, report_type):
                 cursor.execute("""
                 SELECT COALESCE(c.course_code, c.code), COALESCE(c.course_name, c.name),
                        c.department, c.level,
-                       COUNT(sm.student_id) as enrolled, COALESCE(c.max_enrollment, 0) as capacity
+                       COALESCE(occ.headcount, 0) as enrolled, COALESCE(c.max_enrollment, 0) as capacity
                 FROM courses c
-                LEFT JOIN student_modules sm ON sm.module_code = COALESCE(c.course_code, c.code) AND sm.status = 'Enrolled'
+                LEFT JOIN v_course_occupancy occ ON occ.course_code = COALESCE(NULLIF(TRIM(c.course_code), ''), c.code)
                 WHERE COALESCE(c.course_code, c.code) IS NOT NULL
                   AND COALESCE(c.course_name, c.name) IS NOT NULL
                   AND LOWER(COALESCE(c.status, 'active')) = 'active'
@@ -374,15 +395,15 @@ def generate_enrollment_report(self, report_type):
                 cursor.execute("""
                 SELECT COALESCE(c.course_code, c.code), COALESCE(c.course_name, c.name),
                        c.department,
-                       COUNT(sm.student_id) as enrolled,
+                       COALESCE(occ.headcount, 0) as enrolled,
                        COALESCE(c.max_enrollment, 0) as capacity
                 FROM courses c
-                LEFT JOIN student_modules sm ON sm.module_code = COALESCE(c.course_code, c.code) AND sm.status = 'Enrolled'
+                LEFT JOIN v_course_occupancy occ ON occ.course_code = COALESCE(NULLIF(TRIM(c.course_code), ''), c.code)
                 WHERE COALESCE(c.course_code, c.code) IS NOT NULL
                   AND COALESCE(c.course_name, c.name) IS NOT NULL
                   AND LOWER(COALESCE(c.status, 'active')) = 'active'
                 GROUP BY c.id
-                ORDER BY (COALESCE(c.max_enrollment, 0) - COUNT(sm.student_id)) DESC
+                ORDER BY (COALESCE(c.max_enrollment, 0) - COALESCE(occ.headcount, 0)) DESC
                 """)
 
                 capacity_data = cursor.fetchall()
@@ -538,14 +559,15 @@ def _create_summary_charts(self, notebook, cursor):
 
 def _create_department_charts(self, notebook, cursor):
     """Create department report charts"""
+    _ensure_bridge_views(cursor)
     cursor.execute("""
     SELECT
         COALESCE(c.department, 'Unknown') as dept,
         COUNT(DISTINCT c.id) as course_count,
-        COUNT(DISTINCT sm.student_id) as total_students,
+        SUM(COALESCE(occ.headcount, 0)) as total_students,
         SUM(COALESCE(c.max_enrollment, 0)) as total_capacity
     FROM courses c
-    LEFT JOIN student_modules sm ON sm.module_code = COALESCE(c.course_code, c.code) AND sm.status = 'Enrolled'
+    LEFT JOIN v_course_occupancy occ ON occ.course_code = COALESCE(NULLIF(TRIM(c.course_code), ''), c.code)
     WHERE COALESCE(c.course_code, c.code) IS NOT NULL
       AND COALESCE(c.course_name, c.name) IS NOT NULL
       AND LOWER(COALESCE(c.status, 'active')) = 'active'
@@ -618,11 +640,12 @@ def _create_department_charts(self, notebook, cursor):
 
 def _create_detailed_charts(self, notebook, cursor):
     """Create detailed report charts"""
+    _ensure_bridge_views(cursor)
     cursor.execute("""
     SELECT COALESCE(c.course_code, c.code), COALESCE(c.course_name, c.name), c.department,
-           COUNT(sm.student_id) as enrolled, COALESCE(c.max_enrollment, 0) as capacity
+           COALESCE(occ.headcount, 0) as enrolled, COALESCE(c.max_enrollment, 0) as capacity
     FROM courses c
-    LEFT JOIN student_modules sm ON sm.module_code = COALESCE(c.course_code, c.code) AND sm.status = 'Enrolled'
+    LEFT JOIN v_course_occupancy occ ON occ.course_code = COALESCE(NULLIF(TRIM(c.course_code), ''), c.code)
     WHERE COALESCE(c.course_code, c.code) IS NOT NULL
       AND COALESCE(c.course_name, c.name) IS NOT NULL
       AND LOWER(COALESCE(c.status, 'active')) = 'active'
@@ -688,13 +711,14 @@ def _create_detailed_charts(self, notebook, cursor):
 
 def _create_capacity_charts(self, notebook, cursor):
     """Create capacity report charts"""
+    _ensure_bridge_views(cursor)
     cursor.execute("""
     SELECT COALESCE(c.course_code, c.code), COALESCE(c.course_name, c.name), c.department,
-           COUNT(sm.student_id) as enrolled,
+           COALESCE(occ.headcount, 0) as enrolled,
            COALESCE(c.max_enrollment, 0) as capacity,
-           (COALESCE(c.max_enrollment, 0) - COUNT(sm.student_id)) as available
+           (COALESCE(c.max_enrollment, 0) - COALESCE(occ.headcount, 0)) as available
     FROM courses c
-    LEFT JOIN student_modules sm ON sm.module_code = COALESCE(c.course_code, c.code) AND sm.status = 'Enrolled'
+    LEFT JOIN v_course_occupancy occ ON occ.course_code = COALESCE(NULLIF(TRIM(c.course_code), ''), c.code)
     WHERE COALESCE(c.course_code, c.code) IS NOT NULL
       AND COALESCE(c.course_name, c.name) IS NOT NULL
       AND LOWER(COALESCE(c.status, 'active')) = 'active'
@@ -951,6 +975,7 @@ def show_department_stats(self):
         # Get departments list
         with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
             cursor = conn.cursor()
+            _ensure_bridge_views(conn)
             cursor.execute(
                 "SELECT DISTINCT COALESCE(department, 'Unknown') as dept FROM courses "
                 "WHERE course_code IS NOT NULL "
@@ -980,11 +1005,11 @@ def show_department_stats(self):
                     SELECT
                         COALESCE(c.department, 'Unknown') as dept,
                         COUNT(DISTINCT c.id) as course_count,
-                        COUNT(DISTINCT sm.student_id) as total_students,
+                        SUM(COALESCE(occ.headcount, 0)) as total_students,
                         SUM(COALESCE(c.max_enrollment, 0)) as total_capacity,
                         COUNT(DISTINCT CASE WHEN LOWER(COALESCE(c.status, 'active')) = 'active' THEN c.id END) as active_courses
                     FROM courses c
-                    LEFT JOIN student_modules sm ON sm.module_code = COALESCE(c.course_code, c.code) AND sm.status = 'Enrolled'
+                    LEFT JOIN v_course_occupancy occ ON occ.course_code = COALESCE(NULLIF(TRIM(c.course_code), ''), c.code)
                     WHERE COALESCE(c.course_code, c.code) IS NOT NULL
                       AND COALESCE(c.course_name, c.name) IS NOT NULL
                     GROUP BY c.department
@@ -1006,12 +1031,12 @@ def show_department_stats(self):
                     cursor.execute("""
                     SELECT
                         COUNT(DISTINCT c.id) as total_courses,
-                        COUNT(DISTINCT sm.student_id) as total_students,
+                        SUM(COALESCE(occ.headcount, 0)) as total_students,
                         SUM(COALESCE(c.max_enrollment, 0)) as total_capacity,
                         AVG(COALESCE(c.credit_hours, c.credits, 0)) as avg_credits,
                         COUNT(DISTINCT CASE WHEN LOWER(COALESCE(c.status, 'active')) = 'active' THEN c.id END) as active_courses
                     FROM courses c
-                    LEFT JOIN student_modules sm ON sm.module_code = COALESCE(c.course_code, c.code) AND sm.status = 'Enrolled'
+                    LEFT JOIN v_course_occupancy occ ON occ.course_code = COALESCE(NULLIF(TRIM(c.course_code), ''), c.code)
                     WHERE COALESCE(c.course_code, c.code) IS NOT NULL
                       AND COALESCE(c.course_name, c.name) IS NOT NULL
                       AND c.department = ?
@@ -1081,7 +1106,7 @@ class CourseAnalyticsDialog:
                         EVENT_ASSESSMENT_CHANGED, EVENT_ENROLMENT_CHANGED):
                 subscribe_tk(evt, self.dialog, _on_external_change)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog)
@@ -1142,8 +1167,9 @@ class CourseAnalyticsDialog:
         charts_frame = ttk.LabelFrame(parent, text=_t('gui.academics.course_management_gui.analytics.analytics.labels.status_distribution', default="Status Distribution"), padding=10)
         charts_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
-        self.status_text = ScrolledText(charts_frame, height=15)
-        self.status_text.pack(fill=tk.BOTH, expand=True)
+        # Cards rather than a text box: the same figures, readable at a glance.
+        self.status_surface = _report.scrollable(charts_frame)
+        self._status_plain = ""
 
         button_frame = ttk.Frame(parent)
         button_frame.pack(fill=tk.X, pady=(5, 0))
@@ -1164,8 +1190,8 @@ class CourseAnalyticsDialog:
         self.dept_selector.bind('<<ComboboxSelected>>', self.update_department_data)
 
         # Department details
-        self.dept_details = ScrolledText(parent, height=25)
-        self.dept_details.pack(fill=tk.BOTH, expand=True, pady=5)
+        self.dept_surface = _report.scrollable(parent)
+        self._dept_plain = ""
 
         button_frame = ttk.Frame(parent)
         button_frame.pack(fill=tk.X, pady=(5, 0))
@@ -1180,8 +1206,8 @@ class CourseAnalyticsDialog:
         trends_label = ttk.Label(parent, text=_t('gui.academics.course_management_gui.analytics.analytics.labels.course_trends_analysis', default="Course Trends Analysis"), font=("Arial", 14, "bold"))
         trends_label.pack(pady=10)
 
-        self.trends_text = ScrolledText(parent, height=25)
-        self.trends_text.pack(fill=tk.BOTH, expand=True, pady=5)
+        self.trends_surface = _report.scrollable(parent)
+        self._trends_plain = ""
 
         button_frame = ttk.Frame(parent)
         button_frame.pack(fill=tk.X, pady=(5, 0))
@@ -1243,19 +1269,19 @@ class CourseAnalyticsDialog:
             self.available_spots_label.cget("text"),
             self.active_courses_label.cget("text"),
         ]
-        status_text = self.status_text.get(1.0, tk.END).strip()
+        status_text = (getattr(self, '_status_plain', '') or '').strip()
         report_body = "OVERVIEW REPORT\n" + "=" * 40 + "\n" + "\n".join(metrics) + "\n\n" + status_text
         self._send_report_to_admin("Overview", report_body)
 
     def email_department_report(self):
-        report_body = self.dept_details.get(1.0, tk.END).strip()
+        report_body = (getattr(self, '_dept_plain', '') or '').strip()
         if not report_body:
             messagebox.showwarning(_t('gui.academics.course_management_gui.analytics.analytics.dialogs.no_report', default="No Report"), _t('gui.academics.course_management_gui.analytics.analytics.dialogs.department_report_is_empty', default="Department report is empty."))
             return
         self._send_report_to_admin("Department Analysis", report_body)
 
     def email_trends_report(self):
-        report_body = self.trends_text.get(1.0, tk.END).strip()
+        report_body = (getattr(self, '_trends_plain', '') or '').strip()
         if not report_body:
             messagebox.showwarning(_t('gui.academics.course_management_gui.analytics.analytics.dialogs.no_report', default="No Report"), _t('gui.academics.course_management_gui.analytics.analytics.dialogs.trends_report_is_empty', default="Trends report is empty."))
             return
@@ -1309,14 +1335,7 @@ class CourseAnalyticsDialog:
             )
             status_data = cursor.fetchall()
 
-            self.status_text.delete(1.0, tk.END)
-            self.status_text.insert(tk.END, "COURSE STATUS DISTRIBUTION\n")
-            self.status_text.insert(tk.END, "=" * 40 + "\n\n")
-
-            for status, count in status_data:
-                percentage = (count / total_courses * 100) if total_courses > 0 else 0
-                bar = "█" * int(percentage / 5)  # Simple text bar chart
-                self.status_text.insert(tk.END, f"{status:<12} {count:<6} {percentage:>6.1f}% {bar}\n")
+            self._render_status(status_data, total_courses)
 
             conn.close()
 
@@ -1353,47 +1372,33 @@ class CourseAnalyticsDialog:
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
-
-            self.dept_details.delete(1.0, tk.END)
-            self.dept_details.insert(tk.END, f"DEPARTMENT ANALYSIS: {selected_dept.upper()}\n")
-            self.dept_details.insert(tk.END, "=" * 50 + "\n\n")
+            _ensure_bridge_views(conn)
 
             # Department statistics
             cursor.execute("""
             SELECT
                 COUNT(DISTINCT c.id) as total_courses,
-                COUNT(DISTINCT sm.student_id) as total_students,
+                SUM(COALESCE(occ.headcount, 0)) as total_students,
                 SUM(COALESCE(c.max_enrollment, 0)) as total_capacity,
-                CAST(COUNT(DISTINCT sm.student_id) AS REAL) / MAX(COUNT(DISTINCT c.id), 1) as avg_enrollment,
+                CAST(SUM(COALESCE(occ.headcount, 0)) AS REAL) / MAX(COUNT(DISTINCT c.id), 1) as avg_enrollment,
                 AVG(COALESCE(c.credit_hours, c.credits, 0)) as avg_credits,
                 COUNT(DISTINCT CASE WHEN LOWER(COALESCE(c.status, 'active')) = 'active' THEN c.id END) as active_courses
             FROM courses c
-            LEFT JOIN student_modules sm ON sm.module_code = COALESCE(c.course_code, c.code) AND sm.status = 'Enrolled'
+            LEFT JOIN v_course_occupancy occ ON occ.course_code = COALESCE(NULLIF(TRIM(c.course_code), ''), c.code)
             WHERE COALESCE(c.course_code, c.code) IS NOT NULL
               AND COALESCE(c.course_name, c.name) IS NOT NULL
               AND COALESCE(c.department, 'Unknown') = ?
             """, (selected_dept,))
 
             stats = cursor.fetchone()
-            if stats:
-                total, students, capacity, avg_enroll, avg_credits, active = stats
-                fill_rate = (students / capacity * 100) if capacity > 0 else 0
-
-                self.dept_details.insert(tk.END, f"Total Courses: {total}\n")
-                self.dept_details.insert(tk.END, f"Active Courses: {active}\n")
-                self.dept_details.insert(tk.END, f"Total Students: {students or 0}\n")
-                self.dept_details.insert(tk.END, f"Total Capacity: {capacity or 0}\n")
-                self.dept_details.insert(tk.END, f"Fill Rate: {fill_rate:.1f}%\n")
-                self.dept_details.insert(tk.END, f"Average Enrollment: {avg_enroll:.1f}\n")
-                self.dept_details.insert(tk.END, f"Average Credits: {avg_credits:.1f}\n\n")
 
             # Top courses in department
             cursor.execute("""
             SELECT COALESCE(c.course_code, c.code), COALESCE(c.course_name, c.name),
-                   COUNT(sm.student_id) as enrolled,
+                   COALESCE(occ.headcount, 0) as enrolled,
                    COALESCE(c.max_enrollment, 0) as capacity
             FROM courses c
-            LEFT JOIN student_modules sm ON sm.module_code = COALESCE(c.course_code, c.code) AND sm.status = 'Enrolled'
+            LEFT JOIN v_course_occupancy occ ON occ.course_code = COALESCE(NULLIF(TRIM(c.course_code), ''), c.code)
             WHERE COALESCE(c.course_code, c.code) IS NOT NULL
               AND COALESCE(c.course_name, c.name) IS NOT NULL
               AND COALESCE(c.department, 'Unknown') = ?
@@ -1404,33 +1409,26 @@ class CourseAnalyticsDialog:
             """, (selected_dept,))
 
             popular_courses = cursor.fetchall()
-            self.dept_details.insert(tk.END, "Most Popular Courses:\n")
-            for code, name, enrolled, capacity in popular_courses:
-                fill_rate = (enrolled / capacity * 100) if capacity > 0 else 0
-                self.dept_details.insert(tk.END, f"  {code} - {name}: {enrolled}/{capacity} ({fill_rate:.1f}%)\n")
 
-            self.dept_details.insert(tk.END, "\nCourses with Low Enrollment:\n")
             cursor.execute("""
             SELECT COALESCE(c.course_code, c.code), COALESCE(c.course_name, c.name),
-                   COUNT(sm.student_id) as enrolled,
+                   COALESCE(occ.headcount, 0) as enrolled,
                    COALESCE(c.max_enrollment, 0) as capacity
             FROM courses c
-            LEFT JOIN student_modules sm ON sm.module_code = COALESCE(c.course_code, c.code) AND sm.status = 'Enrolled'
+            LEFT JOIN v_course_occupancy occ ON occ.course_code = COALESCE(NULLIF(TRIM(c.course_code), ''), c.code)
             WHERE COALESCE(c.course_code, c.code) IS NOT NULL
               AND COALESCE(c.course_name, c.name) IS NOT NULL
               AND COALESCE(c.department, 'Unknown') = ?
               AND LOWER(COALESCE(c.status, 'active')) = 'active'
               AND COALESCE(c.max_enrollment, 0) > 0
             GROUP BY c.id
-            HAVING COUNT(sm.student_id) < (COALESCE(c.max_enrollment, 0) * 0.3)
+            HAVING COALESCE(occ.headcount, 0) < (COALESCE(c.max_enrollment, 0) * 0.3)
             ORDER BY enrolled ASC
             LIMIT 5
             """, (selected_dept,))
 
             low_enrollment = cursor.fetchall()
-            for code, name, enrolled, capacity in low_enrollment:
-                fill_rate = (enrolled / capacity * 100) if capacity > 0 else 0
-                self.dept_details.insert(tk.END, f"  {code} - {name}: {enrolled}/{capacity} ({fill_rate:.1f}%)\n")
+            self._render_department(selected_dept, stats, popular_courses, low_enrollment)
 
             conn.close()
 
@@ -1443,12 +1441,7 @@ class CourseAnalyticsDialog:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0)
             cursor = conn.cursor()
 
-            self.trends_text.delete(1.0, tk.END)
-            self.trends_text.insert(tk.END, "COURSE TRENDS ANALYSIS\n")
-            self.trends_text.insert(tk.END, "=" * 40 + "\n\n")
-
             # Most/least popular courses
-            self.trends_text.insert(tk.END, "ENROLLMENT TRENDS:\n\n")
 
             cursor.execute("""
             SELECT COALESCE(c.course_code, c.code), COALESCE(c.course_name, c.name),
@@ -1464,12 +1457,7 @@ class CourseAnalyticsDialog:
             """)
 
             popular_courses = cursor.fetchall()
-            if popular_courses:
-                self.trends_text.insert(tk.END, "Most Popular Courses:\n")
-                for code, name, enrollment in popular_courses:
-                    self.trends_text.insert(tk.END, f"  {code} - {name}: {enrollment} students\n")
 
-            self.trends_text.insert(tk.END, "\nCourses with Available Seats:\n")
             cursor.execute("""
             SELECT COALESCE(c.course_code, c.code), COALESCE(c.course_name, c.name),
                    COUNT(s.student_id) as enrolled,
@@ -1488,14 +1476,152 @@ class CourseAnalyticsDialog:
             """)
 
             available_courses = cursor.fetchall()
-            for code, name, enrolled, capacity, available in available_courses:
-                self.trends_text.insert(tk.END, f"  {code} - {name}: {available} seats available ({enrolled}/{capacity})\n")
+            self._render_trends(popular_courses, available_courses)
 
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to load trends data: {e}")
         finally:
             if conn:
                 conn.close()
+
+    # ------------------------------------------------------------------
+    # Rendering
+    #
+    # These replace three ScrolledText panels that printed the same figures
+    # as fixed-width text with "█" bar charts. Each keeps a plain-text copy
+    # in ``_*_plain`` because the "Email to Admin" and export actions send
+    # that, not the widgets.
+    # ------------------------------------------------------------------
+
+    def _render_status(self, status_data, total_courses):
+        surface = self.status_surface
+        _report.clear(surface)
+        lines = ["COURSE STATUS DISTRIBUTION", "=" * 40, ""]
+
+        if not status_data:
+            _report.verdict(surface, None, "No courses to report on", neutral=True)
+            self._status_plain = "\n".join(lines)
+            return
+
+        _report.stat_strip(surface, [
+            (total_courses, "Courses"),
+            (len(status_data), "Distinct statuses"),
+        ])
+        rows = []
+        for status, count in status_data:
+            pct = (count / total_courses * 100) if total_courses else 0
+            rows.append((str(status or "Unknown").title(), count, f"{pct:.1f}%"))
+            lines.append(f"{str(status):<12} {count:<6} {pct:>6.1f}%")
+        _report.card(surface, "Status distribution", accent="#3498db")
+        _report.table(surface, ("Status", "Courses", "Share"), rows,
+                      widths={"Status": 200, "Courses": 100, "Share": 100})
+        self._status_plain = "\n".join(lines)
+
+    def _render_department(self, department, stats, popular, low):
+        surface = self.dept_surface
+        _report.clear(surface)
+        lines = [f"DEPARTMENT ANALYSIS: {department.upper()}", "=" * 50, ""]
+
+        _report.banner(surface, department, "Department analysis")
+
+        if stats:
+            total, students, capacity, avg_enroll, avg_credits, active = stats
+            students = students or 0
+            capacity = capacity or 0
+            fill = (students / capacity * 100) if capacity else 0
+            _report.stat_strip(surface, [
+                (total or 0, "Courses"),
+                (active or 0, "Active"),
+                (students, "Students"),
+                (f"{fill:.1f}%", "Fill rate",
+                 _report.OK if fill >= 50 else _report.WARN),
+            ])
+            body = _report.card(surface, "Totals")
+            _report.kv_grid(body, [
+                ("Total courses", total or 0),
+                ("Active courses", active or 0),
+                ("Total students", students),
+                ("Total capacity", capacity),
+                ("Average enrolment", f"{(avg_enroll or 0):.1f}"),
+                ("Average credits", f"{(avg_credits or 0):.1f}"),
+            ])
+            lines += [f"Total Courses: {total}", f"Active Courses: {active}",
+                      f"Total Students: {students}", f"Total Capacity: {capacity}",
+                      f"Fill Rate: {fill:.1f}%",
+                      f"Average Enrollment: {(avg_enroll or 0):.1f}",
+                      f"Average Credits: {(avg_credits or 0):.1f}", ""]
+
+        def _rows(records):
+            out = []
+            for code, name, enrolled, capacity in records:
+                pct = (enrolled / capacity * 100) if capacity else 0
+                out.append((code, name, f"{enrolled}/{capacity}", f"{pct:.1f}%"))
+            return out
+
+        if popular:
+            _report.card(surface, "Most popular courses", accent="#16a34a")
+            _report.table(surface, ("Code", "Course", "Enrolled", "Fill"),
+                          _rows(popular),
+                          widths={"Code": 90, "Course": 300, "Enrolled": 100, "Fill": 80})
+            lines.append("Most Popular Courses:")
+            lines += [f"  {c} - {n}: {e}/{cap}" for c, n, e, cap in popular]
+
+        if low:
+            _report.card(surface, "Courses with low enrolment (under 30% full)",
+                         accent=_report.WARN)
+            _report.table(surface, ("Code", "Course", "Enrolled", "Fill"),
+                          _rows(low),
+                          widths={"Code": 90, "Course": 300, "Enrolled": 100, "Fill": 80})
+            lines.append("")
+            lines.append("Courses with Low Enrollment:")
+            lines += [f"  {c} - {n}: {e}/{cap}" for c, n, e, cap in low]
+
+        if not popular and not low:
+            _report.verdict(surface, None, "No course activity in this department",
+                            neutral=True)
+        self._dept_plain = "\n".join(lines)
+
+    def _render_trends(self, popular, available):
+        surface = self.trends_surface
+        _report.clear(surface)
+        lines = ["COURSE TRENDS ANALYSIS", "=" * 40, "", "ENROLLMENT TRENDS:", ""]
+
+        _report.banner(surface, "Course trends",
+                       f"Generated {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+
+        total_enrolled = sum((r[2] or 0) for r in popular)
+        total_seats = sum((r[4] or 0) for r in available)
+        _report.stat_strip(surface, [
+            (len(popular), "Courses ranked"),
+            (total_enrolled, "Students in the top courses"),
+            (len(available), "Courses with space"),
+            (total_seats, "Seats available"),
+        ])
+
+        if popular:
+            _report.card(surface, "Most popular courses", accent="#16a34a")
+            _report.table(surface, ("Code", "Course", "Students"),
+                          [(c, n, e) for c, n, e in popular],
+                          widths={"Code": 90, "Course": 340, "Students": 100})
+            lines.append("Most Popular Courses:")
+            lines += [f"  {c} - {n}: {e} students" for c, n, e in popular]
+
+        if available:
+            _report.card(surface, "Courses with available seats", accent="#3498db")
+            _report.table(
+                surface, ("Code", "Course", "Enrolled", "Capacity", "Available"),
+                [(c, n, e, cap, av) for c, n, e, cap, av in available],
+                widths={"Code": 90, "Course": 260, "Enrolled": 90,
+                        "Capacity": 90, "Available": 90})
+            lines.append("")
+            lines.append("Courses with Available Seats:")
+            lines += [f"  {c} - {n}: {av} seats available ({e}/{cap})"
+                      for c, n, e, cap, av in available]
+
+        if not popular and not available:
+            _report.verdict(surface, None, "No enrolment data to trend yet",
+                            neutral=True)
+        self._trends_plain = "\n".join(lines)
 
     def export_report(self):
         filename = filedialog.asksaveasfilename(
@@ -1520,11 +1646,11 @@ class CourseAnalyticsDialog:
                     f.write(f"{self.active_courses_label.cget('text')}\n\n")
 
                     # Export status distribution
-                    f.write(self.status_text.get(1.0, tk.END))
+                    f.write(getattr(self, '_status_plain', '') or '')
                     f.write("\n")
 
                     # Export trends
-                    f.write(self.trends_text.get(1.0, tk.END))
+                    f.write(getattr(self, '_trends_plain', '') or '')
 
                 messagebox.showinfo(_("common.export_complete"), f"Report exported to {filename}")
 

@@ -91,7 +91,7 @@ def link_document(
     try:
         file_size = os.path.getsize(file_path)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     name = document_name or os.path.basename(file_path)
     doc_id: int | None = None
 

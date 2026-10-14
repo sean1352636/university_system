@@ -4,7 +4,9 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 import os
 import shutil
 import threading
@@ -322,7 +324,7 @@ class MessagingManager:
         """
         try:
             # Create messages window
-            messages_window = tk.Toplevel(self.root)
+            messages_window = make_toplevel(self.root)
             messages_window.title(_t('gui.academics.assignment_system.messaging.windows.messages', default="Messages"))
             messages_window.geometry("1000x700")
             messages_window.configure(bg='#f0f0f0')
@@ -801,7 +803,7 @@ class MessagingManager:
                 conn.close()
 
             # Create detail window
-            detail_window = tk.Toplevel(self.root)
+            detail_window = make_toplevel(self.root)
             detail_window.title(_t('gui.academics.assignment_system.messaging.windows.message_details', default="Message Details"))
             detail_window.geometry("800x600")
             detail_window.configure(bg='#f0f0f0')
@@ -1019,7 +1021,7 @@ class MessagingManager:
                 conn.close()
 
             # Create selection window
-            select_window = tk.Toplevel(self.root)
+            select_window = make_toplevel(self.root)
             select_window.title(_t('gui.academics.assignment_system.messaging.windows.select_recipient', default="Select Recipient"))
             select_window.geometry("600x400")
 
@@ -1303,7 +1305,7 @@ class MessagingManager:
             sender_username = sender[0]
 
             # Create reply window
-            reply_window = tk.Toplevel(self.root)
+            reply_window = make_toplevel(self.root)
             reply_window.title(_t('gui.academics.assignment_system.messaging.windows.reply_to_message', default="Reply to Message"))
             reply_window.geometry("700x500")
             reply_window.configure(bg='#f0f0f0')
@@ -1394,7 +1396,7 @@ class MessagingManager:
             self.gui.db._ensure_messages_table()
 
             # Create compose message window
-            compose_window = tk.Toplevel(self.root)
+            compose_window = make_toplevel(self.root)
             compose_window.title(_t('gui.academics.assignment_system.messaging.windows.send_message', default="Send Message"))
             compose_window.geometry("800x600")
             compose_window.configure(bg='#f0f0f0')

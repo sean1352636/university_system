@@ -16,7 +16,7 @@ try:
     HEALTH_PORTAL_GUI_AVAILABLE = True
     _HEALTH_PORTAL_GUI_IMPORT_ERROR = None
 except ImportError as e:
-    print(get_text("health.portal_management.gui_not_available", error=str(e)))
+    print(get_text("health.portal_management.gui_not_available", error=str(e), default="Gui Not Available {error}"))
     _HealthPortalGUI = None
     HEALTH_PORTAL_GUI_AVAILABLE = False
     _HEALTH_PORTAL_GUI_IMPORT_ERROR = str(e)
@@ -45,11 +45,11 @@ class HealthPortalManagementGUI:
         """Open the Health Portal GUI in a child window from the main app."""
         try:
             if not HEALTH_PORTAL_GUI_AVAILABLE:
-                raise ImportError(get_text("health.portal_management.gui_unavailable", error=_HEALTH_PORTAL_GUI_IMPORT_ERROR))
+                raise ImportError(get_text("health.portal_management.gui_unavailable", error=_HEALTH_PORTAL_GUI_IMPORT_ERROR, default="Gui Unavailable {error}"))
 
             # Create a child window
             win = tk.Toplevel(self.root)
-            win.title(get_text("health.portal_management.window_title"))
+            win.title(get_text("health.portal_management.window_title", default="===== WINDOW ====="))
             win.geometry("1400x900")
 
             # Configure window background
@@ -75,21 +75,21 @@ class HealthPortalManagementGUI:
                 # Not fatal—portal will fall back to its default connection strategy
                 logger.debug(f"Could not inject database connection: {e}")
 
-            print(get_text("health.portal_management.opened_success"))
+            print(get_text("health.portal_management.opened_success", default="Opened Success"))
 
         except Exception as e:
-            messagebox.showerror(get_text("health.portal_management.title"), get_text("health.portal_management.open_failed", error=str(e)))
+            messagebox.showerror(get_text("health.portal_management.title", default="===== PORTAL MANAGEMENT ====="), get_text("health.portal_management.open_failed", error=str(e), default="Open Failed {error}"))
 
     def create_health_tab(self, parent):
         """Create system health monitoring tab"""
         health_container = ttk.Frame(parent, padding="20")
         health_container.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(health_container, text=get_text("health.portal_management.system_health_monitoring"),
+        ttk.Label(health_container, text=get_text("health.portal_management.system_health_monitoring", default="System Health Monitoring"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
         # Health checks
-        health_frame = ttk.LabelFrame(health_container, text=get_text("health.portal_management.health_checks"), padding="15")
+        health_frame = ttk.LabelFrame(health_container, text=get_text("health.portal_management.health_checks", default="Health Checks"), padding="15")
         health_frame.pack(fill=tk.X, pady=(0, 20))
 
         # Add health monitoring functionality here

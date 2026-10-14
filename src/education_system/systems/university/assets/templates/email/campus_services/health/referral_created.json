@@ -1,0 +1,9 @@
+{
+    "subject": "🩺 Specialist referral created - $specialty (Ref #$referral_id)",
+    "body": "Dear $student_name,\n\nA specialist referral has been created for you by $referring_provider. This email confirms what has been recorded; you do not need to do anything yet unless one of the next steps below applies to you.\n\n=== YOUR REFERRAL ===\nReference Number: $referral_id\nSpecialty: $specialty\nSpecialist: $specialist_provider\nReferring Provider: $referring_provider\nUrgency: $urgency\nDate Referred: $referral_date\nCurrent Status: $status\n\n=== REASON FOR REFERRAL ===\n$reason\n\n=== ADDITIONAL NOTES ===\n$notes\n\n$urgency_notice\n\n=== WHAT HAPPENS NEXT ===\n1. The specialist service reviews your referral.\n2. You will be contacted to arrange an appointment.\n3. You will receive another email whenever the status of this referral changes.\n\nTypical waiting times depend on the urgency above. If your symptoms get worse while you are waiting, contact the Health Centre — do not wait for the appointment.\n\n=== IF SOMETHING IS WRONG ===\nIf any detail above is incorrect, or you did not expect this referral, contact the Health Centre quoting reference $referral_id.\n\n=== CONTACT INFORMATION ===\nHealth Centre: health@university.edu\nPhone: (555) 123-4567\nOffice Hours: Monday-Friday, 9:00 AM - 5:00 PM\nOut of hours emergencies: call 999\n\nBest regards,\nUniversity Health Centre\n\n$signature",
+    "variables": {
+        "notes": {"default": "None recorded."},
+        "urgency_notice": {"default": ""},
+        "status": {"default": "pending"}
+    }
+}

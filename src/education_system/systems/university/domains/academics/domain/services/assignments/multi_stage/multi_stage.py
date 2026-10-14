@@ -507,7 +507,7 @@ class MultiStageMixin:
             # Insert or update submission
             cursor.execute('''
             INSERT INTO stage_submissions
-            (stage_id, student_id, content, comments, status, submitted_at)
+            (stage_id, student_id, content, feedback, status, submitted_at)
             VALUES (?, ?, ?, ?, 'submitted', ?)
             ''', (
                 stage_id,

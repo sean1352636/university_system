@@ -1,6 +1,6 @@
 // Shared auth helper for the University System web UI.
 //
-// Talks to the unified Flask API (python run.py --api) — single source of
+// Talks to the unified Flask API (python -m education_system --api) — single source of
 // truth for user accounts is the shared auth.db. No hardcoded users here.
 //
 // Endpoints used:
@@ -53,8 +53,8 @@
             } catch (netErr) {
                 if (attempt === 9) {
                     const command = global.location.protocol === 'file:'
-                        ? 'This file cannot authenticate when opened directly. Run:\n  python run.py --university --web'
-                        : 'Restart the combined server with:\n  python run.py --university --web';
+                        ? 'This file cannot authenticate when opened directly. Run:\n  python -m education_system --university --web'
+                        : 'Restart the combined server with:\n  python -m education_system --university --web';
                     throw new Error(`Cannot reach API at ${API_BASE}.\n${command}`);
                 }
                 await new Promise(resolve => setTimeout(resolve, 500));
@@ -74,7 +74,7 @@
                 },
             });
         } catch (netErr) {
-            throw new Error(`Cannot reach API at ${API_BASE}. Restart with: python run.py --university --web`);
+            throw new Error(`Cannot reach API at ${API_BASE}. Restart with: python -m education_system --university --web`);
         }
         if (!response.ok) throw await parseError(response);
         return response.json();

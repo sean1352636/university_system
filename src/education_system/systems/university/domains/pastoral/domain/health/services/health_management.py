@@ -1,7 +1,20 @@
+"""Health screening services.
+
+These functions used to open ``health_records.db`` directly. That file is
+the abandoned half of the health split described in
+``pastoral.infrastructure.health.storage``: it has no ``students`` table
+and no ``screening_results``, so every query here failed and was swallowed
+by the ``except sqlite3.Error: pass`` handlers below — the functions
+returned empty results rather than reporting anything. They now go through
+the health storage adapter, i.e. the same store as the rest of health.
+"""
+
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
-from education_system.systems.university.domains.pastoral.infrastructure.health.storage import sqlite3
-from education_system.paths import UNIVERSITY_HEALTH_DB_PATH
+from education_system.systems.university.domains.pastoral.infrastructure.health.storage import (
+    get_connection,
+    sqlite3,
+)
 
 
 def screening_guidelines() -> Dict[str, Any]:
@@ -27,7 +40,7 @@ def screening_reminders() -> List[Dict[str, Any]]:
     reminders = []
 
     # Connect to database and get students due for screenings
-    conn = sqlite3.connect(str(UNIVERSITY_HEALTH_DB_PATH))
+    conn = get_connection()
     cursor = conn.cursor()
 
     try:
@@ -59,7 +72,7 @@ def record_screening_results(student_id: int, screening_type: str, results: Dict
     if date_performed is None:
         date_performed = datetime.now().date().isoformat()
 
-    conn = sqlite3.connect(str(UNIVERSITY_HEALTH_DB_PATH))
+    conn = get_connection()
     cursor = conn.cursor()
 
     try:
@@ -108,7 +121,7 @@ def view_due_screenings() -> List[Dict[str, Any]]:
     """Display all screenings that are currently due."""
     due_screenings = []
 
-    conn = sqlite3.connect(str(UNIVERSITY_HEALTH_DB_PATH))
+    conn = get_connection()
     cursor = conn.cursor()
 
     try:
@@ -143,7 +156,7 @@ def overdue_screenings() -> List[Dict[str, Any]]:
     """Show overdue health screenings with escalation levels."""
     overdue = []
 
-    conn = sqlite3.connect(str(UNIVERSITY_HEALTH_DB_PATH))
+    conn = get_connection()
     cursor = conn.cursor()
 
     try:
@@ -185,7 +198,7 @@ def overdue_screenings() -> List[Dict[str, Any]]:
 
 def population_screening_reports() -> Dict[str, Any]:
     """Generate population health reports for administration."""
-    conn = sqlite3.connect(str(UNIVERSITY_HEALTH_DB_PATH))
+    conn = get_connection()
     cursor = conn.cursor()
 
     report = {
@@ -248,7 +261,7 @@ def recent_lab_results_dashboard() -> Dict[str, Any]:
         "summary_stats": {}
     }
 
-    conn = sqlite3.connect(str(UNIVERSITY_HEALTH_DB_PATH))
+    conn = get_connection()
     cursor = conn.cursor()
 
     try:
@@ -317,7 +330,7 @@ def vaccination_due_list() -> List[Dict[str, Any]]:
         "covid19": {"interval_months": 6, "required": True}
     }
 
-    conn = sqlite3.connect(str(UNIVERSITY_HEALTH_DB_PATH))
+    conn = get_connection()
     cursor = conn.cursor()
 
     try:

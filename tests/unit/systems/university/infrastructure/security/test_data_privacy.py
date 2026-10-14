@@ -219,7 +219,7 @@ class TestEncryptionManagement:
 class TestAuditLogging:
     """Test audit logging functionality"""
 
-    @patch('education_system.systems.university.domains.pastoral.domain.health.portal.data_privacy.audit_logger')
+    @patch('education_system.systems.university.domains.pastoral.domain.health.portal.data_privacy.audit.audit_logger')
     def test_log_audit_event(self, mock_logger):
         """Test audit event logging"""
         log_audit_event('user123', 'create', 'health_record', '456', 'Created new record')

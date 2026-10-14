@@ -1,4 +1,7 @@
 """Methods __init__ through _view_document."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -207,7 +210,7 @@ class AdminToolsGUI:
                     self.doc_tree.insert("", tk.END, values=values, tags=(status,))
 
         except Exception:
-            pass  # Table may not exist yet
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _on_doc_select(self, event):
         """Handle document selection."""
@@ -250,7 +253,7 @@ Comments: {row[10] or 'None'}
                     self._load_approval_history(doc_id)
 
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _load_approval_history(self, doc_id):
         """Load approval history for a document."""
@@ -276,7 +279,7 @@ Comments: {row[10] or 'None'}
                     )
                     self.history_tree.insert("", tk.END, values=values)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _submit_document(self):
         """Submit a new document for approval."""

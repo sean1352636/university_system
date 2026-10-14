@@ -16,6 +16,7 @@ from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.domains.academics.domain.course_planning.services.planning_service import PlanningService
 from education_system.systems.university.domains.assessment.domain.grading.grade_calculation.gpa import calculate_student_gpa
 from education_system.systems.university.infrastructure.activity_logger import log_activity
+from education_system.systems.university.domains.academics.interfaces.gui._field_pickers import attach_picker
 
 
 class _PrerequisitesMixin:
@@ -34,7 +35,9 @@ class _PrerequisitesMixin:
         control_frame.pack(fill=tk.X, padx=10, pady=10)
 
         ttk.Label(control_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.prerequisites.labels.course_id', default="Course ID:"), font=('Arial', 11)).pack(side=tk.LEFT, padx=5)
-        self.prereq_course_entry = ttk.Entry(control_frame, width=15, font=('Arial', 11))
+        # IdPicker.get() returns the course id, so the two call sites
+        # below keep working unchanged.
+        self.prereq_course_entry = attach_picker(control_frame, 'course', width=34)
         self.prereq_course_entry.pack(side=tk.LEFT, padx=5)
 
         ttk.Button(control_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.prerequisites.buttons.visualize_prerequisites', default="Visualize Prerequisites"),

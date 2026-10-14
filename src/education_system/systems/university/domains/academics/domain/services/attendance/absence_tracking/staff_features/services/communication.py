@@ -96,6 +96,7 @@ class CommunicationService:
             # FIX: original used `HAVING 2 < ?` which is a literal-vs-literal
             # compare (always true if threshold>2). Aliased the aggregate so
             # the threshold actually filters by attendance percentage.
+            # db-audit: ignore[DBW001] - join of placeholders
             rows = self.ctx.db.cur.execute(
                 f"""SELECT student_id,
                            SUM(CASE WHEN status='present' THEN 1 ELSE 0 END)
@@ -212,6 +213,7 @@ class CommunicationService:
         try:
             # FIX: replaced bogus `HAVING 2 < ?` with a real predicate over
             # the aggregated percentage column.
+            # db-audit: ignore[DBW001] - join of placeholders
             low = self.ctx.db.cur.execute(
                 f"""SELECT student_id,
                            SUM(CASE WHEN status='present' THEN 1 ELSE 0 END)
@@ -266,10 +268,10 @@ class CommunicationService:
             self.ctx.db.cur.execute(
                 """CREATE TABLE IF NOT EXISTS office_hours (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    staff_id INTEGER, slot TEXT,
+                    instructor_id INTEGER, slot TEXT,
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP)""")
             self.ctx.db.cur.execute(
-                "INSERT INTO office_hours (staff_id, slot) VALUES (?,?)",
+                "INSERT INTO office_hours (instructor_id, slot) VALUES (?,?)",
                 (self.ctx.uid, slot))
             self.ctx.db.conn.commit()
         except sqlite3.Error as e:

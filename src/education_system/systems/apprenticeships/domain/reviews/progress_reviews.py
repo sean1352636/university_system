@@ -30,7 +30,12 @@ class ReviewSignature:
 
 @dataclass
 class ReviewTarget:
-    """A SMART target agreed at a review."""
+    """A SMART target agreed at a review — an action on the action plan.
+
+    The owner, priority and completion stamp make it something the person
+    responsible can pick up and move, not only something the next review
+    judges. See ``domain/reviews/action_plans.py`` for the rules.
+    """
 
     target_id: int
     review_id: int
@@ -39,8 +44,21 @@ class ReviewTarget:
     ksb_codes: str | None = None
     status: str = "Open"
     outcome_note: str | None = None
+    owner: str = config.ACTION_DEFAULT_OWNER
+    priority: str = config.ACTION_DEFAULT_PRIORITY
+    completed_at: str | None = None
+    # Set on a copy made by carrying an outstanding action forward.
+    carried_from: int | None = None
+    carry_count: int = 0
     created_at: str = ""
     updated_at: str = ""
+    # Denormalised for the action-plan screens, filled by the join.
+    apprentice_id: int | None = None
+    apprentice_name: str = ""
+    employer_id: int | None = None
+    tutor_id: int | None = None
+    review_date: str | None = None
+    review_status: str | None = None
 
     @property
     def is_open(self) -> bool:
@@ -48,7 +66,37 @@ class ReviewTarget:
 
     @property
     def is_overdue(self) -> bool:
-        return self.is_open and bool(self.due_date) and self.due_date < date.today().isoformat()
+        return self.overdue_on(date.today())
+
+    @property
+    def is_carried(self) -> bool:
+        """This is a copy brought forward from an earlier review."""
+        return self.carried_from is not None or self.carry_count > 0
+
+    def overdue_on(self, today: date) -> bool:
+        return self.is_open and bool(self.due_date) and self.due_date < today.isoformat()
+
+    def is_due_soon(self, today: date) -> bool:
+        """Open, not yet overdue, and due within the action warning window."""
+        if not self.is_open or not self.due_date or self.overdue_on(today):
+            return False
+        horizon = today + timedelta(days=config.ACTION_DUE_SOON_DAYS)
+        return self.due_date <= horizon.isoformat()
+
+    def rag(self, today: date) -> str | None:
+        """Red when overdue, Amber when due within the week, Green once met.
+
+        Anything else is untagged: an open action with time in hand needs
+        no colour, and one closed Not Met or carried forward has been
+        dealt with at a review.
+        """
+        if self.status == "Met":
+            return "Green"
+        if self.overdue_on(today):
+            return "Red"
+        if self.is_due_soon(today):
+            return "Amber"
+        return None
 
 
 @dataclass

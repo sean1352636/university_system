@@ -1,0 +1,59 @@
+{
+  "template_id": "trip_updated",
+  "category": "mobility",
+  "name": "Trip Details Updated",
+  "description": "Sent to every registered participant when a trip's details are changed",
+  "version": "1.0.0",
+  "subject": "Details have changed for {trip_name}",
+  "body_text": "Dear {participant_name},\n\nThe details of a trip you are registered for have been updated.\n\n{separator}\nTRIP\n{separator}\nTrip:         {trip_name}\nDestination:  {destination}\nDates:        {trip_dates}\nStatus:       {trip_status}\n\n{separator}\nWHAT CHANGED\n{separator}\n{changes}\n\nYour place on the trip is unaffected. No action is needed unless the new details do not work for you, in which case contact the trips office as soon as possible.\n\n{signature}",
+  "body_html": "<html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Trip Updated</title></head><body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'><div style='max-width: 640px; margin: 0 auto; padding: 20px;'><h2 style='color: #2c5282; border-bottom: 2px solid #2c5282; padding-bottom: 10px;'>Trip Details Updated</h2><p>Dear <strong>{participant_name}</strong>,</p><p>The details of a trip you are registered for have been updated.</p><h3 style='color: #2c5282; margin-bottom: 6px;'>Trip</h3><table style='width: 100%; border-collapse: collapse; margin-bottom: 20px;'><tr><td style='padding: 6px 0; color: #718096; width: 40%;'>Trip</td><td style='padding: 6px 0;'><strong>{trip_name}</strong></td></tr><tr><td style='padding: 6px 0; color: #718096;'>Destination</td><td style='padding: 6px 0;'>{destination}</td></tr><tr><td style='padding: 6px 0; color: #718096;'>Dates</td><td style='padding: 6px 0;'>{trip_dates}</td></tr><tr><td style='padding: 6px 0; color: #718096;'>Status</td><td style='padding: 6px 0;'>{trip_status}</td></tr></table><h3 style='color: #2c5282; margin-bottom: 6px;'>What changed</h3><div style='background-color: #fffaf0; border: 1px solid #f6ad55; border-radius: 4px; padding: 12px; white-space: pre-line;'>{changes}</div><p>Your place on the trip is unaffected.</p><p style='color: #718096; font-size: 0.9em; font-style: italic;'>If you have any questions, contact the trips office.</p><p style='margin-top: 30px;'>{signature}</p></div></body></html>",
+  "variables": {
+    "participant_name": {
+      "type": "string",
+      "description": "Registered participant's name",
+      "required": true
+    },
+    "trip_name": {
+      "type": "string",
+      "description": "Name of the trip",
+      "required": true
+    },
+    "destination": {
+      "type": "string",
+      "description": "Trip destination",
+      "required": true
+    },
+    "trip_dates": {
+      "type": "string",
+      "description": "Trip dates, already formatted (a single date for single-day trips)",
+      "required": true
+    },
+    "trip_status": {
+      "type": "string",
+      "description": "Trip status after the update",
+      "required": true
+    },
+    "changes": {
+      "type": "string",
+      "description": "One line per changed field, e.g. 'Destination: York -> Durham'",
+      "required": true
+    },
+    "separator": {
+      "type": "string",
+      "description": "Visual separator for the text version",
+      "required": false,
+      "default": "----------------------------------------------------------------------"
+    },
+    "signature": {
+      "type": "string",
+      "description": "Email signature; supplied by the renderer when omitted",
+      "required": false
+    }
+  },
+  "tags": [
+    "trip",
+    "update",
+    "participant",
+    "mobility"
+  ]
+}

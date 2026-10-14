@@ -1,4 +1,8 @@
 """Extracted backwards-compatible UserAuth methods."""
+import logging
+
+logger = logging.getLogger(__name__)
+
 from ..facade_support import *
 
 class AuthFacadeSupportLegacyMigrationMixin:
@@ -31,7 +35,7 @@ class AuthFacadeSupportLegacyMigrationMixin:
                             role = row[0]
                             email = row[1] or ""
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
             elif current:
                 role = current.get("role")
                 display_name = current.get("display_name") or username

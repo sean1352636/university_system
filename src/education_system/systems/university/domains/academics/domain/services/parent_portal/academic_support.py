@@ -19,7 +19,7 @@ class AcademicSupportMixin:
             print("This function is only available for parent accounts.")
             return
 
-        if not self.auth.check_permission('view_homework'):
+        if not self.auth.check_permission('view_child_assignments'):
             print("You don't have permission to view homework.")
             return
 
@@ -143,7 +143,7 @@ class AcademicSupportMixin:
             print("This function is only available for parent accounts.")
             return
 
-        if not self.auth.check_permission('schedule_meetings'):
+        if not self.auth.check_permission('request_parent_teacher_meeting'):
             print("You don't have permission to schedule meetings.")
             return
 
@@ -300,7 +300,7 @@ class AcademicSupportMixin:
             print("This function is only available for parent accounts.")
             return
 
-        if not self.auth.check_permission('set_academic_goals'):
+        if not self.auth.check_permission('access_academic_support'):
             print("You don't have permission to set academic goals.")
             return
 

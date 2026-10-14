@@ -112,7 +112,7 @@ def apply_exam_results(exam: Exam,
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     logger.info(
         "Exam results applied for %s: %d written, %d failed",
@@ -243,4 +243,4 @@ def get_existing_results(exam: Exam) -> Dict[str, float]:
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)

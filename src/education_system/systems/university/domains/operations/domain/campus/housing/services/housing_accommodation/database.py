@@ -111,11 +111,13 @@ def init_housing_db():
             real_cols = ('deposit_interest_rate', 'deposit_interest_accrued')
             for col in text_cols:
                 if col not in asg_cols:
+                    # db-audit: ignore[DBW001] - literal collection
                     cursor.execute(
                         f"ALTER TABLE housing_assignments ADD COLUMN {col} TEXT"
                     )
             for col in real_cols:
                 if col not in asg_cols:
+                    # db-audit: ignore[DBW001] - literal collection
                     cursor.execute(
                         f"ALTER TABLE housing_assignments ADD COLUMN {col} REAL DEFAULT 0"
                     )
@@ -250,6 +252,7 @@ def init_housing_db():
             ]
             for col, decl in adds:
                 if col not in cols:
+                    # db-audit: ignore[DBW001] - literal collection
                     cursor.execute(
                         f"ALTER TABLE housing_deposit_deductions ADD COLUMN {col} {decl}"
                     )
@@ -456,6 +459,31 @@ def init_housing_db():
                AND building_type = 'Residence';
         END;
         ''')
+
+        # Inspection statuses: fold the vocabulary the GUI used to write onto
+        # the canonical one shared by both interfaces. Idempotent — after the
+        # first run these UPDATEs match nothing — so it is safe to leave in
+        # init. Without it, rows written by the old GUI stay invisible to the
+        # CLI's status filters and vice versa.
+        try:
+            from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.inspections import (
+                LEGACY_STATUS_MAP,
+            )
+            renamed = 0
+            for legacy, canonical in LEGACY_STATUS_MAP.items():
+                cursor.execute(
+                    'UPDATE housing_inspections SET status = ? WHERE status = ?',
+                    (canonical, legacy))
+                renamed += cursor.rowcount or 0
+            if renamed:
+                import logging
+                logging.getLogger(__name__).info(
+                    "Normalised %d inspection status value(s) to the canonical set",
+                    renamed)
+        except sqlite3.Error as e:
+            import logging
+            logging.getLogger(__name__).warning(
+                "Inspection status normalisation skipped: %s", e)
 
         conn.commit()
         conn.close()

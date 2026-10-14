@@ -1,2 +1,13 @@
-from .schema import CHURCH_MANAGEMENT_SCHEMA, init_church_database
-__all__ = ["CHURCH_MANAGEMENT_SCHEMA", "init_church_database"]
+"""Moved to ``education_system.systems.university.plugins.community_services.interfaces.gui.church_management.persistence`` (community services plugin).
+
+A mirror, not an alias: an aliased package would resolve this package's
+submodules through the new ``__path__`` and load each one a second time.
+Submodules are aliased individually; this copies the package's names.
+"""
+# layout-shim: education_system.systems.university.plugins.community_services.interfaces.gui.church_management.persistence
+import importlib as _importlib
+
+_new = _importlib.import_module("education_system.systems.university.plugins.community_services.interfaces.gui.church_management.persistence")
+globals().update({k: v for k, v in vars(_new).items()
+                  if not (k.startswith("__") and k.endswith("__"))})
+del _importlib, _new

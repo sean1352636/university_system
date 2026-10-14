@@ -3,6 +3,7 @@ from education_system.systems.university.infrastructure.database.db import sqlit
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.infrastructure.logging.log_config import configure_logging, get_log_file
 from education_system.systems.university.infrastructure.i18n import get_text
+from education_system.systems.university.infrastructure.database.schemas.users_table import ensure_users_table
 
 # Alias for convenience
 _t = get_text
@@ -44,20 +45,7 @@ def init_db():
         cursor.execute("PRAGMA table_info(users)")
         if not cursor.fetchall():
             logging.info("users table missing – creating it here")
-            cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                username    TEXT    UNIQUE NOT NULL,
-                first_name  TEXT    NOT NULL,
-                last_name   TEXT    NOT NULL,
-                email       TEXT    UNIQUE NOT NULL,
-                role        TEXT    NOT NULL,
-                student_id  TEXT,
-                created_at  TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                updated_at  TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (student_id) REFERENCES students(student_id)
-            )
-            ''')
+            ensure_users_table(cursor)
 
         # 4) Vehicles table
         cursor.execute('''

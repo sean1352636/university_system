@@ -101,7 +101,7 @@ class _Tooltip:
             try:
                 self.widget.after_cancel(self._after_id)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             self._after_id = None
 
     def _show(self, event):
@@ -129,7 +129,7 @@ class _Tooltip:
             try:
                 self._tip.destroy()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             self._tip = None
 
 
@@ -242,7 +242,7 @@ class GradesBreakdownGUI:
                 if row and row['student_id']:
                     return row['student_id']
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return username
 
     @staticmethod
@@ -263,7 +263,7 @@ class GradesBreakdownGUI:
                 if cand in cols:
                     return cand
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return None
 
     # ------------------------------------------------------------------
@@ -536,7 +536,7 @@ class GradesBreakdownGUI:
             try:
                 self.style.configure(s, font=('Arial', new))
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
     # ------------------------------------------------------------------
     # Theme / palette
@@ -632,7 +632,7 @@ class GradesBreakdownGUI:
             log_activity(self.student_id, 'grades_breakdown_open',
                          f"Opened grades breakdown ({len(self._modules)} modules)")
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # In all-modules mode, kick off background load of every module's data.
         if self.view_mode_var.get() == 'All modules':
@@ -747,6 +747,7 @@ class GradesBreakdownGUI:
         try:
             with get_connection() as conn:
                 placeholders = ','.join('?' * len(ids))
+                # db-audit: ignore[DBW001] - join of placeholders
                 rows = conn.execute(
                     "SELECT assessment_id, mean, median, std_dev, min_score, "
                     "       max_score, q1, q3 "
@@ -1019,7 +1020,7 @@ class GradesBreakdownGUI:
                 diff = float(grade) - float(stats['mean'])
                 vs_disp = f"{diff:+.1f}"
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         tags: list[str] = [tag] if tag else []
         if zebra and tag not in ('pass', 'fail', 'late', 'dropped'):
@@ -1401,7 +1402,7 @@ class GradesBreakdownGUI:
                 log_activity(self.student_id, 'grades_breakdown_csv',
                              f'Exported CSV to {path}')
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
         except Exception as e:
             messagebox.showerror(_t('common.error', 'Error'),
                                  f'Failed to write CSV: {e}', parent=self.window)
@@ -1450,7 +1451,7 @@ class GradesBreakdownGUI:
             log_activity(self.student_id, 'grades_breakdown_pdf',
                          f'Exported PDF transcript to {path}')
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _build_transcript_data(self) -> dict:
         return {
@@ -1499,7 +1500,7 @@ class GradesBreakdownGUI:
                 ).fetchone()
                 advisor = row['advisor_email'] if row and 'advisor_email' in row.keys() else None
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         if not advisor:
             advisor = None  # let the user pick in the dialog below
         win = tk.Toplevel(self.window)
@@ -1540,7 +1541,7 @@ class GradesBreakdownGUI:
             self.window.clipboard_append(text)
             self.refresh_var.set(f'Copied {len(rows)} row(s) to clipboard')
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     # ------------------------------------------------------------------
     # Sorting / tooltips / state
@@ -1605,12 +1606,12 @@ class GradesBreakdownGUI:
             try:
                 self._loading_label.place(relx=0.5, rely=0.5, anchor='center')
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
         else:
             try:
                 self._loading_label.place_forget()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
     def _set_empty_state(self, message: str):
         # Reuse the loading label as a generic placeholder.

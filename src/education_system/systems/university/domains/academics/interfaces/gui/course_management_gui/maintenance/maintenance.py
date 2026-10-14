@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 # gui_course_management.py
 import tkinter as tk
@@ -37,7 +41,7 @@ def _patched_sqlite_connect(database, *args, **kwargs):
         if not database or db_name in (str(DEFAULT_DB_PATH), "courses.db"):
             return _original_sqlite_connect(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return _original_sqlite_connect(database, *args, **kwargs)
 
 sqlite3.connect = _patched_sqlite_connect
@@ -49,23 +53,12 @@ from typing import List, Dict, Optional, Tuple
 import threading
 import logging
 
-# Import chart generation utility
-try:
-    import matplotlib
-    matplotlib.use('TkAgg')
-    import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-    from matplotlib.figure import Figure
-    import seaborn as sns
-    import numpy as np
-    CHARTS_AVAILABLE = True
-except ImportError:
-    CHARTS_AVAILABLE = False
-    plt = None
-    Figure = None
-    FigureCanvasTkAgg = None
-    sns = None
-    np = None
+# Chart generation utilities — deferred, see _lazy_charts. Importing seaborn
+# here pulled matplotlib, pandas and scipy (~4.7s) into every Course Management
+# open, for charts only the analytics dialogs draw.
+from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui._lazy_charts import (
+    CHARTS_AVAILABLE, plt, Figure, FigureCanvasTkAgg, sns, np,
+)
 
 # Import email service
 try:
@@ -285,7 +278,37 @@ class MaintenanceDialog:
             results = "RECALCULATING ENROLLMENT NUMBERS\n"
             results += "=" * 40 + "\n\n"
 
-            # Find courses with invalid enrollment
+            # --- Counters that disagree with the students table ---
+            #
+            # This is what "recalculate" ought to mean, and until now did not:
+            # the check below only looked for negative or over-capacity values,
+            # so a course storing 10 while 12 students were registered on it
+            # was reported as valid and left alone. That is the drift that made
+            # the Course List and the enrolled-students popup disagree.
+            from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core.enrolment_sync import (
+                find_drift,
+                reconcile,
+            )
+
+            drift = find_drift(conn)
+            if drift:
+                results += f"Found {len(drift)} course(s) whose stored enrolment is out of date:\n"
+                for _cid, code, stored, actual in drift:
+                    results += f"  - {code}: stored {stored}, actually {actual}\n"
+
+                if messagebox.askyesno(
+                        _t('gui.academics.course_management_gui.maintenance.maintenance.dialogs.recalculate_enrollments',
+                           default="Recalculate Enrolments"),
+                        f"Update {len(drift)} stored enrolment counter(s) to match "
+                        f"the number of students actually registered?"):
+                    fixed = reconcile(conn)
+                    results += f"\n✓ Recalculated {len(fixed)} enrolment counter(s)\n\n"
+                else:
+                    results += "\nNo changes made.\n\n"
+            else:
+                results += "✓ All enrolment counters match the students table.\n\n"
+
+            # --- Values that are impossible regardless of the headcount ---
             cursor.execute("""
             SELECT id, course_code, current_enrollment, max_enrollment
             FROM courses
@@ -296,7 +319,7 @@ class MaintenanceDialog:
             invalid_enrollments = cursor.fetchall()
 
             if invalid_enrollments:
-                results += f"Found {len(invalid_enrollments)} courses with invalid enrollment:\n"
+                results += f"Found {len(invalid_enrollments)} course(s) with an impossible enrolment value:\n"
                 for course_id, code, current, max_val in invalid_enrollments:
                     results += f"  - {code}: {current}/{max_val}\n"
 
@@ -314,7 +337,7 @@ class MaintenanceDialog:
                 else:
                     results += "\nNo changes made.\n"
             else:
-                results += "✓ All enrollment numbers are valid.\n"
+                results += "✓ No negative or over-capacity enrolment values.\n"
 
             conn.close()
 

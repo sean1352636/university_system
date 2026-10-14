@@ -4,8 +4,14 @@ Sibling to :mod:`calendar`. The events calendar has never known what
 the college's year looks like: nothing stopped a trip being scheduled
 in half term, a rehearsal on an INSET day, or a charity bake sale in
 the middle of the mock exam fortnight. The knowledge exists —
-:mod:`attendance_calendar` holds terms, closures and teaching days —
-but the events side never asked.
+:mod:`academic_year` owns terms, breaks and INSET days — but the
+events side never asked.
+
+It used to ask :mod:`attendance_calendar`, which keeps its own copy
+of the term dates for register purposes. That made three term
+tables in one system and no answer to which one was right. These
+functions now go through :mod:`academic_year_adapters`, the
+academic year's published contract for exactly this question.
 
 :func:`check` asks. For a proposed event it reports, day by day:
 
@@ -93,29 +99,29 @@ class TermReport:
         return "\n".join(w.label for w in self.warnings)
 
 
-# ── The attendance-calendar bridge ──────────────────────────────────
+# ── The academic-year bridge ────────────────────────────────────────
 
-def _att_calendar():
+def _year_adapters():
     """The terms/closures source, or None where it is not installed.
     Everything here degrades to silence without it — a college that
     has never set its terms up gets no term warnings, not a crash."""
     try:
-        from education_system.systems.sixth_form.domain.academics.attendance import (  # noqa: E501
-            attendance_calendar as att_cal,
+        from education_system.systems.sixth_form.domain.academics.academic_year import (  # noqa: E501
+            academic_year_adapters as adapters,
         )
-        return att_cal
+        return adapters
     except Exception:                       # pragma: no cover - optional dep
-        logger.debug("attendance_calendar unavailable", exc_info=True)
+        logger.debug("academic_year_adapters unavailable", exc_info=True)
         return None
 
 
 def term_for(date_iso: str):
     """The Term covering a date, if the college has one set up."""
-    att = _att_calendar()
-    if att is None:
+    adapters = _year_adapters()
+    if adapters is None:
         return None
     try:
-        return att.term_for(core._validate_date(date_iso, "Date"))
+        return adapters.term_on(core._validate_date(date_iso, "Date"))
     except Exception:                       # pragma: no cover - defensive
         return None
 
@@ -138,27 +144,31 @@ def week_label(date_iso: str) -> str | None:
     return f"Week {week} of {term.name}"
 
 
+def _day_status(date_iso: str):
+    """The academic year's verdict on one date, or None when it has
+    nothing to say."""
+    adapters = _year_adapters()
+    if adapters is None:
+        return None
+    try:
+        return adapters.day_status(
+            core._validate_date(date_iso, "Date"))
+    except Exception:                       # pragma: no cover - defensive
+        return None
+
+
 def is_open(date_iso: str) -> bool:
     """Whether the college teaches on this date. Unknown ⇒ assume
     open — a missing term table should not flag every event."""
-    att = _att_calendar()
-    if att is None:
-        return True
-    try:
-        return att.is_open(core._validate_date(date_iso, "Date"))
-    except Exception:                       # pragma: no cover - defensive
-        return True
+    status = _day_status(date_iso)
+    return True if status is None else status.open
 
 
 def closure_reason(date_iso: str) -> str | None:
-    att = _att_calendar()
-    if att is None:
+    status = _day_status(date_iso)
+    if status is None or status.open:
         return None
-    try:
-        status = att.day_status(core._validate_date(date_iso, "Date"))
-        return None if status.open else (status.reason or "Closed")
-    except Exception:                       # pragma: no cover - defensive
-        return None
+    return status.reason or "Closed"
 
 
 # ── Exam windows ────────────────────────────────────────────────────
@@ -203,8 +213,12 @@ def check(payload: dict[str, Any], *,
     # Closed days — unless the event is itself the closure's business.
     if p["event_type"] not in _CLOSURE_TYPES:
         for date in dates:
-            if not is_open(date):
-                reason = closure_reason(date) or "College closed"
+            # One status per date: is_open() + closure_reason()
+            # would resolve the academic year and re-query terms
+            # and breaks twice for every day of the event.
+            status = _day_status(date)
+            if status is not None and not status.open:
+                reason = status.reason or "College closed"
                 report.warnings.append(TermWarning(
                     kind="closed", date=date,
                     detail=f"{reason} — is this event really "

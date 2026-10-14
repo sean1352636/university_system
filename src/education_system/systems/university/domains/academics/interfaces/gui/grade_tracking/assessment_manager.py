@@ -2,21 +2,27 @@
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
+import logging
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, filedialog
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import make_toplevel
 import tkinter.scrolledtext as scrolledtext
 from education_system.systems.university.infrastructure.database.db import sqlite3
 import os
 from pathlib import Path
 import csv
-import numpy as np
 import math
-from scipy import stats
 from datetime import datetime, timedelta
 import json
 from education_system import paths
 from education_system.systems.university.domains.academics.domain.services.assessment_service import AssessmentAssignmentService
 from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.utils import ensure_column_exists
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.utils import ensure_column_exists_safe
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.utils import attr_alive
+from education_system.systems.university.infrastructure.database.schemas.modules_table import ensure_modules_table
+from education_system.systems.university.infrastructure.database.schemas.modules_table import ensure_student_modules_table
+from education_system.systems.university.infrastructure.database.schemas.students_table import ensure_students_table
 
 # Mirror grade_manager's immutable-audit pattern so assessment
 # mutations (create / update / delete) leave the same trail FERPA
@@ -31,36 +37,18 @@ try:
 except ImportError:
     IMMUTABLE_AUDIT_AVAILABLE = False
 
+# Module logger. This is the system's logging, not a private one: the
+# rotating app.log handler is attached to the *root* logger by
+# infrastructure/logs.py at import, and named loggers propagate up to it —
+# which is why entries appear in var/logs/university/app.log tagged with the
+# module path. Every sibling in this package does the same. A module must not
+# call configure_logging() itself; that belongs to the entry point.
+logger = logging.getLogger(__name__)
+
 # Use centralized path configuration
 DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 _CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
-# Optional imports with fallbacks
-try:
-    import pandas as pd
-except ImportError:
-    pd = None
-
-try:
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    import matplotlib
-    matplotlib.use('TkAgg')
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-except ImportError:
-    plt = None
-    sns = None
-    FigureCanvasTkAgg = None
-
-try:
-    from reportlab.lib.pagesizes import letter
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-    from reportlab.lib import colors
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib.units import inch
-except ImportError:
-    # ReportLab not available - PDF features will be disabled
-    SimpleDocTemplate = None
 
 # Database connection setup
 
@@ -72,7 +60,7 @@ def _patched_sqlite3_connect_grade(database, *args, **kwargs):
         if not database or db_name in (str(DEFAULT_DB_PATH), "student_grading_system.db"):
             return _original_sqlite3_connect_grade(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return _original_sqlite3_connect_grade(database, *args, **kwargs)
 
 sqlite3.connect = _patched_sqlite3_connect_grade
@@ -137,48 +125,13 @@ def init_basic_database():
         cursor = conn.cursor()
 
         # Create students table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS students (
-        student_id TEXT PRIMARY KEY,
-        first_name TEXT NOT NULL,
-        middle_name TEXT,
-        last_name TEXT NOT NULL,
-        course TEXT NOT NULL,
-        email_address TEXT,
-        gender TEXT,
-        dob TEXT,
-        enrollment_date TEXT DEFAULT (date('now')),
-        status TEXT DEFAULT 'Active'
-        )
-        ''')
+        ensure_students_table(cursor)
 
         # Create modules table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS modules (
-        module_code TEXT PRIMARY KEY,
-        module_name TEXT NOT NULL,
-        module_type TEXT,
-        credits INTEGER DEFAULT 1,
-        description TEXT,
-        course TEXT,
-        semester TEXT,
-        year INTEGER
-        )
-        ''')
+        ensure_modules_table(cursor)
 
         # Create student_modules table (enrollment)
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS student_modules (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        student_id TEXT,
-        module_code TEXT,
-        enrollment_date TEXT DEFAULT (date('now')),
-        status TEXT DEFAULT 'Enrolled',
-        FOREIGN KEY (student_id) REFERENCES students (student_id),
-        FOREIGN KEY (module_code) REFERENCES modules (module_code),
-        UNIQUE(student_id, module_code)
-        )
-        ''')
+        ensure_student_modules_table(cursor)
 
         # Create assessments table
         cursor.execute('''
@@ -350,6 +303,38 @@ def safe_combo_update(obj, combo_attr, values):
         pass
     return False
 
+def _merge_assessment_sources(assessments, assignments, exams):
+    """One row per real piece of work, across the three tables.
+
+    The same item can exist in all three: an exam is copied into
+    ``assessments`` by the exam sync, and an assessment is copied into
+    ``assignments`` by the assignment sync. Neither copy records where it came
+    from, so they are matched on module code, title and the date part of the
+    due date — the same three fields the syncs themselves compare.
+
+    An exam wins over an assessment, which wins over an assignment: the
+    further from the copy, the more authoritative. Rows are returned in the
+    order they were given, so the existing sort is preserved.
+    """
+    def key(row):
+        module = str(row[3] or "").strip().lower()
+        name = str(row[1] or "").strip().lower()
+        due = str(row[6] or "")[:10]
+        return (module, name, due)
+
+    seen = {}
+    order = []
+    # Highest precedence first, so the first row to claim a key is the winner.
+    for source in (exams, assessments, assignments):
+        for row in source:
+            k = key(row)
+            if k in seen:
+                continue
+            seen[k] = row
+            order.append(row)
+    return order
+
+
 class AssessmentManager:
     """Assessment management"""
 
@@ -381,8 +366,14 @@ class AssessmentManager:
                   command=self.copy_assessment).pack(side='left', padx=5)
         ttk.Button(control_frame, text=_t('gui.academics.grade_tracking.assessment_manager.buttons.refresh', default="Refresh"),
                   command=self.refresh_assessments).pack(side='left', padx=5)
-        ttk.Button(control_frame, text=_t('gui.academics.grade_tracking.assessment_manager.buttons.load_from_assignments', default="🔄 Load from Assignments"),
-                  command=self.sync_from_assignments).pack(side='right', padx=5)
+        # No "Load from …" buttons any more. Assignments and exams are read
+        # live by refresh_assessments, so there is nothing to import: the
+        # buttons used to copy rows between tables, which is what created the
+        # duplicate entries this list now shows as one.
+        ttk.Label(control_frame, text=_t(
+            'gui.academics.grade_tracking.assessment_manager.labels.live_sources',
+            default="Includes assignments and exams automatically.")).pack(
+            side='right', padx=5)
 
         # Filter frame
         filter_frame = ttk.Frame(self.content_frame)
@@ -521,7 +512,7 @@ class AssessmentManager:
 
     def add_assessment_dialog(self):
         """Open dialog to add a new assessment (matches Create Assessment form)"""
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.academics.grade_tracking.assessment_manager.windows.add_assessment', default="Add Assessment"))
         dialog.geometry("600x750")
         dialog.transient(self.root)
@@ -630,21 +621,23 @@ class AssessmentManager:
                 module_code = module.split(' - ')[0]
                 full_due = f"{due_date} {due_time}" if due_date else None
 
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                # Written through the shared service, which also mirrors the
+                # new assessment into the assignments table so it appears in
+                # the Assignment GUI as well. Previously each screen only
+                # ever saw what it had itself created.
+                created_by = 0
                 try:
-                    cursor = conn.cursor()
-                    cursor.execute("""
-                        INSERT INTO assessments (assessment_name, assessment_type, module_code,
-                                               max_points, weight, due_date, duration_minutes,
-                                               status, description, rubric, date_created)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """, (name, assessment_type, module_code, max_points_float, weight_float,
-                          full_due, duration_int, status, description, rubric,
-                          datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-                    new_assessment_id = cursor.lastrowid
-                    conn.commit()
-                finally:
-                    conn.close()
+                    current = getattr(self.auth, 'current_user', None) or {}
+                    created_by = int(current.get('id') or 0)
+                except (TypeError, ValueError):
+                    created_by = 0
+                new_assessment_id = AssessmentAssignmentService.create_assessment(
+                    name=name, assessment_type=assessment_type,
+                    module_code=module_code, max_points=max_points_float,
+                    weight=weight_float, due_date=full_due,
+                    duration_minutes=duration_int, status=status,
+                    description=description, rubric=rubric,
+                    created_by=created_by)
 
                 if IMMUTABLE_AUDIT_AVAILABLE:
                     user_id, session_id = get_gui_context()
@@ -678,7 +671,7 @@ class AssessmentManager:
                             module_code=module_code,
                         )
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 messagebox.showinfo(_t('gui.academics.grade_tracking.assessment_manager.dialogs.success', default="Success"), _t('gui.academics.grade_tracking.assessment_manager.dialogs.assessment_added_successfully', default="Assessment added successfully!"))
                 dialog.destroy()
@@ -733,7 +726,7 @@ class AssessmentManager:
                 messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.assessment_manager.dialogs.assessment_not_found', default="Assessment not found"))
                 return
 
-            dialog = tk.Toplevel(self.root)
+            dialog = make_toplevel(self.root)
             dialog.title(_t('gui.academics.grade_tracking.assessment_manager.windows.edit_assessment', default="Edit Assessment"))
             dialog.geometry("600x700")
             dialog.transient(self.root)
@@ -862,7 +855,11 @@ class AssessmentManager:
                 conn.close()
 
     def delete_assessment(self):
-        """Delete selected assessment (supports both assessments and assignments tables)"""
+        """Delete the selected assessment or assignment.
+
+        Which table the row lives in is the service's problem — this list
+        merges assessments, assignments and exams.
+        """
         selection = self.assessment_tree.selection()
         if not selection:
             messagebox.showwarning(_t('gui.academics.grade_tracking.assessment_manager.dialogs.no_selection', default="No Selection"), _t('gui.academics.grade_tracking.assessment_manager.dialogs.please_select_an_assessment_to_delete', default="Please select an assessment to delete"))
@@ -871,125 +868,64 @@ class AssessmentManager:
         item = self.assessment_tree.item(selection[0])
         raw_id = str(item['values'][0])
         assessment_name = item['values'][1]
-        is_assignment = raw_id.startswith('A')
 
         if not messagebox.askyesno(_t('gui.academics.grade_tracking.assessment_manager.dialogs.confirm_deletion', default="Confirm Deletion"),
                                    f"Are you sure you want to delete '{assessment_name}'?\n\n"
                                    "This will also delete all associated grades/submissions!"):
             return
 
-        conn = None
         try:
-            conn = get_connection()
-            cursor = conn.cursor()
-
-            if is_assignment:
-                real_id = int(raw_id[1:])
-                cursor.execute("PRAGMA foreign_keys = OFF")
-                cursor.execute("DELETE FROM assignment_submissions WHERE assignment_id = ?", (real_id,))
-                cursor.execute("DELETE FROM group_members WHERE group_id IN (SELECT id FROM groups WHERE assignment_id = ?)", (real_id,))
-                cursor.execute("DELETE FROM groups WHERE assignment_id = ?", (real_id,))
-                cursor.execute("DELETE FROM assignments WHERE id = ?", (real_id,))
-                cursor.execute("PRAGMA foreign_keys = ON")
-            else:
-                cursor.execute("DELETE FROM grades WHERE assessment_id = ?", (raw_id,))
-                cursor.execute("DELETE FROM assessments WHERE assessment_id = ?", (raw_id,))
-
-            conn.commit()
-
-            if IMMUTABLE_AUDIT_AVAILABLE:
-                user_id, session_id = get_gui_context()
-                safe_log_security_event(
-                    action=AuditAction.RECORD_DELETE,
-                    user_id=user_id,
-                    resource_type='assessment',
-                    resource_id=str(raw_id),
-                    session_id=session_id,
-                    details={'raw_id': str(raw_id), 'cascade': True},
-                )
-
-            messagebox.showinfo(_t('gui.academics.grade_tracking.assessment_manager.dialogs.success', default="Success"), _t('gui.academics.grade_tracking.assessment_manager.dialogs.assessment_deleted_successfully', default="Assessment deleted successfully!"))
-            self.refresh_assessments()
-            if hasattr(self.app, 'populate_filter_combos'):
-                self.app.populate_filter_combos()
-
+            AssessmentAssignmentService.delete_item(raw_id)
         except sqlite3.Error as e:
             messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.database_error', default="Database Error"), f"Error deleting assessment: {e}")
-        finally:
-            if conn:
-                conn.close()
+            return
+
+        if IMMUTABLE_AUDIT_AVAILABLE:
+            user_id, session_id = get_gui_context()
+            safe_log_security_event(
+                action=AuditAction.RECORD_DELETE,
+                user_id=user_id,
+                resource_type='assessment',
+                resource_id=str(raw_id),
+                session_id=session_id,
+                details={'raw_id': str(raw_id), 'cascade': True},
+            )
+
+        messagebox.showinfo(_t('gui.academics.grade_tracking.assessment_manager.dialogs.success', default="Success"), _t('gui.academics.grade_tracking.assessment_manager.dialogs.assessment_deleted_successfully', default="Assessment deleted successfully!"))
+        self.refresh_assessments()
+        if hasattr(self.app, 'populate_filter_combos'):
+            self.app.populate_filter_combos()
+
 
     def copy_assessment(self):
-        """Copy selected assessment (supports both assessments and assignments tables)"""
+        """Duplicate the selected assessment or assignment."""
         selection = self.assessment_tree.selection()
         if not selection:
             messagebox.showwarning(_t('gui.academics.grade_tracking.assessment_manager.dialogs.no_selection', default="No Selection"), _t('gui.academics.grade_tracking.assessment_manager.dialogs.please_select_an_assessment_to_copy', default="Please select an assessment to copy"))
             return
 
-        item = self.assessment_tree.item(selection[0])
-        raw_id = str(item['values'][0])
-        is_assignment = raw_id.startswith('A')
-
-        conn = None
+        raw_id = str(self.assessment_tree.item(selection[0])['values'][0])
         try:
-            conn = get_connection()
-            cursor = conn.cursor()
-
-            if is_assignment:
-                real_id = int(raw_id[1:])
-                cursor.execute("""
-                    SELECT title, assignment_type, module_code, COALESCE(max_marks, 100),
-                           due_date, description, instructions
-                    FROM assignments WHERE id = ?
-                """, (real_id,))
-                data = cursor.fetchone()
-                if not data:
-                    messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.assessment_manager.dialogs.assignment_not_found', default="Assignment not found"))
-                    return
-
-                new_name = f"Copy of {data[0]}"
-                cursor.execute("PRAGMA foreign_keys = OFF")
-                cursor.execute("""
-                    INSERT INTO assignments (title, assignment_type, module_code, max_marks,
-                                           due_date, description, instructions, is_active,
-                                           created_by, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, 1, 'system', datetime('now'), datetime('now'))
-                """, (new_name, data[1], data[2], data[3], data[4], data[5], data[6]))
-                cursor.execute("PRAGMA foreign_keys = ON")
-            else:
-                cursor.execute("""
-                    SELECT assessment_name, assessment_type, module_code, max_points,
-                           weight, due_date, description, rubric
-                    FROM assessments WHERE assessment_id = ?
-                """, (raw_id,))
-                data = cursor.fetchone()
-                if not data:
-                    messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.assessment_manager.dialogs.assessment_not_found', default="Assessment not found"))
-                    return
-
-                new_name = f"Copy of {data[0]}"
-                cursor.execute("""
-                    INSERT INTO assessments (assessment_name, assessment_type, module_code,
-                                           max_points, weight, due_date, description, rubric,
-                                           date_created)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-                """, (new_name, data[1], data[2], data[3], data[4], data[5], data[6], data[7]))
-
-            conn.commit()
-            messagebox.showinfo(_t('gui.academics.grade_tracking.assessment_manager.dialogs.success', default="Success"), f"Assessment copied as '{new_name}'!")
-            self.refresh_assessments()
-            if hasattr(self.app, 'populate_filter_combos'):
-                self.app.populate_filter_combos()
-
+            new_name = AssessmentAssignmentService.copy_item(raw_id)
         except sqlite3.Error as e:
             messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.database_error', default="Database Error"), f"Error copying assessment: {e}")
-        finally:
-            if conn:
-                conn.close()
+            return
+
+        if not new_name:
+            messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.assessment_manager.dialogs.assessment_not_found', default="Assessment not found"))
+            return
+
+        messagebox.showinfo(_t('gui.academics.grade_tracking.assessment_manager.dialogs.success', default="Success"), f"Assessment copied as '{new_name}'!")
+        self.refresh_assessments()
+        if hasattr(self.app, 'populate_filter_combos'):
+            self.app.populate_filter_combos()
+
 
     def refresh_assessments(self):
         """Refresh the assessments list from database (includes both assessments and assignments)"""
-        if not hasattr(self, 'assessment_tree'):
+        # The tree is destroyed whenever the user navigates to another view;
+        # a stale reference here is normal, not an error.
+        if not attr_alive(self, 'assessment_tree'):
             return
 
         conn = None
@@ -1048,8 +984,38 @@ class AssessmentManager:
 
             assessments_from_assignments = cursor.fetchall()
 
-            # Combine and display all assessments
-            all_assessments = list(assessments_from_assessments) + list(assessments_from_assignments)
+            # Exams, read live from the exam system.
+            #
+            # This used to require pressing "Load from Exam Scheduling", which
+            # *copied* each exam into `assessments`. Copying is what produced
+            # the duplicates: one exam ended up as an exams row, an assessments
+            # row and — once the assignment sync ran over that — an assignments
+            # row too. Reading the three tables live shows the same information
+            # with nothing written, so nothing can drift or double up.
+            assessments_from_exams = []
+            try:
+                params = [filter_module] if filter_module else []
+                # db-audit: ignore[DBW001] - literal fragment
+                cursor.execute(f'''
+                    SELECT 'E' || e.id as assessment_id,
+                           COALESCE(NULLIF(e.exam_name, ''),
+                                    e.module_code || ' exam') as assessment_name,
+                           'exam' as assessment_type, e.module_code,
+                           100 as max_points, 0 as weight, e.date as due_date
+                    FROM exams e
+                    {"WHERE e.module_code = ?" if filter_module else ""}
+                    ORDER BY e.date DESC
+                ''', params)
+                assessments_from_exams = cursor.fetchall()
+            except sqlite3.Error as exc:
+                # `exams` is created lazily by the Exam Scheduling GUI.
+                logger.debug("Exams unavailable for the assessment list: %s", exc)
+
+            all_assessments = _merge_assessment_sources(
+                assessments_from_assessments,
+                assessments_from_assignments,
+                assessments_from_exams,
+            )
 
             for row in all_assessments:
                 assessment_id, name, atype, module, max_points, weight, due_date = row
@@ -1062,6 +1028,10 @@ class AssessmentManager:
                     f"{weight or 0}%",
                     due_date or 'N/A'
                 ))
+
+        except tk.TclError:
+            # Widget torn down mid-refresh (view switched / window closed).
+            return
 
         except sqlite3.Error as e:
             messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.database_error', default="Database Error"), f"Failed to load assessments: {e}")
@@ -1083,7 +1053,7 @@ class AssessmentManager:
             cursor = conn.cursor()
 
             # Load modules for assessment filter
-            if hasattr(self, 'assessment_module_combo'):
+            if attr_alive(self, 'assessment_module_combo'):
                 cursor.execute("""
                     SELECT DISTINCT module_code
                     FROM modules
@@ -1104,43 +1074,3 @@ class AssessmentManager:
         finally:
             if conn:
                 conn.close()
-
-    def sync_from_assignments(self):
-        """Sync assessments from the assignments table"""
-        try:
-            # Get current user ID for creating assignments
-            user_id = self.auth.current_user.get('id', 1) if hasattr(self, 'auth') and self.auth and self.auth.current_user else 1
-
-            # Get all assessments
-            assessments = AssessmentAssignmentService.get_all_assessments()
-
-            if not assessments:
-                messagebox.showinfo(_t('gui.academics.grade_tracking.assessment_manager.dialogs.load_complete', default="Load Complete"), _t('gui.academics.grade_tracking.assessment_manager.dialogs.no_assessments_found_to_load_from_assignments', default="No assessments found to load from assignments"))
-                return
-
-            loaded_count = 0
-            skipped_count = 0
-
-            for assessment in assessments:
-                # Try to create assignment from assessment
-                assignment_id = AssessmentAssignmentService.sync_assessment_to_assignment(
-                    assessment['assessment_id'],
-                    user_id
-                )
-                if assignment_id:
-                    loaded_count += 1
-                else:
-                    skipped_count += 1
-
-            # Reload the assessments display
-            self.refresh_assessments()
-
-            messagebox.showinfo(
-                _t('gui.academics.grade_tracking.assessment_manager.dialogs.load_complete', default="Load Complete"),
-                f"Loaded {loaded_count} assignment(s) from assessments.\n"
-                f"Skipped {skipped_count} (already exist or invalid)."
-            )
-
-        except Exception as e:
-            messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.load_error', default="Load Error"), f"Failed to load from assignments: {e}")
-

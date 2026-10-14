@@ -73,7 +73,7 @@ class ExportOpsMixin:
                 print(_t("shared.utils.batch_operations.no_students_matching"))
                 return
 
-            print(_t("shared.utils.batch_operations.students_to_export", count=len(results)))
+            print(_t("shared.utils.batch_operations.students_to_export", count=len(results), default="Students To Export {count}"))
 
             # Get column names
             columns = [description[0] for description in cursor.description]
@@ -88,7 +88,7 @@ class ExportOpsMixin:
             self.export_data_to_file(results, columns, output_path, export_format)
 
         except sqlite3.Error as e:
-            print(_t("shared.utils.batch_operations.database_error", error=str(e)))
+            print(_t("shared.utils.batch_operations.database_error", error=str(e), default="Database Error {error}"))
         finally:
             conn.close()
 
@@ -112,10 +112,10 @@ class ExportOpsMixin:
                 with open(filename, 'w', encoding='utf-8') as jsonfile:
                     json.dump(json_data, jsonfile, indent=2, default=str)
 
-            print(_t("shared.utils.batch_operations.export_success", filename=filename))
+            print(_t("shared.utils.batch_operations.export_success", filename=filename, default="Export Success {filename}"))
 
         except Exception as e:
-            print(_t("shared.utils.batch_operations.error_exporting", error=str(e)))
+            print(_t("shared.utils.batch_operations.error_exporting", error=str(e), default="Error Exporting. {error}"))
 
     def export_enrollment_statistics(self):
         """Export course and module enrollment statistics"""
@@ -178,15 +178,15 @@ class ExportOpsMixin:
             with open(filename, 'w', encoding='utf-8') as f:
                 json.dump(stats, f, indent=2, default=str)
 
-            print(_t("shared.utils.batch_operations.stats_exported", filename=filename))
+            print(_t("shared.utils.batch_operations.stats_exported", filename=filename, default="Stats Exported {filename}"))
 
             # Display summary
             print("\n" + _t("shared.utils.batch_operations.summary"))
-            print(f"{_t('shared.utils.batch_operations.course_enrollment')}: {stats['course_enrollment']}")
-            print(f"{_t('shared.utils.batch_operations.total_students')}: {sum(stats['course_enrollment'].values())}")
-            print(f"{_t('shared.utils.batch_operations.most_popular_module')}: {stats['module_enrollment'][0]['module_name']} ({stats['module_enrollment'][0]['enrollment']} {_t('shared.utils.batch_operations.students')})")
+            print(f"{_t('shared.utils.batch_operations.course_enrollment', default='Course Enrollment')}: {stats['course_enrollment']}")
+            print(f"{_t('shared.utils.batch_operations.total_students', default='Total Students')}: {sum(stats['course_enrollment'].values())}")
+            print(f"{_t('shared.utils.batch_operations.most_popular_module', default='Most Popular Module')}: {stats['module_enrollment'][0]['module_name']} ({stats['module_enrollment'][0]['enrollment']} {_t('shared.utils.batch_operations.students', default='Students')})")
 
         except sqlite3.Error as e:
-            print(_t("shared.utils.batch_operations.database_error", error=str(e)))
+            print(_t("shared.utils.batch_operations.database_error", error=str(e), default="Database Error {error}"))
         finally:
             conn.close()

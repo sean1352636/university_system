@@ -175,7 +175,7 @@ def kpi_bursaries_submitted() -> Tile:
 
 def kpi_ucas_submitted() -> Tile:
     def _go():
-        from education_system.systems.sixth_form.domain.progression.ucas import ucas
+        from education_system.systems.sixth_form.domain.progression.university import ucas
         apps = ucas.list_applications()
         submitted = sum(1 for a in apps
                         if a.status in ("Submitted", "Replied", "Confirmed", "Clearing"))
@@ -193,6 +193,37 @@ def kpi_apprenticeships_active() -> Tile:
         return active
     n = _safe(_go)
     return Tile("Apprenticeships", _fmt_int(n), "Open applications")
+
+
+def kpi_positive_destinations() -> Tile:
+    """The KS5 sustained-destination headline.
+
+    The measure the sixth form is judged on, and until now it existed
+    only inside the Destinations window. ``None`` from ``headline()``
+    means "could not read", which must render as an em dash rather than
+    0% — no data and nobody progressing are very different answers.
+    """
+    def _go():
+        from education_system.systems.sixth_form.domain.progression.destinations import (
+            destinations_links,
+        )
+        head = destinations_links.headline()
+        return None if head is None else head["positive_pct"]
+    pct = _safe(_go)
+    return Tile("Positive destinations", _fmt_pct(pct),
+                "Sustained at leaving, of those captured")
+
+
+def kpi_destinations_missing() -> Tile:
+    """Leavers with no destination recorded — the capture gap."""
+    def _go():
+        from education_system.systems.sixth_form.domain.progression.destinations import (
+            destinations_links,
+        )
+        head = destinations_links.headline()
+        return None if head is None else head["missing"]
+    n = _safe(_go)
+    return Tile("Destinations missing", _fmt_int(n), "No leaving record yet")
 
 
 def kpi_exam_entries() -> Tile:
@@ -253,6 +284,8 @@ def snapshot(*,
         kpi_bursaries_submitted(),
         kpi_ucas_submitted(),
         kpi_apprenticeships_active(),
+        kpi_positive_destinations(),
+        kpi_destinations_missing(),
         kpi_exam_entries(),
     ]
     return Snapshot(

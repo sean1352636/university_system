@@ -22,14 +22,17 @@ from education_system.systems.apprenticeships.domain.apprentices.models import (
     Apprentice,
     ValidationError,
 )
+from education_system.systems.apprenticeships.domain.records import audit
+from education_system.systems.apprenticeships.domain.training import attendance as attendance_rules
+from education_system.systems.apprenticeships.domain.training import learning_plan as plan_rules
 from education_system.systems.apprenticeships.domain.training import off_the_job_hours as otj
 from education_system.systems.apprenticeships.domain.training import sessions
+from education_system.systems.apprenticeships.domain.training.attendance import AttendanceSummary
 from education_system.systems.apprenticeships.domain.training.off_the_job_hours import (
     OTJEntry,
     OTJSummary,
 )
 from education_system.systems.apprenticeships.domain.training.sessions import (
-    AttendanceSummary,
     SessionAttendance,
     TrainingPlanItem,
     TrainingSession,
@@ -40,6 +43,7 @@ from education_system.systems.apprenticeships.infrastructure.persistence.reposit
 from education_system.systems.apprenticeships.infrastructure.persistence.repositories import (
     apprentice_repository,
     compliance_repository,
+    learning_plan_repository,
     programme_repository,
     staff_repository,
 )
@@ -225,8 +229,13 @@ def mark_attendance(
     status: str,
     otj_hours: float | None = None,
     notes: str | None = None,
+    absence_reason: str | None = None,
 ) -> SessionAttendance:
-    """Mark one apprentice on a register, and log the hours it earned."""
+    """Mark one apprentice on a register, and log the hours it earned.
+
+    An absence (Absent or Excused) is stored with its reason; see
+    :func:`attendance.validate_absence_reason` for what each mark needs.
+    """
     require(actor, "training.manage")
     session = repo.get_session(session_id)
     if session is None:
@@ -234,6 +243,7 @@ def mark_attendance(
     _require_apprentice(actor, apprentice_id)
 
     mark = sessions.validate_attendance_status(status)
+    reason = attendance_rules.validate_absence_reason(mark, absence_reason)
     if otj_hours is None or mark not in sessions.HOURS_EARNING_STATUSES:
         # An override only applies to a mark that earns hours: an absence
         # earns nothing however the register was typed.
@@ -243,13 +253,15 @@ def mark_attendance(
 
     attendance_id = repo.upsert_attendance(
         session_id, apprentice_id,
-        status=mark, otj_hours=hours, notes=_optional_text(notes),
+        status=mark, otj_hours=hours, notes=_optional_text(notes), absence_reason=reason,
     )
     _sync_register_hours(actor, session, apprentice_id, mark, hours)
     compliance_repository.record(
         action="update", entity="attendance", entity_id=attendance_id,
         actor=actor.username, actor_role=actor.role,
-        detail=f"Apprentice {apprentice_id} marked {mark} ({hours}h) on session {session_id}",
+        detail=f"Apprentice {apprentice_id} marked {mark}"
+        + (f" — {reason}" if reason else "")
+        + f" ({hours}h) on session {session_id}",
     )
     logger.info(
         "Apprentice %s marked %s on session %s by %s",
@@ -336,6 +348,7 @@ def add_plan_item(
 
     data = _validate_plan_item(payload, existing=None)
     data["apprentice_id"] = apprentice_id
+    _check_objective(data.get("objective_id"), apprentice_id)
     item_id = repo.create_plan_item(data)
     compliance_repository.record(
         action="create", entity="training_plan_item", entity_id=item_id,
@@ -359,6 +372,8 @@ def update_plan_item(
     existing = _require_plan_item(actor, item_id)
 
     data = _validate_plan_item(payload, existing=existing)
+    if "objective_id" in data:
+        _check_objective(data["objective_id"], existing.apprentice_id)
     repo.update_plan_item(item_id, data)
     compliance_repository.record(
         action="update", entity="training_plan_item", entity_id=item_id,
@@ -524,6 +539,12 @@ def reject_hours(actor: Actor, entry_id: int, *, reason: str) -> OTJEntry:
         action="reject", entity="otj_entry", entity_id=entry_id,
         actor=actor.username, actor_role=actor.role,
         detail=f"Rejected {entry.hours}h on {entry.activity_date}: {reason.strip()}",
+        changes=audit.diff(
+            entry,
+            {"status": "Rejected", "approved_by": actor.username,
+             "decision_note": reason.strip()},
+            fields=("status", "approved_by", "decision_note"),
+        ),
     )
     logger.info("OTJ entry %s rejected by %s: %s", entry_id, actor.username, reason)
 
@@ -568,14 +589,14 @@ def update_entry(actor: Actor, entry_id: int, payload: dict[str, Any]) -> OTJEnt
     # different entry.
     data.pop("apprentice_id", None)
     repo.update_entry(entry_id, data)
+    updated = repo.get_entry(entry_id)
+    assert updated is not None
     compliance_repository.record(
         action="update", entity="otj_entry", entity_id=entry_id,
         actor=actor.username, actor_role=actor.role,
         detail=", ".join(sorted(data)) or "no change",
+        changes=audit.diff(existing, updated, fields=sorted(data)),
     )
-
-    updated = repo.get_entry(entry_id)
-    assert updated is not None
     return updated
 
 
@@ -612,12 +633,26 @@ def _approve_entry(actor: Actor, entry: OTJEntry, note: str | None) -> None:
         action="approve", entity="otj_entry", entity_id=entry.entry_id,
         actor=actor.username, actor_role=actor.role,
         detail=f"Approved {entry.hours}h on {entry.activity_date}",
+        changes=audit.diff(
+            entry,
+            {"status": "Approved", "approved_by": actor.username, "decision_note": note},
+            fields=("status", "approved_by", "decision_note"),
+        ),
     )
 
 
 # ═════════════════════════════════════════════════════════════════════
 # Loading and validation
 # ═════════════════════════════════════════════════════════════════════
+
+def _check_objective(objective_id: int | None, apprentice_id: int) -> None:
+    """An activity can only deliver an objective on its own apprentice's plan."""
+    if objective_id is None:
+        return
+    objective = learning_plan_repository.get_objective(objective_id)
+    if objective is None or objective.apprentice_id != apprentice_id:
+        raise ValidationError("That objective belongs to a different apprentice's plan")
+
 
 def _require_apprentice(actor: Actor, apprentice_id: int) -> Apprentice:
     """Load an apprentice, refusing if *actor* may not see them."""
@@ -742,9 +777,17 @@ def _validate_plan_item(
 
     if existing is None or "title" in payload:
         data["title"] = _require_text(payload.get("title"), "Item title")
-    for key in ("description", "ksb_codes", "status"):
+    for key in ("description", "ksb_codes"):
         if key in payload:
             data[key] = _optional_text(payload.get(key))
+    if "status" in payload:
+        data["status"] = plan_rules.validate_plan_item_status(
+            payload.get("status"), current=existing.status if existing else None
+        )
+    if "objective_id" in payload:
+        data["objective_id"] = _validate_fk(
+            payload.get("objective_id"), learning_plan_repository.get_objective, "objective"
+        )
     if "delivery_mode" in payload:
         data["delivery_mode"] = sessions.validate_delivery_mode(payload.get("delivery_mode"))
     if "planned_start" in payload:

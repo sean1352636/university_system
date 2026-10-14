@@ -27,15 +27,15 @@ Each subsystem ships its own CLI and GUI (Tkinter). All four share a single `aut
 pip install -r ../requirements.lock
 
 # Interactive launcher
-python ../run.py
+python -m education_system
 
 # Direct launch — system + interface
-python ../run.py --university --gui
-python ../run.py --college --gui
-python ../run.py --secondary --cli
-python ../run.py --primary --gui
-python ../run.py --api                    # Unified REST API
-python ../run.py --university --web       # Static HTML UI where available
+python -m education_system --university --gui
+python -m education_system --college --gui
+python -m education_system --secondary --cli
+python -m education_system --primary --gui
+python -m education_system --api                    # Unified REST API
+python -m education_system --university --web       # Static HTML UI where available
 ```
 
 Default dev superadmin: `superadmin` / `SuperAdmin@123`.

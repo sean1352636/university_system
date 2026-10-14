@@ -1,14 +1,13 @@
-"""Barber Shop GUI - Feature mixins."""
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.interfaces.gui.barber.features`` (campus commerce plugin).
 
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.barber.features.appointments import AppointmentsMixin
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.barber.features.services import ServicesMixin
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.barber.features.staff import StaffMixin
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.barber.features.customers import CustomersMixin
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.barber.features.finance import FinanceMixin
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.barber.features.analytics import AnalyticsMixin
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.barber.features.refunds import RefundsMixin
+A mirror, not an alias: an aliased package would resolve this package's
+submodules through the new ``__path__`` and load each one a second time.
+Submodules are aliased individually; this copies the package's names.
+"""
+# layout-shim: education_system.systems.university.plugins.campus_commerce.interfaces.gui.barber.features
+import importlib as _importlib
 
-__all__ = [
-    'AppointmentsMixin', 'ServicesMixin', 'StaffMixin',
-    'CustomersMixin', 'FinanceMixin', 'AnalyticsMixin', 'RefundsMixin',
-]
+_new = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.interfaces.gui.barber.features")
+globals().update({k: v for k, v in vars(_new).items()
+                  if not (k.startswith("__") and k.endswith("__"))})
+del _importlib, _new

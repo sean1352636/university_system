@@ -140,6 +140,24 @@ def _staff_dashboard(data: dict[str, Any]) -> None:
 
 
 def _apprentice_dashboard(data: dict[str, Any]) -> None:
+    academic = data.get("academic_progress")
+    if data.get("degree_link") is not None:
+        prompts.note("\nMy degree apprenticeship:")
+        if data.get("reconciliation_warning"):
+            prompts.note(f"Provider review required: {data['reconciliation_warning']}")
+        if academic:
+            prompts.details([
+                ("Registered degree", academic.get("degree_program_name") or
+                 academic.get("degree_program_code") or "Linked degree"),
+                ("Credits", f"{academic.get('credits_earned', 0):g} / "
+                 f"{academic.get('credits_required', 0):g}"),
+                ("Modules completed", academic.get("modules_completed", 0)),
+                ("Academic standing", academic.get("academic_standing") or "Not reported"),
+                ("Degree outcome", academic.get("degree_outcome") or "Not awarded"),
+            ])
+        else:
+            prompts.note("Waiting for the first university academic update.")
+
     hours = data.get("hours")
     if hours is not None:
         prompts.note("")

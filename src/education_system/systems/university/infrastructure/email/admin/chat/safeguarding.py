@@ -1,5 +1,8 @@
 """SafeguardingMixin — extracted from chat.py."""
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.email.admin._imports import (
     datetime,
@@ -189,7 +192,7 @@ class SafeguardingMixin:
                         data=f"message={message_id}",
                     )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             return True
 
         try:

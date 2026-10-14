@@ -28,8 +28,8 @@ except Exception:  # pragma: no cover - defensive
     _bus_subscribe_tk = None
     EVENT_CALENDAR_CHANGED = "calendar.changed"
 
-TERM_TYPES = ["Semester", "Quarter", "Trimester", "Summer Session", "Intersession"]
-TERM_STATUSES = ["Planned", "Open", "In Progress", "Closed", "Archived"]
+# TERM_TYPES / TERM_STATUSES moved to the academic-calendar terms service
+# along with the term editor; nothing in this read-only tab uses them.
 DELIVERY_MODES = ["In Person", "Online", "Hybrid", "Blended"]
 SECTION_STATUSES = ["Open", "Waitlist", "Closed", "Cancelled"]
 
@@ -71,15 +71,19 @@ class SectionsTabMixin:
             self._ext_report_error("build Terms & Sections tab", exc)
 
     def _on_calendar_changed(self, **_payload):
-        """Event-bus handler: a calendar term/semester changed → refresh terms."""
+        """Event-bus handler: terms changed in the calendar → re-read them.
+
+        This used to *import* calendar semesters into ``academic_terms``.
+        There is nothing to import now: the calendar writes ``academic_terms``
+        directly, so this only has to re-read the table.
+        """
         if not hasattr(self, "_terms_tree"):
             return
         try:
-            imported = self._import_terms_from_calendar()
-            if imported:
-                self._reload_terms()
+            self._reload_terms()
         except Exception:
-            logger.debug("Reverse calendar→terms sync failed", exc_info=True)
+            logger.debug("Term refresh after calendar change failed",
+                         exc_info=True)
 
     # ------------------------------------------------------------------
     # Academic Terms sub-tab
@@ -90,23 +94,22 @@ class SectionsTabMixin:
         self._sections_notebook.add(tab, text=_("course_management.tabs.terms",
                                                  default="Academic Terms"))
 
+        # Read-only. Terms belong to the Academic Calendar, which already owns
+        # academic years and semesters; Course Management only consumes a term
+        # as course_sections.term_id. While both sides could edit them, the two
+        # models had to be reconciled by sync code that worked in one direction
+        # only — a term created here reached the calendar as a plain event, not
+        # a semester, so it never came back. Editing lives in one place now.
         bar = ttk.Frame(tab)
         bar.pack(fill=tk.X, pady=5)
-        if self._ext_can_edit():
-            ttk.Button(bar, text=_("common.add", default="Add Term"),
-                       command=self._add_term).pack(side=tk.LEFT, padx=5)
-            ttk.Button(bar, text=_("common.edit", default="Edit"),
-                       command=self._edit_term).pack(side=tk.LEFT, padx=5)
-            ttk.Button(bar, text=_("common.delete", default="Delete"),
-                       command=self._delete_term).pack(side=tk.LEFT, padx=5)
+        ttk.Label(bar, text=_(
+            "course_management.terms.managed_in_calendar",
+            default="Terms are managed in the Academic Calendar.")).pack(
+            side=tk.LEFT, padx=5)
         ttk.Button(bar, text=_("common.refresh", default="Refresh"),
                    command=self._reload_terms).pack(side=tk.LEFT, padx=5)
-        # Terms are now pushed to the Academic Calendar automatically when
-        # they're added or edited (see _sync_term_to_calendar), so the manual
-        # "Publish term to Calendar" button has been removed. A launcher to
-        # open the calendar itself remains.
         ttk.Button(bar, text=_("course_management.buttons.open_calendar",
-                               default="Open Academic Calendar →"),
+                               default="Manage terms in Academic Calendar →"),
                    command=self._open_academic_calendar).pack(side=tk.RIGHT, padx=5)
 
         cols = ("ID", "Name", "Type", "Year", "Start", "End", "Status")
@@ -124,9 +127,6 @@ class SectionsTabMixin:
     def _reload_terms(self, *_a):
         if not hasattr(self, "_terms_tree"):
             return
-        # Pull in any terms created on the Academic Calendar side first, so a
-        # plain refresh of this tab surfaces them.
-        self._import_terms_from_calendar()
         self._ext_clear_tree(self._terms_tree)
         try:
             with self._ext_db() as conn:
@@ -144,183 +144,7 @@ class SectionsTabMixin:
         except Exception as exc:
             self._ext_report_error("load academic terms", exc)
 
-    def _term_form_fields(self, data=None):
-        data = data or {}
-        return [
-            ("name", "Term Name:", {"default": data.get("name", "")}),
-            ("term_type", "Type:", {"type": "combo", "values": TERM_TYPES,
-                                    "default": data.get("term_type", "Semester")}),
-            ("academic_year", "Academic Year:",
-             {"default": data.get("academic_year", ""), "width": 20}),
-            ("start_date", "Start Date (YYYY-MM-DD):",
-             {"default": data.get("start_date", "")}),
-            ("end_date", "End Date (YYYY-MM-DD):",
-             {"default": data.get("end_date", "")}),
-            ("status", "Status:", {"type": "combo", "values": TERM_STATUSES,
-                                   "default": data.get("status", "Planned")}),
-        ]
-
-    def _add_term(self):
-        if not self._ext_can_edit():
-            return
-
-        def submit(values):
-            name = (values.get("name") or "").strip()
-            if not name:
-                messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                     _t('gui.academics.course_management_gui.core.sections_tab.dialogs.term_name_is_required', default="Term name is required."))
-                return False
-            try:
-                with self._ext_db(write=True) as conn:
-                    conn.execute(
-                        "INSERT INTO academic_terms "
-                        "(name, term_type, academic_year, start_date, end_date, "
-                        " status, created_at, updated_at) "
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                        (name, values["term_type"], values["academic_year"],
-                         values["start_date"], values["end_date"], values["status"],
-                         self._ext_now(), self._ext_now()),
-                    )
-            except Exception as exc:
-                # Likely a UNIQUE clash on name — report and keep the form open.
-                self._ext_report_error("add term", exc)
-                return False
-            self._ext_audit("create", "academic_term", name=name)
-            # Auto-push the new term onto the Academic Calendar.
-            self._sync_term_to_calendar(
-                name, values["term_type"], values["academic_year"],
-                values["start_date"], values["end_date"])
-            self._reload_terms()
-            return True
-
-        ExtFormDialog(self.root, self, "Add Academic Term",
-                      self._term_form_fields(), submit, submit_label="Add Term",
-                      geometry="480x430")
-
-    def _selected_term(self):
-        vals = self._ext_selected_values(self._terms_tree)
-        if not vals:
-            messagebox.showwarning(_("common.warning", default="Warning"),
-                                   _t('gui.academics.course_management_gui.core.sections_tab.dialogs.select_a_term_first', default="Select a term first."))
-            return None
-        return vals
-
     # -- Academic Calendar tie-in --------------------------------------
-    def _calendar_event_name(self, term_name):
-        """Deterministic calendar-event name for a curriculum term, so pushes
-        are idempotent (one event per term, updated in place)."""
-        return f"{term_name} (Academic Term)"
-
-    def _sync_term_to_calendar(self, name, term_type, year, start, end):
-        """Push (or update) an Academic Calendar event for a curriculum term.
-
-        Called automatically whenever a term is added or edited — the manual
-        "Publish term to Calendar" button was removed in favour of this. It's
-        idempotent: the event is keyed by a deterministic name, so a term
-        edited multiple times updates the same event instead of creating
-        duplicates. Best-effort — a failure here never blocks saving the term
-        (the term already exists in academic_terms by the time we're called).
-        """
-        start = (start or "").strip()
-        end = (end or "").strip()
-        # A calendar event needs a valid, ordered date span; skip quietly if
-        # the term hasn't got usable dates yet (it'll sync on the next edit).
-        if not start or not end or start >= end:
-            return
-        canonical = self._calendar_event_name(name)
-        description = f"Course-management term '{name}' ({term_type}, {year})."
-        try:
-            with self._ext_db() as conn:
-                row = conn.execute(
-                    "SELECT id, date_start, date_end, description "
-                    "FROM academic_calendar_events WHERE name = ? LIMIT 1",
-                    (canonical,),
-                ).fetchone()
-
-            from education_system.systems.university.domains.academics.domain.services.academic_calendar.calendar_core import (
-                AcademicCalendarManager,
-            )
-            mgr = AcademicCalendarManager(auth_manager=getattr(self, "auth", None))
-
-            if row is None:
-                mgr.add_event(
-                    name=canonical, date_start=start, date_end=end,
-                    event_type="Academic", description=description)
-                self._ext_audit("publish", "calendar_term", term=name)
-            else:
-                event_id, cur_start, cur_end, cur_desc = row
-                if ((cur_start or "") != start or (cur_end or "") != end
-                        or (cur_desc or "") != description):
-                    mgr.update_event(event_id, {
-                        "date_start": start, "date_end": end,
-                        "description": description})
-                    self._ext_audit("update", "calendar_term", term=name)
-        except Exception as exc:
-            # Never surface a modal error for the auto-push; the term is saved
-            # regardless. Log for diagnostics.
-            logger.warning("Auto-push of term '%s' to calendar failed: %s",
-                           name, exc)
-
-    def _import_terms_from_calendar(self):
-        """Reverse sync: mirror terms created on the Academic Calendar side
-        (its ``semesters``) into ``academic_terms`` so they show up in this
-        tab automatically.
-
-        Idempotent — imported terms are named ``"<Semester> <Year>"`` and
-        matched against existing term names (``academic_terms.name`` is
-        UNIQUE), so re-running never duplicates. Returns the number of new
-        terms imported.
-        """
-        if not hasattr(self, "_terms_tree"):
-            return 0
-        try:
-            with self._ext_db() as conn:
-                cur = conn.cursor()
-                # Guard: the calendar's semesters table may not exist yet.
-                cur.execute("SELECT name FROM sqlite_master "
-                            "WHERE type='table' AND name='semesters'")
-                if not cur.fetchone():
-                    return 0
-                cur.execute("SELECT LOWER(name) FROM academic_terms")
-                existing = {r[0] for r in cur.fetchall()}
-                cur.execute(
-                    "SELECT name, COALESCE(academic_year_id, ''), "
-                    "       start_date, end_date FROM semesters")
-                semesters = cur.fetchall()
-
-            new_terms = []
-            for sem_name, year, start, end in semesters:
-                sem_name = (sem_name or "").strip()
-                if not sem_name:
-                    continue
-                term_name = f"{sem_name} {year}".strip() if year else sem_name
-                if term_name.lower() in existing:
-                    continue
-                new_terms.append((term_name, year, start or "", end or ""))
-                existing.add(term_name.lower())
-
-            if not new_terms:
-                return 0
-
-            with self._ext_db(write=True) as conn:
-                for term_name, year, start, end in new_terms:
-                    conn.execute(
-                        "INSERT OR IGNORE INTO academic_terms "
-                        "(name, term_type, academic_year, start_date, end_date, "
-                        " status, created_at, updated_at) "
-                        "VALUES (?, 'Semester', ?, ?, ?, 'Planned', ?, ?)",
-                        (term_name, year, start, end,
-                         self._ext_now(), self._ext_now()))
-            for term_name, *_ in new_terms:
-                self._ext_audit("import", "academic_term",
-                                name=term_name, source="calendar")
-            logger.debug("Imported %d calendar term(s) into academic_terms",
-                         len(new_terms))
-            return len(new_terms)
-        except Exception as exc:
-            logger.warning("Import of calendar terms failed: %s", exc)
-            return 0
-
     def _open_academic_calendar(self):
         """Open the Academic Calendar GUI in its own window."""
         def _build(top):
@@ -331,84 +155,6 @@ class SectionsTabMixin:
         self._ext_launch_window(
             _("course_management.titles.academic_calendar", default="Academic Calendar"),
             _build, geometry="1400x900", minsize=(1000, 600))
-
-    def _edit_term(self):
-        if not self._ext_can_edit():
-            return
-        vals = self._selected_term()
-        if not vals:
-            return
-        term_id = vals[0]
-        data = {"name": vals[1], "term_type": vals[2], "academic_year": vals[3],
-                "start_date": vals[4], "end_date": vals[5], "status": vals[6]}
-
-        def submit(values):
-            name = (values.get("name") or "").strip()
-            if not name:
-                messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                     _t('gui.academics.course_management_gui.core.sections_tab.dialogs.term_name_is_required', default="Term name is required."))
-                return False
-            try:
-                with self._ext_db(write=True) as conn:
-                    conn.execute(
-                        "UPDATE academic_terms SET name=?, term_type=?, "
-                        "academic_year=?, start_date=?, end_date=?, status=?, "
-                        "updated_at=? WHERE id=?",
-                        (name, values["term_type"], values["academic_year"],
-                         values["start_date"], values["end_date"], values["status"],
-                         self._ext_now(), term_id),
-                    )
-            except Exception as exc:
-                self._ext_report_error("update term", exc)
-                return False
-            self._ext_audit("update", "academic_term", term_id=term_id, name=name)
-            # Keep the term's Academic Calendar event in sync with the edit.
-            self._sync_term_to_calendar(
-                name, values["term_type"], values["academic_year"],
-                values["start_date"], values["end_date"])
-            self._reload_terms()
-            return True
-
-        ExtFormDialog(self.root, self, "Edit Academic Term",
-                      self._term_form_fields(data), submit,
-                      submit_label="Save", geometry="480x430")
-
-    def _delete_term(self):
-        if not self._ext_can_edit():
-            return
-        vals = self._selected_term()
-        if not vals:
-            return
-        term_id, name = vals[0], vals[1]
-        try:
-            with self._ext_db() as conn:
-                cur = conn.cursor()
-                cur.execute("SELECT COUNT(*) FROM course_sections WHERE term_id=?",
-                            (term_id,))
-                section_count = cur.fetchone()[0]
-        except Exception as exc:
-            self._ext_report_error("check term usage", exc)
-            return
-        msg = f"Delete term '{name}'?"
-        if section_count:
-            msg += (f"\n\n{section_count} course section(s) are scheduled in this "
-                    "term and will also be deleted.")
-        if not messagebox.askyesno(_("common.confirm", default="Confirm"), msg):
-            return
-        try:
-            with self._ext_db(write=True) as conn:
-                conn.execute("DELETE FROM course_sections WHERE term_id=?", (term_id,))
-                conn.execute("DELETE FROM academic_terms WHERE id=?", (term_id,))
-        except Exception as exc:
-            self._ext_report_error("delete term", exc)
-            return
-        self._ext_audit("delete", "academic_term", term_id=term_id, name=name)
-        self._reload_terms()
-        self._reload_sections()
-
-    # ------------------------------------------------------------------
-    # Course Sections sub-tab
-    # ------------------------------------------------------------------
 
     def _create_course_sections_subtab(self):
         tab = ttk.Frame(self._sections_notebook, padding=10)

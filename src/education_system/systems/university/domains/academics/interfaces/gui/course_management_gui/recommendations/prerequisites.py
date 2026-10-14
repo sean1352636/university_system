@@ -83,14 +83,12 @@ class PrerequisitesMixin:
                     return
 
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-                try:
-                    cursor = conn.cursor()
+                cursor = conn.cursor()
 
-                    # Check for circular dependency
-                    if self.check_circular_prerequisite_db(cursor, course_id, prereq_id):
-                        messagebox.showerror(_t('gui.academics.course_management_gui.recommendations.prerequisites.dialogs.circular_dependency', default="Circular Dependency"),
-                                           _t('gui.academics.course_management_gui.recommendations.prerequisites.dialogs.adding_this_prerequisite_would_create_a_circular_dependency', default="Adding this prerequisite would create a circular dependency!"))
-                finally:
+                # Check for circular dependency
+                if self.check_circular_prerequisite_db(cursor, course_id, prereq_id):
+                    messagebox.showerror(_t('gui.academics.course_management_gui.recommendations.prerequisites.dialogs.circular_dependency', default="Circular Dependency"),
+                                       _t('gui.academics.course_management_gui.recommendations.prerequisites.dialogs.adding_this_prerequisite_would_create_a_circular_dependency', default="Adding this prerequisite would create a circular dependency!"))
                     conn.close()
                     return
 

@@ -19,6 +19,7 @@ SLICE = "learners"
 _UNI = "education_system.systems.university"
 _LEGACY = f"{_UNI}.domain"
 _ACAD = f"{_UNI}.domains.academics"
+_ADM = f"{_UNI}.domains.admissions"
 _OPS = f"{_UNI}.domains.operations"          # domains not yet migrated
 _FIN = f"{_UNI}.domains.finance"    # already a slice
 _GOV = f"{_UNI}.domains.governance.domain"
@@ -84,15 +85,6 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = {
         "interfaces/gui/students/student_crud_gui/sync/chat_rooms.py",
         f"{_ACAD}.domain.services.admissions_selection.module_chat",
     ),
-    # Operations — textbook library holds
-    (
-        "interfaces/gui/students/student_crud_gui/create.py",
-        f"{_OPS}.domain.commerce.textbooks.services.library_holds",
-    ),
-    (
-        "interfaces/gui/students/student_crud_gui/update.py",
-        f"{_OPS}.domain.commerce.textbooks.services.library_holds",
-    ),
     # Pastoral — medical data, which the document wants private to that slice
     (
         "interfaces/gui/students/student_crud_gui/create.py",
@@ -130,6 +122,30 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = {
     (
         "interfaces/gui/students/student_crud_gui/update.py",
         f"{_FIN}.domain.services.enrolment_fees",
+    ),
+    # Admissions — the sixth-form import picker. Enrolling a leaver directly
+    # has to reconcile with the applicant Admissions may already hold for
+    # them, or one person ends up as an active student here *and* a pending
+    # applicant there with nothing joining the two. The picker asks
+    # Admissions whether an application exists; the save handler binds the
+    # new student to it.
+    #
+    # This is the reach the document most wants gone, and the way out is
+    # already half-built: ``admissions_lifecycle.convert_to_student`` does
+    # the whole job properly, gates included. The right end state is that
+    # this GUI stops creating students at all and calls that instead, at
+    # which point both entries disappear rather than move.
+    (
+        "interfaces/gui/students/student_crud_gui/importers.py",
+        f"{_ADM}.domain",
+    ),
+    (
+        "interfaces/gui/students/student_crud_gui/create.py",
+        f"{_ADM}.domain",
+    ),
+    (
+        "interfaces/gui/students/student_crud_gui/create.py",
+        f"{_ADM}.domain.services",
     ),
 }
 

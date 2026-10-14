@@ -33,22 +33,20 @@ class SubmissionsMixin:
             assignment_id = int(assignment_id)
 
             conn = sqlite3.connect(self.db_path)
-            try:
-                cursor = conn.cursor()
+            cursor = conn.cursor()
 
-                # Get assignment details
-                cursor.execute('''
-                SELECT a.*, m.module_name
-                FROM assignments a
-                JOIN modules m ON a.module_code = m.module_code
-                WHERE a.id = ? AND a.is_active = 1
-                ''', (assignment_id,))
+            # Get assignment details
+            cursor.execute('''
+            SELECT a.*, m.module_name
+            FROM assignments a
+            JOIN modules m ON a.module_code = m.module_code
+            WHERE a.id = ? AND a.is_active = 1
+            ''', (assignment_id,))
 
-                assignment = cursor.fetchone()
+            assignment = cursor.fetchone()
 
-                if not assignment:
-                    print("Assignment not found.")
-            finally:
+            if not assignment:
+                print("Assignment not found.")
                 conn.close()
                 return
 

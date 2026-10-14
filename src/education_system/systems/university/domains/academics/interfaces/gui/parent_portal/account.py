@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
@@ -166,7 +170,7 @@ def _load_activity_log_entries(self, max_entries=100):
                                     timestamp = parts[2]
                                     activities.append((timestamp, user, action))
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
     except Exception as e:
         print(f"Error loading activity log: {e}")

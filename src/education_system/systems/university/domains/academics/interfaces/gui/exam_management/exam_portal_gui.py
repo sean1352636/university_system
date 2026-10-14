@@ -16,6 +16,7 @@ import threading
 from datetime import datetime
 
 from education_system.systems.university.domains.academics.domain.services.exam_management import ExamPortalService
+from education_system.platform.delivery.gui.portal_dismiss import forget_tab
 
 logger = logging.getLogger(__name__)
 
@@ -87,14 +88,37 @@ class ExamPortalGUI:
         ttk.Label(toolbar, text=f"Exam Management  |  {self._user.get('username', '')} ({self._role})",
                   font=("Arial", 11, "bold")).pack(side="left", padx=20)
 
-        # Main notebook
-        self.notebook = ttk.Notebook(self.root)
-        self.notebook.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        # Body: a scrollable sidebar of view buttons on the left, the current
+        # view on the right.
+        #
+        # This was a tab bar, and the scheduler arrived as a *nested* notebook
+        # inside one of its tabs — fifteen views over two rows of tabs, nine of
+        # them a level down. A single scrolling list holds them all without
+        # running out of horizontal room, and groups the scheduler's views
+        # under their own heading instead of burying them.
+        #
+        # The notebook survives as the content host, restyled with no tab
+        # strip: every view builder here and in the scheduler calls
+        # ``notebook.add(...)``, and the lazy-build machinery keys off
+        # ``<<NotebookTabChanged>>``. Keeping it means the sidebar is purely a
+        # different way to select a tab, and no view builder had to change.
+        body = ttk.Frame(self.root)
+        body.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
-        # Lazy tabs: only the initially-visible "Available Exams" tab
-        # builds now. The rest (especially Scheduling, which embeds the
-        # entire ExamSchedulerApp + its DB-driven AcademicPeriodPanel)
-        # are placeholder frames that materialize on first selection.
+        self._build_sidebar(body)
+
+        style = ttk.Style()
+        try:
+            # An empty layout for the Tab element hides the tab strip while
+            # leaving the notebook itself working normally.
+            style.layout("ExamTabless.TNotebook.Tab", [])
+        except tk.TclError:
+            pass
+        self.notebook = ttk.Notebook(body, style="ExamTabless.TNotebook")
+        self.notebook.pack(side="right", fill="both", expand=True)
+
+        # Lazy views: only the initially-visible "Available Exams" builds now.
+        # The rest are placeholder frames that materialize on first selection.
         self._lazy_tab_builders: dict[str, tuple] = {}
         self._build_browse_tab()
 
@@ -103,14 +127,210 @@ class ExamPortalGUI:
             self.notebook.add(placeholder, text=label)
             self._lazy_tab_builders[str(placeholder)] = (placeholder, builder, label)
 
+        self._add_sidebar_heading("Exams")
+        self._add_sidebar_button("Available Exams")
         _register("My Results", self._build_results_tab)
+        self._add_sidebar_button("My Results")
+
         if self._role in ("admin", "staff", "instructor"):
             _register("Manage Exams", self._build_manage_tab)
-            _register("Scheduling", self._build_scheduling_tab)
+            self._add_sidebar_button("Manage Exams")
             _register("Grading", self._build_grading_tab)
+            self._add_sidebar_button("Grading")
             _register("Analytics", self._build_analytics_tab)
+            self._add_sidebar_button("Analytics")
+
+            # The scheduler's own views, listed here rather than nested. It is
+            # built on first use — constructing it opens the exam/room data
+            # manager, which is not worth doing for a student or for a staff
+            # member who never opens a scheduling view.
+            self._add_sidebar_heading("Scheduling")
+            for index, label in enumerate(self.SCHEDULER_VIEWS):
+                self._add_scheduler_button(index, label)
 
         self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
+        self._highlight_sidebar("Available Exams")
+
+    #: Provisional labels for the tabs ExamSchedulerApp contributes, in its
+    #: own order. Only placeholders: the buttons are relabelled from the real
+    #: tab text once the scheduler is built. The first tab's label is a
+    #: translated string ("exam_scheduler.tabs.schedule_overview"), so matching
+    #: scheduler views by label would break under any non-English locale —
+    #: they are selected by position instead.
+    SCHEDULER_VIEWS = ("Schedule", "Exams", "Rooms", "Calendar", "Deferred",
+                       "At-Risk Audit", "Exam Eligibility", "Results",
+                       "Seating")
+
+    # ── Sidebar ─────────────────────────────────────────────────────
+
+    def _build_sidebar(self, parent):
+        """A scrolling column of view buttons."""
+        holder = ttk.Frame(parent, width=210)
+        holder.pack(side="left", fill="y")
+        holder.pack_propagate(False)
+
+        canvas = tk.Canvas(holder, highlightthickness=0, width=210)
+        scrollbar = ttk.Scrollbar(holder, orient="vertical",
+                                  command=canvas.yview)
+        self._sidebar = ttk.Frame(canvas)
+        self._sidebar.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=self._sidebar, anchor="nw",
+                             width=190)
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        def _wheel(event):
+            try:
+                delta = 1 if (getattr(event, "num", 0) == 5
+                              or getattr(event, "delta", 0) < 0) else -1
+                canvas.yview_scroll(delta, "units")
+            except tk.TclError:
+                pass
+            return "break"
+
+        for sequence in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            canvas.bind(sequence, _wheel)
+
+        self._sidebar_buttons: dict[str, ttk.Button] = {}
+        self._scheduler_buttons: dict[int, ttk.Button] = {}
+        self._scheduler_labels: list[str] = []
+        self._scheduler = None
+
+    def _add_sidebar_heading(self, text):
+        ttk.Label(self._sidebar, text=text, font=("Arial", 9, "bold"),
+                  foreground="#555555", anchor="w").pack(
+            fill="x", padx=6, pady=(10, 2))
+
+    def _add_sidebar_button(self, label, scheduler=False):
+        button = ttk.Button(
+            self._sidebar, text=label,
+            command=lambda lbl=label, s=scheduler: self._show_view(lbl, s))
+        button.pack(fill="x", padx=6, pady=1)
+        self._sidebar_buttons[label] = button
+
+    def _add_scheduler_button(self, index, provisional_label):
+        """A sidebar entry for one of the scheduler's tabs, chosen by position."""
+        button = ttk.Button(
+            self._sidebar, text=provisional_label,
+            command=lambda i=index: self._show_scheduler_view(i))
+        button.pack(fill="x", padx=6, pady=1)
+        self._scheduler_buttons[index] = button
+
+    def _show_view(self, label, scheduler=False):
+        """Select the view a sidebar button names, building it if needed."""
+        if scheduler:
+            self._ensure_scheduler()
+        if not self._select_tab_by_label(label):
+            return
+        self._highlight_sidebar(label)
+
+    def _show_scheduler_view(self, index):
+        """Select the scheduler's *index*-th view.
+
+        Looked up by label, not by cached tab id. A lazy tab is built by
+        *forgetting* its placeholder and adding a new frame in its place, so
+        the tab id changes the first time a view is opened and any id captured
+        beforehand is dead. The label survives — the rebuild restores it — so
+        it is the stable handle.
+        """
+        self._ensure_scheduler()
+        labels = getattr(self, "_scheduler_labels", [])
+        if index >= len(labels):
+            logger.warning("No scheduler view at position %d", index)
+            return
+        if not self._select_tab_by_label(labels[index]):
+            logger.warning("Scheduler view %r is not in the notebook",
+                           labels[index])
+            return
+        self._highlight_sidebar(labels[index])
+
+    def _select_tab_by_label(self, label):
+        for tab_id in self.notebook.tabs():
+            try:
+                if self.notebook.tab(tab_id, "text") == label:
+                    self.notebook.select(tab_id)
+                    return True
+            except tk.TclError:
+                continue
+        return False
+
+    def _highlight_sidebar(self, label):
+        """Mark the active entry and clear the rest.
+
+        Walks both groups — the portal's own buttons and the scheduler's —
+        so selecting a scheduling view clears the exam view above it, and vice
+        versa. Best-effort: styling must never break navigation.
+        """
+        buttons = list(getattr(self, "_sidebar_buttons", {}).values())
+        buttons += list(getattr(self, "_scheduler_buttons", {}).values())
+        for button in buttons:
+            try:
+                active = button.cget("text") == label
+                button.state(["pressed"] if active else ["!pressed"])
+            except tk.TclError:
+                pass
+
+    def _ensure_scheduler(self):
+        """Build the embedded scheduler once, into this window's notebook.
+
+        The tabs it adds are identified by diffing the notebook before and
+        after, which is what lets the sidebar select them by position without
+        depending on their (translated) labels.
+        """
+        if getattr(self, "_scheduler", None) is not None:
+            return
+        before = set(self.notebook.tabs())
+        try:
+            from education_system.systems.university.domains.academics.interfaces.gui.exam_management.app import (
+                ExamSchedulerApp,
+            )
+            self._scheduler = ExamSchedulerApp(
+                self.root, auth_instance=self.auth, notebook=self.notebook)
+            # No auto-sync. Opening the scheduling views used to import every
+            # scheduled exam into the portal as a question-less draft — a
+            # paper exam sat in a room does not need an online shell, and the
+            # shells were pure duplication. Importing is still available
+            # deliberately, from the "Sync from Scheduler" button on Manage
+            # Exams.
+        except Exception as exc:
+            self._scheduler = None
+            messagebox.showerror(
+                _t('gui.academics.exam_management.exam_portal.dialogs.error',
+                   default="Error"),
+                f"Exam Scheduler could not be loaded: {exc}")
+            return
+
+        # Record the *labels* of the tabs the scheduler just added, in order.
+        # Tab ids are deliberately not kept: a lazy tab is rebuilt as a new
+        # widget on first open, which invalidates its id but preserves its
+        # label.
+        added = [t for t in self.notebook.tabs() if t not in before]
+        self._scheduler_labels = []
+        for tab_id in added:
+            try:
+                self._scheduler_labels.append(self.notebook.tab(tab_id, "text"))
+            except tk.TclError:
+                self._scheduler_labels.append("")
+
+        # Relabel the sidebar from the real tab text, so it shows whatever the
+        # scheduler calls its views — including translations.
+        for index, button in list(self._scheduler_buttons.items()):
+            if index < len(self._scheduler_labels):
+                try:
+                    button.configure(text=self._scheduler_labels[index])
+                except tk.TclError:
+                    pass
+            else:
+                # Fewer tabs than buttons — the scheduler's tab set changed.
+                # Drop the button rather than leave one that selects nothing.
+                try:
+                    button.destroy()
+                except tk.TclError:
+                    pass
+                self._scheduler_buttons.pop(index, None)
 
     def _on_tab_changed(self, _event=None):
         try:
@@ -125,7 +345,10 @@ class ExamPortalGUI:
             tab_index = self.notebook.index(placeholder)
         except tk.TclError:
             return
-        self.notebook.forget(placeholder)
+        # Destroy the placeholder as well as detaching it — the index and
+        # label are already captured above, and it is popped from
+        # _lazy_tab_builders, so nothing refers to it again.
+        forget_tab(self.notebook, placeholder)
         # The builders all call ``self.notebook.add(...)`` themselves,
         # so the new tab lands at the end. Move it back to the
         # original slot and re-select it so the user's click takes
@@ -145,32 +368,20 @@ class ExamPortalGUI:
         try:
             self.root.destroy()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
-    # ── Scheduling Tab (Staff/Admin — embedded scheduler) ────────────
+    # ── Scheduler (Staff/Admin) ─────────────────────────────────────
+    #
+    # The "Scheduling" tab that used to live here built its own frame and put
+    # a whole ExamSchedulerApp — and therefore a second notebook — inside it.
+    # The scheduler's views are sidebar entries now and it shares this
+    # window's notebook, so there is no wrapper tab. See _ensure_scheduler.
 
-    def _build_scheduling_tab(self):
-        """Embed the Exam Scheduler inside a tab for staff/admin users."""
-        tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text=_t('gui.academics.exam_management.exam_portal.tabs.scheduling', default="Scheduling"))
-
-        try:
-            from education_system.systems.university.domains.academics.interfaces.gui.exam_management import ExamSchedulerApp
-            scheduler = ExamSchedulerApp(tab)
-            # Auto-sync scheduler exams into the portal on tab build
-            self._auto_sync_from_scheduler()
-        except Exception as e:
-            ttk.Label(tab, text=f"Exam Scheduler could not be loaded: {e}",
-                      font=("Arial", 12)).pack(padx=20, pady=20)
-
-    def _auto_sync_from_scheduler(self):
-        """Silently sync exams from the scheduler into the portal."""
-        try:
-            self.svc.sync_from_scheduler(
-                created_by=self._user.get("username", "scheduler")
-            )
-        except Exception:
-            pass
+    # _auto_sync_from_scheduler was removed with its only caller. Importing
+    # scheduled exams is now always a deliberate act — the "Sync from
+    # Scheduler" button on Manage Exams — never a side effect of opening a
+    # view. A silent import is what filled this table with question-less
+    # drafts nobody asked for.
 
     # ── Browse Exams Tab (Student) ──────────────────────────────────
 
@@ -1070,10 +1281,37 @@ class ExamPortalGUI:
         self._analytics_text = scrolledtext.ScrolledText(tab, wrap=tk.WORD, font=("Courier", 10))
         self._analytics_text.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
+        # Export bar. Disabled until a report has actually been loaded —
+        # exporting an empty view produces an empty file, which reads as a
+        # broken feature rather than an empty result.
+        actions = ttk.Frame(tab)
+        actions.pack(fill="x", padx=10, pady=(0, 10))
+        self._analytics_actions = [
+            ttk.Button(actions, text=_t(
+                'gui.academics.exam_management.exam_portal.buttons.save_txt',
+                default="Save as TXT"), command=self._save_analytics_txt),
+            ttk.Button(actions, text=_t(
+                'gui.academics.exam_management.exam_portal.buttons.save_pdf',
+                default="Save as PDF"), command=self._save_analytics_pdf),
+            ttk.Button(actions, text=_t(
+                'gui.academics.exam_management.exam_portal.buttons.email_admin',
+                default="Email to Admin"), command=self._email_analytics),
+        ]
+        for button in self._analytics_actions:
+            button.pack(side="left", padx=(0, 6))
+        self._set_analytics_actions(False)
+
         # Populate exam list
         exams = self.svc.list_exams()
         self._analytics_exam_map = {f"{e['id']}: {e['title']}": e["id"] for e in exams}
         self._analytics_combo["values"] = list(self._analytics_exam_map.keys())
+
+    def _set_analytics_actions(self, enabled):
+        for button in getattr(self, "_analytics_actions", []):
+            try:
+                button.state(["!disabled"] if enabled else ["disabled"])
+            except tk.TclError:
+                pass
 
     def _load_analytics(self):
         key = self._analytics_exam_var.get()
@@ -1105,6 +1343,204 @@ QUESTION ANALYSIS
 
         self._analytics_text.insert("1.0", text)
         self._analytics_text.config(state=tk.DISABLED)
+
+        # Keep what was rendered so the exports send exactly what is on screen
+        # rather than re-querying and risking a different answer.
+        self._analytics_report = text
+        self._analytics_data = analytics
+        self._analytics_title = key.split(": ", 1)[-1] if ": " in key else key
+        self._set_analytics_actions(True)
+
+    # ── Analytics export ────────────────────────────────────────────
+
+    def _analytics_ready(self):
+        if not getattr(self, "_analytics_report", None):
+            messagebox.showinfo(
+                _t('gui.academics.exam_management.exam_portal.tabs.analytics',
+                   default="Analytics"),
+                _t('gui.academics.exam_management.exam_portal.dialogs.load_first',
+                   default="Load an exam's analytics first."))
+            return False
+        return True
+
+    def _default_export_name(self, extension):
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        safe = "".join(ch if ch.isalnum() or ch in "-_" else "_"
+                       for ch in getattr(self, "_analytics_title", "exam"))
+        return f"exam_analytics_{safe}_{stamp}.{extension}"
+
+    def _save_analytics_txt(self):
+        if not self._analytics_ready():
+            return
+        path = filedialog.asksaveasfilename(
+            parent=self.root, defaultextension=".txt",
+            initialfile=self._default_export_name("txt"),
+            filetypes=[("Text file", "*.txt"), ("All files", "*.*")])
+        if not path:
+            return
+        try:
+            with open(path, "w", encoding="utf-8") as handle:
+                handle.write(self._analytics_report)
+        except OSError as exc:
+            messagebox.showerror(_t(
+                'gui.academics.exam_management.exam_portal.dialogs.error',
+                default="Error"), f"Could not save the report: {exc}")
+            return
+        messagebox.showinfo(_t(
+            'gui.academics.exam_management.exam_portal.dialogs.saved',
+            default="Saved"), f"Report saved to:\n{path}")
+
+    def _save_analytics_pdf(self):
+        if not self._analytics_ready():
+            return
+        try:
+            from reportlab.lib.pagesizes import A4
+            from reportlab.lib.units import mm
+            from reportlab.pdfgen import canvas as pdf_canvas
+        except ImportError:
+            # reportlab ships with the `documents` extra, which is not
+            # installed everywhere. Say so rather than failing obscurely.
+            messagebox.showerror(_t(
+                'gui.academics.exam_management.exam_portal.dialogs.error',
+                default="Error"),
+                "PDF export needs the 'reportlab' package, which is not "
+                "installed. Save as TXT instead, or install the documents "
+                "extra.")
+            return
+
+        path = filedialog.asksaveasfilename(
+            parent=self.root, defaultextension=".pdf",
+            initialfile=self._default_export_name("pdf"),
+            filetypes=[("PDF file", "*.pdf"), ("All files", "*.*")])
+        if not path:
+            return
+
+        try:
+            page_width, page_height = A4
+            doc = pdf_canvas.Canvas(path, pagesize=A4)
+            doc.setTitle(f"Exam Analytics — {self._analytics_title}")
+            # Monospaced, because the report is column-aligned with spaces.
+            doc.setFont("Courier", 8.5)
+            left, top, leading = 15 * mm, page_height - 18 * mm, 11
+            y = top
+            for line in self._analytics_report.splitlines():
+                if y < 18 * mm:
+                    doc.showPage()
+                    doc.setFont("Courier", 8.5)
+                    y = top
+                # Hard-wrap rather than let long question text run off the
+                # page; Courier 8.5pt fits roughly 108 characters across A4.
+                for chunk in (self._wrap(line, 108) or [""]):
+                    doc.drawString(left, y, chunk)
+                    y -= leading
+            doc.save()
+        except Exception as exc:
+            messagebox.showerror(_t(
+                'gui.academics.exam_management.exam_portal.dialogs.error',
+                default="Error"), f"Could not write the PDF: {exc}")
+            return
+        messagebox.showinfo(_t(
+            'gui.academics.exam_management.exam_portal.dialogs.saved',
+            default="Saved"), f"Report saved to:\n{path}")
+
+    @staticmethod
+    def _wrap(line, width):
+        """Split *line* into chunks of at most *width* characters."""
+        if not line:
+            return [""]
+        return [line[i:i + width] for i in range(0, len(line), width)]
+
+    def _email_analytics(self):
+        if not self._analytics_ready():
+            return
+
+        recipient = self._resolve_admin_email()
+        if not recipient:
+            messagebox.showerror(_t(
+                'gui.academics.exam_management.exam_portal.dialogs.error',
+                default="Error"),
+                "No administrator email address is on file, so there is "
+                "nowhere to send the report.")
+            return
+
+        if not messagebox.askyesno(_t(
+                'gui.academics.exam_management.exam_portal.dialogs.email_admin',
+                default="Email to Admin"),
+                f"Send this analytics report to {recipient}?"):
+            return
+
+        try:
+            from education_system.systems.university.infrastructure.email import (
+                send_template_email,
+            )
+        except Exception as exc:
+            messagebox.showerror(_t(
+                'gui.academics.exam_management.exam_portal.dialogs.error',
+                default="Error"), f"Email system unavailable: {exc}")
+            return
+
+        data = self._analytics_data or {}
+        rows = []
+        for i, q in enumerate(data.get("questions", []), 1):
+            rows.append(f"  {i:<3} {q['type']:<12} {q['marks']:<6} "
+                        f"correct {q['difficulty_pct']}%  avg {q['avg_marks']}  "
+                        f"{q['text']}")
+
+        try:
+            # Full path: the template sits two directories deep and the
+            # bare-name lookup only searches one level, so a bare name would
+            # silently resolve to nothing.
+            result = send_template_email(
+                "academics/teaching/exams/exam_analytics_report",
+                recipient,
+                {
+                    "exam_title": self._analytics_title,
+                    "sender_name": self._user.get("username", "Exam Management"),
+                    "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    "total_attempts": data.get("total_attempts", 0),
+                    "average_score": data.get("average_score", 0),
+                    "min_score": data.get("min_score", 0),
+                    "max_score": data.get("max_score", 0),
+                    "pass_count": data.get("pass_count", 0),
+                    "pass_rate": data.get("pass_rate", 0),
+                    "question_analysis": "\n".join(rows) or "  (no questions)",
+                },
+            )
+        except Exception as exc:
+            logger.error("Failed to email analytics report: %s", exc)
+            messagebox.showerror(_t(
+                'gui.academics.exam_management.exam_portal.dialogs.error',
+                default="Error"), f"Could not send the report: {exc}")
+            return
+
+        if result is False:
+            messagebox.showerror(_t(
+                'gui.academics.exam_management.exam_portal.dialogs.error',
+                default="Error"),
+                "The email system rejected the report. Check the mail "
+                "configuration and the logs.")
+            return
+        messagebox.showinfo(_t(
+            'gui.academics.exam_management.exam_portal.dialogs.sent',
+            default="Sent"), f"Analytics report sent to {recipient}.")
+
+    def _resolve_admin_email(self):
+        """First administrator with an email address on file."""
+        try:
+            from education_system.systems.university.infrastructure.database.db import (
+                get_connection,
+            )
+            with get_connection() as conn:
+                row = conn.execute(
+                    "SELECT email FROM users "
+                    "WHERE LOWER(role) IN ('admin', 'administrator') "
+                    "  AND email IS NOT NULL AND TRIM(email) != '' "
+                    "ORDER BY id LIMIT 1"
+                ).fetchone()
+            return row[0] if row else None
+        except Exception as exc:
+            logger.warning("Could not resolve an admin email: %s", exc)
+            return None
 
     def run(self):
         if hasattr(self.root, "mainloop"):

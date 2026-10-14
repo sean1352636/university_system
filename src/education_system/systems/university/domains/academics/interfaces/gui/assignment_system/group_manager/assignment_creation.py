@@ -1,9 +1,13 @@
 """Group assignment creation GUI and logic"""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
+from tkinter import ttk, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 
@@ -429,7 +433,7 @@ class AssignmentCreationMixin:
                         )
                         sent += 1
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
 
             if sent > 0:
                 messagebox.showinfo(_t('gui.academics.assignment_system.group_manager.assignment_creation.dialogs.emails_sent', default="Emails Sent"), f"Notified {sent} students about their group assignments.")
@@ -474,7 +478,7 @@ class AssignmentCreationMixin:
                     )
                     sent += 1
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
             if sent > 0:
                 messagebox.showinfo(_t('gui.academics.assignment_system.group_manager.assignment_creation.dialogs.emails_sent', default="Emails Sent"), f"Notified {sent} students about the new group assignment.")

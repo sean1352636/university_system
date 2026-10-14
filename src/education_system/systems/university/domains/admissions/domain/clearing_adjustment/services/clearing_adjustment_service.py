@@ -1,4 +1,7 @@
 """Automated clearing and adjustment workflow for admissions."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -79,6 +82,7 @@ class ClearingAdjustmentService:
         from education_system.platform.kernel.database.sql_safety import validate_identifier  # nosec B608
         sets = ", ".join(f"{validate_identifier(k)} = ?" for k in kwargs)
         with transaction() as conn:
+            # db-audit: ignore[DBW001] - f-string of literal parts
             conn.execute(f"UPDATE clearing_vacancies SET {sets} WHERE id = ?", (*kwargs.values(), vacancy_id))
             conn.commit()
             return True
@@ -151,7 +155,7 @@ class ClearingAdjustmentService:
                     applicant_name=accepted_app.get('applicant_name'),
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
         return True
 
     def auto_shortlist(self) -> List[Dict]:
@@ -214,7 +218,7 @@ class ClearingAdjustmentService:
                     to_course=approved_row.get('requested_course') or '',
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
         return True
 
     def get_clearing_statistics(self) -> Dict:

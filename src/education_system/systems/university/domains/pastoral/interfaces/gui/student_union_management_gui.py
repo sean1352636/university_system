@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 import sys
@@ -12,7 +16,7 @@ try:
     from education_system.systems.university.domains.pastoral.interfaces.gui.student_union_gui import StudentUnionGUI
     STUDENT_UNION_GUI_AVAILABLE = True
 except ImportError as e:
-    print(get_text("student_affairs.union_management.gui_not_available", error=str(e)))
+    print(get_text("student_affairs.union_management.gui_not_available", error=str(e), default="Gui Not Available {error}"))
     StudentUnionGUI = None
     STUDENT_UNION_GUI_AVAILABLE = False
     STUDENT_UNION_GUI_IMPORT_ERROR = str(e)
@@ -22,7 +26,7 @@ try:
     from education_system.systems.university.domains.pastoral.domain.student_life.student_union import display_student_union_menu
 except ImportError:
     def display_student_union_menu():
-        print(get_text("student_affairs.union_management.cli_not_available"))
+        print(get_text("student_affairs.union_management.cli_not_available", default="Cli Not Available"))
 
 # Import shared constants
 try:
@@ -54,19 +58,19 @@ class StudentUnionManagementGUI:
         """Open the Student Union GUI in a child window with proper integration"""
         try:
             if not getattr(self.auth, "current_user", None):
-                messagebox.showerror(get_text("student_affairs.union_management.title"), get_text("student_affairs.union_management.login_required"))
+                messagebox.showerror(get_text("student_affairs.union_management.title", default="===== UNION MANAGEMENT ====="), get_text("student_affairs.union_management.login_required", default="Login Required"))
                 return
 
             if not STUDENT_UNION_GUI_AVAILABLE:
-                msg = get_text("student_affairs.union_management.gui_unavailable")
+                msg = get_text("student_affairs.union_management.gui_unavailable", default="Gui Unavailable")
                 if 'STUDENT_UNION_GUI_IMPORT_ERROR' in globals():
                     msg += f"\n{STUDENT_UNION_GUI_IMPORT_ERROR}"
-                messagebox.showerror(get_text("student_affairs.union_management.title"), msg)
+                messagebox.showerror(get_text("student_affairs.union_management.title", default="===== UNION MANAGEMENT ====="), msg)
                 return
 
             # Create a new window for the Student Union GUI
             union_window = tk.Toplevel(self.root)
-            union_window.title(get_text("student_affairs.union_management.window_title"))
+            union_window.title(get_text("student_affairs.union_management.window_title", default="===== WINDOW ====="))
             union_window.geometry("1400x900")
             union_window.minsize(1200, 800)
 
@@ -82,7 +86,7 @@ class StudentUnionManagementGUI:
             try:
                 union_window.transient(self.root)
             except Exception:
-                pass  # Continue if transient fails
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Initialize the Student Union GUI in the new window
             union_gui = StudentUnionGUI(parent=union_window)
@@ -119,14 +123,14 @@ class StudentUnionManagementGUI:
                 # Already initialized successfully - just show dashboard
                 union_gui.show_main_dashboard()
 
-            print(get_text("student_affairs.union_management.opened_success"))
+            print(get_text("student_affairs.union_management.opened_success", default="Opened Success"))
 
         except Exception as e:
-            messagebox.showerror(get_text("student_affairs.union_management.title"), get_text("student_affairs.union_management.open_failed", error=str(e)))
-            print(get_text("student_affairs.union_management.error", error=str(e)))
+            messagebox.showerror(get_text("student_affairs.union_management.title", default="===== UNION MANAGEMENT ====="), get_text("student_affairs.union_management.open_failed", error=str(e), default="Open Failed {error}"))
+            print(get_text("student_affairs.union_management.error", error=str(e), default="Error {error}"))
 
             # Fallback to CLI menu if GUI fails
             try:
                 display_student_union_menu()
             except ImportError:
-                messagebox.showerror(get_text("common.error"), get_text("student_affairs.union_management.neither_available"))
+                messagebox.showerror(get_text("common.error"), get_text("student_affairs.union_management.neither_available", default="Neither Available"))

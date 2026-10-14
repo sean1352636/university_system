@@ -1,4 +1,7 @@
 """Payments & Refunds tab mixin for ParkingManagementGUI."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
@@ -437,7 +440,7 @@ University Parking Management
                         WHERE payment_id = ? AND source_type = 'parking'
                     """, (refund_ref, dialog.result['payment_id']))
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 # If student account, add refund amount
                 if dialog.result['refund_method'] == 'student_account' and dialog.result['student_id']:

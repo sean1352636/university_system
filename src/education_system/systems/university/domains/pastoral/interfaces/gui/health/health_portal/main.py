@@ -23,7 +23,7 @@ from education_system.systems.university.domains.pastoral.interfaces.gui.health.
 from education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.medical_history import MedicalHistoryMixin
 from education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.reports import ReportsMixin
 from education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.audit_security import AuditSecurityMixin
-from education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.data_management import DataManagementMixin
+from education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.data_management import DataManagementMixin, IntegrationManagementMixin
 from education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.email_integration import EmailIntegrationMixin
 from education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.accessibility import AccessibilityMixin
 
@@ -40,6 +40,7 @@ class HealthPortalGUI(
     ReportsMixin,
     AuditSecurityMixin,
     DataManagementMixin,
+    IntegrationManagementMixin,
     EmailIntegrationMixin,
     AccessibilityMixin,
 ):

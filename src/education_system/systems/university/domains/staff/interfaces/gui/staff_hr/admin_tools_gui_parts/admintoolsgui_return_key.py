@@ -1,4 +1,7 @@
 """Methods _return_key through _quick_check_in."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -212,7 +215,7 @@ class AdminToolsGUI:
                     self.visitors_tree.insert("", tk.END, values=values, tags=(status,))
 
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         self._update_visitor_stats()
 
@@ -265,7 +268,7 @@ Notes: {row[14] or 'None'}
                     self.visitor_detail_text.config(state=tk.DISABLED)
 
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _register_visitor(self):
         """Register a new visitor."""

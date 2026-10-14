@@ -202,7 +202,7 @@ Or set up a virtual framebuffer for testing:
 
 ```bash
 sudo apt-get install xvfb
-xvfb-run python run.py --primary --gui
+xvfb-run python -m education_system --primary --gui
 ```
 
 ### GUI Freezes or Becomes Unresponsive
@@ -246,10 +246,10 @@ Any import errors will be printed to the console.
 - Exit the CLI completely and re-launch with the explicit flag:
 
 ```bash
-python run.py --primary --cli
+python -m education_system --primary --cli
 ```
 
-- If using the universal login (`python run.py`), ensure you select "Primary School" when prompted for a system.
+- If using the universal login (`python -m education_system`), ensure you select "Primary School" when prompted for a system.
 
 ### CLI Logout Does Not Return to Login
 
@@ -258,7 +258,7 @@ python run.py --primary --cli
 **Solution**: This is expected behaviour when launching with `--primary --cli`. The system exits on logout. To return to the universal login, launch without a system flag:
 
 ```bash
-python run.py
+python -m education_system
 ```
 
 ### CLI Menu Displays Incorrectly
@@ -452,7 +452,7 @@ rm -f education_system/primary_school/data/db_files/primary_school.db
 rm -f education_system/primary_school/logs/app.log
 
 # Restart the application -- database and defaults will be recreated
-python run.py --primary --gui
+python -m education_system --primary --gui
 ```
 
 **Warning**: This destroys all primary school data. The shared auth database is not affected. Only do this in development or after making a backup.

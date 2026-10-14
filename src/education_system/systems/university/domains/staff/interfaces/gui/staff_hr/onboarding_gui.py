@@ -10,6 +10,9 @@ Provides interface for:
 """
 
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -1051,7 +1054,7 @@ Status: {values[7]}
                 for row in cursor.fetchall():
                     templates[row[1]] = row[0]
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return templates
 
 

@@ -1,15 +1,20 @@
 """AI Assistant Manager for assignment system - rule-based AI features"""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext, filedialog
+from tkinter import ttk, scrolledtext, filedialog
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
 import json
 import re
 import math
 from datetime import datetime, timedelta
 from collections import Counter
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
+from education_system.systems.university.domains.academics.interfaces.gui._field_pickers import attach_picker
 
 
 class AIAssistantManager:
@@ -581,9 +586,28 @@ class AIAssistantManager:
         opt_frame = ttk.Frame(parent)
         opt_frame.pack(fill='x', pady=(0, 5))
 
-        ttk.Label(opt_frame, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.module_code', default="Module Code:")).pack(side='left')
+        # Course first, then that course's modules. This was a free-text
+        # "Module Code" box, so anything at all was accepted and questions were
+        # filed against module codes that do not exist — the default when it
+        # was left empty was literally "UNKNOWN".
+        ttk.Label(opt_frame, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.course', default="Course:")).pack(side='left')
+        self._pq_course_var = tk.StringVar()
+        self._pq_course_combo = ttk.Combobox(
+            opt_frame, textvariable=self._pq_course_var, width=26,
+            state='readonly')
+        self._pq_course_combo.pack(side='left', padx=(5, 15))
+        self._pq_course_combo.bind('<<ComboboxSelected>>',
+                                   self._on_pq_course_selected)
+
+        ttk.Label(opt_frame, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.module', default="Module:")).pack(side='left')
         self._pq_module_var = tk.StringVar()
-        ttk.Entry(opt_frame, textvariable=self._pq_module_var, width=15).pack(side='left', padx=(5, 15))
+        self._pq_module_combo = ttk.Combobox(
+            opt_frame, textvariable=self._pq_module_var, width=28,
+            state='readonly')
+        self._pq_module_combo.pack(side='left', padx=(5, 15))
+
+        self._load_pq_courses()
+        self._on_pq_course_selected()
 
         ttk.Label(opt_frame, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.question_type', default="Question Type:")).pack(side='left')
         self._pq_type_var = tk.StringVar(value=_t('gui.academics.assignment_system.ai_assistant_manager.values.mcq', default='mcq'))
@@ -638,6 +662,57 @@ class AIAssistantManager:
             except Exception as e:
                 messagebox.showerror(_t('gui.academics.assignment_system.ai_assistant_manager.dialogs.error', default="Error"), f"Could not read file: {e}")
 
+    def _load_pq_courses(self):
+        """Fill the course dropdown for the practice-question generator."""
+        self._pq_course_codes = []
+        values = []
+        try:
+            with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+                rows = conn.execute(
+                    "SELECT COALESCE(NULLIF(TRIM(course_code), ''), code), "
+                    "       COALESCE(NULLIF(TRIM(course_name), ''), name) "
+                    "  FROM courses "
+                    " WHERE COALESCE(NULLIF(TRIM(course_code), ''), code) IS NOT NULL "
+                    " ORDER BY 1").fetchall()
+            for code, name in rows:
+                self._pq_course_codes.append(code)
+                values.append(f"{code} - {name}" if name else code)
+        except Exception:
+            logger.warning("could not load courses for the question generator",
+                           exc_info=True)
+        self._pq_course_combo['values'] = ["(all courses)"] + values
+        self._pq_course_combo.current(0)
+
+    def _on_pq_course_selected(self, event=None):
+        """Scope the module dropdown to the chosen course."""
+        selection = self._pq_course_var.get()
+        course_code = None
+        if selection and selection != "(all courses)":
+            course_code = selection.split(" - ", 1)[0].strip()
+
+        modules = []
+        try:
+            with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+                if course_code:
+                    rows = conn.execute(
+                        "SELECT module_code, module_name FROM modules "
+                        " WHERE COALESCE(TRIM(module_code), '') <> '' "
+                        "   AND TRIM(COALESCE(course, '')) = ? "
+                        " ORDER BY module_code", (course_code,)).fetchall()
+                else:
+                    rows = conn.execute(
+                        "SELECT module_code, module_name FROM modules "
+                        " WHERE COALESCE(TRIM(module_code), '') <> '' "
+                        " ORDER BY module_code").fetchall()
+            modules = [f"{code} - {name}" if name else code for code, name in rows]
+        except Exception:
+            logger.warning("could not load modules for the question generator",
+                           exc_info=True)
+
+        self._pq_module_combo['values'] = modules
+        if self._pq_module_var.get() not in modules:
+            self._pq_module_var.set(modules[0] if modules else "")
+
     def _on_generate_questions(self):
         """Handle question generation request"""
         content = self._pq_source.get('1.0', 'end').strip()
@@ -650,7 +725,13 @@ class AIAssistantManager:
 
         count = self._pq_count_var.get()
         q_type = self._pq_type_var.get()
-        module_code = self._pq_module_var.get().strip() or "UNKNOWN"
+        # The dropdown shows "CODE - Module name"; store the bare code.
+        module_code = self._pq_module_var.get().split(" - ", 1)[0].strip()
+        if not module_code:
+            messagebox.showwarning(
+                _t('gui.academics.assignment_system.ai_assistant_manager.dialogs.warning', default="Warning"),
+                "Select a course and a module before generating questions.")
+            return
 
         questions = self.generate_practice_questions(content, count, q_type)
 
@@ -1245,7 +1326,7 @@ class AIAssistantManager:
                     flagged_text,
                 ), tags=('flagged',) if flagged else ())
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     # -------------------------------------------------------------------------
     # Late-Pass Advisor
@@ -1276,7 +1357,8 @@ class AIAssistantManager:
 
         ttk.Label(sel_frame, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.student_id', default="Student ID:")).pack(side='left')
         self._lp_student_var = tk.StringVar()
-        ttk.Entry(sel_frame, textvariable=self._lp_student_var, width=20).pack(side='left', padx=(5, 15))
+        attach_picker(sel_frame, 'student', id_var=self._lp_student_var,
+                      width=30).pack(side='left', padx=(5, 15))
 
         ttk.Label(sel_frame, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.assignment_optional', default="Assignment (optional):")).pack(side='left')
         self._lp_assignment_var = tk.StringVar()
@@ -1416,7 +1498,7 @@ class AIAssistantManager:
                     )
                     extension_count = cursor.fetchone()[0]
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
             finally:
                 conn.close()
@@ -1615,7 +1697,7 @@ class AIAssistantManager:
                     created,
                 ))
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     # -------------------------------------------------------------------------
     # Helpers
@@ -1629,7 +1711,7 @@ class AIAssistantManager:
             if self.auth and self.auth.current_user:
                 return self.auth.current_user.get('id') or self.auth.current_user.get('student_id')
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return 'unknown'
 
     def _load_assignments_into_combo(self, combo):

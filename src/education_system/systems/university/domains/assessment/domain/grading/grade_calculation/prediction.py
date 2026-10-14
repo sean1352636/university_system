@@ -769,3 +769,46 @@ def predict_final_module_grade(cursor):
     print(f"Current Progress: {result['progress']:.1f}%")
     print(f"Predicted Final Score: {result['score']:.1f}%")
     print(f"Predicted Final Grade: {result['grade']}")
+
+
+def grade_prediction():
+    """Predict future grades based on current performance"""
+    print("\nGrade Prediction System")
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        print("\nGrade Prediction Options:")
+        print("1. Predict Next Assessment Grade")
+        print("2. Predict Final Module Grade")
+        print("3. Predict GPA at End of Term")
+        print("4. Batch Grade Predictions")
+
+        choice = input("Enter your choice (1-4): ").strip()
+
+        if choice == '1':
+            predict_next_assessment_grade(cursor)
+        elif choice == '2':
+            predict_final_module_grade(cursor)
+        elif choice == '3':
+            student_id = select_student(cursor)
+            if student_id:
+                result = predict_end_term_gpa(cursor, student_id)
+                if result:
+                    print(f"\nCurrent GPA: {result['current_gpa']:.2f}")
+                    print(f"Predicted End-of-Term GPA: {result['predicted_gpa']:.2f}")
+                    print(f"Trend delta: {result['trend']:+.2f}")
+                else:
+                    print("Not enough data to predict GPA.")
+            else:
+                print("No student selected.")
+        elif choice == '4':
+            batch_grade_predictions(cursor)
+        else:
+            print("Invalid choice. Returning to menu.")
+
+        conn.close()
+
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")

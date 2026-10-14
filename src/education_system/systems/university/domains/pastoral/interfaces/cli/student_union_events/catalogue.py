@@ -7,6 +7,9 @@ from education_system.systems.university.domains.pastoral.domain.student_life.st
 )
 from education_system.systems.university.domains.pastoral.interfaces.cli.student_union_events.context import auth
 from education_system.systems.university.domains.pastoral.interfaces.cli.student_union_events.context import auth
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.identity import (
+    current_student_id as _current_student_id,
+)
 
 def view_events():
     """View upcoming events"""
@@ -27,7 +30,7 @@ def view_events():
         cursor.execute('''
         SELECT e.event_id, e.event_name, e.description, e.event_date, e.start_time, e.end_time,
                e.location, c.club_name, e.category, e.max_attendees, e.current_attendees
-        FROM union_events e
+        FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e
         JOIN student_clubs c ON e.organizer_id = c.club_id
         WHERE e.event_date >= ? AND e.status = 'upcoming'
         ORDER BY e.event_date, e.start_time
@@ -95,15 +98,12 @@ def create_event(cursor, conn):
                 return
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?',
-                       (auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, auth)
 
-        if not result:
+        if not student_id:
             print("No student record is associated with your account.")
             return
 
-        student_id = result[0]
 
         # Get clubs user is an officer of
         cursor.execute('''
@@ -151,10 +151,9 @@ def create_event(cursor, conn):
         club_id = clubs[0][0]
 
         cursor.execute('''
-            INSERT INTO union_events (
-                event_name, description, event_date, start_time,
-                location, organizer_id, category, max_attendees, status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'upcoming')
+            INSERT INTO unified_events (
+                title, description, event_date, start_time, location, organizer_id, event_category, max_capacity, status, source_type
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'upcoming', 'union')
         ''', (event_name, description, event_date, start_time,
               location, club_id, category, max_attendees))
 

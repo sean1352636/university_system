@@ -1,5 +1,8 @@
 """Split from equality_diversity/gui.py — assembled in package __init__.py."""
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -50,7 +53,7 @@ class _LifecycleMixin:
             try:
                 self.root.transient(parent)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
         else:
             self.root = parent
         self.theme_name = "light"
@@ -67,7 +70,7 @@ class _LifecycleMixin:
         try:
             self.root.configure(bg=self.theme["bg"])
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # feature 9 — pagination state
         self.page = 0
@@ -84,14 +87,22 @@ class _LifecycleMixin:
         try:
             reports_engine.run_due_schedules()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     # ---------------------------------------------------------------- theme
 
     def _apply_theme(self, name: str):
         self.theme_name = name
         self.theme = THEMES[name]
-        self.root.configure(bg=self.theme["bg"])
+        # Guarded exactly as the same call is in __init__. When this GUI is
+        # embedded, self.root is whatever container the host passed — often a
+        # ttk widget, which has no ``-bg`` option and raises TclError. ttk is
+        # themed through ttk.Style instead, so there is nothing to set here.
+        # Without this, every theme button crashed in the embedded case.
+        try:
+            self.root.configure(bg=self.theme["bg"])
+        except tk.TclError:
+            pass
         # Rebuild everything — simplest and reliable
         for child in list(self.root.winfo_children()):
             child.destroy()
@@ -184,7 +195,7 @@ class _LifecycleMixin:
                 try:
                     self.root.destroy()
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
                 return
             self.root.after(30_000, tick)
         self.root.after(30_000, tick)

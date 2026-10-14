@@ -97,6 +97,7 @@ class ExternalExaminerService:
         from education_system.platform.kernel.database.sql_safety import validate_identifier  # nosec B608
         sets = ", ".join(f"{validate_identifier(k)} = ?" for k in kwargs)
         with transaction() as conn:
+            # db-audit: ignore[DBW001] - f-string of literal parts
             conn.execute(f"UPDATE external_examiners SET {sets} WHERE id = ?", (*kwargs.values(), examiner_id))
             conn.commit()
             return True

@@ -5,6 +5,19 @@ from datetime import datetime, date, timedelta
 
 logger = logging.getLogger(__name__)
 
+# Module level, because the rest of this file calls ``_t(...)`` directly from
+# its methods. It used to be imported inside __init__ and bound only to
+# ``self._t``, which left every one of those calls raising NameError the
+# moment a tab was built — and made the ``_t`` on the window-title line an
+# UnboundLocalError, since the later import turned ``_t`` into a local for the
+# whole of __init__.
+try:
+    from education_system.systems.university.infrastructure.i18n import get_text as _t
+except ImportError:  # pragma: no cover - i18n is optional
+    def _t(key, default=None, **kwargs):
+        """Fallback that honours the ``default=`` every caller here passes."""
+        return default if default is not None else key
+
 class AdvisingPortalGUI:
     """Academic Advising Portal - schedule meetings, view advisor info, degree planning."""
 
@@ -26,12 +39,9 @@ class AdvisingPortalGUI:
         except Exception:
             self.auth = None
 
-        # Try to get i18n
-        try:
-            from education_system.systems.university.infrastructure.i18n import get_text as _t
-            self._t = _t
-        except ImportError:
-            self._t = lambda key, **kw: key
+        # Kept for the two call sites that go through the instance; both point
+        # at the module-level _t resolved above.
+        self._t = _t
 
         self._build_ui()
         self._init_db()
@@ -281,7 +291,7 @@ class AdvisingPortalGUI:
                         self._load_advisors()
                         return
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
         self.advisor_combo['values'] = advisor_list if advisor_list else ["No advisors available"]
         if advisor_list:
             self.advisor_combo.current(0)
@@ -414,7 +424,7 @@ class AdvisingPortalGUI:
                     # Get current credits from enrolled modules
                     try:
                         credits_row = conn.execute(
-                            "SELECT COALESCE(SUM(m.credits), 0) FROM student_modules sm JOIN modules m ON sm.module_code = m.module_code WHERE sm.student_id = ? AND sm.status = 'completed'",
+                            "SELECT COALESCE(SUM(m.credits), 0) FROM student_modules sm JOIN modules m ON sm.module_code = m.module_code WHERE sm.student_id = ? AND LOWER(sm.status) = 'completed'",
                             (student_id,)
                         ).fetchone()
                         completed = credits_row[0] if credits_row else 0

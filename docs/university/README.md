@@ -39,17 +39,17 @@ Cross-cutting infrastructure shared with the other four systems (auth, unified
 API, GDPR, audit, backups) lives under `src/education_system/platform/`.
 Tests live at `tests/unit/systems/university/`.
 
-API route names do not always match top-level domain folders. The route-to-domain
-ownership map is documented in
-[`domain/README.md`](../../education_system/systems/university/domain/README.md).
+API route names do not always match top-level domain folders. The current
+domain ownership and delivery boundaries are documented in the
+[project structure reference](../reference/PROJECT_STRUCTURE.md#university-system).
 
 ---
 
 ## Entry Points
 
-- **GUI:** `python run.py --university --gui` (from repository root)
-- **CLI:** `python run.py --university --cli`
-- **API:** `python run.py --university --api`
+- **GUI:** `python -m education_system --university --gui` (from repository root)
+- **CLI:** `python -m education_system --university --cli`
+- **API:** `python -m education_system --university --api`
 
 ---
 

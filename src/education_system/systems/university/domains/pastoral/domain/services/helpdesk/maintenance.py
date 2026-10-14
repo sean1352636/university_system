@@ -123,11 +123,15 @@ def backup_database(auth):
     try:
         import shutil
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        backup_filename = f"student_records_backup_{timestamp}.db"
+        # var/backups is the one place backups live; this used to drop the
+        # file into whatever directory the process happened to start in.
+        target_dir = paths.system_backup_dir("university", "database")
+        target_dir.mkdir(parents=True, exist_ok=True)
+        backup_path = target_dir / f"student_records_backup_{timestamp}.db"
 
         db_path = paths.UNIVERSITY_DEFAULT_DB_PATH
-        shutil.copy2(db_path, backup_filename)
-        print(f"Database backed up to {backup_filename}")
+        shutil.copy2(db_path, backup_path)
+        print(f"Database backed up to {backup_path}")
 
     except Exception as e:
         print(f"Error backing up database: {e}")

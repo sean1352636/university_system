@@ -3,6 +3,9 @@ Enhanced Library Management System - GUI Version
 Maintains all original CLI functions while adding a modern GUI interface
 Backwards compatible with existing database and auth systems
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -93,15 +96,11 @@ except ImportError:
     FINANCE_ACCOUNT_AVAILABLE = False
     print("Warning: Student finance account integration not available")
 
-# Import matplotlib for library finance charts
-try:
-    import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-    from matplotlib.figure import Figure
-    MATPLOTLIB_AVAILABLE = True
-except ImportError:
-    MATPLOTLIB_AVAILABLE = False
-    print("Warning: Matplotlib not available for library finance charts")
+# Matplotlib is imported lazily by finance_shared, the one module in this
+# package whose names are actually read (by the two chart dialogs under
+# finance_parts/). This module carried an identical eager copy of that import
+# and never used any of it — importing matplotlib.pyplot costs ~1.3s and was
+# paid by anything that touched the library package at all.
 
 # Import email service for library finance notifications
 try:
@@ -117,6 +116,9 @@ _AUDIT_LOG_COLUMNS_CACHE: Optional[List[str]] = None
 _STUDENT_COLUMNS_CACHE: Optional[List[str]] = None
 
 from education_system.systems.university.domains.academics.interfaces.gui.library.base import LibraryGUI
+
+from education_system.systems.university.domains.academics.interfaces.gui.library._pickers import attach_picker
+
 
 def show_checkout(self):
     """Show checkout interface"""
@@ -937,7 +939,28 @@ def enhanced_return_book_gui(self):
     ttk.Radiobutton(search_frame, text=_t('gui.academics.library.checkout_return.buttons.by_loan_id', default="By Loan ID"), variable=search_type,
                    value="loan_id").grid(row=0, column=2, sticky=tk.W, padx=5)
 
-    ttk.Entry(search_frame, textvariable=search_value, width=30).grid(row=1, column=0, columnspan=2, padx=5, pady=10)
+    # The three search modes want three different inputs. Book and
+    # borrower are chosen from real rows — only a loan ID is genuinely
+    # free text, since it is printed on the receipt the reader brings in.
+    # Only books that are actually on loan are offered: searching for a
+    # book nobody has out can only ever return nothing.
+    book_picker = attach_picker(search_frame, "loaned_book", width=40)
+    borrower_picker = attach_picker(search_frame, "borrower", width=40)
+    loan_entry = ttk.Entry(search_frame, textvariable=search_value, width=30)
+    for widget in (book_picker.combo, borrower_picker.combo, loan_entry):
+        widget.grid(row=1, column=0, columnspan=2, padx=5, pady=10, sticky=tk.W)
+        widget.grid_remove()
+
+    def _show_input(*_args):
+        mode = search_type.get()
+        book_picker.combo.grid_remove()
+        borrower_picker.combo.grid_remove()
+        loan_entry.grid_remove()
+        {"book_id": book_picker.combo,
+         "user_id": borrower_picker.combo}.get(mode, loan_entry).grid()
+
+    search_type.trace_add("write", _show_input)
+    _show_input()
 
     # Results frame
     results_frame = ttk.LabelFrame(return_window, text=_t('gui.academics.library.checkout_return.labels.active_loans', default="Active Loans"), padding=10)
@@ -958,7 +981,9 @@ def enhanced_return_book_gui(self):
             results_tree.delete(item)
 
         stype = search_type.get()
-        svalue = search_value.get().strip()
+        svalue = {"book_id": book_picker.get,
+                  "user_id": borrower_picker.get}.get(
+                      stype, lambda: search_value.get().strip())()
 
         if not svalue:
             messagebox.showwarning(_("common.warning"), _t('gui.academics.library.checkout_return.dialogs.please_enter_a_search_value', default="Please enter a search value"))
@@ -1244,10 +1269,40 @@ def view_loan_history_gui(self):
     search_frame = ttk.Frame(options_frame)
     search_frame.pack(fill=tk.X, padx=5, pady=5)
 
-    ttk.Label(search_frame, text=_t('gui.academics.library.checkout_return.labels.user_book_id', default="User/Book ID:")).pack(side=tk.LEFT)
+    self.loan_history_label = ttk.Label(search_frame, text=_t('gui.academics.library.checkout_return.labels.user_book', default="User/Book:"))
+    self.loan_history_label.pack(side=tk.LEFT)
     self.loan_search_var = tk.StringVar()
-    ttk.Entry(search_frame, textvariable=self.loan_search_var, width=20).pack(side=tk.LEFT, padx=5)
-    ttk.Button(search_frame, text=_("common.search"), command=self.load_loan_history).pack(side=tk.LEFT, padx=5)
+
+    # One picker per mode, swapped with the radio buttons above. History
+    # covers returned loans too, so every book is offered here, not just
+    # the ones currently out.
+    self._loan_user_picker = attach_picker(search_frame, "borrower", width=36)
+    self._loan_book_picker = attach_picker(search_frame, "book", width=36)
+    for widget in (self._loan_user_picker.combo, self._loan_book_picker.combo):
+        widget.pack(side=tk.LEFT, padx=5)
+        widget.pack_forget()
+
+    search_btn = ttk.Button(search_frame, text=_("common.search"),
+                            command=self.load_loan_history)
+    search_btn.pack(side=tk.LEFT, padx=5)
+
+    def _show_loan_input(*_args):
+        mode = self.loan_history_type.get()
+        self._loan_user_picker.combo.pack_forget()
+        self._loan_book_picker.combo.pack_forget()
+        search_btn.pack_forget()
+        if mode == "user":
+            self.loan_history_label.config(text=_t('gui.academics.library.checkout_return.labels.user', default="User:"))
+            self._loan_user_picker.combo.pack(side=tk.LEFT, padx=5)
+        elif mode == "book":
+            self.loan_history_label.config(text=_t('gui.academics.library.checkout_return.labels.book', default="Book:"))
+            self._loan_book_picker.combo.pack(side=tk.LEFT, padx=5)
+        else:
+            self.loan_history_label.config(text=_t('gui.academics.library.checkout_return.labels.all_recent_loans', default="All recent loans"))
+        search_btn.pack(side=tk.LEFT, padx=5)
+
+    self.loan_history_type.trace_add("write", _show_loan_input)
+    _show_loan_input()
 
     # Results table
     table_frame = ttk.Frame(main_frame)
@@ -1368,7 +1423,7 @@ def _send_checkout_emails(self, user_id, book_id, book_title, due_date):
                     )
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
     except Exception as e:
         import logging
@@ -1414,7 +1469,7 @@ def _send_return_emails(self, user_id, book_id, book_title):
                     )
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
     except Exception as e:
         import logging

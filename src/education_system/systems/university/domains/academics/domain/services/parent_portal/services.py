@@ -18,7 +18,7 @@ class ServicesMixin:
             print("This function is only available for parent accounts.")
             return
 
-        if not self.auth.check_permission('view_transportation'):
+        if not self.auth.check_permission('manage_transportation'):
             print("You don't have permission to view transportation information.")
             return
 
@@ -93,7 +93,7 @@ class ServicesMixin:
             print("This function is only available for parent accounts.")
             return
 
-        if not self.auth.check_permission('view_library_account'):
+        if not self.auth.check_permission('view_child_records'):
             print("You don't have permission to view library accounts.")
             return
 
@@ -204,7 +204,7 @@ class ServicesMixin:
             print("This function is only available for parent accounts.")
             return
 
-        if not self.auth.check_permission('view_extracurricular'):
+        if not self.auth.check_permission('view_child_records'):
             print("You don't have permission to view extracurricular activities.")
             return
 

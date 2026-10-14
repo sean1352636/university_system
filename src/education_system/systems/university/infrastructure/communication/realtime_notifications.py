@@ -113,6 +113,7 @@ class DatabaseNotificationHandler(NotificationHandler):
     def _init_db(self) -> None:
         """Initialize notifications table."""
         with get_connection(self.db_path) as conn:
+            # db-audit: ignore[DBW001] - string literal
             conn.execute(f'''
                 CREATE TABLE IF NOT EXISTS {self.TABLE_NAME} (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -127,6 +128,7 @@ class DatabaseNotificationHandler(NotificationHandler):
                     expires_at TEXT
                 )
             ''')
+            # db-audit: ignore[DBW001] - string literal
             conn.execute(f'''
                 CREATE INDEX IF NOT EXISTS idx_realtime_notif_recipient
                 ON {self.TABLE_NAME}(recipient_id, read_at, created_at DESC)
@@ -136,6 +138,7 @@ class DatabaseNotificationHandler(NotificationHandler):
     def send(self, notification: Notification) -> bool:
         try:
             with get_connection(self.db_path) as conn:
+                # db-audit: ignore[DBW001] - string literal
                 cursor = conn.execute(f'''
                     INSERT INTO {self.TABLE_NAME}
                     (type, recipient_id, title, message, data, priority, created_at, expires_at)
@@ -523,6 +526,7 @@ class NotificationService:
         """Get count of unread notifications."""
         table = self.db_handler.TABLE_NAME
         with get_connection(self.db_path) as conn:
+            # db-audit: ignore[DBW001] - string literal
             cursor = conn.execute(f'''
                 SELECT COUNT(*) FROM {table}
                 WHERE recipient_id = ? AND read_at IS NULL
@@ -533,6 +537,7 @@ class NotificationService:
         """Mark a notification as read."""
         table = self.db_handler.TABLE_NAME
         with get_connection(self.db_path) as conn:
+            # db-audit: ignore[DBW001] - string literal
             cursor = conn.execute(f'''
                 UPDATE {table} SET read_at = ? WHERE id = ?
             ''', (datetime.now().isoformat(), notification_id))
@@ -543,6 +548,7 @@ class NotificationService:
         """Mark all notifications as read for a user."""
         table = self.db_handler.TABLE_NAME
         with get_connection(self.db_path) as conn:
+            # db-audit: ignore[DBW001] - string literal
             cursor = conn.execute(f'''
                 UPDATE {table} SET read_at = ?
                 WHERE recipient_id = ? AND read_at IS NULL
@@ -556,6 +562,7 @@ class NotificationService:
         cutoff = (datetime.now() - timedelta(days=days)).isoformat()
 
         with get_connection(self.db_path) as conn:
+            # db-audit: ignore[DBW001] - string literal
             cursor = conn.execute(f'''
                 DELETE FROM {table}
                 WHERE read_at IS NOT NULL AND read_at < ?

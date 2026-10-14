@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
-from education_system.systems.apprenticeships.domain.training.sessions import (  # noqa: F401
+from education_system.systems.apprenticeships.domain.training.attendance import (  # noqa: F401
     AttendanceSummary,
+    summarise,
+    validate_absence_reason,
+)
+from education_system.systems.apprenticeships.domain.training.sessions import (  # noqa: F401
     SessionAttendance,
     TrainingPlanItem,
     TrainingSession,
@@ -19,6 +23,8 @@ __all__ = [
     'TrainingPlanItem',
     'TrainingSession',
     'hours_for_mark',
+    'summarise',
+    'validate_absence_reason',
     'validate_attendance_status',
     'validate_delivery_mode',
     'validate_session_status',

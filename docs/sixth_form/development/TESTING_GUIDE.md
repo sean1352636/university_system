@@ -23,7 +23,7 @@ Configuration is in `pyproject.toml` under `[tool.pytest.ini_options]`.
 
 ```bash
 # Via the unified launcher
-python run.py --college --test
+python -m education_system --college --test
 
 # Or directly with pytest
 python -m pytest education_system/college_system/tests/ -v --tb=short

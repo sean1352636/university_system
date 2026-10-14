@@ -339,7 +339,7 @@ class BulkGradeImportGUI:
                     details=f"Imported {imported} grades for assignment {assignment_id}"
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             messagebox.showinfo(
                 _t('gui.academics.bulk_grade_import.bulk_grade.dialogs.import_complete', default="Import Complete"),

@@ -129,7 +129,7 @@ class CareerServicesGUI:
 
         ttk.Label(
             title_frame,
-            text=_t("careers.title", default="Career Services Platform"),
+            text=_t("careers.title", default="===== CAREERS ====="),
             font=('Arial', 18, 'bold')
         ).pack(side=tk.LEFT)
 

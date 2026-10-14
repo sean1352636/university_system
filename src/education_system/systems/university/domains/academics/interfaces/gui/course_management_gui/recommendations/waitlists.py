@@ -3,6 +3,7 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.recommendations._imports import (
     tk, ttk, messagebox, sqlite3, _, DEFAULT_DB_PATH, datetime,
 )
+from education_system.systems.university.domains.academics.interfaces.gui._field_pickers import attach_picker
 
 
 class WaitlistsMixin:
@@ -37,7 +38,8 @@ class WaitlistsMixin:
 
         ttk.Label(student_frame, text=_t('gui.academics.course_management_gui.recommendations.waitlists.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         student_id_var = tk.StringVar()
-        student_id_entry = ttk.Entry(student_frame, textvariable=student_id_var, width=30)
+        student_id_entry = attach_picker(student_frame, 'student',
+                                         id_var=student_id_var, width=34)
         student_id_entry.grid(row=0, column=1, sticky=tk.W, pady=5, padx=5)
 
         # Info label
@@ -88,18 +90,16 @@ class WaitlistsMixin:
                 student_id = student_id_var.get().strip()
 
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-                try:
-                    cursor = conn.cursor()
+                cursor = conn.cursor()
 
-                    # Validate student exists in database
-                    cursor.execute("SELECT student_id, first_name, last_name FROM students WHERE student_id = ?", (student_id,))
-                    student_record = cursor.fetchone()
+                # Validate student exists in database
+                cursor.execute("SELECT student_id, first_name, last_name FROM students WHERE student_id = ?", (student_id,))
+                student_record = cursor.fetchone()
 
-                    if not student_record:
-                        messagebox.showerror(_t('gui.academics.course_management_gui.recommendations.waitlists.dialogs.invalid_student', default="Invalid Student"),
-                                           f"Student ID '{student_id}' does not exist in the database.\n\n"
-                                           f"Please enter a valid student ID.")
-                finally:
+                if not student_record:
+                    messagebox.showerror(_t('gui.academics.course_management_gui.recommendations.waitlists.dialogs.invalid_student', default="Invalid Student"),
+                                       f"Student ID '{student_id}' does not exist in the database.\n\n"
+                                       f"Please enter a valid student ID.")
                     conn.close()
                     return
 

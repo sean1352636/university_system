@@ -120,7 +120,7 @@ from education_system.systems.university.infrastructure.auth.integrations import
 )
 
 # CLI menu functions
-from education_system.systems.university.interfaces.cli.shell.auth import (
+from education_system.systems.university.shell.cli.auth import (
     display_auth_menu,
     display_user_management_menu,
     display_role_management_menu,

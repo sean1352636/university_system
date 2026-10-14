@@ -26,6 +26,7 @@ from education_system.systems.university.infrastructure.utils.activity_logger im
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import (
     extras,
 )
+import tkinter.simpledialog  # noqa: F401 - registers tk.simpledialog
 
 logger = logging.getLogger(__name__)
 

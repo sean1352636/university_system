@@ -155,7 +155,7 @@ def _on_module_selected(self, event=None):
 def _send_email_via_gui(self, to_email, subject, message):
     """Send email via email GUI"""
     try:
-        from education_system.systems.university.interfaces.gui.shell.email.email_gui import EmailManagerGUI
+        from education_system.systems.university.shell.gui.email.email_gui import EmailManagerGUI
         email_gui = EmailManagerGUI(self.root, auth=self.auth)
 
         # If email GUI has send_email method, use it
@@ -1020,7 +1020,7 @@ def add_gui_support():
             else:
                 # Running standalone, need to create main GUI
                 root_widget.destroy()
-                from education_system.systems.university.interfaces.gui.shell.main import UnifiedManagementGUI
+                from education_system.systems.university.shell.gui.main import UnifiedManagementGUI
                 app = UnifiedManagementGUI(self.auth)
                 app.run()
         except Exception as e:

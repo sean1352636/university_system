@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
@@ -1747,7 +1751,7 @@ def execute_workflow_actions_gui(self, ticket_id, actions):
         conn.close()
 
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.execute_workflow_actions_gui = execute_workflow_actions_gui

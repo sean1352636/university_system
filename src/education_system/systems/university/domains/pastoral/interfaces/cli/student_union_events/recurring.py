@@ -8,6 +8,9 @@ from education_system.systems.university.domains.pastoral.domain.student_life.st
 )
 from education_system.systems.university.domains.pastoral.interfaces.cli.student_union_events.context import auth
 from education_system.systems.university.domains.pastoral.interfaces.cli.student_union_events.context import auth
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.identity import (
+    current_student_id as _current_student_id,
+)
 
 def _create_recurring_event_simple():
     """Create a recurring event for a club."""
@@ -17,7 +20,7 @@ def _create_recurring_event_simple():
         print("You must be logged in to create recurring events.")
         return
 
-    if not auth.check_permission('create_recurring_events'):
+    if not auth.check_permission('manage_events'):
         print("You don't have permission to create recurring events.")
         return
 
@@ -25,14 +28,13 @@ def _create_recurring_event_simple():
         conn = get_connection()
         cursor = conn.cursor()
 
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
-        if not result:
+        student_id = _current_student_id(cursor, auth)
+
+        if not student_id:
             print("No student record is associated with your account.")
             conn.close()
             return
 
-        student_id = result[0]
 
         cursor.execute('''
         SELECT c.club_id, c.club_name
@@ -91,15 +93,13 @@ def create_recurring_event():
         cursor = conn.cursor()
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, auth)
 
-        if not result:
+        if not student_id:
             print("No student record is associated with your account.")
             conn.close()
             return
 
-        student_id = result[0]
 
         # Get clubs user can create events for
         cursor.execute('''
@@ -199,10 +199,9 @@ def create_recurring_event():
 
         # Create the parent event
         cursor.execute('''
-        INSERT INTO union_events (
-            event_name, description, event_date, start_time, end_time,
-            location, organizer_id, category, max_attendees, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO unified_events (
+                title, description, event_date, start_time, end_time, location, organizer_id, event_category, max_capacity, status, source_type
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'union')
         ''', (
             f"{event_name} (Series)", description, start_date, start_time, end_time,
             location, club_id, category, max_attendees, 'upcoming'
@@ -231,10 +230,9 @@ def create_recurring_event():
 
             # Create individual event
             cursor.execute('''
-            INSERT INTO union_events (
-                event_name, description, event_date, start_time, end_time,
-                location, organizer_id, category, max_attendees, status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO unified_events (
+                title, description, event_date, start_time, end_time, location, organizer_id, event_category, max_capacity, status, source_type
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'union')
             ''', (
                 f"{event_name} #{occurrence_count}", description,
                 current_date.strftime('%Y-%m-%d'), start_time, end_time,
@@ -295,33 +293,31 @@ def manage_recurring_events():
         cursor = conn.cursor()
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, auth)
 
-        if not result:
+        if not student_id:
             print("No student record is associated with your account.")
             conn.close()
             return
 
-        student_id = result[0]
 
         # Get recurring events user can manage
         if auth.check_permission('manage_all_events'):
             cursor.execute('''
-            SELECT r.recurring_id, e.event_name, c.club_name, r.recurrence_type,
+            SELECT r.id, e.event_name, c.club_name, r.recurrence_type,
                    r.current_occurrences, r.max_occurrences, r.status
             FROM recurring_events r
-            JOIN union_events e ON r.parent_event_id = e.event_id
+            JOIN (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e ON r.parent_event_id = e.event_id
             JOIN student_clubs c ON e.organizer_id = c.club_id
             WHERE r.status = 'active'
             ORDER BY e.event_name
             ''')
         else:
             cursor.execute('''
-            SELECT r.recurring_id, e.event_name, c.club_name, r.recurrence_type,
+            SELECT r.id, e.event_name, c.club_name, r.recurrence_type,
                    r.current_occurrences, r.max_occurrences, r.status
             FROM recurring_events r
-            JOIN union_events e ON r.parent_event_id = e.event_id
+            JOIN (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e ON r.parent_event_id = e.event_id
             JOIN student_clubs c ON e.organizer_id = c.club_id
             WHERE (c.president_id = ? OR c.treasurer_id = ? OR c.secretary_id = ?)
             AND r.status = 'active'
@@ -370,9 +366,9 @@ def manage_recurring_events():
 
                 cursor.execute('''
                 SELECT event_id, event_name, event_date, start_time, status, current_attendees
-                FROM union_events
+                FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union')
                 WHERE organizer_id = (
-                    SELECT organizer_id FROM union_events WHERE event_id = ?
+                    SELECT organizer_id FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') WHERE event_id = ?
                 ) AND event_name LIKE ?
                 ORDER BY event_date
                 ''', (parent_id, f"{event_name.split(' (Series)')[0]}%"))
@@ -402,7 +398,7 @@ def manage_recurring_events():
                 SELECT r.parent_event_id, r.recurrence_type, r.recurrence_interval,
                        r.current_occurrences
                 FROM recurring_events r
-                WHERE r.recurring_id = ?
+                WHERE r.id = ?
                 ''', (recurring_id,))
 
                 series_info = cursor.fetchone()
@@ -415,7 +411,7 @@ def manage_recurring_events():
                 cursor.execute('''
                 SELECT event_name, description, start_time, end_time, location,
                        organizer_id, category, max_attendees
-                FROM union_events
+                FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union')
                 WHERE event_id = ?
                 ''', (parent_id,))
 
@@ -423,7 +419,7 @@ def manage_recurring_events():
 
                 # Find last occurrence date
                 cursor.execute('''
-                SELECT MAX(event_date) FROM union_events
+                SELECT MAX(event_date) FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union')
                 WHERE organizer_id = ? AND event_name LIKE ?
                 ''', (template[5], f"{template[0].split(' (Series)')[0]}%"))
 
@@ -459,10 +455,9 @@ def manage_recurring_events():
 
                     # Create the occurrence
                     cursor.execute('''
-                    INSERT INTO union_events (
-                        event_name, description, event_date, start_time, end_time,
-                        location, organizer_id, category, max_attendees, status
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO unified_events (
+                title, description, event_date, start_time, end_time, location, organizer_id, event_category, max_capacity, status, source_type
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'union')
                     ''', (
                         f"{base_name} #{current_count}", template[1],
                         last_date.strftime('%Y-%m-%d'), template[2], template[3],
@@ -487,7 +482,7 @@ def manage_recurring_events():
                 parent_id = cursor.fetchone()[0]
 
                 cursor.execute('''
-                SELECT organizer_id, event_name FROM union_events WHERE event_id = ?
+                SELECT organizer_id, event_name FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') WHERE event_id = ?
                 ''', (parent_id,))
 
                 org_info = cursor.fetchone()
@@ -496,9 +491,11 @@ def manage_recurring_events():
                 current_date = datetime.now().strftime('%Y-%m-%d')
 
                 cursor.execute('''
-                UPDATE union_events
+                UPDATE unified_events
                 SET status = 'cancelled'
-                WHERE organizer_id = ? AND event_name LIKE ? AND event_date > ? AND status = 'upcoming'
+                WHERE source_type = 'union'
+                  AND organizer_id = ? AND title LIKE ? AND event_date > ?
+                  AND status = 'upcoming'
                 ''', (org_info[0], f"{base_name}%", current_date))
 
                 cancelled_count = cursor.rowcount

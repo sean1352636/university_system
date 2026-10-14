@@ -27,8 +27,6 @@ class DataAggregator:
             "students": ("Students", "Student enrollment records"),
             "modules": ("Modules/Courses", "Academic modules and courses"),
             "student_modules": ("Enrollments", "Student course enrollments"),
-            "lms_courses": ("LMS Courses", "Learning management system courses"),
-            "lms_gradebook": ("Gradebook", "Student grades and scores"),
             "degree_programs": ("Degree Programs", "Available degree programs"),
             "attendance_sessions": ("Attendance Sessions", "Class attendance records"),
             "attendance_records": ("Attendance Records", "Individual attendance entries"),
@@ -243,7 +241,7 @@ class DataAggregator:
                         row[0] or "Unknown": row[1] for row in cursor.fetchall()
                     }
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 # By program (if program column exists)
                 try:
@@ -253,7 +251,7 @@ class DataAggregator:
                     )
                     stats["by_program"] = {row[0]: row[1] for row in cursor.fetchall()}
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
         except Exception as e:
             logger.error(f"Error getting student statistics: {e}")
@@ -287,7 +285,7 @@ class DataAggregator:
                     result = cursor.fetchone()
                     stats["scholarship_total"] = result[0] if result and result[0] else 0
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 # Fee types
                 try:
@@ -295,7 +293,7 @@ class DataAggregator:
                     result = cursor.fetchone()
                     stats["fee_types_count"] = result[0] if result else 0
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
         except Exception as e:
             logger.error(f"Error getting financial statistics: {e}")
@@ -321,7 +319,7 @@ class DataAggregator:
                     result = cursor.fetchone()
                     stats["total_sessions"] = result[0] if result else 0
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 try:
                     cursor = conn.execute("SELECT COUNT(*) FROM attendance_records")
@@ -334,7 +332,7 @@ class DataAggregator:
                     )
                     stats["by_status"] = {row[0]: row[1] for row in cursor.fetchall()}
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
         except Exception as e:
             logger.error(f"Error getting attendance statistics: {e}")
@@ -360,14 +358,14 @@ class DataAggregator:
                     result = cursor.fetchone()
                     stats["total_events"] = result[0] if result else 0
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 try:
                     cursor = conn.execute("SELECT COUNT(*) FROM unified_event_registrations")
                     result = cursor.fetchone()
                     stats["total_registrations"] = result[0] if result else 0
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 try:
                     cursor = conn.execute(
@@ -376,7 +374,7 @@ class DataAggregator:
                     )
                     stats["by_type"] = {row[0]: row[1] for row in cursor.fetchall()}
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
         except Exception as e:
             logger.error(f"Error getting event statistics: {e}")

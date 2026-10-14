@@ -132,6 +132,8 @@ class EmployerManager:
     username: str | None = None
     active: bool = True
     created_at: str = ""
+    # config.EMPLOYER_CONTACT_ROLES; None when nobody has said.
+    contact_role: str | None = None
 
 
 @dataclass

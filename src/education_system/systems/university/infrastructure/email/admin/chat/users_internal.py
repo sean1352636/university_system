@@ -1,5 +1,8 @@
 """UsersInternalMixin — extracted from chat.py."""
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.email.admin._imports import (
     datetime,
@@ -77,7 +80,7 @@ class UsersInternalMixin:
             if new_id:
                 return new_id
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         # If the insert failed (e.g., a NOT NULL we don't know about),
         # one last attempt: did a parallel writer create it meanwhile?
         try:
@@ -86,7 +89,7 @@ class UsersInternalMixin:
             if row:
                 return row[0]
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return fallback_user_id
 
     @handle_exception
@@ -258,7 +261,7 @@ class UsersInternalMixin:
                 if sr:
                     profile['student_id'] = sr[0]
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             return profile
 
         try:
@@ -340,7 +343,7 @@ class UsersInternalMixin:
             cursor.execute(sql, [used[c] for c in col_list])
         except Exception:
             # Don't propagate. Likely NOT NULL on a column we don't know about.
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _emit_chat_mention_notifications(self, cursor, room_id, sender_id,
                                          sender_name, content, message_id):

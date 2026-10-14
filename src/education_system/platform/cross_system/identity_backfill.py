@@ -1,23 +1,31 @@
-"""One-time (idempotent) backfill of the cross-system identity registry.
+"""Idempotent backfill of the cross-system identity registry.
 
-Walks each of the 5 system databases, reads existing student/pupil records,
-and registers them into ``student_journey`` via
-:func:`identity_service.get_or_create_journey`. Because matching is on
-(first_name, last_name, date_of_birth), the same real person enrolled in
-several systems collapses to a single ``journey_id`` with each system's slot
-linked — turning name-based guessing into authoritative identity.
+Walks each system database, reads existing student/pupil records, and
+registers them into ``student_journey`` via
+:func:`identity_service.get_or_create_journey`. The same real person
+enrolled in several systems collapses to a single ``journey_id`` with each
+system's slot linked — turning name-based guessing into authoritative
+identity. Resolution is the registry's own (a record already linked is
+reused; different people who share a name and birthday are *not* folded
+together), so the backfill cannot create a false merge the live create
+paths would not.
 
 As well as registering each row into the registry, the backfill stamps the
 resulting ``journey_id`` back onto the system's own pupil/student row (adding
 the column if absent), so existing records gain the same FK to the shared
 identity that newly created ones get on insert. Pass ``stamp=False`` to skip.
 
-Re-running is safe: ``get_or_create_journey`` is idempotent, so a second pass
-relinks the same rows without creating duplicates.
+Re-running is safe: a second pass finds every record already linked and
+creates nothing. Registration events are suppressed — historic records
+joining the registry are not news to the other systems.
 
 Records without a date of birth are skipped (the registry requires DOB to
 match identity) and reported in the summary so the gap is visible rather than
 silently dropped.
+
+:func:`run_all` is the single entry point an operator screen calls: identity,
+then the enrolment history derived from the slots, then the qualification
+projection.
 """
 
 from __future__ import annotations
@@ -135,7 +143,8 @@ def backfill_system(system: str, *, db_path=None, auth_db=None,
         try:
             jid = identity_service.get_or_create_journey(
                 first_name=first, last_name=last, date_of_birth=dob,
-                system=system, student_id=str(r["sid"]), db_path=auth_db,
+                system=system, student_id=str(r["sid"]), announce=False,
+                db_path=auth_db,
             )
             stats["linked"] += 1
             if stamp and jid:
@@ -155,8 +164,12 @@ def backfill_identity_registry(*, db_paths=None, auth_db=None,
     """Backfill every system into the registry (nursery -> university order).
 
     Args:
-        db_paths: optional {system: path} override (defaults to the canonical
-            registry); useful for tests.
+        db_paths: optional {system: path} override. When given, it is the
+            *complete* set: a system absent from it is reported as
+            ``db_missing`` rather than silently read — and stamped — from
+            the live registry path. (That fallback used to let a test that
+            listed five systems write into the running FE and
+            apprenticeships databases.)
         auth_db: optional auth DB path override (where student_journey lives).
         dry_run: count what would be linked without writing.
         stamp: also write journey_id back onto each local row (default True).
@@ -166,9 +179,13 @@ def backfill_identity_registry(*, db_paths=None, auth_db=None,
     result: dict[str, dict[str, int]] = {}
     total = _blank()
     for system in SYSTEM_ORDER:
-        path = (db_paths or {}).get(system)
-        stats = backfill_system(system, db_path=path, auth_db=auth_db,
-                                dry_run=dry_run, stamp=stamp)
+        if db_paths is not None and not db_paths.get(system):
+            stats = _blank()
+            stats["db_missing"] = 1
+        else:
+            path = (db_paths or {}).get(system)
+            stats = backfill_system(system, db_path=path, auth_db=auth_db,
+                                    dry_run=dry_run, stamp=stamp)
         result[system] = stats
         for k, v in stats.items():
             total[k] += v
@@ -180,3 +197,53 @@ def backfill_identity_registry(*, db_paths=None, auth_db=None,
         total["errors"],
     )
     return result
+
+
+def run_all(*, db_paths=None, auth_db=None, dry_run: bool = False,
+            include_qualifications: bool = True) -> dict[str, int]:
+    """Run every backfill, in dependency order. Idempotent.
+
+    1. identity — register and stamp every local learner record;
+    2. enrolments — derive ``learner_enrolment`` history from the slots;
+    3. qualifications — project each system's awards and approved
+       handovers into ``learner_qualification`` (no bus events).
+
+    Returns one flat ``{counter: n}`` dict (``identity_linked``,
+    ``enrolments_created``, ``qualifications_created`` ...), which is what a
+    superadmin screen shows after pressing the button. ``dry_run`` stops
+    after counting the identity pass, since the later steps read its output.
+    """
+    from education_system.platform.cross_system import (
+        enrolment_schema,
+        qualifications,
+    )
+
+    out: dict[str, int] = {}
+    identity = backfill_identity_registry(db_paths=db_paths, auth_db=auth_db,
+                                          dry_run=dry_run, stamp=True)
+    for key, value in identity["_total"].items():
+        out[f"identity_{key}"] = value
+    if dry_run:
+        return out
+
+    for key, value in enrolment_schema.backfill_enrolments(
+            db_path=auth_db).items():
+        out[f"enrolments_{key}"] = value
+
+    if include_qualifications:
+        try:
+            q = qualifications.sync_all(db_paths=db_paths, db_path=auth_db)
+            out["qualifications_created"] = q.get("created", 0)
+            out["qualifications_unmatched"] = q.get("unmatched", 0)
+        except Exception:
+            logger.exception("Qualification projection failed during run_all")
+            out["qualifications_errors"] = 1
+    logger.info("Backfill run_all: %s", out)
+    return out
+
+
+__all__ = [
+    "backfill_system",
+    "backfill_identity_registry",
+    "run_all",
+]

@@ -249,9 +249,11 @@ def view_trip_itinerary():
 
                 # Format time information
                 if start_time and end_time:
-                    time_info = f"({start_time} - {end_time})"
+                    # The translated string spans both ends ("from {start} to {end}"),
+                    # so it belongs on this branch, not the start-only one below.
+                    time_info = "(" + get_text("mobility.trip_management.itinerary.from_time", "from {start} to {end}").format(start=start_time, end=end_time) + ")"
                 elif start_time:
-                    time_info = get_text("mobility.trip_management.itinerary.from_time", "(from {time})").format(time=start_time)
+                    time_info = get_text("mobility.trip_management.itinerary.from_time_only", "(from {start})").format(start=start_time)
                 else:
                     time_info = ""
 

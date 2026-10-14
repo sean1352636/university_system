@@ -1,0 +1,11 @@
+{
+  "template_id": "ucas_application_submitted",
+  "description": "Sent to the sixth-form student the moment their UCAS application moves from Draft to Submitted. Confirms the submission date, the UCAS personal ID and every choice as it was sent, so the student can check the five slots are the five they meant before UCAS processes them. Sent from the college's UCAS inbox.",
+  "channel": "Email",
+  "category": "General",
+  "priority": "Normal",
+  "from_name": "{{system_name}} UCAS Team",
+  "from_address": "ucas@sixthform.ac.uk",
+  "subject": "Your UCAS application has been submitted ({{cycle_year}} entry)",
+  "body": "Hi {{first_name}},\n\nYour UCAS application for {{cycle_year}} entry has been submitted. From this point on, the universities you applied to can see it, so please read the details below and tell us straight away if anything is wrong.\n\n  Submitted on  : {{submitted_at}}\n  Cycle         : {{cycle_year}}\n  UCAS ID       : {{ucas_id}}\n  Choices sent  : {{n_choices}} of {{max_choices}}\n\nYour choices\n------------\n{{choices_block}}\n\nWhat happens next\n-----------------\n  - Sign in to UCAS Track (track.ucas.com) — your application will appear there and every decision lands on that dashboard.\n  - Universities reply in their own time. Some come back within days, others take months, and the order they reply in means nothing.\n  - When all your decisions are in, you choose one Firm and one Insurance reply. Your tutor and the careers team will help you weigh them up.\n  - Keep working: most offers you receive will be conditional on your final grades.\n\nIf anything above is wrong — a course, a university, the UCAS ID — reply to this email or contact us at {{contact_email}} as soon as you can.\n\nGood luck.\n\nThe UCAS Team\n{{system_name}}"
+}

@@ -94,6 +94,11 @@ def register_enabled_plugin_routes(app) -> list[str]:
                     plugin_id, module_name, exc.name or module_name
                 ) from exc
             blueprint = getattr(module, attribute)
+            # Core may already register a plugin's blueprints unconditionally
+            # (campus commerce's routes still are); enabling the plugin must
+            # not then fail on a duplicate blueprint name.
+            if getattr(blueprint, "name", None) in getattr(app, "blueprints", {}):
+                continue
             app.register_blueprint(blueprint)
         registered.append(plugin_id)
     return registered

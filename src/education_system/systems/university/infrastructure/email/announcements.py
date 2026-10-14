@@ -479,6 +479,7 @@ def display_announcements_menu(dashboard):
                         params.extend([ann_id, dashboard.auth.current_user['id']])
 
                         # Execute the query
+                        # db-audit: ignore[DBW001] - join over a code-controlled list
                         cursor.execute(f'''
                         UPDATE announcements
                         SET {", ".join(query_parts)}

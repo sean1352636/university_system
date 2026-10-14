@@ -24,11 +24,10 @@ def display_exam_portal_menu(auth):
     role = user.get("role", "student")
     username = user.get("username", "guest")
 
-    # Auto-sync scheduled exams into the portal on entry
-    try:
-        svc.sync_from_scheduler(created_by=username)
-    except Exception:
-        pass
+    # No auto-sync on entry. This imported every scheduled exam into the
+    # portal as a question-less draft simply for opening the menu, which
+    # duplicated each exam without anyone asking for it. The explicit
+    # "sync from scheduler" menu option still does it on request.
 
     while True:
         print("\nExam Management")

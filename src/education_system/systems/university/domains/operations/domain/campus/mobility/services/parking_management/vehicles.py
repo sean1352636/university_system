@@ -22,7 +22,7 @@ def register_vehicle():
 
     if not (auth.check_permission('register_vehicle') or auth.check_permission('register_own_vehicle')):
         logging.warning(f"User {auth.current_user['username']} attempted to register vehicle without permission")
-        print(_t("parking.auth.no_permission"))
+        print(_t("parking.auth.no_permission", default="No Permission."))
         return
 
     try:
@@ -69,26 +69,26 @@ def register_vehicle():
         try:
             license_plate = input("Enter license plate: ").upper()
             if not license_plate:
-                print(_t("parking.error.license_plate_required"))
+                print(_t("parking.error.license_plate_required", default="License Plate Required"))
                 conn.close()
                 return
 
             # Check if license plate already exists
             cursor.execute('SELECT COUNT(*) FROM vehicles WHERE license_plate = ?', (license_plate,))
             if cursor.fetchone()[0] > 0:
-                print(_t("parking.error.license_plate_exists"))
+                print(_t("parking.error.license_plate_exists", default="License Plate Exists"))
                 conn.close()
                 return
 
             make = input("Enter vehicle make: ")
             if not make:
-                print(_t("parking.error.make_required"))
+                print(_t("parking.error.make_required", default="Make Required"))
                 conn.close()
                 return
 
             model = input("Enter vehicle model: ")
             if not model:
-                print(_t("parking.error.model_required"))
+                print(_t("parking.error.model_required", default="Model Required"))
                 conn.close()
                 return
 
@@ -103,7 +103,7 @@ def register_vehicle():
                         print(_t("parking.error.year_range").format(max_year=current_year + 1))
                         year = None
                 except ValueError:
-                    print(_t("parking.error.year_must_be_number"))
+                    print(_t("parking.error.year_must_be_number", default="Year Must Be Number"))
 
             color = input("Enter vehicle color: ")
 
@@ -120,7 +120,7 @@ def register_vehicle():
 
             registration_state = input("Enter registration state (e.g., NY): ").upper()
             if not registration_state:
-                print(_t("parking.error.registration_state_required"))
+                print(_t("parking.error.registration_state_required", default="Registration State Required"))
                 conn.close()
                 return
 
@@ -131,7 +131,7 @@ def register_vehicle():
 
             # Insert vehicle
             cursor.execute(
-                'INSERT INTO vehicles VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO vehicles (vehicle_id, license_plate, make, model, year, color, vehicle_type, owner_id, registration_state) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 (vehicle_id, license_plate, make, model, year, color, vehicle_type, owner_id, registration_state)
             )
 
@@ -175,7 +175,7 @@ def view_vehicle():
 
     if not (auth.check_permission('view_any_vehicle') or auth.check_permission('view_own_vehicle')):
         logging.warning(f"User {auth.current_user['username']} attempted to view vehicles without permission")
-        print(_t("parking.auth.no_permission"))
+        print(_t("parking.auth.no_permission", default="No Permission."))
         return
 
     try:
@@ -318,7 +318,7 @@ def update_vehicle():
 
     if not (auth.check_permission('update_any_vehicle') or auth.check_permission('update_own_vehicle')):
         logging.warning(f"User {auth.current_user['username']} attempted to update vehicle without permission")
-        print(_t("parking.auth.no_permission"))
+        print(_t("parking.auth.no_permission", default="No Permission."))
         return
 
     # Backup before making changes
@@ -356,7 +356,7 @@ def update_vehicle():
                 return
 
             if not vehicle:
-                print(_t("parking.msg.no_vehicle_criteria"))
+                print(_t("parking.msg.no_vehicle_criteria", default="No Vehicle Criteria."))
                 conn.close()
                 return
 
@@ -369,7 +369,7 @@ def update_vehicle():
             vehicles = cursor.fetchall()
 
             if not vehicles:
-                print(_t("parking.msg.no_vehicles_to_update"))
+                print(_t("parking.msg.no_vehicles_to_update", default="No Vehicles To Update."))
                 conn.close()
                 return
 
@@ -384,7 +384,7 @@ def update_vehicle():
                     raise ValueError
                 vehicle = vehicles[idx]
             except (ValueError, IndexError):
-                print(_t("common.invalid_selection"))
+                print(_t("common.invalid_selection", default="Invalid Selection."))
                 conn.close()
                 return
 
@@ -420,7 +420,7 @@ def update_vehicle():
             if option < 1 or option > max_option:
                 raise ValueError
         except ValueError:
-            print(_t("common.invalid_option"))
+            print(_t("common.invalid_option", default="Invalid Option."))
             conn.close()
             return
 
@@ -429,7 +429,7 @@ def update_vehicle():
             # Update license plate
             new_plate = input("Enter new license plate: ").upper()
             if not new_plate:
-                print(_t("parking.error.license_plate_empty"))
+                print(_t("parking.error.license_plate_empty", default="License Plate Empty"))
                 conn.close()
                 return
 
@@ -439,7 +439,7 @@ def update_vehicle():
                 (new_plate, vehicle['vehicle_id'])
             )
             if cursor.fetchone()[0] > 0:
-                print(_t("parking.error.license_plate_other_vehicle"))
+                print(_t("parking.error.license_plate_other_vehicle", default="License Plate Other Vehicle"))
                 conn.close()
                 return
 
@@ -460,7 +460,7 @@ def update_vehicle():
             # Update make
             new_make = input("Enter new make: ")
             if not new_make:
-                print(_t("parking.error.make_empty"))
+                print(_t("parking.error.make_empty", default="Make Empty"))
                 conn.close()
                 return
 
@@ -475,7 +475,7 @@ def update_vehicle():
             # Update model
             new_model = input("Enter new model: ")
             if not new_model:
-                print(_t("parking.error.model_empty"))
+                print(_t("parking.error.model_empty", default="Model Empty"))
                 conn.close()
                 return
 
@@ -504,7 +504,7 @@ def update_vehicle():
                 print(f"Year updated to: {new_year}")
 
             except ValueError:
-                print(_t("parking.error.year_must_be_number"))
+                print(_t("parking.error.year_must_be_number", default="Year Must Be Number"))
                 conn.close()
                 return
 
@@ -512,7 +512,7 @@ def update_vehicle():
             # Update color
             new_color = input("Enter new color: ")
             if not new_color:
-                print(_t("parking.error.color_empty"))
+                print(_t("parking.error.color_empty", default="Color Empty"))
                 conn.close()
                 return
 
@@ -546,7 +546,7 @@ def update_vehicle():
             # Update registration state
             new_state = input("Enter new registration state: ").upper()
             if not new_state:
-                print(_t("parking.error.registration_state_empty"))
+                print(_t("parking.error.registration_state_empty", default="Registration State Empty"))
                 conn.close()
                 return
 
@@ -614,9 +614,9 @@ def delete_vehicle():
         print(_t("parking.auth.login_required"))
         return
 
-    if not (auth.check_permission('delete_any_vehicle') or auth.check_permission('delete_own_vehicle')):
+    if not (auth.check_permission('delete_any_vehicle') or auth.check_permission('update_own_vehicle')):
         logging.warning(f"User {auth.current_user['username']} attempted to delete vehicle without permission")
-        print(_t("parking.auth.no_permission"))
+        print(_t("parking.auth.no_permission", default="No Permission."))
         return
 
     # Backup before making changes
@@ -662,7 +662,7 @@ def delete_vehicle():
             vehicles = cursor.fetchall()
 
             if not vehicles:
-                print(_t("parking.msg.no_vehicles_to_delete"))
+                print(_t("parking.msg.no_vehicles_to_delete", default="No Vehicles To Delete."))
                 conn.close()
                 return
 
@@ -677,7 +677,7 @@ def delete_vehicle():
                     raise ValueError
                 vehicle_id = vehicles[idx][0]
             except (ValueError, IndexError):
-                print(_t("common.invalid_selection"))
+                print(_t("common.invalid_selection", default="Invalid Selection."))
                 conn.close()
                 return
 
@@ -707,7 +707,7 @@ def delete_vehicle():
         if active_permits:
             permit_ids = ", ".join([p[0] for p in active_permits])
             print(f"Error: Vehicle is associated with active permits: {permit_ids}")
-            print(_t("parking.msg.delete_permits_first"))
+            print(_t("parking.msg.delete_permits_first", default="Delete Permits First"))
             conn.close()
             return
 
@@ -722,7 +722,7 @@ def delete_vehicle():
         confirm = input("\nAre you sure you want to delete this vehicle? (y/n): ")
 
         if confirm.lower() != 'y':
-            print(_t("common.deletion_cancelled"))
+            print(_t("common.deletion_cancelled", default="Deletion Cancelled"))
             conn.close()
             return
 

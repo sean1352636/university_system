@@ -1,7 +1,13 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+
+from ._dialogs import make_toplevel, messagebox
 import tkinter.font as tkFont
 from datetime import datetime, timedelta
 import json
@@ -68,7 +74,7 @@ def _patched_sqlite_connect(database, *args, **kwargs):
         if not database or db_name == str(DEFAULT_DB_PATH):
             return _original_sqlite3_connect(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return _original_sqlite3_connect(database, *args, **kwargs)
 
 sqlite3.connect = _patched_sqlite_connect
@@ -239,10 +245,9 @@ class TicketActionsMixin:
         ticket_id = ticket.get('ticket_id', 'N/A')
         ticket_title = ticket.get('subject', 'Untitled')
 
-        response_dialog = tk.Toplevel(self.root)
+        response_dialog = make_toplevel(self.root)
         response_dialog.title(f"💬 Add Response to Ticket #{ticket_id}")
         response_dialog.geometry("1400x800")
-        response_dialog.transient(self.root)
         response_dialog.grab_set()
 
         # Dialog content
@@ -327,7 +332,7 @@ class TicketActionsMixin:
                 if result and result[0] == ticket_student_id:
                     return True
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             finally:
                 if conn:
                     conn.close()
@@ -379,10 +384,9 @@ class TicketActionsMixin:
 
         ticket_id = ticket.get('ticket_id', 'N/A')
 
-        merge_dialog = tk.Toplevel(self.root)
+        merge_dialog = make_toplevel(self.root)
         merge_dialog.title(_t('gui.pastoral.student_support.ticket_actions.windows.merge_tickets', default="Merge Tickets"))
         merge_dialog.geometry("1000x650")
-        merge_dialog.transient(self.root)
         merge_dialog.grab_set()
 
         form_frame = ttk.Frame(merge_dialog, padding="20")
@@ -485,10 +489,9 @@ class TicketActionsMixin:
         try:
             history = self.support.get_ticket_history(ticket_id)
 
-            history_window = tk.Toplevel(self.root)
+            history_window = make_toplevel(self.root)
             history_window.title(f"Ticket #{ticket_id} History")
             history_window.geometry("1500x900")
-            history_window.transient(self.root)
 
             # Create scrollable timeline
             canvas = tk.Canvas(history_window)
@@ -563,10 +566,9 @@ class TicketActionsMixin:
 
         ticket_id = ticket.get('ticket_id', 'N/A')
 
-        note_dialog = tk.Toplevel(self.root)
+        note_dialog = make_toplevel(self.root)
         note_dialog.title(f"Add Internal Note - Ticket #{ticket_id}")
         note_dialog.geometry("1200x700")
-        note_dialog.transient(self.root)
         note_dialog.grab_set()
 
         form_frame = ttk.Frame(note_dialog, padding="20")
@@ -600,10 +602,9 @@ class TicketActionsMixin:
 
     def show_response_template_dialog(self, ticket):
         """Show dialog to use response template"""
-        template_dialog = tk.Toplevel(self.root)
+        template_dialog = make_toplevel(self.root)
         template_dialog.title(_t('gui.pastoral.student_support.ticket_actions.windows.use_response_template', default="Use Response Template"))
         template_dialog.geometry("1400x800")
-        template_dialog.transient(self.root)
         template_dialog.grab_set()
 
         form_frame = ttk.Frame(template_dialog, padding="20")
@@ -680,10 +681,9 @@ class TicketActionsMixin:
         template_content = template.get('content', '')
         template_id = template.get('template_id')
 
-        response_dialog = tk.Toplevel(self.root)
+        response_dialog = make_toplevel(self.root)
         response_dialog.title(f"Add Response - Ticket #{ticket_id}")
         response_dialog.geometry("1400x800")
-        response_dialog.transient(self.root)
         response_dialog.grab_set()
 
         form_frame = ttk.Frame(response_dialog, padding="20")
@@ -738,10 +738,9 @@ class TicketActionsMixin:
             messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.student_support.ticket_actions.dialogs.only_students_can_submit_satisfaction_ratings', default="Only students can submit satisfaction ratings"))
             return
 
-        rating_dialog = tk.Toplevel(self.root)
+        rating_dialog = make_toplevel(self.root)
         rating_dialog.title(_t('gui.pastoral.student_support.ticket_actions.windows.submit_satisfaction_rating', default="Submit Satisfaction Rating"))
         rating_dialog.geometry("1300x800")
-        rating_dialog.transient(self.root)
         rating_dialog.grab_set()
 
         form_frame = ttk.Frame(rating_dialog, padding="20")

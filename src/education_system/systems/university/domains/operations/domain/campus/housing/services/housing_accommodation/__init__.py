@@ -9,19 +9,27 @@ from education_system.systems.university.domains.operations.domain.campus.housin
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.database import init_housing_db
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.buildings import (
     create_building, create_rooms_for_building, view_building,
-    update_building, delete_building,
+    update_building, delete_building, delete_room,
 )
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.applications import (
     create_application, select_student, process_application, view_application,
 )
-from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.assignments import view_assignment, update_assignment_status
+from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.assignments import (
+    view_assignment, update_assignment_status, create_assignment,
+    notify_room_of_assignment,
+    plan_relocations, apply_relocations, relocate_residents,
+    notify_relocated_residents, describe_move,
+)
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.maintenance import (
     create_maintenance_request, view_maintenance_requests,
     update_maintenance_request,
 )
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.payments import record_payment, view_payment_history
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.inventory import manage_inventory
-from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.inspections import create_inspection, view_inspections
+from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.inspections import (
+    create_inspection, view_inspections, update_inspection,
+    update_inspection_status, delete_inspection,
+)
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.reports import (
     generate_occupancy_report, generate_financial_report,
     export_housing_data, search_housing_records,

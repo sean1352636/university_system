@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 import tkinter as tk
@@ -102,7 +106,7 @@ class DirectoryMixin:
                     log_activity('update', 'connection_request',
                                  details={'connection_id': connection_id, 'action': response})
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
             except sqlite3.Error as e:
                 messagebox.showerror(_t('gui.learners.alumni.directory.dialogs.database_error', default="Database Error"), f"Failed to respond: {str(e)}")
@@ -219,7 +223,7 @@ class DirectoryMixin:
                         log_activity('create', 'connection_request',
                                      details={'recipient': alumni_data[0]})
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
 
                 except sqlite3.Error as e:
                     messagebox.showerror(_t('gui.learners.alumni.directory.dialogs.database_error', default="Database Error"), f"Failed to send request: {str(e)}")

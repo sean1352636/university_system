@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.domains.finance.interfaces.gui.finance_reporting.archive_backup._imports import (
     tk, ttk, messagebox, scrolledtext, ScrolledText, datetime, timedelta, _,
@@ -267,7 +271,7 @@ def create_archive_tables(self, parent_window):
             log_activity('create', 'archive_tables',
                        details={'tables_created': tables_created})
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     except Exception as e:
         messagebox.showerror(_t('gui.finance.finance_reporting.archive_backup.archive_management.dialogs.error', default="Error"),
@@ -457,7 +461,7 @@ def run_archive_process(self, parent_window):
             log_activity('archive', 'financial_data',
                        details={'records_archived': total_archived})
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     except Exception as e:
         messagebox.showerror(_t('gui.finance.finance_reporting.archive_backup.archive_management.dialogs.error', default="Error"),

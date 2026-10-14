@@ -138,13 +138,20 @@ def view_health_records(auth):
         conn.close()
         return
 
+    # Which query ran decides how each row unpacks, so settle it once, before
+    # the loop. It used to be re-tested per row against ``student_id`` — which
+    # the all-records branch below then reassigned from the row itself, so from
+    # the second row on the test flipped and a 9-column row was unpacked into
+    # 7 names: "too many values to unpack (expected 7)".
+    viewing_all_students = auth.check_permission('view_any_health_record') and not student_id
+
     print("\n===== Health Records =====")
     for record in records:
-        if auth.check_permission('view_any_health_record') and not student_id:
+        if viewing_all_students:
             # All records view
-            hr_id, student_id, first_name, last_name, record_type, record_date, description, provider, confidential = record
+            hr_id, row_student_id, first_name, last_name, record_type, record_date, description, provider, confidential = record
             print(f"\nID: {hr_id}")
-            print(f"Student: {first_name} {last_name} (ID: {student_id})")
+            print(f"Student: {first_name} {last_name} (ID: {row_student_id})")
             print(f"Type: {record_type}")
             print(f"Date: {record_date}")
             print(f"Description: {description}")

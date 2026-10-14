@@ -1,0 +1,11 @@
+{
+    "subject": "❌ Cancelled: $event_name",
+    "body": "Dear $student_name,\n\nWe are sorry to tell you that an event you registered for has been cancelled.\n\n=== THE CANCELLED EVENT ===\nEvent: $event_name\nWas Taking Place: $start_datetime\nLocation: $location\nOrganiser: $organizer_name\nCancelled On: $cancelled_date\nCancelled By: $cancelled_by\n\n=== WHY ===\n$reason\n\n=== WHAT THIS MEANS FOR YOU ===\n- Your registration has been cancelled. You do not need to do anything.\n- Please do not turn up at the venue — the event is not going ahead.\n- If you paid for a ticket, a refund will be processed automatically. Contact us if it has not appeared within 10 working days.\n\n=== OTHER EVENTS ===\nThere are other events coming up — browse them under Events → View Upcoming Events.\n\n=== CONTACT ===\nStudents' Union Events: studentunion@university.edu\nPhone: (555) 123-4567\nOffice Hours: Monday-Friday, 9:00 AM - 5:00 PM\n\nWe are sorry for the inconvenience.\n\nBest regards,\nStudents' Union Events Team\n\n$signature",
+    "variables": {
+        "location": {"default": "Not specified"},
+        "organizer_name": {"default": "Students' Union"},
+        "reason": {"default": "No reason was recorded."},
+        "cancelled_by": {"default": "the Students' Union"},
+        "start_datetime": {"default": "Not specified"}
+    }
+}

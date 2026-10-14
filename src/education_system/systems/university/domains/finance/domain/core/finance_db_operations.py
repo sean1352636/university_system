@@ -18,6 +18,7 @@ from education_system.systems.university.domains.finance.infrastructure.finance_
     process_student_finance_account_payment,
     record_payment_to_finance,
 )
+from education_system.systems.university.infrastructure.database.schemas.students_table import ensure_students_table
 
 def init_enhanced_finance_db():
     """Initialize the enhanced finance database with all new tables"""
@@ -624,7 +625,7 @@ def init_enhanced_finance_db():
 
         conn.commit()
         conn.close()
-        print(get_text("finance.db_operations.init_success"))
+        print(get_text("finance.db_operations.init_success", default="Init Success"))
 
     except sqlite3.Error as e:
         print(f"An error occurred while initializing the enhanced finance database: {e}")
@@ -837,23 +838,7 @@ def complete_database_fix():
     print("📋 Creating complete database schema...")
 
     # Students table - COMPLETE with all required columns
-    cursor.execute('''
-    CREATE TABLE students (
-        student_id TEXT PRIMARY KEY,
-        first_name TEXT NOT NULL,
-        last_name TEXT NOT NULL,
-        email_address TEXT,
-        phone_number TEXT,
-        course TEXT,
-        enrollment_date TEXT,
-        status TEXT DEFAULT 'active',
-        date_of_birth TEXT,
-        address TEXT,
-        emergency_contact TEXT,
-        created_at TEXT,
-        updated_at TEXT
-    )
-    ''')
+    ensure_students_table(cursor)
 
     # Fee types table
     cursor.execute('''
@@ -1368,12 +1353,15 @@ def complete_database_fix():
         ('STU005', 'James', 'Wilson', 'james.wilson@university.ac.uk', '07123456793', 'Mathematics', '2024-09-01', 'active', '2003-11-05', '654 Education Lane, Liverpool', 'Helen Wilson - 07555666777', now, now)
     ]
 
+    # phone_number / date_of_birth / created_at / updated_at are not columns
+    # on this table; the real names are phone / dob / created_date, and there
+    # is no updated_at at all. Every one of these inserts used to fail.
     cursor.executemany('''
     INSERT INTO students
-    (student_id, first_name, last_name, email_address, phone_number, course,
-     enrollment_date, status, date_of_birth, address, emergency_contact, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', sample_students)
+    (student_id, first_name, last_name, email_address, phone, course,
+     enrollment_date, status, dob, address, emergency_contact, created_date)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', [row[:-1] for row in sample_students])
 
     # Add comprehensive fee types
     fee_types = [

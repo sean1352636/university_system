@@ -387,6 +387,7 @@ class BulkOperationsMixin:
 
             if choice == '1':
                 new_status = input("New status (Pending/Verified/Rejected): ").strip()
+                # db-audit: ignore[DBW001] - join of placeholders
                 cursor.execute(f'''
                 UPDATE documents
                 SET verification_status = ?
@@ -395,6 +396,7 @@ class BulkOperationsMixin:
 
             elif choice == '2':
                 tags = self.select_tags(cursor)
+                # db-audit: ignore[DBW001] - join of placeholders
                 cursor.execute(f'''
                 UPDATE documents
                 SET tags = ?
@@ -403,6 +405,7 @@ class BulkOperationsMixin:
 
             elif choice == '3':
                 new_expiry = self.get_expiry_date()
+                # db-audit: ignore[DBW001] - join of placeholders
                 cursor.execute(f'''
                 UPDATE documents
                 SET expiry_date = ?
@@ -411,6 +414,7 @@ class BulkOperationsMixin:
 
             elif choice == '4':
                 priority = input("New priority (0-5): ").strip()
+                # db-audit: ignore[DBW001] - join of placeholders
                 cursor.execute(f'''
                 UPDATE documents
                 SET priority = ?

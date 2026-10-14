@@ -7,15 +7,33 @@ Primary, Secondary, College, University).
 
 import os
 import tkinter as tk
+
+from education_system import paths as _paths
 from tkinter import ttk, messagebox, simpledialog
 from datetime import datetime, timedelta
 from pathlib import Path
+
+from education_system.platform.delivery.gui.superadmin_linked_sections import (
+    LINKED_SECTIONS,
+    LinkedPlatformSectionsMixin,
+)
 
 
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
 
+# Which systems exist, in what order, and what they are called are read from
+# paths — the one registry that already carries the short display names every
+# console uses. This module used to keep its own copies, which is why adding a
+# system left the dashboard silently showing a subset of the platform.
+SYSTEM_ORDER = list(_paths.SYSTEM_ORDER)
+SYSTEM_LABELS = dict(_paths.SYSTEM_LABELS)
+
+# Presentation only, and the one thing genuinely local to this console. A
+# system with no colour here still appears — in grey — rather than vanishing
+# from the grid or raising a KeyError.
+DEFAULT_SYSTEM_COLOR = "#7f8c8d"
 SYSTEM_COLORS = {
     "university": "#2980b9",
     "sixth_form": "#27ae60",
@@ -23,19 +41,20 @@ SYSTEM_COLORS = {
     "primary": "#e67e22",
     "nursery": "#16a085",
     "apprenticeships": "#c0392b",
+    "fe_college": "#2c3e50",
 }
 
-SYSTEM_LABELS = {
-    "nursery": "Nursery",
-    "primary": "Primary School",
-    "secondary": "Secondary School",
-    "sixth_form": "Sixth Form College",
-    "university": "University",
-    "apprenticeships": "Apprenticeships",
+# Sub-caption for the Quick Launch cards. Same rule: a system missing from
+# here still gets a card, just without the blurb.
+SYSTEM_BLURBS = {
+    "nursery": "Birth - 5 years\nEYFS / Early Years",
+    "primary": "Reception - Year 6\nEYFS / KS1 / KS2",
+    "secondary": "Years 7 - 11\nKS3 / KS4 / GCSE",
+    "sixth_form": "Years 12 - 13\nA-Levels / BTEC / T-Levels",
+    "university": "Undergraduate & Postgraduate\nDegrees / Research",
+    "apprenticeships": "Levels 2 - 7\nOn-the-job training / EPA",
+    "fe_college": "16+ Further Education\nVocational / Access",
 }
-
-SYSTEM_ORDER = ["nursery", "primary", "secondary", "sixth_form", "university",
-                "apprenticeships"]
 
 # ---------------------------------------------------------------------------
 # i18n helper (Feature 12)
@@ -127,13 +146,18 @@ COMPARISON_COLUMNS = [
 # SuperAdminDashboard
 # ---------------------------------------------------------------------------
 
-class SuperAdminDashboard(tk.Tk):
-    """Standalone top-level window for superadmin management."""
+class SuperAdminDashboard(LinkedPlatformSectionsMixin, tk.Tk):
+    """Standalone top-level window for superadmin management.
+
+    The cross-system sections (tasks, Learner 360, transfer and event
+    monitors, registry, identity, reports, boards) come from
+    :class:`LinkedPlatformSectionsMixin`.
+    """
 
     def __init__(self, user_info, auth, auth_db_path=None):
         super().__init__()
 
-        # Public attributes read by run.py after the window closes
+        # Public attributes read by python -m education_system after the window closes
         self.user_info = user_info
         self.auth = auth
         self.launch_system = None
@@ -168,6 +192,16 @@ class SuperAdminDashboard(tk.Tk):
         self._build_ui()
         self._show_section("dashboard")
         self._start_auto_refresh()
+        # Run the shared bus consumers (notifications, webhooks, calendar)
+        # for every system while the console is open, so a transfer into a
+        # system nobody has launched still reaches its staff.
+        try:
+            from education_system.platform.integrations.external.bus_drainer import (
+                start_platform_drainer,
+            )
+            start_platform_drainer(db_path=auth_db_path)
+        except Exception:
+            pass
         # Wait until the root window is visible before presenting a modal.
         self.after(350, self._show_locked_account_alert)
 
@@ -466,6 +500,7 @@ class SuperAdminDashboard(tk.Tk):
             ("notifications", _t("nav.notifications", "Notifications")),
             ("search", _t("nav.search", "Student Search")),
             ("journey", _t("nav.journey", "Student Journey")),
+            *((key, _t(f"nav.{key}", label)) for key, label in LINKED_SECTIONS),
             ("permissions", _t("nav.permissions", "Permission Matrix")),
             ("password_policy", _t("nav.password_policy", "Password Policy")),
             ("security_training", _t("nav.security_training", "ICT Security Training")),
@@ -542,6 +577,7 @@ class SuperAdminDashboard(tk.Tk):
             "sessions": self._build_sessions,
             "launch": self._build_launch,
         }
+        builders.update(self._linked_builders())
 
         builder = builders.get(section_key)
         if builder:
@@ -639,7 +675,7 @@ class SuperAdminDashboard(tk.Tk):
     def _make_system_card(self, parent, info):
         """Build a card for a system using a health info dict."""
         sys_key = info.get("system", "")
-        color = SYSTEM_COLORS.get(sys_key, "#95a5a6")
+        color = SYSTEM_COLORS.get(sys_key, DEFAULT_SYSTEM_COLOR)
         label = info.get("label", sys_key.title())
 
         card = tk.Frame(parent, bg=CARD_BG, relief=tk.RAISED, bd=1)
@@ -982,7 +1018,7 @@ class SuperAdminDashboard(tk.Tk):
             for i, sys_key in enumerate(SYSTEM_ORDER):
                 placeholder = {
                     "system": sys_key,
-                    "label": SYSTEM_LABELS[sys_key],
+                    "label": SYSTEM_LABELS.get(sys_key, sys_key),
                     "status": "unknown",
                     "student_count": "N/A",
                     "staff_count": "N/A",
@@ -1231,7 +1267,7 @@ class SuperAdminDashboard(tk.Tk):
 
         for info in health_data:
             sys_key = info.get("system", "")
-            color = SYSTEM_COLORS.get(sys_key, "#95a5a6")
+            color = SYSTEM_COLORS.get(sys_key, DEFAULT_SYSTEM_COLOR)
 
             card = tk.Frame(frame, bg=CARD_BG, relief=tk.RAISED, bd=1)
             card.pack(fill=tk.X, padx=24, pady=6)
@@ -1581,7 +1617,7 @@ class SuperAdminDashboard(tk.Tk):
             row = tk.Frame(sr_frame)
             row.pack(fill=tk.X, pady=1)
             enabled_var = tk.BooleanVar(value=False)
-            tk.Checkbutton(row, text=SYSTEM_LABELS[sys_key], variable=enabled_var, width=18, anchor=tk.W).pack(
+            tk.Checkbutton(row, text=SYSTEM_LABELS.get(sys_key, sys_key), variable=enabled_var, width=18, anchor=tk.W).pack(
                 side=tk.LEFT
             )
             role_var = tk.StringVar(value="student")
@@ -1658,7 +1694,7 @@ class SuperAdminDashboard(tk.Tk):
             row = tk.Frame(sr_frame)
             row.pack(fill=tk.X, pady=1)
             enabled_var = tk.BooleanVar(value=sys_key in current_systems)
-            tk.Checkbutton(row, text=SYSTEM_LABELS[sys_key], variable=enabled_var, width=18, anchor=tk.W).pack(
+            tk.Checkbutton(row, text=SYSTEM_LABELS.get(sys_key, sys_key), variable=enabled_var, width=18, anchor=tk.W).pack(
                 side=tk.LEFT
             )
             role_var = tk.StringVar(value=current_systems.get(sys_key, "student"))
@@ -1795,7 +1831,7 @@ class SuperAdminDashboard(tk.Tk):
 
             for i, sys_info in enumerate(per_system):
                 sys_key = sys_info.get("system", "")
-                color = SYSTEM_COLORS.get(sys_key, "#95a5a6")
+                color = SYSTEM_COLORS.get(sys_key, DEFAULT_SYSTEM_COLOR)
                 grid_row, grid_col = divmod(i, _ANALYTICS_COLS)
                 card = tk.Frame(ps_frame, bg=CARD_BG, relief=tk.RAISED, bd=1)
                 card.grid(row=grid_row, column=grid_col, padx=6, pady=6, sticky=tk.NSEW)
@@ -1991,7 +2027,7 @@ class SuperAdminDashboard(tk.Tk):
         ret_map = {r["system"]: r for r in retention}
 
         for i, sys_key in enumerate(SYSTEM_ORDER):
-            color = SYSTEM_COLORS[sys_key]
+            color = SYSTEM_COLORS.get(sys_key, DEFAULT_SYSTEM_COLOR)
             card = tk.Frame(comp_frame, bg=CARD_BG, relief=tk.RAISED, bd=1)
             card.grid(row=0, column=i, padx=6, pady=4, sticky=tk.NSEW)
             comp_frame.columnconfigure(i, weight=1)
@@ -2000,7 +2036,7 @@ class SuperAdminDashboard(tk.Tk):
             accent.pack(fill=tk.X, side=tk.TOP)
 
             tk.Label(
-                card, text=SYSTEM_LABELS[sys_key],
+                card, text=SYSTEM_LABELS.get(sys_key, sys_key),
                 font=("Segoe UI", 10, "bold"), bg=CARD_BG, fg=TEXT_DARK,
             ).pack(padx=8, pady=(6, 2), anchor=tk.W)
 
@@ -2101,8 +2137,8 @@ class SuperAdminDashboard(tk.Tk):
             sys_row.pack(fill=tk.X, padx=24, pady=(0, 20))
 
             for sys_key in SYSTEM_ORDER:
-                sys_color = SYSTEM_COLORS[sys_key]
-                sys_label = SYSTEM_LABELS[sys_key]
+                sys_color = SYSTEM_COLORS.get(sys_key, DEFAULT_SYSTEM_COLOR)
+                sys_label = SYSTEM_LABELS.get(sys_key, sys_key)
 
                 cursor.execute(
                     "SELECT COUNT(*) FROM academic_misconduct_cases WHERE system_key = ?", (sys_key,))
@@ -2179,8 +2215,8 @@ class SuperAdminDashboard(tk.Tk):
 
         # Per-system launch buttons
         for sys_key in SYSTEM_ORDER:
-            sys_color = SYSTEM_COLORS[sys_key]
-            sys_label = SYSTEM_LABELS[sys_key]
+            sys_color = SYSTEM_COLORS.get(sys_key, DEFAULT_SYSTEM_COLOR)
+            sys_label = SYSTEM_LABELS.get(sys_key, sys_key)
             btn = tk.Button(
                 btn_row,
                 text=sys_label,
@@ -3293,7 +3329,7 @@ class SuperAdminDashboard(tk.Tk):
 
     def _draw_journey_card(self, parent, sys_key, stage, is_last=False):
         """Draw a single journey stage card with a connecting line."""
-        color = SYSTEM_COLORS.get(sys_key, "#95a5a6")
+        color = SYSTEM_COLORS.get(sys_key, DEFAULT_SYSTEM_COLOR)
         label = SYSTEM_LABELS.get(sys_key, sys_key.title())
 
         wrapper = tk.Frame(parent, bg=CONTENT_BG)
@@ -3371,25 +3407,25 @@ class SuperAdminDashboard(tk.Tk):
         tree_frame = tk.Frame(frame, bg=CONTENT_BG)
         tree_frame.pack(fill=tk.X, padx=24, pady=(0, 12))
 
-        columns = ("username", "display_name", "nursery", "primary", "secondary", "sixth_form", "university")
+        # A column per system, from SYSTEM_ORDER — a hardcoded column list
+        # here silently hid a user's access to any system added later.
+        columns = ("username", "display_name", *SYSTEM_ORDER)
         tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=22)
 
-        for col, heading, w in [
-            ("username", "Username", 95),
-            ("display_name", "Display Name", 120),
-            ("nursery", "Nursery", 80),
-            ("primary", "Primary", 80),
-            ("secondary", "Secondary", 80),
-            ("sixth_form", "Sixth Form", 80),
-            ("university", "University", 80),
-        ]:
+        headings = [("username", "Username", 95), ("display_name", "Display Name", 120)]
+        headings += [(key, SYSTEM_LABELS.get(key, key), 92) for key in SYSTEM_ORDER]
+        for col, heading, w in headings:
             tree.heading(col, text=heading)
-            tree.column(col, width=w, minwidth=60)
+            tree.column(col, width=w, minwidth=60, stretch=False)
 
         vsb = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=tree.yview)
-        tree.configure(yscrollcommand=vsb.set)
-        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        # With every system present the row is wider than the pane, so it
+        # needs to scroll sideways as well or the last systems are unreachable.
+        hsb = ttk.Scrollbar(tree_frame, orient=tk.HORIZONTAL, command=tree.xview)
+        tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
         vsb.pack(side=tk.RIGHT, fill=tk.Y)
+        hsb.pack(side=tk.BOTTOM, fill=tk.X)
+        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         all_users = []
         svc = self._get_admin_service()
@@ -3406,11 +3442,7 @@ class SuperAdminDashboard(tk.Tk):
             tree.insert("", tk.END, values=(
                 u.get("username", ""),
                 u.get("display_name", ""),
-                sys_map.get("nursery", "\u2014"),
-                sys_map.get("primary", "\u2014"),
-                sys_map.get("secondary", "\u2014"),
-                sys_map.get("sixth_form", "\u2014"),
-                sys_map.get("university", "\u2014"),
+                *(sys_map.get(key, "\u2014") for key in SYSTEM_ORDER),
             ))
 
         if not all_users:
@@ -3495,8 +3527,8 @@ class SuperAdminDashboard(tk.Tk):
         ).pack(anchor=tk.W, padx=24, pady=(4, 6))
 
         for sys_key in SYSTEM_ORDER:
-            sys_label = SYSTEM_LABELS[sys_key]
-            color = SYSTEM_COLORS[sys_key]
+            sys_label = SYSTEM_LABELS.get(sys_key, sys_key)
+            color = SYSTEM_COLORS.get(sys_key, DEFAULT_SYSTEM_COLOR)
 
             card = tk.Frame(frame, bg=CARD_BG, relief=tk.RAISED, bd=1)
             card.pack(fill=tk.X, padx=24, pady=4)
@@ -4092,17 +4124,22 @@ class SuperAdminDashboard(tk.Tk):
             fg=TEXT_MUTED,
         ).pack(anchor=tk.W, padx=24, pady=(0, 24))
 
-        # Grid of large launch buttons (3 columns → a 3×3 grid for the 9 systems)
+        # One card per system, three to a row. Built from SYSTEM_ORDER rather
+        # than a hand-written list: the hand-written one had drifted to five
+        # entries while the platform had grown past it, so half the systems
+        # had no way in from here.
         grid = tk.Frame(frame, bg=CONTENT_BG)
         grid.pack(padx=40, pady=(0, 30))
         _LAUNCH_COLS = 3
 
         launch_configs = [
-            ("nursery", "Nursery", SYSTEM_COLORS["nursery"], "Birth - 5 years\nEYFS / Early Years"),
-            ("primary", "Primary School", "#e67e22", "Reception - Year 6\nEYFS / KS1 / KS2"),
-            ("secondary", "Secondary School", "#8e44ad", "Years 7 - 11\nKS3 / KS4 / GCSE"),
-            ("sixth_form", "Sixth Form College", "#27ae60", "Years 12 - 13\nA-Levels / BTEC / T-Levels"),
-            ("university", "University", "#2980b9", "Undergraduate & Postgraduate\nDegrees / Research"),
+            (
+                key,
+                SYSTEM_LABELS.get(key, key),
+                SYSTEM_COLORS.get(key, DEFAULT_SYSTEM_COLOR),
+                SYSTEM_BLURBS.get(key, ""),
+            )
+            for key in SYSTEM_ORDER
         ]
 
         for i, (sys_key, label, color, desc) in enumerate(launch_configs):
@@ -4212,8 +4249,10 @@ class SuperAdminDashboard(tk.Tk):
         tk.Label(
             dlg,
             text=(
-                "Unified management console for Nursery, Primary School,\n"
-                "Secondary School, Sixth Form College, and University.\n\n"
+                "Unified management console for all "
+                f"{len(SYSTEM_ORDER)} education systems:\n"
+                + ", ".join(SYSTEM_LABELS.get(k, k) for k in SYSTEM_ORDER)
+                + ".\n\n"
                 "Python / tkinter / SQLite"
             ),
             font=("Segoe UI", 9), fg=TEXT_MUTED, justify=tk.CENTER,

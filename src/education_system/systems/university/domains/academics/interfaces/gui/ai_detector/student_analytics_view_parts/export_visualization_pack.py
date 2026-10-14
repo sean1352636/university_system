@@ -1,4 +1,7 @@
 """Extracted function implementation."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -42,7 +45,7 @@ def export_visualization_pack(self):
                     f.write(content)
                 exported += 1
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         # Create summary file
         summary = "AI Detection Analytics Export\n"

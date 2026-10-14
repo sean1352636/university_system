@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.utils.document_manager._common import (
     os, hashlib, datetime, sqlite3,
     get_connection, get_current_user, _t, log_event,
@@ -37,8 +41,8 @@ class UploadMixin:
 
             if existing_doc:
                 print(_t("shared.utils.document_manager.existing_doc_found", default="\nExisting document found: {filename} (Version {version})", filename=existing_doc[2], version=existing_doc[1]))
-                print(_t("shared.utils.document_manager.option_upload_new_version", default="1. Upload new version (replace existing)"))
-                print(_t("shared.utils.document_manager.option_upload_additional", default="2. Upload additional document"))
+                print(_t("shared.utils.document_manager.option_upload_new_version", default="1. Upload New Version"))
+                print(_t("shared.utils.document_manager.option_upload_additional", default="2. Upload Additional"))
                 print(_t("shared.utils.document_manager.option_cancel", default="3. Cancel"))
 
                 choice = input("Choose option (1-3): ").strip()
@@ -108,7 +112,7 @@ class UploadMixin:
                     name=type_name,
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Create workflow steps
             self.create_workflow_steps(cursor, document_id, type_id)
@@ -374,7 +378,7 @@ class UploadMixin:
             VALUES (?, ?, ?, ?, ?, ?)
             ''', (recipient_id, notification_type, title, message, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), document_id))
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Send email notification if email system is available
         if EMAIL_SYSTEM_AVAILABLE:

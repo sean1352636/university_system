@@ -1,0 +1,18 @@
+{
+    "subject": "$urgency_emoji Overdue: your $screening_label was due on $due_date",
+    "body": "Dear $student_name,\n\nOur records show that a health screening booked for you is now overdue. Nothing bad happens because of this — we would just like to get it done.\n\n=== WHAT IS OUTSTANDING ===\nScreening: $screening_type\nWas Due: $due_date\nOverdue By: $days_overdue days\nReference: $screening_id\nStudent ID: $student_id\nProvider: $provider\n\n$urgency_note\n\n=== BOOKING IN ===\n1. Log in to the Health Portal and choose Appointments, or\n2. Call the Health Centre on (555) 123-4567, or\n3. Drop in during open clinic hours.\n\nIt usually takes 15-20 minutes, and there is no charge.\n\n=== IF OUR RECORD IS WRONG ===\nIf you have already had this screening — here, at your GP, or anywhere else — tell us the date and where, and we will update your record so the reminders stop. If you have decided not to have it, say so and we will record that instead.\n\nEmail health@university.edu either way, and we will sort it out.\n\n=== CONTACT INFORMATION ===\nHealth Centre: health@university.edu\nPhone: (555) 123-4567\nOffice Hours: Monday-Friday, 9:00 AM - 5:00 PM\n\nBest regards,\nUniversity Health Centre\n\n$signature",
+    "variables": {
+        "provider": {
+            "default": "To be assigned"
+        },
+        "urgency_emoji": {
+            "default": "🟠"
+        },
+        "urgency_note": {
+            "default": ""
+        },
+        "screening_label": {
+            "default": "screening"
+        }
+    }
+}

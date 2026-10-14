@@ -36,7 +36,7 @@ class PredictiveAnalyticsMixin:
             return
 
         if not (self.auth.check_permission('manage_grades') or
-                self.auth.check_permission('view_risk_analysis')):
+                self.auth.check_permission('predictive_analytics')):
             messagebox.showerror(_("common.error"), _("grades.risk.no_permission_identify"))
             return
 
@@ -97,7 +97,7 @@ class PredictiveAnalyticsMixin:
             return
 
         if not (self.auth.check_permission('manage_grades') or
-                self.auth.check_permission('view_risk_analysis')):
+                self.auth.check_permission('predictive_analytics')):
             messagebox.showerror(_("common.error"), _("grades.risk.no_permission_warning"))
             return
 
@@ -118,7 +118,7 @@ class PredictiveAnalyticsMixin:
             return
 
         if not (self.auth.check_permission('manage_grades') or
-                self.auth.check_permission('generate_alerts')):
+                self.auth.check_permission('predictive_analytics')):
             messagebox.showerror(_("common.error"), _("grades.risk.no_permission_alert"))
             return
 
@@ -244,7 +244,7 @@ class PredictiveAnalyticsMixin:
             return
 
         if not (self.auth.check_permission('manage_grades') or
-                self.auth.check_permission('use_ml_models')):
+                self.auth.check_permission('predictive_analytics')):
             messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.you_don_t_have_permission_to_build_ml_models', default="You don't have permission to build ML models."))
             return
 
@@ -276,7 +276,7 @@ class PredictiveAnalyticsMixin:
             return
 
         if not (self.auth.check_permission('manage_grades') or
-                self.auth.check_permission('view_risk_analysis')):
+                self.auth.check_permission('predictive_analytics')):
             messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.you_don_t_have_permission_to_analyze_dropout_risk_factors', default="You don't have permission to analyze dropout risk factors."))
             return
 
@@ -308,7 +308,7 @@ class PredictiveAnalyticsMixin:
             return
 
         if not (self.auth.check_permission('manage_grades') or
-                self.auth.check_permission('use_ml_models')):
+                self.auth.check_permission('predictive_analytics')):
             messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.you_don_t_have_permission_to_build_ml_models', default="You don't have permission to build ML models."))
             return
 
@@ -340,7 +340,7 @@ class PredictiveAnalyticsMixin:
             return
 
         if not (self.auth.check_permission('manage_grades') or
-                self.auth.check_permission('generate_interventions')):
+                self.auth.check_permission('predictive_analytics')):
             messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.you_don_t_have_permission_to_generate_interventions', default="You don't have permission to generate interventions."))
             return
 
@@ -372,7 +372,7 @@ class PredictiveAnalyticsMixin:
             return
 
         if not (self.auth.check_permission('manage_grades') or
-                self.auth.check_permission('generate_interventions')):
+                self.auth.check_permission('predictive_analytics')):
             messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.you_don_t_have_permission_to_generate_intervention_plans', default="You don't have permission to generate intervention plans."))
             return
 
@@ -429,7 +429,7 @@ class PredictiveAnalyticsMixin:
             return
 
         if not (self.auth.check_permission('manage_grades') or
-                self.auth.check_permission('view_risk_analysis')):
+                self.auth.check_permission('predictive_analytics')):
             messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.you_don_t_have_permission_to_identify_high_dropout_risk_students', default="You don't have permission to identify high dropout risk students."))
             return
 

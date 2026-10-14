@@ -55,7 +55,7 @@ class IRStatusStrip(ttk.Frame):
         try:
             self.after(self._poll_ms, self._tick)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _tick(self) -> None:
         if not self.winfo_exists():

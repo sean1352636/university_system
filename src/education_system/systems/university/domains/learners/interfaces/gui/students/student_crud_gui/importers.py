@@ -9,7 +9,7 @@ import json
 import csv
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from datetime import datetime
-from education_system.systems.university.interfaces.gui.shell.main._tk_callback_filter import install_clean_close as _install_clean_close
+from education_system.platform.delivery.gui.tk_callback_filter import install_clean_close as _install_clean_close
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import get_db_connection, get_connection, transaction, foreign_keys_off
@@ -42,62 +42,350 @@ from education_system.systems.university.services.student_provisioning import (
 )
 
 
-def _sixth_form_alevel_grades(student_id, subjects):
-    """Best A-level grade per subject for a sixth-form student.
+#: Eligibility failures that do not stop an *import*.
+#:
+#: ``not_transferred`` fails exactly when the learner has already been
+#: handed over — which on this screen is the precondition, not an
+#: objection. The check belongs to the sixth form's progression board,
+#: where it means "do not submit this learner twice"; read from here it
+#: was refusing to import anybody the sixth form had successfully sent,
+#: which is everybody this screen exists for. A learner could be handed
+#: over and then never admitted, with the tool for admitting them citing
+#: the handover as the reason.
+#:
+#: The double-import it warns about is still prevented, by the two checks
+#: that actually test for it: ``not_already_here`` (does the journey
+#: already carry a university slot) and the ``converted_student_id``
+#: guard above, which catches an application already enrolled.
+_IMPORT_EXEMPT_CHECKS = frozenset({"not_transferred"})
 
-    Prefers achieved exam results, then falls back to teacher-predicted
-    grades. Returns a ``{subject: grade}`` dict (subject keys exactly as
-    stored in the sixth-form system). Best-effort: returns ``{}`` if the
-    sixth-form assessment modules aren't importable or hold nothing for this
-    student, so "grades if available" degrades gracefully to "no grades".
+
+def _import_blockers(readiness):
+    """Blocking failures that are real objections to importing."""
+    if readiness is None:
+        return []
+    return [c for c in readiness.blockers
+            if c.key not in _IMPORT_EXEMPT_CHECKS]
+
+
+
+def _awaiting_admission(readiness) -> bool:
+    """Handed over by the college, with no university record to show.
+
+    True when the only thing standing between this applicant and a
+    student record is us. ``not_transferred`` failing means the college
+    has completed the handover; ``not_already_here`` passing means no
+    university slot has been filled. Together they describe a learner who
+    has left one system without arriving at the next — the same failure
+    the sixth form calls Stranded, seen from the receiving end.
+    """
+    if readiness is None:
+        return False
+    failed = {c.key for c in readiness.checks if not c.passed}
+    if "not_transferred" not in failed:
+        return False
+    if "not_already_here" in failed:
+        return False
+    # Anything else outstanding is a real objection; report that instead.
+    return not [c for c in readiness.blockers
+                if c.key not in _IMPORT_EXEMPT_CHECKS]
+
+
+def _import_title():
+    """Dialog title. A function, not a constant: ``_t`` resolves against
+    the locale in force *now*, and a module-level constant would freeze
+    whichever locale happened to be active at import."""
+    return _t(
+        'gui.learners.students.student_crud_gui.importers.dialogs.admit_from_ucas',
+        default="Admit from UCAS")
+
+
+def _ucas_applicants():
+    """Everyone applying to this university, from every source system.
+
+    Not just the sixth form: FE College uses the same UCAS route, and a
+    completed higher apprentice can progress onto a degree or top-up.
+    ``applicants.list_all_applicants`` merges the UCAS rows with the
+    cross-system handover transitions and returns one normalised shape,
+    already ordered with the actionable people first.
+    """
+    from education_system.systems.university.domains.admissions.domain.ucas import (
+        applicants,
+    )
+    return applicants.list_all_applicants()
+
+
+def _admission_application_for(journey_id):
+    """The staged admission application for a journey, if any."""
+    if not journey_id:
+        return None
+    try:
+        from education_system.systems.university.domains.admissions.domain import (
+            sixthform_intake,
+        )
+        return sixthform_intake.find_application_for_journey(journey_id)
+    except Exception:
+        logger.debug("Could not look up the admission application",
+                     exc_info=True)
+        return None
+
+
+def _actor_name(self):
+    """Who is doing this, for the audit line on the clear-down."""
+    for attr in ("current_user", "user", "auth"):
+        holder = getattr(self, attr, None)
+        user = getattr(holder, "current_user", holder)
+        if isinstance(user, dict):
+            return user.get("username") or user.get("display_name")
+        if isinstance(user, str):
+            return user
+    return None
+
+
+def _university_student_exists(student_id) -> bool:
+    """Is there really a student record behind a converted application?
+
+    An application can carry ``converted_student_id`` for a student that no
+    longer exists — deleted, or never created if the conversion half-failed.
+    The picker used to trust the field and refuse the import, which left the
+    operator told about a record they could not find.
+    """
+    if not student_id:
+        return False
+    try:
+        from education_system.systems.university.infrastructure.database.db import (
+            get_connection,
+        )
+        conn = get_connection()
+        try:
+            row = conn.execute(
+                "SELECT 1 FROM students WHERE student_id = ?",
+                (str(student_id),),
+            ).fetchone()
+        finally:
+            conn.close()
+        return row is not None
+    except Exception:
+        logger.exception("Could not check whether student %s exists",
+                         student_id)
+        # Unverifiable: treat as present, so a database problem never
+        # invites a duplicate record.
+        return True
+
+
+def _report_ucas_clear(summary, parent):
+    """Tell the operator what the clear-down did."""
+    if summary is None:
+        messagebox.showwarning(
+            _import_title(),
+            "The student is enrolled, but their UCAS application could not "
+            "be cleared. See the log; they may still appear in this list.",
+            parent=parent)
+        return
+    from education_system.systems.university.services.bus import ucas_bus
+    detail = ucas_bus.describe(summary)
+    if summary.get("errors"):
+        messagebox.showwarning(_import_title(),
+                               f"UCAS clear-down finished with problems:\n\n{detail}",
+                               parent=parent)
+    elif summary.get("choices_removed"):
+        messagebox.showinfo(_import_title(), detail, parent=parent)
+
+
+def _clear_ucas_application(sf_student_id, uni_student_id, *, actor=None):
+    """Close the applicant's UCAS application to us, after they are admitted.
+
+    Admission is what ends an application. Without this the learner keeps
+    appearing in "Admit from UCAS" for ever — listed as *Enrolled*, with
+    Admit refusing them as an existing student, which reports a problem the
+    screen offers no way to clear.
+
+    Best-effort: the student exists by the time this runs, and a tidy-up
+    failure must not present a successful admission as a failed one.
+    """
+    if not sf_student_id:
+        return None
+    try:
+        from education_system.systems.university.services.bus import ucas_bus
+        summary = ucas_bus.clear_after_admission(
+            sf_student_id, uni_student_id, actor=actor)
+        logger.info("UCAS clear-down for %s -> %s: %s",
+                    sf_student_id, uni_student_id, ucas_bus.describe(summary))
+        return summary
+    except Exception:
+        logger.exception(
+            "Could not clear the UCAS application for %s after admitting "
+            "them as %s", sf_student_id, uni_student_id)
+        return None
+
+
+def _convert_via_admissions(application_id, parent):
+    """Enrol through the supported admissions route.
+
+    ``convert_to_student`` creates the student, registration, history and
+    outbox event in one transaction, filling every field from the
+    application's accepted choice — so there is no form to complete and
+    no chance of the two records disagreeing. It refuses unless the
+    application is genuinely ready, which is the whole point of
+    preferring it.
+
+    Returns the new student id, or ``None`` if it could not run.
+    """
+    from education_system.systems.university.domains.admissions.domain.services import (
+        admissions_lifecycle,
+    )
+    try:
+        issues = admissions_lifecycle.readiness_issues(application_id)
+    except Exception as exc:
+        logger.exception("Readiness check failed for application %s",
+                         application_id)
+        messagebox.showerror(_import_title(),
+                             f"Could not check the application: {exc}",
+                             parent=parent)
+        return None
+    if issues:
+        messagebox.showwarning(
+            _import_title(),
+            f"Application #{application_id} is not ready to enrol:\n\n"
+            + "\n".join(f"  • {i}" for i in issues)
+            + "\n\nComplete these in Admissions, or use the manual route "
+              "below to create the student without those checks.",
+            parent=parent)
+        return None
+    try:
+        student_id = admissions_lifecycle.convert_to_student(application_id)
+    except Exception as exc:
+        logger.exception("convert_to_student failed for %s", application_id)
+        messagebox.showerror(_import_title(),
+                             f"Could not enrol from the application: {exc}",
+                             parent=parent)
+        return None
+    messagebox.showinfo(
+        _import_title(),
+        f"Enrolled from application #{application_id}.\n\n"
+        f"Student {student_id} was created with their programme, academic "
+        f"year and identity taken from the accepted choice — nothing to "
+        f"fill in.",
+        parent=parent)
+    return student_id
+
+
+def _qualification_grades(record):
+    """``{subject: grade}`` from a handover record, achieved before predicted.
+
+    Reads the assembled ``SIXTH_FORM_TO_UNIVERSITY`` record rather than
+    re-querying the sixth form's assessment modules. That is not only
+    cheaper — it is the same data the *event* route carries, so the two
+    routes can no longer disagree about what grades a learner holds.
     """
     grades: dict[str, str] = {}
-    try:
-        from education_system.systems.sixth_form.domain.assessment.exam_results import (
-            exam_results as _exam_results,
-        )
-        for rr in _exam_results.results_for_student(student_id):
-            if rr.subject and rr.result and rr.result.grade:
-                grades.setdefault(rr.subject, rr.result.grade)
-    except Exception:
-        logger.debug(
-            "Sixth-form exam results unavailable for %s", student_id,
-            exc_info=True)
-    try:
-        from education_system.systems.sixth_form.domain.assessment.predicted_grades import (
-            predicted_grades as _predicted_grades,
-        )
-        for p in _predicted_grades.predictions_for_student(student_id):
-            if p.subject and p.grade:
-                grades.setdefault(p.subject, p.grade)
-    except Exception:
-        logger.debug(
-            "Sixth-form predicted grades unavailable for %s", student_id,
-            exc_info=True)
+    for key in ("achieved_qualifications", "predicted_qualifications"):
+        for row in record.get(key) or []:
+            subject = (row.get("subject") or "").strip()
+            grade = (row.get("grade") or "").strip()
+            if subject and grade:
+                grades.setdefault(subject.lower(), grade)
     return grades
 
 
-def _open_sixth_form_import_dialog(parent_dialog, fields):
-    """Modal picker showing Year 13 students from the sixth-form system.
+def _existing_university_applications(sf_student_ids):
+    """``{sf_student_id: (journey_id, application_or_None)}`` for a cohort.
 
-    On confirm, pre-fills the parent create-student dialog's title,
-    first/middle/last name, gender, and date-of-birth fields, plus the three
-    A-level subjects the student studies and their grades where available
-    (achieved exam results first, otherwise teacher-predicted grades). The
-    UCAS tariff recomputes from the filled grades; course assignment and visa
+    The eligibility gate runs source-side and cannot see the university's
+    admissions tables. This is the destination half of "protection against
+    an existing application/student": a learner the bus already staged as
+    an applicant must be *converted*, not enrolled a second time from
+    scratch.
+
+    Two batched queries for the whole list, not two per learner — a fresh
+    connection to the university database costs about a tenth of a second,
+    and this runs for every Year 13 student the moment the picker opens.
+    """
+    ids = list(sf_student_ids)
+    out = {sid: (None, None) for sid in ids}
+    if not ids:
+        return out
+    try:
+        from education_system.platform.cross_system import identity_service
+        journeys = identity_service.find_by_students("sixth_form", ids)
+    except Exception:
+        logger.exception(
+            "Could not resolve journeys for the Year 13 cohort")
+        return out
+
+    by_journey = {}
+    for sid, journey in journeys.items():
+        journey_id = journey.get("journey_id")
+        out[sid] = (journey_id, None)
+        if journey_id:
+            by_journey.setdefault(journey_id, []).append(sid)
+    if not by_journey:
+        return out
+
+    from education_system.systems.university.domains.admissions.domain import (
+        sixthform_intake,
+    )
+    applications = sixthform_intake.find_applications_for_journeys(
+        by_journey.keys())
+    for journey_id, application in applications.items():
+        for sid in by_journey.get(journey_id, ()):
+            out[sid] = (journey_id, application)
+    return out
+
+
+def _select_course_for(fields, course_code):
+    """Point the course combobox at the learner's firm-choice course.
+
+    Silent when the code names nothing in the live catalogue: the sixth
+    form records a UCAS course code, which is not guaranteed to be one of
+    this university's internal codes, and guessing would be worse than
+    leaving the operator to choose.
+    """
+    code = (course_code or "").strip().upper()
+    combo = fields.get('course')
+    if not code or combo is None:
+        return False
+    try:
+        for label in combo['values']:
+            if str(label).split(' - ', 1)[0].strip().upper() == code:
+                combo.set(label)
+                return True
+    except Exception:
+        logger.debug("Could not pre-select course %s", code, exc_info=True)
+    return False
+
+
+def _open_sixth_form_import_dialog(parent_dialog, fields):
+    """Modal picker of sixth-form leavers who are ready to be admitted.
+
+    This used to list *every* active Year 13 student and let any of them
+    be turned into an enrolled undergraduate. It now runs
+    ``handover_eligibility`` over each candidate and shows the answer:
+    whether this university is their confirmed destination, whether they
+    hold an accepted offer, whether its conditions and results are
+    confirmed, whether the handover consent exists, and whether they are
+    already here. A learner with a blocking failure cannot be imported;
+    one with only advisory gaps can be, after the operator has seen them.
+
+    On confirm, the parent create-student dialog is pre-filled from the
+    assembled handover record — identity, firm-choice course and entry
+    year, and A-level subjects with achieved (falling back to predicted)
+    grades — and the released payload is stashed on the dialog for the
+    save handler. The UCAS tariff recomputes from the filled grades; visa
     details are intentionally left to the user.
 
     Errors are surfaced via messagebox and logged; the parent dialog
     is left untouched if anything goes wrong.
     """
     try:
-        from education_system.systems.sixth_form.domain.learners.students import (
-            students as sf_students,
+        from education_system.systems.sixth_form.domain.progression import (
+            handover_eligibility,
+            university_handover,
         )
     except Exception:
-        logger.exception("Sixth-form module not importable")
+        logger.exception("Sixth-form progression modules not importable")
         messagebox.showerror(
-            _t('gui.learners.students.student_crud_gui.importers.dialogs.import_from_sixth_form_system', default="Import from Sixth Form System"),
+            _import_title(),
             _t('gui.learners.students.student_crud_gui.importers.dialogs.could_not_load_the_sixth_form_student_module_make_sure_the_sixth', default="Could not load the sixth-form student module. "
             "Make sure the sixth-form system is installed alongside "
             "the university system."),
@@ -105,83 +393,262 @@ def _open_sixth_form_import_dialog(parent_dialog, fields):
         )
         return
 
+    # Who applied *here*, per UCAS — not "everyone in Year 13". The
+    # decision on the choice is what makes someone admissible, and this
+    # scope also excludes learners who chose other universities.
     try:
-        rows = sf_students.list_year_13_students()
+        applicants = _ucas_applicants()
     except Exception as e:
-        logger.exception("list_year_13_students failed")
+        logger.exception("Could not load UCAS applicants")
         messagebox.showerror(
-            _t('gui.learners.students.student_crud_gui.importers.dialogs.import_from_sixth_form_system', default="Import from Sixth Form System"),
-            f"Could not load Year 13 students: {e}",
+            _import_title(),
+            f"Could not load UCAS applicants: {e}",
             parent=parent_dialog,
         )
         return
 
-    if not rows:
+    if not applicants:
         messagebox.showinfo(
-            _t('gui.learners.students.student_crud_gui.importers.dialogs.import_from_sixth_form_system', default="Import from Sixth Form System"),
-            _t('gui.learners.students.student_crud_gui.importers.dialogs.no_active_year_13_students_were_found_in_the_sixth_form_database', default="No active Year 13 students were found in the sixth-form "
-            "database. (Looking for enrolments with year_group=13 and "
-            "status='Enrolled'.)"),
+            _import_title(),
+            "No UCAS applicants name this university yet.\n\n"
+            "Applicants appear here once a learner lists this university "
+            "as a choice in the sixth form's UCAS module.",
             parent=parent_dialog,
         )
         return
+
+    # Join each applicant to the sixth form's own readiness assessment.
+    # An applicant with no sixth-form record still lists — they simply
+    # have no handover to check, and the manual route can still take them.
+    rows = []
+    for applicant in applicants:
+        readiness = None
+        # The sixth form's handover checks only describe sixth-form
+        # learners. An FE or apprenticeship applicant is assessed by their
+        # own route, so leave readiness unset rather than reporting a
+        # sixth-form verdict about somebody who was never there.
+        if applicant.source_system == "sixth_form":
+            try:
+                readiness = handover_eligibility.assess_id(applicant.student_id)
+            except Exception:
+                logger.debug("Readiness lookup failed for %s",
+                             applicant.student_id, exc_info=True)
+        student = None
+        if applicant.source_system == "sixth_form":
+            try:
+                from education_system.systems.sixth_form.domain.learners.students import (
+                    students as _sf_students,
+                )
+                student = _sf_students.get_student(applicant.student_id)
+            except Exception:
+                logger.debug("No sixth-form record for %s",
+                             applicant.student_id, exc_info=True)
+        rows.append((applicant, student, readiness))
+
+    # Destination-side check, folded in as one more advisory/blocking
+    # reason per student. Done once here rather than per selection so the
+    # duplicate warning is visible in the list, not only after clicking.
+    by_id = {}
+    admissions_side = _existing_university_applications(
+        [a.student_id for a, _s, _r in rows])
+    for applicant, student, readiness in rows:
+        journey_id, application = admissions_side.get(
+            applicant.student_id, (None, None))
+        by_id[applicant.student_id] = (applicant, student, readiness,
+                                       journey_id, application)
 
     picker = tk.Toplevel(parent_dialog)
-    picker.title(_t('gui.learners.students.student_crud_gui.importers.windows.import_from_sixth_form_system_year_13', default="Import from Sixth Form System — Year 13"))
-    picker.geometry("820x520")
+    picker.title(_t(
+        'gui.learners.students.student_crud_gui.importers.windows.admit_from_ucas',
+        default="Admit from UCAS — applicants to this university"))
+    picker.geometry("1120x640")
+    picker.minsize(960, 540)
     picker.transient(parent_dialog)
     try:
         picker.grab_set()
     except tk.TclError:
         pass
 
+    ready_count = sum(1 for _a, _s, r in rows if r is not None and r.ready)
+    staged_count = sum(1 for v in by_id.values() if v[4])
     header = ttk.Frame(picker, padding=(12, 10, 12, 4))
     header.pack(fill=tk.X)
     ttk.Label(
         header,
-        text=(_t('gui.learners.students.student_crud_gui.importers.labels.year_13_students_in_the_sixth_form_database_pick_one_and_click_i', default="Year 13 students in the sixth-form database. "
-              "Pick one and click Import to pre-fill the form.")),
-        font=('Arial', 10),
+        text=(f"{len(rows)} UCAS applicant(s) to this university; "
+              f"{ready_count} ready to hand over, {staged_count} with an "
+              f"admission application already staged.\n"
+              f"Where an application exists and is ready, Admit uses it — "
+              f"the student is created from the accepted choice with "
+              f"nothing to fill in. Otherwise the form below is pre-filled "
+              f"from the UCAS choice and the sixth-form handover."),
+        font=('Arial', 10), wraplength=990, justify=tk.LEFT,
     ).pack(side=tk.LEFT)
 
-    body = ttk.Frame(picker, padding=(12, 4, 12, 12))
+    body = ttk.Frame(picker, padding=(12, 4, 12, 4))
     body.pack(fill=tk.BOTH, expand=True)
 
-    cols = ("student_id", "name", "title", "gender", "dob")
+    cols = ("status", "source", "student_id", "name", "decision", "course",
+            "issues")
     headings = {
-        "student_id": "Student ID",
+        "status":     "Status",
+        "source":     "From",
+        "student_id": "Applicant",
         "name":       "Name",
-        "title":      "Title",
-        "gender":     "Gender",
-        "dob":        "Date of birth",
+        "decision":   "Decision",
+        "course":     "Course applied for",
+        "issues":     "Outstanding",
     }
-    widths = {"student_id": 110, "name": 260,
-              "title": 80, "gender": 90, "dob": 120}
+    widths = {"status": 85, "source": 115, "student_id": 100, "name": 175,
+              "decision": 175, "course": 215, "issues": 230}
 
     tree = ttk.Treeview(body, columns=cols, show='headings',
-                         selectmode='browse')
+                         selectmode='browse', height=12)
     for c in cols:
         tree.heading(c, text=headings[c])
         tree.column(c, width=widths[c],
-                     anchor=tk.W if c in ('student_id', 'name')
+                     anchor=tk.W if c in ('student_id', 'name', 'course',
+                                          'issues')
                                   else tk.CENTER)
     vsb = ttk.Scrollbar(body, orient='vertical', command=tree.yview)
     tree.configure(yscrollcommand=vsb.set)
     tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     vsb.pack(side=tk.RIGHT, fill=tk.Y)
+    tree.tag_configure("blocked", foreground="#8b0000")
+    tree.tag_configure("check", foreground="#8a6d00")
+    tree.tag_configure("ready", foreground="#14532d")
 
-    for s in rows:
+    tree.tag_configure("supported", foreground="#0b5394")
+    # Louder than "supported": this learner is off their college's roll
+    # and waiting on us, which is the one state on this screen that gets
+    # worse on its own.
+    tree.tag_configure("awaiting", foreground="#8a6d00")
+
+    for sid, (applicant, student, readiness, _jid, application) in by_id.items():
+        blocked = bool(_import_blockers(readiness))
+        outstanding = []
+        if readiness is not None:
+            outstanding = [c.label for c in _import_blockers(readiness)]
+            outstanding += [c.label for c in readiness.warnings]
+        else:
+            outstanding.append("no sixth-form record to check")
+        staged = bool(application and not application.get("converted_student_id"))
+        if staged:
+            outstanding.insert(0, f"application #{application['application_id']} staged")
+
+        if application and application.get("converted_student_id"):
+            status, tag = "Enrolled", "check"
+        elif _awaiting_admission(readiness):
+            # Handed over and never admitted. The sixth form names its
+            # half of this failure (Stranded) and offers a retry; from
+            # here the learner was indistinguishable from anyone else in
+            # the list, so nobody could tell that the college had already
+            # let them go and was waiting on us.
+            status, tag = "Awaiting admission", "awaiting"
+        elif staged:
+            # The supported route is available for this person: say so
+            # rather than reporting it as an obstacle.
+            status, tag = "Admit", "supported"
+        elif blocked:
+            status = readiness.status_label if readiness else "Blocked"
+            tag = "blocked"
+        elif outstanding:
+            status, tag = (readiness.status_label if readiness else "Check"), "check"
+        else:
+            status, tag = (readiness.status_label if readiness else "Ready"), "ready"
+
+        decision = applicant.decision_status or "—"
+        if applicant.final_decision:
+            decision = f"{decision} · {applicant.final_decision}"
+
         tree.insert(
-            "", "end", iid=s.student_id,
-            values=(s.student_id, s.full_name,
-                      s.title or "—",
-                      s.gender or "—",
-                      s.date_of_birth or "—"),
+            "", "end", iid=sid,
+            values=(status, applicant.source_label, sid,
+                      applicant.student_name or
+                      (student.full_name if student else "—"),
+                      decision, applicant.course_label,
+                      ", ".join(outstanding) or "—"),
+            tags=(tag,),
         )
 
-    footer = ttk.Frame(picker, padding=(12, 0, 12, 12))
+    detail_frame = ttk.LabelFrame(picker, text="Handover checks",
+                                   padding=(10, 6))
+    detail_frame.pack(fill=tk.X, padx=12, pady=(0, 4))
+    detail = tk.Text(detail_frame, height=7, wrap=tk.WORD,
+                      font=("Courier", 9), relief=tk.FLAT)
+    detail.configure(state="disabled")
+    detail.pack(fill=tk.BOTH, expand=True)
+
+    def _show_detail(_event=None):
+        sel = tree.selection()
+        detail.configure(state="normal")
+        detail.delete("1.0", tk.END)
+        if sel and sel[0] in by_id:
+            applicant, _student, readiness, journey_id, application = by_id[sel[0]]
+            detail.insert(
+                tk.END,
+                f"UCAS  {applicant.course_code or '—'} {applicant.course_name}"
+                f"  ·  {applicant.decision_status}"
+                + (f"  ·  {applicant.final_decision}"
+                   if applicant.final_decision else "")
+                + (f"  ·  entry {applicant.entry_year}"
+                   if applicant.entry_year else "") + "\n")
+            if readiness is None:
+                detail.insert(
+                    tk.END,
+                    "!   No sixth-form record for this applicant, so the "
+                    "handover checks cannot run.\n")
+            for c in (readiness.checks if readiness else ()):
+                if not c.passed and c.key in _IMPORT_EXEMPT_CHECKS:
+                    # Failing here is the normal state at import time,
+                    # not an objection to importing. Reporting it with a
+                    # ✗ told the operator to go and fix the one thing
+                    # that had to have happened before they could start.
+                    detail.insert(
+                        tk.END,
+                        f"OK  {c.label}: {c.detail}\n"
+                        "    (expected here — the handover is what this "
+                        "screen imports)\n")
+                    continue
+                mark = "OK  " if c.passed else ("✗   " if c.blocking
+                                                 else "!   ")
+                detail.insert(tk.END, f"{mark}{c.label}: {c.detail}\n")
+            if application:
+                converted = application.get("converted_student_id")
+                detail.insert(
+                    tk.END,
+                    f"{'OK  ' if converted else '!   '}Existing application: "
+                    f"#{application['application_id']} "
+                    f"({application.get('status') or 'unknown'})"
+                    + (f", already enrolled as {converted}\n" if converted
+                       else " — complete that admission instead of "
+                            "enrolling a second record\n"))
+            if journey_id:
+                detail.insert(tk.END, f"    journey {journey_id}\n")
+        detail.configure(state="disabled")
+
+    tree.bind("<<TreeviewSelect>>", _show_detail)
+
+    # Right to study is the one required condition the sixth form cannot
+    # answer — see handover_eligibility.RIGHT_TO_STUDY_NOTE. Rather than
+    # carry it as a check that fails for everybody, it is an explicit
+    # acknowledgement the operator must give before Import will run. The
+    # supported route records it as an admissions requirement and gates
+    # conversion on it; this route creates an active student outright, so
+    # the acknowledgement is the only thing standing in for that gate.
+    ack_frame = ttk.Frame(picker, padding=(12, 0, 12, 0))
+    ack_frame.pack(fill=tk.X)
+    rts_ack = tk.BooleanVar(value=False)
+    ttk.Checkbutton(
+        ack_frame, variable=rts_ack,
+        text=(handover_eligibility.RIGHT_TO_STUDY_NOTE
+              + " I will complete it for this student."),
+    ).pack(side=tk.LEFT)
+
+    footer = ttk.Frame(picker, padding=(12, 6, 12, 12))
     footer.pack(fill=tk.X)
-    info = ttk.Label(footer, text="", foreground="#666")
+    info = ttk.Label(footer, text="", foreground="#666", wraplength=600,
+                      justify=tk.LEFT)
     info.pack(side=tk.LEFT)
 
     def _do_import():
@@ -190,70 +657,187 @@ def _open_sixth_form_import_dialog(parent_dialog, fields):
             info.config(text=_t('gui.learners.students.student_crud_gui.importers.text.select_a_student_first', default="Select a student first."))
             return
         sid = sel[0]
-        student = next((s for s in rows if s.student_id == sid), None)
-        if student is None:
+        entry = by_id.get(sid)
+        if entry is None:
             info.config(text=_t('gui.learners.students.student_crud_gui.importers.text.selection_lost_refresh_the_list', default="Selection lost — refresh the list."))
             return
-        # Remember the origin id on the parent dialog so the eventual
-        # Save handler can call mark_transferred() against the right
-        # sixth-form row.
+        applicant, student, readiness, journey_id, application = entry
+
+        # ── The supported route, when it is available ───────────────
+        # An application that is staged and ready enrols through
+        # admissions: everything comes off the accepted choice, the
+        # checks actually run, and there is no form to complete. Only
+        # fall through to the manual pre-fill when that is not possible.
+        if application and not application.get("converted_student_id"):
+            new_id = _convert_via_admissions(
+                application["application_id"], picker)
+            if new_id:
+                # They are a student here now, so their application to us
+                # is over: take it out of UCAS rather than leaving them in
+                # this picker as a permanent "Enrolled" row.
+                _clear_ucas_application(sid, new_id,
+                                        actor=_actor_name(parent_dialog))
+                picker.destroy()
+                return
+            # _convert_via_admissions has already explained why not; the
+            # operator can still use the manual route below.
+            if not messagebox.askyesno(
+                    _import_title(),
+                    "Create the student manually instead, bypassing the "
+                    "admissions checks?",
+                    parent=picker, icon="warning"):
+                return
+
+        if application and application.get("converted_student_id"):
+            enrolled_as = application["converted_student_id"]
+            exists = _university_student_exists(enrolled_as)
+            if not exists:
+                # "Enrolled" on the application, but no student record to
+                # show for it. Saying only "already enrolled" strands the
+                # operator: the record they are told about cannot be found.
+                messagebox.showerror(
+                    _import_title(),
+                    f"{applicant.student_name}'s application is marked "
+                    f"enrolled as {enrolled_as}, but no student with that "
+                    f"id exists here.\n\n"
+                    "The application and the student record disagree — fix "
+                    "the application in Admissions (or clear the conversion "
+                    "on it) before admitting them again, so this person "
+                    "does not end up with two records.",
+                    parent=picker)
+                return
+            # Genuinely enrolled. Offer the clear-down, because this row is
+            # otherwise stuck in the picker for good.
+            if messagebox.askyesno(
+                    _import_title(),
+                    f"{applicant.student_name} is already enrolled as "
+                    f"{enrolled_as}.\n\n"
+                    "Remove their UCAS application to this university so "
+                    "they stop appearing here?",
+                    parent=picker):
+                summary = _clear_ucas_application(
+                    sid, enrolled_as, actor=_actor_name(parent_dialog))
+                _report_ucas_clear(summary, picker)
+                picker.destroy()
+            return
+
+        if student is None or readiness is None:
+            messagebox.showerror(
+                _import_title(),
+                f"{applicant.student_name} has no sixth-form record, so "
+                "there is nothing to pre-fill from. Create the student "
+                "manually, or complete their admission in Admissions.",
+                parent=picker)
+            return
+
+        if not rts_ack.get():
+            info.config(
+                text="Tick the right-to-study acknowledgement before "
+                     "importing.")
+            return
+
+        # Hard stop. These are the failures the platform can positively
+        # prove, and every one of them describes a learner who should not
+        # become a student here today.
+        if _import_blockers(readiness):
+            messagebox.showerror(
+                _import_title(),
+                f"{student.full_name} cannot be handed over yet:\n\n"
+                + "\n".join(f"  • {c.label} — {c.detail}"
+                             for c in _import_blockers(readiness))
+                + "\n\nResolve these in the sixth-form system first.",
+                parent=picker,
+            )
+            return
+
+        # A staged application was already offered — and declined — as the
+        # supported route above, so by here the operator has chosen the
+        # manual path knowingly.
+        if readiness.warnings:
+            proceed = messagebox.askyesno(
+                _import_title(),
+                f"{student.full_name} is importable, but these are "
+                f"outstanding:\n\n"
+                + "\n".join(f"  • {c.label} — {c.detail}"
+                             for c in readiness.warnings)
+                + "\n\nImport anyway?",
+                parent=picker, icon="warning",
+            )
+            if not proceed:
+                return
+
+        # Everything the save handler needs to finish the transfer without
+        # re-reading the sixth form: the origin id, the journey it anchors,
+        # any application to attach to, and the *released* payload — built
+        # through the same handover spec the bus route uses, so consent and
+        # restricted-field rules apply to the manual route too.
+        released = None
         try:
-            parent_dialog._sixth_form_origin_id = student.student_id
+            released = university_handover.build(student)
         except Exception:
             logger.exception(
-                "Could not stash sixth-form origin id on dialog")
+                "Could not build the handover payload for %s", sid)
+        try:
+            parent_dialog._sixth_form_origin_id = student.student_id
+            parent_dialog._sixth_form_journey_id = journey_id
+            parent_dialog._sixth_form_application_id = (
+                application["application_id"] if application else None)
+            parent_dialog._sixth_form_handover = released
+        except Exception:
+            logger.exception(
+                "Could not stash sixth-form handover state on dialog")
+
+        record = readiness.record
+        identity = record.get("student_identity") or {}
+        destination = record.get("confirmed_destination") or {}
         try:
             # Pre-fill the parent form. Use _safe_entry_insert helper
             # for entries; combobox uses .set() which is safe.
             if student.title and 'title' in fields:
                 _safe_set_combobox(fields['title'], student.title)
-            if 'first_name' in fields:
-                fields['first_name'].delete(0, tk.END)
-                _safe_entry_insert(fields['first_name'],
-                                     student.first_name or "")
-            if 'middle_name' in fields:
-                fields['middle_name'].delete(0, tk.END)
-                _safe_entry_insert(fields['middle_name'],
-                                     student.middle_name or "")
-            if 'last_name' in fields:
-                fields['last_name'].delete(0, tk.END)
-                _safe_entry_insert(fields['last_name'],
-                                     student.last_name or "")
+            for key, value in (
+                ('first_name', identity.get("first_name")
+                               or student.first_name),
+                ('middle_name', identity.get("middle_name")
+                                or student.middle_name),
+                ('last_name', identity.get("last_name")
+                              or student.last_name),
+            ):
+                if key in fields:
+                    fields[key].delete(0, tk.END)
+                    _safe_entry_insert(fields[key], value or "")
             if student.gender and 'gender' in fields:
                 _safe_set_combobox(fields['gender'], student.gender)
-            if student.date_of_birth and 'dob' in fields:
+            dob = identity.get("date_of_birth") or student.date_of_birth
+            if dob and 'dob' in fields:
                 # The DOB widget is now a _DOBPicker; use its set()
                 # rather than delete/insert on a plain Entry.
                 try:
-                    fields['dob'].set(student.date_of_birth)
+                    fields['dob'].set(dob)
                 except Exception:
                     # Fallback for the legacy Entry just in case.
                     fields['dob'].delete(0, tk.END)
-                    _safe_entry_insert(fields['dob'],
-                                         student.date_of_birth)
+                    _safe_entry_insert(fields['dob'], dob)
         except Exception as e:
             logger.exception(
                 "Pre-filling form from sixth-form student %s failed", sid)
             messagebox.showerror(
-                _t('gui.learners.students.student_crud_gui.importers.dialogs.import_from_sixth_form_system', default="Import from Sixth Form System"),
+                _import_title(),
                 f"Could not pre-fill the form: {e}",
                 parent=picker,
             )
             return
 
-        # Pre-fill the three A-level subjects + grades (where available) from
-        # the sixth-form record so the UCAS tariff / course eligibility come
-        # from the student's real results rather than being re-keyed. Subjects
-        # with no grade on record are left blank for the user to complete.
+        course_set = _select_course_for(fields, destination.get("course_code"))
+
+        # Pre-fill the three A-level subjects + grades from the handover
+        # record so the UCAS tariff / course eligibility come from the
+        # student's real results rather than being re-keyed. Subjects with
+        # no grade on record are left blank for the user to complete.
         filled_grades = 0
         sf_subjects = list(getattr(student, "subjects", []) or [])
         try:
-            grade_by_subject = _sixth_form_alevel_grades(
-                student.student_id, sf_subjects)
-            norm_grades = {
-                (subj or "").strip().lower(): grade
-                for subj, grade in grade_by_subject.items()
-            }
+            norm_grades = _qualification_grades(record)
             for i in range(1, 4):
                 subj = sf_subjects[i - 1] if i - 1 < len(sf_subjects) else ""
                 if f"alevel_subj_{i}" in fields:
@@ -272,39 +856,57 @@ def _open_sixth_form_import_dialog(parent_dialog, fields):
                     fields["alevel_grade_3"].event_generate(
                         "<<ComboboxSelected>>")
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
         except Exception:
             logger.exception(
                 "Pre-filling A-levels from sixth-form student %s failed", sid)
 
         logger.info(
             "Imported sixth-form student %s (%s) into university "
-            "create-student dialog (fields pre-filled: title=%s, "
-            "gender=%s, dob=%s, a_levels=%d/%d subjects, grades=%d)",
-            student.student_id, student.full_name,
-            bool(student.title), bool(student.gender),
-            bool(student.date_of_birth),
-            len(sf_subjects), 3, filled_grades,
+            "create-student dialog: journey=%s, application=%s, "
+            "course pre-selected=%s, a_levels=%d/%d subjects, grades=%d, "
+            "handover fields=%s",
+            student.student_id, student.full_name, journey_id,
+            application["application_id"] if application else None,
+            course_set, len(sf_subjects), 3, filled_grades,
+            ", ".join(released.included) if released else "none",
         )
+
+        notes = []
         if sf_subjects and filled_grades < len(sf_subjects):
+            notes.append(
+                f"{len(sf_subjects) - filled_grades} A-level grade(s) were "
+                f"not on record — please complete them before saving.")
+        if destination.get("course_code") and not course_set:
+            notes.append(
+                f"Their firm choice is course "
+                f"{destination['course_code']}, which is not in this "
+                f"university's catalogue — pick the matching course.")
+        if released and released.missing_required:
+            notes.append(
+                "The handover is missing required field(s): "
+                + ", ".join(released.missing_required) + ".")
+        if released and released.withheld_no_consent:
+            notes.append(
+                "Withheld for lack of consent: "
+                + ", ".join(released.withheld_no_consent) + ".")
+        if notes:
             messagebox.showinfo(
-                _t('gui.learners.students.student_crud_gui.importers.dialogs.import_from_sixth_form_system', default="Import from Sixth Form System"),
-                "Imported the student's A-level subjects, but "
-                f"{len(sf_subjects) - filled_grades} grade(s) were not on "
-                "record in the sixth-form system. Please complete the missing "
-                "A-level grade(s) before saving.",
-                parent=parent_dialog,
-            )
+                _import_title(), "\n\n".join(notes), parent=parent_dialog)
         picker.destroy()
 
     btns = ttk.Frame(footer)
     btns.pack(side=tk.RIGHT)
     ttk.Button(btns, text=_t('gui.learners.students.student_crud_gui.importers.buttons.cancel', default="Cancel"),
                 command=picker.destroy).pack(side=tk.RIGHT, padx=4)
-    ttk.Button(btns, text=_t('gui.learners.students.student_crud_gui.importers.buttons.import', default="Import"),
+    ttk.Button(btns, text=_t('gui.learners.students.student_crud_gui.importers.buttons.admit', default="Admit"),
                 command=_do_import).pack(side=tk.RIGHT, padx=4)
 
     tree.bind("<Double-Button-1>", lambda _e: _do_import())
+    if by_id:
+        first = next(iter(by_id))
+        tree.selection_set(first)
+        _show_detail()
 
 
 def _open_bulk_csv_import_dialog(self, parent_dialog):
@@ -616,7 +1218,7 @@ def _open_bulk_csv_import_dialog(self, parent_dialog):
                         cur.execute(
                             "UPDATE courses SET current_enrollment = "
                             "current_enrollment + 1 "
-                            "WHERE course_code = ? AND status = 'active'",
+                            "WHERE course_code = ? AND LOWER(COALESCE(status, 'active')) = 'active'",
                             (course,),
                         )
                     conn.commit()
@@ -668,7 +1270,7 @@ def _open_bulk_csv_import_dialog(self, parent_dialog):
                 self.view_students()
             self.refresh_advanced_search()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         if ok_rows and not err_rows:
             win.destroy()
 

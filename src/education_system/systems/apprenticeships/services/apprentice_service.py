@@ -17,14 +17,21 @@ from datetime import date
 from typing import Any
 
 from education_system.systems.apprenticeships import config
-from education_system.systems.apprenticeships.domain.apprentices import status as lifecycle
+from education_system.systems.apprenticeships.domain.apprentices import (
+    breaks,
+    lifecycle,
+    withdrawals,
+)
 from education_system.systems.apprenticeships.domain.apprentices.models import (
     Apprentice,
     ApprenticeSummary,
     ValidationError,
     planned_end_for,
+    validate_age_at_start,
+    validate_date_of_birth,
     validate_uln,
 )
+from education_system.systems.apprenticeships.domain.records import audit
 from education_system.systems.apprenticeships.infrastructure.persistence.repositories import (
     apprentice_repository as repo,
 )
@@ -188,6 +195,8 @@ def create_apprentice(actor: Actor, payload: dict[str, Any]) -> Apprentice:
 
     created = repo.get(apprentice_id)
     assert created is not None
+    _register_journey(created)
+    _sync_login_links(apprentice_id)
     return created
 
 
@@ -208,14 +217,16 @@ def update_apprentice(actor: Actor, apprentice_id: int, payload: dict[str, Any])
     data = _validate(payload, existing=existing)
     data.pop("status", None)
     repo.update(apprentice_id, data)
+    updated = repo.get(apprentice_id)
+    assert updated is not None
     compliance_repository.record(
         action="update", entity="apprentice", entity_id=apprentice_id,
         actor=actor.username, actor_role=actor.role,
         detail=", ".join(sorted(data)) or "no change",
+        changes=audit.diff(existing, updated, fields=sorted(data)),
     )
-
-    updated = repo.get(apprentice_id)
-    assert updated is not None
+    if (existing.username or "").strip().lower() != (updated.username or "").strip().lower():
+        _sync_login_links(apprentice_id, previous_username=existing.username)
     return updated
 
 
@@ -226,12 +237,22 @@ def change_status(
     *,
     reason: str | None = None,
     effective_date: str | None = None,
+    notes: str | None = None,
+    expected_return: str | None = None,
+    last_activity_date: str | None = None,
 ) -> Apprentice:
     """Move an apprentice through the lifecycle.
 
     The transition rules live in the domain; this adds the side effects
-    each move implies — closing a break on return, stamping an end date
-    on completion — so no caller has to remember them.
+    each move implies — opening and closing break records, recording a
+    withdrawal, stamping or clearing the end date — so no caller has to
+    remember them. Everything is checked before anything is written.
+
+    ``notes`` is free-text detail for a break or withdrawal, whose
+    ``reason`` is filed under one of the configured categories.
+    ``expected_return`` applies to a break; ``last_activity_date`` — the
+    last day of learning, defaulting to the effective date — to a
+    withdrawal, and becomes the actual end date.
     """
     require(actor, "apprentice.manage")
     existing = repo.get(apprentice_id)
@@ -241,26 +262,52 @@ def change_status(
 
     lifecycle.require_transition(existing.status, new_status, reason)
     when = _validate_date(effective_date, "Effective date") or date.today().isoformat()
+    category, detail = lifecycle.split_reason(new_status, reason, notes)
 
-    end_date: str | None = None
-    if new_status in ("Completed", "Withdrawn", "Transferred"):
-        end_date = when
-    if existing.status == "Break in Learning" and new_status == "On Programme":
+    end_effect = lifecycle.end_date_change(existing.status, new_status)
+    end_date = when if end_effect == "set" else None
+    expected: str | None = None
+    last_day: str | None = None
+    if new_status == "Break in Learning":
+        expected = _validate_date(expected_return, "Expected return date")
+        breaks.validate_new_break(
+            start_date=when, expected_return=expected, programme_start=existing.start_date
+        )
+    if new_status == "Withdrawn":
+        last_day = _validate_date(last_activity_date, "Last day of learning") or when
+        withdrawals.require_not_a_transfer(
+            category,
+            transfer_allowed=lifecycle.can_transition(existing.status, "Transferred"),
+        )
+        withdrawals.validate_withdrawal(
+            withdrawal_date=when, last_activity_date=last_day, start_date=existing.start_date
+        )
+        end_date = last_day
+
+    # Leaving a break in any direction closes it — returning, withdrawing
+    # or transferring alike — or it would stay open forever.
+    if existing.status == "Break in Learning":
         repo.end_break(apprentice_id, when)
     if new_status == "Break in Learning":
         repo.add_break(
             apprentice_id,
             start_date=when,
-            expected_return=None,
-            reason=reason or "Not stated",
+            expected_return=expected,
+            reason=category,
+            notes=detail,
         )
-    if new_status == "Withdrawn":
+    audit_note = ""
+    if new_status == "Withdrawn" and last_day is not None:
         repo.add_withdrawal(
             apprentice_id,
             withdrawal_date=when,
-            reason=reason or "Not stated",
+            last_activity_date=last_day,
+            reason=category,
+            notes=detail,
             recorded_by=actor.username,
         )
+        if withdrawals.within_qualifying_period(existing.start_date, last_day):
+            audit_note = " — left inside the funding qualifying period"
 
     repo.set_status(
         apprentice_id,
@@ -270,20 +317,24 @@ def change_status(
         effective_date=when,
         actor=actor.username,
         actual_end_date=end_date,
+        clear_end_date=end_effect == "clear",
     )
+    updated = repo.get(apprentice_id)
+    assert updated is not None
     compliance_repository.record(
         action="withdraw" if new_status == "Withdrawn" else "update",
         entity="apprentice", entity_id=apprentice_id,
         actor=actor.username, actor_role=actor.role,
-        detail=f"{existing.status} -> {new_status}" + (f" ({reason})" if reason else ""),
+        detail=f"{existing.status} -> {new_status}" + (f" ({reason})" if reason else "")
+        + audit_note,
+        changes=audit.diff(existing, updated, fields=("status", "actual_end_date")),
     )
     logger.info(
         "Apprentice %s moved %s -> %s by %s",
         apprentice_id, existing.status, new_status, actor.username,
     )
-
-    updated = repo.get(apprentice_id)
-    assert updated is not None
+    _lifecycle_events(existing, updated, reason=reason, category=category,
+                      when=when, end_date=end_date)
     return updated
 
 
@@ -314,10 +365,19 @@ def start_programme(
     programme = programme_repository.get(target_programme)
     if programme is None:
         raise ValidationError(f"No programme with id {target_programme}")
+    # New starts go on an Active version only. Someone already recorded
+    # against an older version keeps it, which is the point of versioning.
+    if programme.status != "Active" and target_programme != existing.programme_id:
+        version = getattr(programme, "version", None)
+        raise ValidationError(
+            f"{programme.title}{f' v{version}' if version else ''} is {programme.status} — "
+            "only an Active programme takes new starts"
+        )
 
     start = _validate_date(start_date, "Start date")
     if start is None:
         raise ValidationError("Start date is required")
+    validate_age_at_start(existing.date_of_birth, start)
 
     planned_end = planned_end_for(start, programme.duration_months, existing.weekly_hours)
     repo.update(apprentice_id, {
@@ -325,11 +385,31 @@ def start_programme(
         "start_date": start,
         "planned_end_date": planned_end,
     })
-    return change_status(
+    started = change_status(
         actor, apprentice_id, "On Programme",
         reason=f"Started {programme.title}",
         effective_date=effective_date or start,
     )
+    _publish("EVENT_APPRENTICESHIP_STARTED", apprentice_id,
+             key=f"apprenticeship.started:{apprentice_id}:{start}",
+             programme_id=target_programme, programme=programme.title,
+             programme_reference=getattr(programme, "reference", None),
+             level=getattr(programme, "level", None), start_date=start,
+             planned_end_date=planned_end, employer_id=started.employer_id)
+    try:
+        from education_system.platform.cross_system import enrolments
+        jid = _journey_id(apprentice_id)
+        if jid:
+            # Fills blanks only: the programme and start the platform
+            # enrolment was created without.
+            enrolments.link_local_enrolment(
+                journey_id=jid, system=_SYSTEM,
+                local_student_id=str(apprentice_id), programme=programme.title,
+                start_date=start, source_system=_SYSTEM)
+    except Exception:
+        logger.debug("Programme annotation failed for apprentice %s",
+                     apprentice_id, exc_info=True)
+    return started
 
 
 def assign_tutor(actor: Actor, apprentice_id: int, tutor_id: int | None) -> Apprentice:
@@ -341,13 +421,14 @@ def assign_tutor(actor: Actor, apprentice_id: int, tutor_id: int | None) -> Appr
     require_apprentice_access(actor, existing)
 
     repo.update(apprentice_id, {"tutor_id": tutor_id})
+    updated = repo.get(apprentice_id)
+    assert updated is not None
     compliance_repository.record(
         action="update", entity="apprentice", entity_id=apprentice_id,
         actor=actor.username, actor_role=actor.role,
         detail=f"Tutor set to {tutor_id}" if tutor_id else "Tutor cleared",
+        changes=audit.diff(existing, updated, fields=("tutor_id",)),
     )
-    updated = repo.get(apprentice_id)
-    assert updated is not None
     return updated
 
 
@@ -380,6 +461,176 @@ def delete_apprentice(actor: Actor, apprentice_id: int, *, reason: str) -> None:
         "Apprentice %s (%s) deleted by %s: %s",
         apprentice_id, existing.full_name, actor.username, reason,
     )
+
+
+# ═════════════════════════════════════════════════════════════════════
+# Cross-system registration and lifecycle events
+# ═════════════════════════════════════════════════════════════════════
+#
+# An apprentice is the same person the platform may already know from
+# school, sixth form or FE. Registering them joins this record to that
+# journey, and the lifecycle events below tell the other systems what
+# happened. Everything here is best-effort: the apprenticeship record is
+# written first and stands whatever the platform does. Nothing formative
+# (portfolio, reviews, KSB judgements) is ever published — only the facts
+# of starting, leaving and completing.
+
+_SYSTEM = "apprenticeships"
+_SOURCE_MODULE = "apprenticeships.services.apprentice_service"
+
+
+def _journey_id(apprentice_id: int) -> str | None:
+    try:
+        from education_system.platform.cross_system import identity_service
+        row = identity_service.find_by_student(_SYSTEM, str(apprentice_id))
+        return row["journey_id"] if row else None
+    except Exception:
+        logger.debug("Journey lookup failed for apprentice %s", apprentice_id,
+                     exc_info=True)
+        return None
+
+
+def _publish(event_attr: str, apprentice_id: int, *, key: str,
+             **payload: Any) -> None:
+    try:
+        from education_system.platform.integrations.external import (
+            cross_system_bus as bus,
+        )
+        jid = _journey_id(apprentice_id)
+        if jid is None:
+            return
+        bus.publish_cross_system(
+            getattr(bus, event_attr), source_system=_SYSTEM,
+            source_module=_SOURCE_MODULE, journey_id=jid,
+            idempotency_key=key, local_student_id=str(apprentice_id),
+            **payload)
+    except Exception:
+        logger.warning("Could not publish %s for apprentice %s (record saved)",
+                       event_attr, apprentice_id, exc_info=True)
+
+
+def _programme_title(programme_id: int | None) -> str | None:
+    if not programme_id:
+        return None
+    try:
+        programme = programme_repository.get(programme_id)
+        return programme.title if programme else None
+    except Exception:
+        return None
+
+
+def _register_journey(apprentice: Apprentice) -> None:
+    """Join an apprentice to the cross-system identity registry.
+
+    Every school-shaped system did this on create; apprenticeships did not,
+    so an apprentice who never came through a transfer had no journey.
+    """
+    try:
+        from education_system.platform.cross_system import person
+        from education_system.systems.apprenticeships.infrastructure.persistence import (
+            schema as _schema,
+        )
+        person.register_local_learner(
+            _SYSTEM, student_id=str(apprentice.apprentice_id),
+            pk=apprentice.apprentice_id, first_name=apprentice.given_name,
+            last_name=apprentice.family_name,
+            date_of_birth=apprentice.date_of_birth,
+            programme=_programme_title(apprentice.programme_id),
+            start_date=apprentice.start_date, source_module=_SOURCE_MODULE,
+            system_db_path=str(_schema.DB_PATH))
+    except Exception:
+        logger.debug("Journey registration skipped for apprentice %s",
+                     apprentice.apprentice_id, exc_info=True)
+
+
+def _sync_login_links(apprentice_id: int, *, previous_username: str | None = None) -> None:
+    """Link the apprentice's login to their learner record (``login_links``).
+
+    Runs after registration so the journey exists to link to, and never
+    raises: like everything in this section, the record stands regardless.
+    """
+    from education_system.systems.apprenticeships.services import login_links
+
+    login_links.try_sync_apprentice(apprentice_id, previous_username=previous_username)
+
+
+def _end_platform_enrolment(apprentice_id: int, *, status: str, reason: str,
+                            end_date: str | None,
+                            outcome: str | None = None) -> None:
+    try:
+        from education_system.platform.cross_system import enrolments
+        enrolments.end_local_enrolment(
+            _SYSTEM, str(apprentice_id), reason=reason, status=status,
+            end_date=end_date, outcome=outcome)
+    except Exception:
+        logger.debug("Could not close platform enrolment for apprentice %s",
+                     apprentice_id, exc_info=True)
+
+
+def _latest_epa_grade(apprentice_id: int) -> str | None:
+    """The published end-point assessment outcome, if one is recorded."""
+    try:
+        from education_system.systems.apprenticeships.infrastructure.persistence import (
+            schema as _schema,
+        )
+        with _schema.connect() as conn:
+            row = conn.execute(
+                "SELECT grade FROM epa_results WHERE apprentice_id = ? "
+                "ORDER BY assessed_date DESC, result_id DESC LIMIT 1",
+                (apprentice_id,)).fetchone()
+        return row["grade"] if row else None
+    except Exception:
+        return None
+
+
+def _lifecycle_events(before: Apprentice, after: Apprentice, *,
+                      reason: str | None, category: str | None,
+                      when: str, end_date: str | None) -> None:
+    """Publish what a status change means to the rest of the platform."""
+    aid = after.apprentice_id
+    new = after.status
+    if new == "Withdrawn":
+        _publish("EVENT_STUDENT_WITHDRAWN", aid,
+                 key=f"student.withdrawn:{_SYSTEM}:{aid}:{when}",
+                 reason=category or reason, withdrawal_date=when,
+                 last_day_of_learning=end_date, from_status=before.status)
+        _end_platform_enrolment(aid, status="withdrawn",
+                                reason=category or reason or "withdrawn",
+                                end_date=end_date or when)
+    elif new == "Transferred":
+        _end_platform_enrolment(aid, status="transferred",
+                                reason=category or reason or "transferred",
+                                end_date=end_date or when)
+    elif new == "Completed":
+        title = _programme_title(after.programme_id)
+        grade = _latest_epa_grade(aid)
+        _publish("EVENT_PROGRAMME_COMPLETED", aid,
+                 key=f"programme.completed:{_SYSTEM}:{aid}:{after.programme_id}",
+                 programme_id=after.programme_id, programme=title,
+                 completion_date=end_date or when, epa_grade=grade)
+        _end_platform_enrolment(aid, status="completed",
+                                reason="completed apprenticeship",
+                                end_date=end_date or when, outcome=grade)
+        try:
+            from education_system.platform.cross_system import qualifications
+            jid = _journey_id(aid)
+            if jid:
+                programme = (programme_repository.get(after.programme_id)
+                             if after.programme_id else None)
+                qualifications.record_qualification(
+                    jid, source_system=_SYSTEM,
+                    title=title or f"Apprenticeship programme {after.programme_id}",
+                    level=getattr(programme, "level", None), grade=grade,
+                    awarded_on=end_date or when,
+                    source_ref=f"apprenticeships:apprentices:{aid}:{after.programme_id}",
+                    qualification_type="Apprenticeship standard",
+                    recorded_by=_SOURCE_MODULE)
+        except Exception:
+            logger.warning("Could not record the apprenticeship award for %s",
+                           aid, exc_info=True)
+    elif new == "On Programme" and before.status in ("Withdrawn", "Transferred"):
+        # Reinstated: a new spell on the platform, like a returning learner.
+        _register_journey(after)
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -462,6 +713,13 @@ def _validate(payload: dict[str, Any], *, existing: Apprentice | None) -> dict[s
     end = data.get("planned_end_date", existing.planned_end_date if existing else None)
     if start and end and end <= start:
         raise ValidationError("Planned end date must be after the start date")
+
+    # Only when one of the two dates is being set, so editing a phone
+    # number is never blocked by an old record the rules now dislike.
+    if "date_of_birth" in data or "start_date" in data:
+        dob = data.get("date_of_birth", existing.date_of_birth if existing else None)
+        validate_date_of_birth(dob, date.today())
+        validate_age_at_start(dob, start)
 
     return data
 

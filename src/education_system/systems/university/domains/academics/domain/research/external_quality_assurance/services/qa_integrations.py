@@ -196,7 +196,7 @@ def draft_tef_narrative(section: str, year: int,
         f"600 words, formal register."
     )
     try:
-        from education_system.systems.university.interfaces.cli.shell.chatbot_integration import (
+        from education_system.systems.university.shell.cli.chatbot_integration import (
             run_completion,  # type: ignore
         )
         text = run_completion(prompt) or ""
@@ -330,6 +330,7 @@ def gdpr_redact_qa(user_id: int) -> int:
             ("ref_environment_statements", "drafted_by"),
         ):
             try:
+                # db-audit: ignore[DBW001] - loop over a literal table
                 cur = conn.execute(
                     f"UPDATE {table} SET {col} = NULL WHERE {col} = ?",
                     (user_id,),

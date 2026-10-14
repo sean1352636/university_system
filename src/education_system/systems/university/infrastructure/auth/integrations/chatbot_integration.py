@@ -205,7 +205,7 @@ def create_chatbot_session(auth_instance, username: str) -> Optional[str]:
     if not auth_instance.current_user or auth_instance.current_user['username'] != username:
         return None
 
-    if not auth_instance.check_permission('access_chatbot'):
+    if not auth_instance.check_permission('use_chat_rooms'):
         return None
 
     # Generate session token
@@ -369,7 +369,7 @@ def launch_chatbot_interface(auth_instance):
         print("You must be logged in to access the chatbot.")
         return
 
-    if not auth_instance.check_permission('access_chatbot'):
+    if not auth_instance.check_permission('use_chat_rooms'):
         print("You don't have permission to access the chatbot.")
         return
 

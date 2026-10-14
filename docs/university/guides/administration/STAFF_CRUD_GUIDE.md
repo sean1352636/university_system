@@ -194,7 +194,7 @@ Staff accounts created through this system:
 ### As Admin:
 ```bash
 # Run the GUI
-python run.py --gui
+python -m education_system --gui
 
 # Login as admin
 # Username: admin
@@ -277,7 +277,7 @@ Your Staff CRUD system is **fully functional** and ready to use!
 ### Step 1: Run the Application
 ```bash
 cd university_system
-python run.py --gui
+python -m education_system --gui
 ```
 
 ### Step 2: Login

@@ -1,9 +1,14 @@
 """Risk assessment and early warning methods for AnalyticsManager."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import make_toplevel
 from datetime import datetime
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -20,7 +25,7 @@ def _open_connection():
             if conn is not None:
                 return raw_conn, conn
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
     return raw_conn, raw_conn
 
 
@@ -103,16 +108,20 @@ class RiskMixin:
                         factors_summary=factors_summary,
                     )
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
             if not at_risk_students:
                 messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.risk.dialogs.at_risk_students', default="At-Risk Students"), _t('gui.academics.grade_tracking.analytics_manager.risk.dialogs.no_students_currently_identified_as_at_risk', default="No students currently identified as at-risk."))
                 return
 
             # Display results window
-            results_window = tk.Toplevel(self.root)
+            results_window = make_toplevel(self.root)
             results_window.title(_t('gui.academics.grade_tracking.analytics_manager.risk.windows.at_risk_students', default="At-Risk Students"))
-            results_window.geometry("900x600")
+            try:
+                from education_system.platform.delivery.gui.window_sizing import center
+                center(results_window, 1200, 800, minsize=(900, 600))
+            except Exception:
+                results_window.geometry("1200x800")
             safe_grab_set(results_window)
 
             ttk.Label(results_window, text=_t('gui.academics.grade_tracking.analytics_manager.risk.labels.at_risk_student_identification', default="At-Risk Student Identification"),
@@ -179,7 +188,7 @@ class RiskMixin:
                 return
 
             # Selection dialog
-            dialog = tk.Toplevel(self.root)
+            dialog = make_toplevel(self.root)
             dialog.title(_t('gui.academics.grade_tracking.analytics_manager.risk.windows.select_student_for_risk_assessment', default="Select Student for Risk Assessment"))
             dialog.geometry("400x500")
             safe_grab_set(dialog)
@@ -665,9 +674,13 @@ class RiskMixin:
                 return
 
             # Display warnings window
-            warning_window = tk.Toplevel(self.root)
+            warning_window = make_toplevel(self.root)
             warning_window.title(_t('gui.academics.grade_tracking.analytics_manager.risk.windows.early_warning_alerts', default="Early Warning Alerts"))
-            warning_window.geometry("900x600")
+            try:
+                from education_system.platform.delivery.gui.window_sizing import center
+                center(warning_window, 1200, 800, minsize=(900, 600))
+            except Exception:
+                warning_window.geometry("1200x800")
             safe_grab_set(warning_window)
 
             ttk.Label(warning_window, text=_t('gui.academics.grade_tracking.analytics_manager.risk.labels.early_warning_alerts', default="Early Warning Alerts"),

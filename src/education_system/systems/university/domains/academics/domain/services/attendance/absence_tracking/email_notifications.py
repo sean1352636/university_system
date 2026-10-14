@@ -405,6 +405,7 @@ class AbsenceEmailService:
         try:
             placeholders = ",".join("?" * len(modules))
             from datetime import date as _date
+            # db-audit: ignore[DBW001] - join of placeholders
             rows = self.db.cur.execute(
                 f"""SELECT date, start_time, end_time, module_code,
                           COALESCE(module_name, module_code), COALESCE(room,'')

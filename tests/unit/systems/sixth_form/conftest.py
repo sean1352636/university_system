@@ -18,9 +18,21 @@ _FEATURE_MODULES = (
     "education_system.systems.sixth_form.domain.academics.class_groups.class_groups",
     "education_system.systems.sixth_form.domain.academics.timetable_optimiser.timetable_optimiser",
     "education_system.systems.sixth_form.domain.assessment.risk_analytics.risk_analytics",
-    "education_system.systems.sixth_form.domain.progression.ucas_workflow.ucas_workflow",
+    "education_system.systems.sixth_form.domain.progression.university.workflow",
     "education_system.systems.sixth_form.domain.governance.automation_rules.automation_rules",
     "education_system.systems.sixth_form.domain.operations.communications.parent_portal.parent_portal",
+    # Creating a parent account sends the welcome email, which writes to
+    # the messages log — redirect it too or the test writes real mail
+    # into the live sixthform.db.
+    "education_system.systems.sixth_form.domain.operations.communications.messages.messages",
+    # ``messages`` carries foreign keys to staff, parent_contacts and
+    # alumni. With ``PRAGMA foreign_keys=ON`` SQLite refuses the INSERT
+    # when a parent table is absent, even for NULL columns — so these are
+    # built from their owning modules rather than stubbed, to keep the
+    # fixture's schema identical to the live one.
+    "education_system.systems.sixth_form.domain.staff.staff",
+    "education_system.systems.sixth_form.domain.operations.communications.parent_contacts.parent_contacts",
+    "education_system.systems.sixth_form.domain.learners.alumni.alumni",
 )
 
 # Input tables the feature modules READ but don't own. We create them
@@ -108,6 +120,19 @@ def feature_db(tmp_path, monkeypatch):
     Returns a namespace with the imported modules and seeded ids.
     """
     db = str(tmp_path / "sixthform.db")
+
+    # The parent portal mirrors every account into the shared auth DB so
+    # parents can use the universal login. Point that at a temp auth.db
+    # too, or creating a portal account in a test would write a real user
+    # into the live one.
+    from education_system.platform.identity.auth.schema import initialise_auth_db
+    from education_system.systems.sixth_form.domain.operations.communications.parent_portal import (
+        shared_auth_mirror,
+    )
+    auth_db = str(tmp_path / "auth.db")
+    initialise_auth_db(auth_db)
+    monkeypatch.setattr(shared_auth_mirror, "AUTH_DB_PATH", auth_db)
+
     mods = {}
     for dotted in _FEATURE_MODULES:
         m = importlib.import_module(dotted)
@@ -120,8 +145,11 @@ def feature_db(tmp_path, monkeypatch):
     # class_groups, and each feature module's own tables).
     mods["students"].init_db()
     mods["class_groups"].init_db()
+    # staff / parent_contacts / alumni before messages — they are the
+    # targets of its foreign keys.
     for key in ("timetable_optimiser", "risk_analytics", "ucas_workflow",
-                "automation_rules", "parent_portal"):
+                "automation_rules", "staff", "parent_contacts", "alumni",
+                "messages", "parent_portal"):
         mods[key].init_db()
 
     conn = sqlite3.connect(db)
@@ -173,7 +201,7 @@ def feature_db(tmp_path, monkeypatch):
 
     conn.commit()
     conn.close()
-    return SimpleNamespace(db=db, mods=mods, s1="S1", s2="S2")
+    return SimpleNamespace(db=db, auth_db=auth_db, mods=mods, s1="S1", s2="S2")
 
 
 @pytest.fixture

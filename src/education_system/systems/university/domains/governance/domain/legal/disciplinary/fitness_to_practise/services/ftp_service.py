@@ -7,6 +7,9 @@ resolve via the shim re-export.
 """
 
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 import sqlite3
 
@@ -29,7 +32,7 @@ def current_username() -> str:
                     or user.get('email')
                     or str(user.get('id') or 'Admin'))
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return 'Admin'
 
 
@@ -119,6 +122,7 @@ class FtPDataAccess:
         placeholders = ", ".join("?" * len(cols))
         conn = self._conn()
         try:
+            # db-audit: ignore[DBW001] - join of placeholders; join over a code-controlled list
             cur = conn.execute(
                 f"INSERT INTO ftp_cases ({', '.join(cols)}) "
                 f"VALUES ({placeholders})", values)

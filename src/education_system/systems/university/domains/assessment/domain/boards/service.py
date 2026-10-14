@@ -138,6 +138,7 @@ def generate_agenda(board_id: int) -> int:
         if board["module_code"]:
             filters.append("sm.module_code = ?")
             params.append(board["module_code"])
+        # db-audit: ignore[DBW001] - join over a code-controlled list
         rows = conn.execute(
             f"""SELECT s.student_id, s.course, s.grade_level,
                        COUNT(sm.id) AS module_count,

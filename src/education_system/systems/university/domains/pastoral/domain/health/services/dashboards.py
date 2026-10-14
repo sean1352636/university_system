@@ -40,7 +40,7 @@ def critical_alerts_dashboard(auth):
     adverse_reactions = cursor.fetchall()
 
     for vaccine, date, first_name, last_name, student_id in adverse_reactions:
-        alerts.append(_t('health_misc.dashboards.adverse_reaction', vaccine=vaccine, first_name=first_name, last_name=last_name, student_id=student_id, date=date))
+        alerts.append(_t('health_misc.dashboards.adverse_reaction', vaccine=vaccine, first_name=first_name, last_name=last_name, student_id=student_id, date=date, default="Adverse Reaction: {date} {first_name} {last_name} {student_id} {vaccine}"))
 
     # Overdue follow-ups
     today = datetime.now().strftime('%Y-%m-%d')
@@ -54,7 +54,7 @@ def critical_alerts_dashboard(auth):
     overdue_followups = cursor.fetchall()
 
     for follow_date, first_name, last_name, student_id, assessment in overdue_followups:
-        alerts.append(_t('health_misc.dashboards.overdue_followup', assessment=assessment, first_name=first_name, last_name=last_name, student_id=student_id, follow_date=follow_date))
+        alerts.append(_t('health_misc.dashboards.overdue_followup', assessment=assessment, first_name=first_name, last_name=last_name, student_id=student_id, follow_date=follow_date, default="Overdue Followup: {assessment} {first_name} {follow_date} {last_name} {student_id}"))
 
     if alerts:
         for alert in alerts:
@@ -66,15 +66,15 @@ def critical_alerts_dashboard(auth):
 
 def generate_custom_report(auth):
     """Generate custom reports based on user criteria"""
-    print(f"\n{_t('health_misc.dashboards.report_generator_title')}")
-    print(_t('health_misc.dashboards.available_reports'))
-    print(f"1. {_t('health_misc.dashboards.student_health_summary')}")
-    print(f"2. {_t('health_misc.dashboards.vaccination_status')}")
-    print(f"3. {_t('health_misc.dashboards.appointment_schedule')}")
-    print(f"4. {_t('health_misc.dashboards.health_condition_analysis')}")
-    print(f"5. {_t('health_misc.dashboards.provider_performance')}")
+    print(f"\n{_t('health_misc.dashboards.report_generator_title', default='===== HEALTH REPORT GENERATOR =====')}")
+    print(_t('health_misc.dashboards.available_reports', default="Available Reports"))
+    print(f"1. {_t('health_misc.dashboards.student_health_summary', default='Student Health Summary')}")
+    print(f"2. {_t('health_misc.dashboards.vaccination_status', default='Vaccination Status')}")
+    print(f"3. {_t('health_misc.dashboards.appointment_schedule', default='Appointment Schedule')}")
+    print(f"4. {_t('health_misc.dashboards.health_condition_analysis', default='Health Condition Analysis')}")
+    print(f"5. {_t('health_misc.dashboards.provider_performance', default='Provider Performance')}")
 
-    choice = input(f"\n{_t('health_misc.dashboards.select_report_type')}").strip()
+    choice = input(f"\n{_t('health_misc.dashboards.select_report_type', default='Select report type: ')}").strip()
 
     if choice == '1':
         from education_system.systems.university.domains.pastoral.domain.health.records.analytics.population import generate_student_health_summary
@@ -92,4 +92,4 @@ def generate_custom_report(auth):
         from education_system.systems.university.domains.pastoral.domain.health.appointments.appointment_booking import generate_provider_performance_report
         return generate_provider_performance_report(auth)
     else:
-        print(_t('health_misc.dashboards.invalid_selection'))
+        print(_t('health_misc.dashboards.invalid_selection', default="Invalid selection. Please try again."))

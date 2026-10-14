@@ -109,27 +109,6 @@ def add_sidebar_separator(self):
     sep.pack(fill=tk.X, padx=10, pady=5)
 
 
-def switch_to_cli(self):
-    """Switch to Student Union CLI mode"""
-    if not CLI_AVAILABLE:
-        messagebox.showerror(_t('gui.pastoral.student_union_gui.core.navigation.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.core.navigation.dialogs.cli_mode_is_not_available', default="CLI mode is not available"))
-        return
-    response = messagebox.askyesno(_t('gui.pastoral.student_union_gui.core.navigation.dialogs.switch_to_cli', default="Switch to CLI"),
-                                 _t('gui.pastoral.student_union_gui.core.navigation.dialogs.switch_to_student_union_command_line_interface_the_gui_will_clos', default="Switch to Student Union command-line interface?\nThe GUI will close."))
-    if response:
-        self.root.destroy()
-        # Launch Student Union CLI mode
-        try:
-            from education_system.systems.university.domains.pastoral.domain.student_life.student_union.administration.student_union_core import display_student_union_menu
-            # Get current auth from GUI
-            auth = get_auth()
-            if auth:
-                from education_system.systems.university.domains.pastoral.domain.student_life.student_union.administration.student_union_core import set_auth
-                set_auth(auth)
-            display_student_union_menu()
-        except ImportError as e:
-            print(f"Error: Cannot import Student Union CLI system - {e}")
-            messagebox.showerror(_t('gui.pastoral.student_union_gui.core.navigation.dialogs.error', default="Error"), f"Cannot import Student Union CLI system: {e}")
 
 
 def return_to_homescreen(self):
@@ -158,8 +137,6 @@ def setup_main_menu(self):
     # Tools menu
     tools_menu = tk.Menu(self.menu_bar, tearoff=0)
     self.menu_bar.add_cascade(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.tools', default="Tools"), menu=tools_menu)
-    if CLI_AVAILABLE:
-        tools_menu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.switch_to_cli', default="Switch to CLI"), command=self.switch_to_cli)
     if is_admin or is_staff:
         tools_menu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.database_info', default="Database Info"), command=self.show_database_info)
     # Integrations menu
@@ -327,7 +304,7 @@ def return_to_main_menu(self):
         else:
             # Running standalone, need to create main GUI
             self.root.destroy()
-            from education_system.systems.university.interfaces.gui.shell.main import UnifiedManagementGUI
+            from education_system.systems.university.shell.gui.main import UnifiedManagementGUI
             app = UnifiedManagementGUI(self.auth)
             app.run()
     except (tk.TclError, AttributeError) as e:

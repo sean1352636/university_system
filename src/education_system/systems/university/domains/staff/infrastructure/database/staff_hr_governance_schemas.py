@@ -7,6 +7,9 @@ Idempotent. Safe to call repeatedly: every statement is CREATE TABLE
 IF NOT EXISTS / CREATE INDEX IF NOT EXISTS / INSERT OR IGNORE.
 """
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.database.db import (
     sqlite3,
@@ -14,6 +17,9 @@ from education_system.systems.university.infrastructure.database.db import (
 )
 from education_system.systems.university.infrastructure.sql_safety import (
     safe_alter_table_add_column,
+)
+from education_system.systems.university.infrastructure.database.schemas.unified_events_link import (
+    ensure_unified_columns,
 )
 
 
@@ -278,7 +284,7 @@ def _init_governance_schemas() -> None:
                     cursor.execute('ALTER TABLE staff_recruitment_postings ADD COLUMN status TEXT DEFAULT "draft"')
                     cursor.execute('CREATE INDEX IF NOT EXISTS idx_staff_recruitment_postings_status ON staff_recruitment_postings(status)')
                 except Exception:
-                    pass  # Column might already exist or table doesn't exist
+                    logger.debug("Suppressed exception", exc_info=True)
 
             # ---- staff_recruitment_applications ----
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_staff_recruitment_apps_posting ON staff_recruitment_applications(posting_id)')
@@ -458,28 +464,10 @@ def _init_governance_schemas() -> None:
                 )
             ''')
 
-            # ---- committee_meetings ----
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS committee_meetings (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    committee_id INTEGER NOT NULL,
-                    title TEXT NOT NULL,
-                    meeting_date TEXT NOT NULL,
-                    start_time TEXT NOT NULL,
-                    end_time TEXT,
-                    location TEXT,
-                    virtual_link TEXT,
-                    status TEXT DEFAULT 'scheduled',
-                    chair_id TEXT,
-                    secretary_id TEXT,
-                    recurrence TEXT DEFAULT 'none',
-                    notes TEXT,
-                    created_by TEXT,
-                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (committee_id) REFERENCES committees(id)
-                )
-            ''')
+            # Committee meetings are rows in ``unified_events`` tagged
+            # ``source_type = 'committee'``; agenda items and votes reference
+            # ``unified_events(event_id)``.
+            ensure_unified_columns(conn)
 
             # ---- committee_agenda_items ----
             cursor.execute('''
@@ -495,7 +483,7 @@ def _init_governance_schemas() -> None:
                     resolution TEXT,
                     status TEXT DEFAULT 'pending',
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (meeting_id) REFERENCES committee_meetings(id)
+                    FOREIGN KEY (meeting_id) REFERENCES unified_events(event_id)
                 )
             ''')
 
@@ -517,7 +505,7 @@ def _init_governance_schemas() -> None:
                     opened_at TEXT DEFAULT CURRENT_TIMESTAMP,
                     closed_at TEXT,
                     created_by TEXT,
-                    FOREIGN KEY (meeting_id) REFERENCES committee_meetings(id),
+                    FOREIGN KEY (meeting_id) REFERENCES unified_events(event_id),
                     FOREIGN KEY (committee_id) REFERENCES committees(id)
                 )
             ''')
@@ -538,7 +526,7 @@ def _init_governance_schemas() -> None:
             try:
                 safe_alter_table_add_column('meeting_minutes', 'meeting_id', 'INTEGER', conn)
             except Exception:
-                pass  # Table may not exist yet if v2 schemas not initialized
+                logger.debug("Suppressed exception", exc_info=True)
 
             # ---- ip_disclosures ----
             cursor.execute('''
@@ -671,9 +659,7 @@ def _init_governance_schemas() -> None:
 
             indexes = [
                 # Committee indexes
-                ('idx_committee_meetings_committee', 'committee_meetings', 'committee_id'),
-                ('idx_committee_meetings_date', 'committee_meetings', 'meeting_date'),
-                ('idx_committee_meetings_status', 'committee_meetings', 'status'),
+                ('idx_unified_events_committee', 'unified_events', 'committee_id'),
                 ('idx_meeting_agenda_meeting', 'committee_agenda_items', 'meeting_id'),
                 ('idx_committee_votes_meeting', 'committee_votes', 'meeting_id'),
                 ('idx_committee_votes_committee', 'committee_votes', 'committee_id'),
@@ -720,6 +706,7 @@ def _init_governance_schemas() -> None:
 
             for idx_name, table, columns in indexes:
                 try:
+                    # db-audit: ignore[DBW001] - literal collection
                     cursor.execute(f'CREATE INDEX IF NOT EXISTS {idx_name} ON {table}({columns})')
                 except sqlite3.Error:
                     pass  # Index may already exist

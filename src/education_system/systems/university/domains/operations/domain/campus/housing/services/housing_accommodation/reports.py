@@ -3,6 +3,171 @@ from education_system.systems.university.domains.operations.domain.campus.housin
     sqlite3, datetime, os, get_text, get_connection,
     log_read, log_export, log_search,
 )
+import io
+import sys
+from education_system import paths
+
+# ---------------------------------------------------------------------------
+# Report delivery
+# ---------------------------------------------------------------------------
+# The reports print to the screen and were gone the moment the terminal
+# scrolled. Each one is now captured as it prints, shown as before, and then
+# offered for saving or sending — the report itself is untouched, so the
+# delivery options and the report logic stay independent.
+
+REPORTS_OUTPUT_DIR = paths.VAR_DIR / "reports" / "university" / "housing"
+
+
+def _capture_report(report_fn):
+    """Run *report_fn*, returning everything it printed as one string.
+
+    The text is echoed as it is produced, so the operator sees the report at
+    the usual time rather than after a pause.
+    """
+    buffer = io.StringIO()
+
+    class _Tee:
+        def write(self, data):
+            buffer.write(data)
+            return _original.write(data)
+
+        def flush(self):
+            return _original.flush()
+
+    _original = sys.stdout
+    sys.stdout = _Tee()
+    try:
+        report_fn()
+    finally:
+        sys.stdout = _original
+    return buffer.getvalue()
+
+
+def _save_report_txt(title, content):
+    """Write the report to a .txt file. Returns the path, or None."""
+    try:
+        REPORTS_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+        stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        slug = ''.join(c if c.isalnum() else '_' for c in title).strip('_').lower()
+        path = REPORTS_OUTPUT_DIR / f"{slug}_{stamp}.txt"
+        header = f"{title}\nGenerated: {datetime.datetime.now():%Y-%m-%d %H:%M:%S}\n"
+        path.write_text(header + "=" * 70 + "\n" + content, encoding='utf-8')
+        return path
+    except Exception as exc:
+        print(f"Could not save the text file: {exc}")
+        return None
+
+
+def _save_report_pdf(title, content):
+    """Render the report to a PDF. Returns the path, or None.
+
+    Uses reportlab, which the project already depends on for its other PDF
+    exports. If it is unavailable we say so and leave the operator with the
+    text option rather than failing the whole delivery step.
+    """
+    try:
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.units import mm
+        from reportlab.pdfgen import canvas as pdf_canvas
+    except ImportError:
+        print("PDF export needs reportlab, which is not installed here. "
+              "Save as text instead, or install the 'documents' extra.")
+        return None
+
+    try:
+        REPORTS_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+        stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        slug = ''.join(c if c.isalnum() else '_' for c in title).strip('_').lower()
+        path = REPORTS_OUTPUT_DIR / f"{slug}_{stamp}.pdf"
+
+        page_width, page_height = A4
+        pdf = pdf_canvas.Canvas(str(path), pagesize=A4)
+        pdf.setTitle(title)
+
+        left = 15 * mm
+        top = page_height - 20 * mm
+        bottom = 20 * mm
+        leading = 4.6 * mm
+
+        pdf.setFont("Helvetica-Bold", 13)
+        pdf.drawString(left, top, title)
+        pdf.setFont("Helvetica", 8)
+        pdf.drawString(left, top - 6 * mm,
+                       f"Generated: {datetime.datetime.now():%Y-%m-%d %H:%M:%S}")
+
+        # The reports are column-aligned plain text, so a monospaced font is
+        # what keeps them readable on the page.
+        pdf.setFont("Courier", 8)
+        y = top - 14 * mm
+        for line in content.splitlines():
+            if y < bottom:
+                pdf.showPage()
+                pdf.setFont("Courier", 8)
+                y = top
+            pdf.drawString(left, y, line[:110])
+            y -= leading
+
+        pdf.save()
+        return path
+    except Exception as exc:
+        print(f"Could not create the PDF: {exc}")
+        return None
+
+
+def _email_report_to_admin(title, content):
+    """Send the report to the configured housing admins."""
+    auth = _common.auth
+    sender = 'University Housing Management System'
+    if auth and auth.current_user:
+        sender = auth.current_user.get('username', sender)
+
+    sent, failed, addresses = _common.send_report_to_admins(title, content, sender)
+    if not sent and not failed:
+        print("No admin email address is configured, so the report was not sent.")
+        print("Set an email against an admin user, then try again.")
+        return False
+    if sent:
+        print(f"Report emailed to: {', '.join(addresses)}")
+    if failed:
+        print(f"{failed} admin email(s) could not be sent.")
+    return bool(sent)
+
+
+def deliver_report(title, report_fn):
+    """Run a report, then offer to save or send it.
+
+    Wraps every entry on the reports menu so the options are the same
+    wherever you are: save as text, save as PDF, email it to the admin, or
+    cancel and keep it on screen only.
+    """
+    content = _capture_report(report_fn)
+    if not content.strip():
+        return
+
+    while True:
+        print("\nWhat would you like to do with this report?")
+        print("1. Save as TXT")
+        print("2. Save as PDF")
+        print("3. Email to admin")
+        print("4. Cancel")
+
+        choice = input("\nEnter your choice (1-4): ").strip()
+
+        if choice == '1':
+            path = _save_report_txt(title, content)
+            if path:
+                print(f"Saved to {path}")
+        elif choice == '2':
+            path = _save_report_pdf(title, content)
+            if path:
+                print(f"Saved to {path}")
+        elif choice == '3':
+            _email_report_to_admin(title, content)
+        elif choice == '4':
+            return
+        else:
+            print("Invalid choice. Please try again.")
+
 
 @log_read(module="housing", description="Generating housing occupancy report")
 def generate_occupancy_report():
@@ -1030,17 +1195,17 @@ def display_reports_menu():
         choice = input("\nEnter your choice (1-8): ")
 
         if choice == '1':
-            generate_occupancy_report()
+            deliver_report("Housing Occupancy Report", generate_occupancy_report)
         elif choice == '2':
-            generate_financial_report()
+            deliver_report("Housing Financial Report", generate_financial_report)
         elif choice == '3':
-            maintenance_summary()
+            deliver_report("Housing Maintenance Summary", maintenance_summary)
         elif choice == '4':
-            upcoming_moveouts_report()
+            deliver_report("Upcoming Move-outs", upcoming_moveouts_report)
         elif choice == '5':
-            check_room_availability()
+            deliver_report("Room Availability", check_room_availability)
         elif choice == '6':
-            search_housing_records()
+            deliver_report("Housing Records Search", search_housing_records)
         elif choice == '7':
             export_housing_data()
         elif choice == '8':

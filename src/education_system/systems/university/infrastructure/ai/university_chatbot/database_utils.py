@@ -69,13 +69,16 @@ def get_student_profile(chatbot, student_id: str) -> Optional[StudentProfile]:
 
         cursor.execute("""
             SELECT module_code FROM student_modules
-            WHERE student_id = ? AND status = 'completed'
+            WHERE student_id = ? AND LOWER(status) = 'completed'
         """, (student_id,))
         completed_courses = [row[0] for row in cursor.fetchall()]
 
+        # Canonical capitalisation is 'Enrolled'; the sibling queries below
+        # already use LOWER(status) and this one did not, so it matched only
+        # the handful of rows written under a lowercase column default.
         cursor.execute("""
             SELECT module_code FROM student_modules
-            WHERE student_id = ? AND status = 'enrolled'
+            WHERE student_id = ? AND LOWER(status) = 'enrolled'
         """, (student_id,))
         current_courses = [row[0] for row in cursor.fetchall()]
 
@@ -309,7 +312,7 @@ def get_academic_calendar(chatbot) -> List[Dict]:
                        COALESCE(date_start, date) AS ev_start,
                        COALESCE(date_end, date_start, date) AS ev_end,
                        event_type
-                FROM academic_calendar_events
+                FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar')
                 WHERE COALESCE(date_start, date) >= date('now', '-30 days')
                 ORDER BY ev_start ASC LIMIT 20
             """)
@@ -384,28 +387,45 @@ def get_application_status(chatbot, identifier: str) -> List[Dict]:
 # Administrative queries
 # ---------------------------------------------------------------------------
 
-def search_staff_directory(chatbot, query: str) -> List[Dict]:
-    """Search staff directory by name or department."""
+def search_staff_directory(chatbot, query: str = "", limit: int = 10) -> List[Dict]:
+    """Search the staff directory by name, role or department.
+
+    An empty *query* lists everyone (up to *limit*) rather than returning
+    nothing — "list all staff members" is a legitimate request and there was
+    previously no way to express it.
+    """
     conn = connect_to_db(chatbot.db_path)
     if not conn:
         return []
     try:
         cursor = conn.cursor()
-        like_q = f"%{query}%"
-        for sql in [
-            """SELECT name, email, department, role, phone, office_location
-               FROM staff_directory
-               WHERE name LIKE ? OR department LIKE ? OR role LIKE ?
-               ORDER BY name LIMIT 10""",
-            # Actual staff table: single `name` column, role, email, phone;
-            # no department/office columns.
-            """SELECT name, email, '' AS department, role, phone, '' AS office
-               FROM staff
-               WHERE name LIKE ? OR role LIKE ? OR email LIKE ?
-               ORDER BY name LIMIT 10""",
-        ]:
+        list_all = not (query or "").strip()
+        like_q = f"%{query.strip()}%"
+
+        if list_all:
+            candidates = [
+                ("""SELECT name, email, department, role, phone, office_location
+                    FROM staff_directory ORDER BY name LIMIT ?""", (limit,)),
+                ("""SELECT name, email, '' AS department, role, phone, '' AS office
+                    FROM staff ORDER BY name LIMIT ?""", (limit,)),
+            ]
+        else:
+            candidates = [
+                ("""SELECT name, email, department, role, phone, office_location
+                    FROM staff_directory
+                    WHERE name LIKE ? OR department LIKE ? OR role LIKE ?
+                    ORDER BY name LIMIT ?""", (like_q, like_q, like_q, limit)),
+                # Actual staff table: single `name` column, role, email, phone;
+                # no department/office columns.
+                ("""SELECT name, email, '' AS department, role, phone, '' AS office
+                    FROM staff
+                    WHERE name LIKE ? OR role LIKE ? OR email LIKE ?
+                    ORDER BY name LIMIT ?""", (like_q, like_q, like_q, limit)),
+            ]
+
+        for sql, params in candidates:
             try:
-                cursor.execute(sql, (like_q, like_q, like_q))
+                cursor.execute(sql, params)
                 rows = cursor.fetchall()
                 if rows:
                     return [{"name": r[0], "email": r[1], "department": r[2],

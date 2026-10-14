@@ -25,7 +25,7 @@ class PredictionsMixin:
             return
 
         if not (self.auth.check_permission('manage_grades') or
-                self.auth.check_permission('use_ml_models')):
+                self.auth.check_permission('predictive_analytics')):
             messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.you_don_t_have_permission_to_use_batch_predictions', default="You don't have permission to use batch predictions."))
             return
 
@@ -56,7 +56,7 @@ class PredictionsMixin:
             return
 
         if not (self.auth.check_permission('manage_grades') or
-                self.auth.check_permission('use_ml_models')):
+                self.auth.check_permission('predictive_analytics')):
             messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.you_don_t_have_permission_to_use_batch_predictions', default="You don't have permission to use batch predictions."))
             return
 
@@ -119,7 +119,7 @@ class PredictionsMixin:
             return
 
         if not (self.auth.check_permission('manage_grades') or
-                self.auth.check_permission('use_ml_models')):
+                self.auth.check_permission('predictive_analytics')):
             messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.you_don_t_have_permission_to_predict_module_grades', default="You don't have permission to predict module grades."))
             return
 
@@ -187,7 +187,7 @@ class PredictionsMixin:
             return
 
         if not (self.auth.check_permission('manage_grades') or
-                self.auth.check_permission('use_ml_models')):
+                self.auth.check_permission('predictive_analytics')):
             messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.you_don_t_have_permission_to_predict_gpas', default="You don't have permission to predict GPAs."))
             return
 

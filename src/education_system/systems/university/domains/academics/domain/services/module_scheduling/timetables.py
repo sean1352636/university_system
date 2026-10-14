@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.database.db import get_connection
 from education_system.systems.university.domains.academics.domain.services.module_scheduling.constants import DAYS_OF_WEEK, TIME_SLOTS
 from datetime import datetime, timedelta
@@ -659,7 +663,7 @@ class TimetablesMixin:
                             if len(str(cell.value)) > max_length:
                                 max_length = len(str(cell.value))
                         except Exception:
-                            pass
+                            logger.debug("Suppressed exception", exc_info=True)
                     adjusted_width = min(max_length + 2, 50)
                     worksheet.column_dimensions[column_cells[0].column_letter].width = adjusted_width
 

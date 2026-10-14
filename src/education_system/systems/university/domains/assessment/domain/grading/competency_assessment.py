@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.database.db import sqlite3, DatabaseManager
 import os
 import csv
@@ -14,12 +18,48 @@ import matplotlib
 from education_system.systems.university.infrastructure.database.db import get_connection
 matplotlib.use('Agg')
 from education_system.systems.university.domains.assessment.domain.grading.utils import select_student
-from education_system.systems.university.domains.assessment.domain.grading.grade_calculation import calculate_student_gpa
+from education_system.systems.university.domains.assessment.domain.grading.grade_calculation import calculate_student_gpa, map_assessments_to_competencies
+from education_system.systems.university.domains.assessment.domain.grading.competency import (
+    manage_competencies,
+    record_student_competencies,
+)
 from education_system.systems.university.infrastructure.sql_safety import (
     validate_table_name,
     validate_column_name,
     SQLIdentifierError
 )
+
+def competency_assessment_menu():
+    """Display the competency-based assessment menu and handle user choices"""
+    while True:
+        print("\nCompetency-Based Assessment:")
+        print("1. Manage Competencies")
+        print("2. Manage Competency Levels")
+        print("3. Map Assessments to Competencies")
+        print("4. Record Student Competencies")
+        print("5. View Student Competency Profile")
+        print("6. Generate Competency Report")
+        print("7. Return to Grade Menu")
+
+        choice = input("Enter your choice (1-7): ")
+
+        if choice == '1':
+            manage_competencies()
+        elif choice == '2':
+            manage_competency_levels()
+        elif choice == '3':
+            map_assessments_to_competencies()
+        elif choice == '4':
+            record_student_competencies()
+        elif choice == '5':
+            view_student_competency_profile()
+        elif choice == '6':
+            generate_competency_report()
+        elif choice == '7':
+            print("Returning to grade menu...")
+            break
+        else:
+            print("Invalid choice. Please try again.")
 
 def add_competency_levels(cursor, competency_id, competency_name):
     """Add levels for a specific competency"""
@@ -814,7 +854,7 @@ def generate_student_competency_report(cursor, student_id):
         try:
             os.remove(chart_filename)
         except Exception:
-            pass  # Ignore errors during cleanup
+            logger.debug("Suppressed exception", exc_info=True)
 
         print(f"\nStudent competency report generated: {report_filename}")
 
@@ -1173,7 +1213,7 @@ def generate_course_competency_report(cursor, course):
             if 'chart2_filename' in locals() and os.path.exists(chart2_filename):
                 os.remove(chart2_filename)
         except Exception:
-            pass  # Ignore errors during cleanup
+            logger.debug("Suppressed exception", exc_info=True)
 
         print(f"\nCourse competency report generated: {report_filename}")
 

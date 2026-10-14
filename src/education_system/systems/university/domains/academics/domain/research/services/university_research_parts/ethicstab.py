@@ -7,7 +7,14 @@ globals().update({name: value for name, value in _shared.__dict__.items() if not
 class EthicsTab(TableModule):
     title = "Research Ethics / IRB"
     subtitle = "Track applications, approvals and expiry across the institution."
-    table_name = "ethics_applications"
+    # ethics_reviews is the university's existing table. The portal's
+    # extra fields (reference/title/PI/department/risk_level/category/notes)
+    # were added to it by migration b4e19d7a3c62; `status` maps onto its
+    # `decision` column and `approval_expiry` onto `approval_expiry_date`.
+    # Its project_id was NOT NULL and is now nullable: a portal application
+    # is standalone, not a review of an existing grant project.
+    table_name = "ethics_reviews"
+    pk = "review_id"
 
     ETHICS_STATUSES = ["Draft", "Submitted", "Under Review",
                        "Revisions Required", "Approved", "Rejected",
@@ -24,25 +31,30 @@ class EthicsTab(TableModule):
         widths = (95, 280, 170, 130, 70, 140, 110)
         return cols, heads, widths
 
+    _BASE = ("SELECT e.*, e.decision AS status, "
+             "e.approval_expiry_date AS approval_expiry "
+             "FROM ethics_reviews e")
+
     def fetch_rows(self, search):
         q = f"%{search.lower()}%" if search else None
         if q:
-            sql = """SELECT e.*, p.name AS pi_name FROM research_ethics_applications e
-                     LEFT JOIN research_people p ON p.id=e.principal_investigator_id
-                     WHERE LOWER(e.reference) LIKE ? OR LOWER(e.title) LIKE ?
-                        OR LOWER(COALESCE(p.name,'')) LIKE ?
-                        OR LOWER(COALESCE(e.status,'')) LIKE ?
-                     ORDER BY e.submitted_date DESC NULLS LAST, e.id DESC"""
-            return self.db.query(sql, (q, q, q, q))
-        return self.db.query("""SELECT e.*, p.name AS pi_name
-            FROM research_ethics_applications e
-            LEFT JOIN research_people p ON p.id=e.principal_investigator_id
-            ORDER BY e.submitted_date DESC, e.id DESC""")
+            return self.db.query(
+                self._BASE +
+                " WHERE LOWER(COALESCE(e.reference,'')) LIKE ?"
+                "    OR LOWER(COALESCE(e.title,'')) LIKE ?"
+                "    OR LOWER(COALESCE(e.department,'')) LIKE ?"
+                "    OR LOWER(COALESCE(e.decision,'')) LIKE ?"
+                " ORDER BY e.submission_date DESC, e.review_id DESC",
+                (q, q, q, q))
+        return self.db.query(
+            self._BASE +
+            " ORDER BY e.submission_date DESC, e.review_id DESC")
 
     def row_to_tree_values(self, row):
-        return (row["reference"], row["title"], row["pi_name"] or "—",
+        return (row["reference"] or "—", row["title"] or "(untitled)",
+                self.person_name(row["principal_investigator_id"]),
                 row["category"] or "—", row["risk_level"] or "—",
-                row["status"], fmt_date(row["decision_date"]))
+                row["status"] or "—", fmt_date(row["decision_date"]))
 
     def get_field_specs(self, record=None):
         return [
@@ -57,7 +69,7 @@ class EthicsTab(TableModule):
                       choices=self.CATEGORIES),
             FieldSpec("risk_level", "Risk level", kind="combo",
                       choices=self.RISK_LEVELS),
-            FieldSpec("submitted_date", "Submitted date", kind="date",
+            FieldSpec("submission_date", "Submitted date", kind="date",
                       hint="YYYY-MM-DD"),
             FieldSpec("decision_date", "Decision date", kind="date",
                       hint="YYYY-MM-DD"),
@@ -69,45 +81,48 @@ class EthicsTab(TableModule):
         ]
 
     def render_detail(self, row):
-        pi_name = "—"
-        if row.get("principal_investigator_id"):
-            r = self.db.query("SELECT name FROM research_people WHERE id=?",
-                              (row["principal_investigator_id"],))
-            if r:
-                pi_name = r[0]["name"]
-        self.detail_text.insert("end", f"{row['reference']}\n", ("section",))
-        self.detail_text.insert("end", f"{row['title']}\n\n", ("value",))
+        pi_name = self.person_name(row.get("principal_investigator_id"))
+        self.detail_text.insert(
+            "end", f"{row.get('reference') or '(no reference)'}\n", ("section",))
+        self.detail_text.insert(
+            "end", f"{row.get('title') or '(untitled)'}\n\n", ("value",))
         self._write_detail([
             ("Status", row.get("status")),
             ("Principal Investigator", pi_name),
             ("Department", row.get("department")),
             ("Category", row.get("category")),
             ("Risk level", row.get("risk_level")),
-            ("Submitted", fmt_date(row.get("submitted_date"))),
+            ("Submitted", fmt_date(row.get("submission_date"))),
             ("Decision", fmt_date(row.get("decision_date"))),
             ("Approval expiry", fmt_date(row.get("approval_expiry"))),
             ("Notes", row.get("notes")),
+            ("Reviewer comments", row.get("reviewer_comments")),
+            ("Conditions", row.get("conditions")),
         ])
 
     def insert_sql(self, d):
-        self.db.execute("""INSERT INTO research_ethics_applications
+        # review_type and submission_date are NOT NULL on the shared table.
+        self.db.execute("""INSERT INTO ethics_reviews
             (reference,title,principal_investigator_id,department,risk_level,
-             category,submitted_date,decision_date,status,approval_expiry,notes)
-            VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
+             category,submission_date,decision_date,decision,
+             approval_expiry_date,notes,review_type)
+            VALUES(?,?,?,?,?,?,?,?,?,?,?,?)""",
             (d.get("reference"), d.get("title"),
              d.get("principal_investigator_id"), d.get("department"),
              d.get("risk_level"), d.get("category"),
-             d.get("submitted_date"), d.get("decision_date"),
-             d.get("status"), d.get("approval_expiry"), d.get("notes")))
+             d.get("submission_date") or date.today().isoformat(),
+             d.get("decision_date"), d.get("status"),
+             d.get("approval_expiry"), d.get("notes"),
+             d.get("category") or "Research ethics application"))
 
     def update_sql(self, d, pk):
-        self.db.execute("""UPDATE research_ethics_applications SET
+        self.db.execute("""UPDATE ethics_reviews SET
             reference=?,title=?,principal_investigator_id=?,department=?,
-            risk_level=?,category=?,submitted_date=?,decision_date=?,
-            status=?,approval_expiry=?,notes=? WHERE id=?""",
+            risk_level=?,category=?,submission_date=?,decision_date=?,
+            decision=?,approval_expiry_date=?,notes=? WHERE review_id=?""",
             (d.get("reference"), d.get("title"),
              d.get("principal_investigator_id"), d.get("department"),
              d.get("risk_level"), d.get("category"),
-             d.get("submitted_date"), d.get("decision_date"),
-             d.get("status"), d.get("approval_expiry"),
-             d.get("notes"), pk))
+             d.get("submission_date") or date.today().isoformat(),
+             d.get("decision_date"), d.get("status"),
+             d.get("approval_expiry"), d.get("notes"), pk))

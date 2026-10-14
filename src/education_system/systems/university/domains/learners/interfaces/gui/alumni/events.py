@@ -852,10 +852,9 @@ class EventsMixin:
                     # range. Alumni events are single-day, so use `date`.
                     conn.execute(
                         """
-                        INSERT OR REPLACE INTO academic_calendar_events
-                            (id, name, date, date_start, date_end, description,
-                             event_type, date_added, last_modified, created_by)
-                        VALUES (?, ?, ?, NULL, NULL, ?, ?, ?, ?, ?)
+                        INSERT OR REPLACE INTO unified_events (
+                    source_event_id, title, event_date, start_datetime, end_datetime, description, event_type, created_at, updated_at, created_by, source_type
+                ) VALUES (?, ?, ?, NULL, NULL, ?, ?, ?, ?, ?, 'academic_calendar')
                         """,
                         (cal_id, name, date_, description or "",
                          f"Alumni: {event_type}", now, now, created_by),

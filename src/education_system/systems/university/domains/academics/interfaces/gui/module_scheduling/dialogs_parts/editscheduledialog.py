@@ -1,4 +1,7 @@
 """Extracted class implementation."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -47,6 +50,7 @@ class EditScheduleDialog:
                         "semester", "year", "status", "recurrence",
                         "recurrence_until"]
                 select_cols = [c if c in cols else f"NULL AS {c}" for c in want]
+                # db-audit: ignore[DBW001] - join over a code-controlled list
                 cursor.execute(
                     f"SELECT {', '.join(select_cols)} FROM module_schedule WHERE id = ?",
                     (self.schedule_id,),
@@ -119,7 +123,7 @@ class EditScheduleDialog:
                     self.room_var.set(f"{room[0]} - {room[1]}-{room[2]}")
                     break
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         room_combo.grid(row=4, column=1, pady=5, sticky=tk.W)
 
@@ -145,7 +149,7 @@ class EditScheduleDialog:
                     self.instructor_var.set(f"{inst[0]} - {inst[1]} {inst[2]}")
                     break
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         instructor_combo.grid(row=5, column=1, pady=5, sticky=tk.W)
 
@@ -293,7 +297,7 @@ class EditScheduleDialog:
                     elif user and hasattr(user, "username"):
                         changed_by = str(user.username)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             updates['changed_by'] = changed_by
 
             # Update schedule

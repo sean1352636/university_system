@@ -4,12 +4,21 @@ Services compose repositories and domain rules into whole operations. They are
 the layer the GUI and the CLI share: everything a screen needs is one call
 here, so the two interfaces can never drift into implementing the same rule
 differently.
+
+The learner lifecycle is also announced to the rest of the platform from
+here — a new learner joins the cross-system identity registry, and a start,
+withdrawal or completion is published on the durable bus — so that an FE
+learner has the same journey, history and events as a learner in any other
+system. Those calls are best-effort: the college's own record is written
+first and stands whatever the platform does.
 """
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from datetime import date
+from typing import Any
 
 from education_system.systems.fe_college.config import ACADEMIC_YEAR
 from education_system.systems.fe_college.domain.students.attendance import (
@@ -34,6 +43,11 @@ from education_system.systems.fe_college.infrastructure.persistence.repositories
     pastoral_repository as pastoral_repo,
     student_repository as repo,
 )
+
+logger = logging.getLogger(__name__)
+
+SYSTEM = "fe_college"
+_SOURCE_MODULE = "fe_college.services.student_service"
 
 
 @dataclass(frozen=True)
@@ -107,15 +121,181 @@ def counts() -> dict[str, int]:
     return repo.count_by_status()
 
 
+# ── Cross-system hooks (best-effort; never fail the college's own write) ────
+
+def _iso(value: Any) -> str | None:
+    if value in (None, ""):
+        return None
+    return value.isoformat() if hasattr(value, "isoformat") else str(value)
+
+
+def _journey_id(student_id: str) -> str | None:
+    try:
+        from education_system.platform.cross_system import identity_service
+        row = identity_service.find_by_student(SYSTEM, str(student_id))
+        return row["journey_id"] if row else None
+    except Exception:
+        logger.debug("Journey lookup failed for %s", student_id, exc_info=True)
+        return None
+
+
+def _publish(event_attr: str, student_id: str, *, key: str,
+             **payload: Any) -> None:
+    """Publish a lifecycle event for a learner with a journey."""
+    try:
+        from education_system.platform.integrations.external import (
+            cross_system_bus as bus,
+        )
+        jid = _journey_id(student_id)
+        if jid is None:
+            return
+        bus.publish_cross_system(
+            getattr(bus, event_attr), source_system=SYSTEM,
+            source_module=_SOURCE_MODULE, journey_id=jid,
+            idempotency_key=key, local_student_id=str(student_id), **payload)
+    except Exception:
+        logger.warning("Could not publish %s for learner %s (record saved)",
+                       event_attr, student_id, exc_info=True)
+
+
+def _register_journey(student: Student) -> None:
+    """Join a new learner to the cross-system identity registry.
+
+    Every other system did this on create; FE did not, so an FE learner had
+    no journey until a transfer happened to mint one. Also announces
+    ``journey.registered`` (deduplicated against the registry's own).
+    """
+    try:
+        from education_system.platform.cross_system import person
+        from education_system.systems.fe_college.infrastructure.persistence import (
+            db_path,
+        )
+        person.register_local_learner(
+            SYSTEM, student_id=student.student_id,
+            first_name=student.first_name, last_name=student.last_name,
+            date_of_birth=_iso(student.date_of_birth),
+            start_date=_iso(student.start_date),
+            source_module=_SOURCE_MODULE, system_db_path=str(db_path()))
+    except Exception:
+        logger.debug("Journey registration skipped for %s",
+                     student.student_id, exc_info=True)
+
+
+def _sync_login_links(student: Student, *, previous_email: str | None = None) -> None:
+    """Link the learner's own login(s) to their platform learner record.
+
+    FE pairs a login with a learner by student id, then by email, so both
+    are re-checked — and a previous email too, so a link made on the old
+    address is taken off. Best-effort, never raises.
+    """
+    from education_system.platform.cross_system import login_links
+
+    login_links.try_sync_username(student.student_id)
+    addresses = {a.strip().lower() for a in (student.email, previous_email)
+                 if a and a.strip()}
+    for address in sorted(addresses):
+        login_links.try_sync_email(address)
+
+
+def _set_programme(student_id: str, title: str | None, *,
+                   start: Any = None, replace: bool = False) -> None:
+    """Record the learner's main programme on their platform enrolment."""
+    if not title:
+        return
+    try:
+        from education_system.platform.cross_system import enrolments
+        jid = _journey_id(student_id)
+        if jid is None:
+            return
+        current = enrolments.current_enrolment(jid, SYSTEM)
+        if current is not None and replace and current.get("programme") != title:
+            enrolments.update_enrolment(current["enrolment_id"], programme=title)
+        else:
+            enrolments.link_local_enrolment(
+                journey_id=jid, system=SYSTEM, local_student_id=str(student_id),
+                programme=title, start_date=_iso(start), source_system=SYSTEM)
+    except Exception:
+        logger.debug("Programme annotation failed for %s", student_id,
+                     exc_info=True)
+
+
+def _learner_left(student_id: str, *, reason: str, status: str,
+                  on: Any = None, outcome: str | None = None) -> None:
+    """Close the learner's platform enrolment (publishes enrolment.ended)."""
+    try:
+        from education_system.platform.cross_system import enrolments
+        enrolments.end_local_enrolment(
+            SYSTEM, str(student_id), reason=reason, status=status,
+            end_date=_iso(on), outcome=outcome)
+    except Exception:
+        logger.debug("Could not close platform enrolment for %s", student_id,
+                     exc_info=True)
+
+
+def record_completion(enrolment: Enrolment, course: Any = None, *,
+                      passed: bool = False) -> None:
+    """Announce a completed course: programme.completed, and the award.
+
+    Called by :func:`enrolment_service.complete` after the college's own
+    row is saved. A passing grade is recorded as a qualification (which
+    publishes ``qualification.awarded``) under the same lineage reference
+    the platform's qualification projection uses, so the two never
+    duplicate. When no active course remains the learner's platform
+    enrolment is closed as completed.
+    """
+    sid = str(enrolment.student_id)
+    title = getattr(course, "title", None) or str(enrolment.course_id)
+    _publish(
+        "EVENT_PROGRAMME_COMPLETED", sid,
+        key=f"programme.completed:{SYSTEM}:{enrolment.enrolment_id}",
+        enrolment_id=enrolment.enrolment_id, course_id=enrolment.course_id,
+        programme=title, final_grade=enrolment.final_grade or None,
+        is_main_aim=bool(enrolment.is_main_aim),
+        end_date=_iso(enrolment.end_date))
+    if passed and enrolment.final_grade:
+        try:
+            from education_system.platform.cross_system import qualifications
+            jid = _journey_id(sid)
+            if jid:
+                qualifications.record_qualification(
+                    jid, source_system=SYSTEM, title=title,
+                    level=getattr(course, "level", None),
+                    grade=enrolment.final_grade,
+                    awarded_on=_iso(enrolment.end_date),
+                    source_ref=f"fe_college:enrolments:{enrolment.enrolment_id}",
+                    qualification_type=getattr(course, "qualification_type", None),
+                    awarding_body=getattr(course, "awarding_body", None),
+                    recorded_by=_SOURCE_MODULE)
+        except Exception:
+            logger.warning("Could not record qualification for enrolment %s",
+                           enrolment.enrolment_id, exc_info=True)
+    try:
+        still_active = repo.list_enrolments(student_id=sid, status="active")
+    except Exception:
+        still_active = [enrolment]
+    if not still_active:
+        _learner_left(sid, reason="completed programme", status="completed",
+                      on=enrolment.end_date,
+                      outcome=enrolment.final_grade or None)
+
+
 # ── Commands ────────────────────────────────────────────────────────────────
 
 def create(student: Student) -> Student:
     """Register a new learner (an applicant until they are enrolled)."""
-    return repo.create(student)
+    created = repo.create(student)
+    _register_journey(created)
+    _sync_login_links(created)
+    return created
 
 
 def update(student: Student) -> Student:
-    return repo.update(student)
+    before = repo.get(student.student_id)
+    updated = repo.update(student)
+    if before is not None and (
+            (before.email or "").strip().lower() != (updated.email or "").strip().lower()):
+        _sync_login_links(updated, previous_email=before.email)
+    return updated
 
 
 def delete(student_id: str) -> bool:
@@ -158,9 +338,17 @@ def enrol(student_id: str, course_id: str, *,
             expected_end_date=course.end_date,
             funding_source=funding_source,
         ))
-        if student.status == "applicant":
+        started = student.status == "applicant"
+        if started:
             repo.set_status(student_id, "enrolled")
-        return enrolment
+    if is_main_aim:
+        _set_programme(student_id, course.title, start=enrolment.start_date)
+    if started:
+        _publish("EVENT_LEARNER_UPDATED", student_id,
+                 key=f"learner.updated:{SYSTEM}:{student_id}:enrolled",
+                 scope="status", status="enrolled", course_id=course_id,
+                 programme=course.title)
+    return enrolment
 
 
 def withdraw(enrolment_id: int, reason: str, on: date | None = None) -> None:
@@ -179,8 +367,17 @@ def withdraw(enrolment_id: int, reason: str, on: date | None = None) -> None:
             e for e in repo.list_enrolments(student_id=enrolment.student_id, status="active")
             if e.enrolment_id != enrolment_id
         ]
-        if not remaining:
+        left = not remaining
+        if left:
             repo.set_status(enrolment.student_id, "withdrawn", on or date.today())
+    if left:
+        when = on or date.today()
+        _publish("EVENT_STUDENT_WITHDRAWN", enrolment.student_id,
+                 key=f"student.withdrawn:{SYSTEM}:{enrolment.student_id}:{when}",
+                 reason=reason, withdrawal_date=_iso(when),
+                 enrolment_id=enrolment_id)
+        _learner_left(enrolment.student_id, reason=reason, status="withdrawn",
+                      on=when)
 
 
 def transfer(enrolment_id: int, new_course_id: str, *,
@@ -208,7 +405,12 @@ def transfer(enrolment_id: int, new_course_id: str, *,
             funding_source=enrolment.funding_source,
         ))
         repo.set_status(enrolment.student_id, "enrolled")
-        return new
+        new_course = course_repo.get(new_course_id)
+    if enrolment.is_main_aim and new_course is not None:
+        # A change of main programme is a learner update the platform sees
+        # (enrolments publishes learner.updated when the programme changes).
+        _set_programme(enrolment.student_id, new_course.title, replace=True)
+    return new
 
 
 def set_target(student_id: str, description: str, *, set_by: str,
@@ -285,6 +487,7 @@ __all__ = [
     "list_active",
     "next_reference",
     "profile",
+    "record_completion",
     "search",
     "set_target",
     "transfer",

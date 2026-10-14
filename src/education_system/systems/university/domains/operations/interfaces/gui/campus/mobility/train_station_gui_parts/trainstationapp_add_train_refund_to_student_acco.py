@@ -1,4 +1,7 @@
 """Methods add_train_refund_to_student_account through view_train_ticket_details."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -37,7 +40,7 @@ class TrainStationApp:
             try:
                 cursor.execute("ALTER TABLE train_station_tickets ADD COLUMN status TEXT DEFAULT 'active'")
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Update status if column exists (optional - status is now derived from unified_refunds)
             try:
@@ -47,7 +50,7 @@ class TrainStationApp:
                     WHERE ticket_number = ?
                 """, (ticket_number,))
             except Exception:
-                pass  # Column doesn't exist, status will be derived from unified_refunds table
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Get processed_by info
             processed_by = None
@@ -123,7 +126,7 @@ class TrainStationApp:
                 try:
                     self.refresh_refunds_list()
                 except Exception:
-                    pass  # Refunds view not currently active
+                    logger.debug("Suppressed exception", exc_info=True)
 
             messagebox.showinfo(_t("common.success", default="Success"),
                               f"Refund added to student account!\n"

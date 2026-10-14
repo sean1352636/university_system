@@ -36,6 +36,22 @@ FORBIDDEN_IN_APPLICATION = ("tkinter", "webbrowser")
 _UNIVERSITY = "education_system.systems.university"
 
 
+def _is_delivery_adapter(module: str) -> bool:
+    """Is *module* an inbound adapter — a slice's own interfaces, or the shell?
+
+    University delivery code lives in two places: ``domains/<d>/interfaces/`` for
+    a domain's own adapters, and the system-wide ``university/shell/`` for the
+    launcher, menus, main window and cross-cutting routes. Matching only the
+    first would silently stop detecting domain-to-shell imports, which is exactly
+    what happened when the shell moved out of ``interfaces/{cli,gui}/shell/``.
+
+    The shell test is anchored to the full university prefix on purpose: a bare
+    ``".shell."`` also matches unrelated modules such as
+    ``...church_management/ui/shell.py``.
+    """
+    return ".interfaces." in module or f"{_UNIVERSITY}.shell." in module
+
+
 def _imported_modules(path: Path) -> list[str]:
     """Every module name imported by *path*, including inside functions."""
     tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
@@ -54,8 +70,9 @@ def _violations(slice_name: str) -> set[tuple[str, str]]:
     Two rules are enforced:
 
     1. The slice's ``domain/`` layer may not import a GUI toolkit, a web
-       framework, a SQL driver, or any of the slice's own inbound adapters —
-       dependencies point inward, never out to an interface.
+       framework, a SQL driver, or any inbound adapter — its own
+       ``interfaces/`` or the system-wide ``shell/``. Dependencies point
+       inward, never out to a delivery layer.
     2. The slice's ``application/`` layer may not drive the user directly: a use
        case that opens a window or a browser tab cannot be called from the API
        or the CLI.
@@ -74,7 +91,7 @@ def _violations(slice_name: str) -> set[tuple[str, str]]:
             # Not `root` — that name holds the slice directory in this scope.
             top = module.split(".")[0]
             if rel.startswith("domain/"):
-                if top in FORBIDDEN_IN_DOMAIN or ".interfaces." in module:
+                if top in FORBIDDEN_IN_DOMAIN or _is_delivery_adapter(module):
                     found.add((rel, module))
             if rel.startswith("application/") and top in FORBIDDEN_IN_APPLICATION:
                 found.add((rel, module))

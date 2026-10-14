@@ -11,6 +11,9 @@ from education_system.systems.university.infrastructure.database.db import Datab
 from education_system.systems.university.infrastructure.i18n import get_text
 from education_system.systems.university.infrastructure.email import send_confirmation_email
 from education_system.systems.university.domains.academics.domain.services.academic_calendar.calendar_core import AcademicCalendarManager
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.identity import (
+    current_student_id as _current_student_id,
+)
 
 # --- Shared auth wiring ---
 try:
@@ -41,7 +44,7 @@ def submit_expense_request():
     global auth
 
     if not auth or not auth.current_user:
-        print(get_text("student_union.finance_oversight.login_required_submit"))
+        print(get_text("student_union.finance_oversight.login_required_submit", default="Login Required Submit"))
         return
 
     try:
@@ -49,15 +52,13 @@ def submit_expense_request():
         cursor = conn.cursor()
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, auth)
 
-        if not result:
-            print(get_text("student_union.finance_oversight.no_student_record"))
+        if not student_id:
+            print(get_text("student_union.finance_oversight.no_student_record", default="No Student Record."))
             conn.close()
             return
 
-        student_id = result[0]
 
         # Get clubs where user is an officer
         cursor.execute('''
@@ -71,50 +72,50 @@ def submit_expense_request():
         clubs = cursor.fetchall()
 
         if not clubs:
-            print(get_text("student_union.finance_oversight.not_club_officer"))
+            print(get_text("student_union.finance_oversight.not_club_officer", default="Not Club Officer"))
             conn.close()
             return
 
-        print("\n" + get_text("student_union.finance_oversight.your_clubs"))
+        print("\n" + get_text("student_union.finance_oversight.your_clubs", default="Your Clubs"))
         for i, club in enumerate(clubs):
             print(f"{i+1}. {club[1]}")
 
-        choice = input(get_text("student_union.finance_oversight.select_club_prompt")).strip()
+        choice = input(get_text("student_union.finance_oversight.select_club_prompt", default="Select Club: ")).strip()
         if not choice.isdigit() or int(choice) < 1 or int(choice) > len(clubs):
-            print(get_text("student_union.finance_oversight.invalid_selection"))
+            print(get_text("student_union.finance_oversight.invalid_selection", default="Invalid Selection."))
             conn.close()
             return
 
         club_id = clubs[int(choice)-1][0]
         club_name = clubs[int(choice)-1][1]
 
-        print("\n" + get_text("student_union.finance_oversight.submitting_expense_for", club_name=club_name))
+        print("\n" + get_text("student_union.finance_oversight.submitting_expense_for", club_name=club_name, default="Submitting Expense For {club_name}"))
 
-        expense_type = input(get_text("student_union.finance_oversight.expense_type_prompt")).strip()
+        expense_type = input(get_text("student_union.finance_oversight.expense_type_prompt", default="Expense Type: ")).strip()
         if not expense_type:
-            print(get_text("student_union.finance_oversight.expense_type_empty"))
+            print(get_text("student_union.finance_oversight.expense_type_empty", default="Expense Type Empty"))
             conn.close()
             return
 
         try:
-            amount = float(input(get_text("student_union.finance_oversight.amount_prompt")).strip())
+            amount = float(input(get_text("student_union.finance_oversight.amount_prompt", default="Amount: ")).strip())
             if amount <= 0:
-                print(get_text("student_union.finance_oversight.amount_positive"))
+                print(get_text("student_union.finance_oversight.amount_positive", default="Amount Positive"))
                 conn.close()
                 return
         except ValueError:
-            print(get_text("student_union.finance_oversight.invalid_amount"))
+            print(get_text("student_union.finance_oversight.invalid_amount", default="Invalid Amount."))
             conn.close()
             return
 
-        description = input(get_text("student_union.finance_oversight.description_prompt")).strip()
+        description = input(get_text("student_union.finance_oversight.description_prompt", default="Description: ")).strip()
         if not description:
-            print(get_text("student_union.finance_oversight.description_empty"))
+            print(get_text("student_union.finance_oversight.description_empty", default="Description Empty"))
             conn.close()
             return
 
-        budget_category = input(get_text("student_union.finance_oversight.budget_category_prompt")).strip()
-        receipt_path = input(get_text("student_union.finance_oversight.receipt_path_prompt")).strip()
+        budget_category = input(get_text("student_union.finance_oversight.budget_category_prompt", default="Budget Category: ")).strip()
+        receipt_path = input(get_text("student_union.finance_oversight.receipt_path_prompt", default="Receipt Path: ")).strip()
 
         # Check club budget
         cursor.execute('''
@@ -127,8 +128,8 @@ def submit_expense_request():
         available_budget = budget_result[0] if budget_result[0] else 0
 
         if amount > available_budget:
-            print(get_text("student_union.finance_oversight.budget_exceeded_warning", amount=f"{amount:.2f}", available=f"{available_budget:.2f}"))
-            confirm = input(get_text("student_union.finance_oversight.continue_anyway")).strip().lower()
+            print(get_text("student_union.finance_oversight.budget_exceeded_warning", amount=f"{amount:.2f}", available=f"{available_budget:.2f}", default="Budget Exceeded Warning {amount} {available}"))
+            confirm = input(get_text("student_union.finance_oversight.continue_anyway", default="Continue Anyway")).strip().lower()
             if confirm != 'y':
                 conn.close()
                 return
@@ -149,26 +150,26 @@ def submit_expense_request():
         conn.commit()
         expense_id = cursor.lastrowid
 
-        print(get_text("student_union.finance_oversight.expense_submitted", expense_id=expense_id))
-        print(get_text("student_union.finance_oversight.request_pending"))
+        print(get_text("student_union.finance_oversight.expense_submitted", expense_id=expense_id, default="Expense Submitted {expense_id}"))
+        print(get_text("student_union.finance_oversight.request_pending", default="Request Pending"))
 
         conn.close()
 
     except sqlite3.Error as e:
-        print(get_text("student_union.finance_oversight.database_error", error=str(e)))
+        print(get_text("student_union.finance_oversight.database_error", error=str(e), default="Database Error {error}"))
     except Exception as e:
-        print(get_text("student_union.finance_oversight.error_occurred", error=str(e)))
+        print(get_text("student_union.finance_oversight.error_occurred", error=str(e), default="Error Occurred. {error}"))
 
 def approve_expense_requests():
     """Approve or reject expense requests (for authorized users)"""
     global auth
 
     if not auth or not auth.current_user:
-        print(get_text("student_union.finance_oversight.login_required_approve"))
+        print(get_text("student_union.finance_oversight.login_required_approve", default="Login Required Approve"))
         return
 
     if not (auth.check_permission('manage_all_clubs') or auth.check_permission('manage_own_club')):
-        print(get_text("student_union.finance_oversight.no_permission_approve"))
+        print(get_text("student_union.finance_oversight.no_permission_approve", default="No Permission Approve."))
         return
 
     try:
@@ -176,15 +177,13 @@ def approve_expense_requests():
         cursor = conn.cursor()
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, auth)
 
-        if not result:
-            print(get_text("student_union.finance_oversight.no_student_record"))
+        if not student_id:
+            print(get_text("student_union.finance_oversight.no_student_record", default="No Student Record."))
             conn.close()
             return
 
-        student_id = result[0]
 
         # Get pending expense requests
         if auth.check_permission('manage_all_clubs'):
@@ -214,31 +213,31 @@ def approve_expense_requests():
         requests = cursor.fetchall()
 
         if not requests:
-            print(get_text("student_union.finance_oversight.no_pending_requests"))
+            print(get_text("student_union.finance_oversight.no_pending_requests", default="No Pending Requests."))
             conn.close()
             return
 
-        print("\n" + get_text("student_union.finance_oversight.pending_requests_title"))
+        print("\n" + get_text("student_union.finance_oversight.pending_requests_title", default="===== PENDING REQUESTS ====="))
         print("========================")
 
         for i, request in enumerate(requests):
-            print(f"\n{i+1}. " + get_text("student_union.finance_oversight.request_id", request_id=request[0]))
-            print("   " + get_text("student_union.finance_oversight.club_label", club=request[2]))
-            print("   " + get_text("student_union.finance_oversight.requested_by", name=f"{request[3]} {request[4]}"))
-            print("   " + get_text("student_union.finance_oversight.type_label", type=request[5]))
-            print("   " + get_text("student_union.finance_oversight.amount_label", amount=f"{request[6]:.2f}"))
-            print("   " + get_text("student_union.finance_oversight.description_label", description=request[7]))
-            print("   " + get_text("student_union.finance_oversight.date_label", date=request[8]))
+            print(f"\n{i+1}. " + get_text("student_union.finance_oversight.request_id", request_id=request[0], default="Request ID {request_id}"))
+            print("   " + get_text("student_union.finance_oversight.club_label", club=request[2], default="Club: {club}"))
+            print("   " + get_text("student_union.finance_oversight.requested_by", name=f"{request[3]} {request[4]}", default="Requested By {name}"))
+            print("   " + get_text("student_union.finance_oversight.type_label", type=request[5], default="Type: {type}"))
+            print("   " + get_text("student_union.finance_oversight.amount_label", amount=f"{request[6]:.2f}", default="Amount: {amount}"))
+            print("   " + get_text("student_union.finance_oversight.description_label", description=request[7], default="Description: {description}"))
+            print("   " + get_text("student_union.finance_oversight.date_label", date=request[8], default="Date: {date}"))
             print("-" * 40)
 
-        choice = input("\n" + get_text("student_union.finance_oversight.enter_request_number")).strip()
+        choice = input("\n" + get_text("student_union.finance_oversight.enter_request_number", default="Enter Request Number: ")).strip()
 
         if choice == '0':
             conn.close()
             return
 
         if not choice.isdigit() or int(choice) < 1 or int(choice) > len(requests):
-            print(get_text("student_union.finance_oversight.invalid_selection"))
+            print(get_text("student_union.finance_oversight.invalid_selection", default="Invalid Selection."))
             conn.close()
             return
 
@@ -247,12 +246,12 @@ def approve_expense_requests():
         club_id = selected[1]
         amount = selected[6]
 
-        print("\n" + get_text("student_union.finance_oversight.processing_request", expense_id=expense_id))
-        print("1. " + get_text("student_union.finance_oversight.approve_option"))
-        print("2. " + get_text("student_union.finance_oversight.reject_option"))
-        print("3. " + get_text("student_union.finance_oversight.request_info_option"))
+        print("\n" + get_text("student_union.finance_oversight.processing_request", expense_id=expense_id, default="Processing Request {expense_id}"))
+        print("1. " + get_text("student_union.finance_oversight.approve_option", default="Approve Option"))
+        print("2. " + get_text("student_union.finance_oversight.reject_option", default="Reject Option"))
+        print("3. " + get_text("student_union.finance_oversight.request_info_option", default="Request Info Option"))
 
-        action = input(get_text("student_union.finance_oversight.choose_action")).strip()
+        action = input(get_text("student_union.finance_oversight.choose_action", default="Choose Action")).strip()
 
         if action == '1':
             # Approve request

@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -52,13 +56,44 @@ class GradeTrackingManagementGUI(
 
     def show_grade_tracking_gui(self):
         """Launch the Grade Tracking GUI in a child window"""
-        if not self.auth.current_user:
+        # These two gates fail for very different reasons — no session at all
+        # versus a session whose role carries no grade permissions — but both
+        # surface to the user as a refusal, and neither said which. Log the
+        # distinguishing detail so an "access denied" report can be diagnosed
+        # without reproducing it.
+        import logging
+        _log = logging.getLogger(__name__)
+
+        if self.auth is None:
+            _log.error("Grade Tracking refused: no auth object was passed to "
+                       "GradeTrackingManagementGUI (auth is None).")
             messagebox.showerror(_("common.error"), _("grades.messages.login_required"))
             return
 
-        if not (self.auth.check_permission('manage_grades') or
-                self.auth.check_permission('view_own_grades') or
-                self.auth.check_permission('manage_module_grades')):
+        if not self.auth.current_user:
+            # Distinguish "never logged in" from "session expired underneath
+            # you", which is what an active user actually hits.
+            expired = getattr(self.auth, "last_activity", None) is None
+            _log.error(
+                "Grade Tracking refused: no current_user on the auth object "
+                "(%s). The session was lost before this click.",
+                "session expired or logged out" if expired else "session state present",
+            )
+            messagebox.showerror(_("common.error"), _("grades.messages.login_required"))
+            return
+
+        required = ('manage_grades', 'view_own_grades', 'manage_module_grades')
+        held = [p for p in required if self.auth.check_permission(p)]
+        if not held:
+            user = self.auth.current_user or {}
+            granted = user.get('permissions', [])
+            _log.error(
+                "Grade Tracking refused: user %r (role %r) holds none of %s. "
+                "Session carries %d permission(s)%s",
+                user.get('username'), user.get('role'), list(required), len(granted),
+                " — the role resolved to an empty permission set, so every "
+                "feature will refuse it." if not granted else ".",
+            )
             messagebox.showerror(_("common.error"), _("grades.messages.no_permission_access"))
             return
 
@@ -71,10 +106,22 @@ class GradeTrackingManagementGUI(
                 grade_window = tk.Toplevel(self.root)
                 grade_window.withdraw()
                 _w, _h = 1400, 900
-                grade_window.geometry("%dx%d+%d+%d" % (
-                    _w, _h,
-                    (grade_window.winfo_screenwidth() - _w) // 2,
-                    (grade_window.winfo_screenheight() - _h) // 2))
+                # Clamp the centring offsets to zero. On a display smaller than
+                # the requested size — a 1366x768 laptop, say — the plain
+                # centring maths goes negative: (1366-1400)//2 = -17 and
+                # (768-900)//2 = -66. That produced "1400x900+-17+-66", which
+                # placed the window 17px off the left edge (leaving a matching
+                # gap down the right of the screen) and, worse, 66px off the
+                # top — hiding the title bar and the first row of controls in
+                # every view, so those buttons could not be clicked at all.
+                #
+                # It also silently defeated window_sizing's clamp: "+-17" is
+                # not a geometry string that module could parse, so the whole
+                # request was passed through unclamped. Same max(0, ...) form
+                # the Course Management window uses.
+                _x = max(0, (grade_window.winfo_screenwidth() - _w) // 2)
+                _y = max(0, (grade_window.winfo_screenheight() - _h) // 2)
+                grade_window.geometry("%dx%d+%d+%d" % (_w, _h, _x, _y))
                 grade_window.minsize(1200, 800)
                 grade_window.configure(bg='#f0f0f0')
                 grade_window.title(_("grades.title"))
@@ -82,16 +129,24 @@ class GradeTrackingManagementGUI(
                 try:
                     grade_window.transient(self.root)
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
-                # Initialize the Grade Tracking GUI
-                grade_gui = GradeTrackingApp(grade_window)
-
-                # Pass auth context if supported
-                if hasattr(grade_gui, 'set_auth'):
-                    grade_gui.set_auth(self.auth)
-                elif hasattr(grade_gui, 'auth'):
-                    grade_gui.auth = self.auth
+                # Initialize the Grade Tracking GUI.
+                #
+                # auth MUST be passed to the constructor. GradeTrackingApp
+                # authorises inside __init__ ("do not initialise managers, open
+                # the database, or construct navigation until authentication is
+                # known") and, when auth is None, renders "Access denied / Sign
+                # in with an authorised university account to access grades."
+                # and returns without building anything.
+                #
+                # This call site used to construct it with no auth and assign
+                # afterwards, which is too late — the denial screen was already
+                # built and the app never initialised, so the button appeared
+                # broken for every user including admins. There is no set_auth
+                # method to recover through, and the other six call sites all
+                # pass auth positionally; this was the one that was missed.
+                grade_gui = GradeTrackingApp(grade_window, self.auth)
 
                 grade_window.deiconify()
                 # #2 — Honour any pending EQA drill-through. The
@@ -104,7 +159,7 @@ class GradeTrackingManagementGUI(
                         if hasattr(grade_gui, "_apply_eqa_context"):
                             grade_gui._apply_eqa_context()
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
                 print("Grade Tracking GUI opened successfully")
 
             else:
@@ -161,7 +216,7 @@ class GradeTrackingManagementGUI(
                         not assessment_ref or c.get('assessment_ref') == assessment_ref):
                     flags.setdefault('claims', []).append(c)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return flags
 
     def show_curriculum_assessment_strategy(self, module_code: str = None):
@@ -359,7 +414,7 @@ class GradeTrackingManagementGUI(
             try:
                 init_ai_features_system_db()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             window = tk.Toplevel(self.root)
             window.title(_("ai_features.autograding.title"))
@@ -368,7 +423,7 @@ class GradeTrackingManagementGUI(
             try:
                 window.transient(self.root)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Header
             header = ttk.Frame(window)

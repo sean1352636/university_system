@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.domains.pastoral.infrastructure.health.storage import sqlite3, get_connection
 from datetime import datetime, timedelta
 from education_system.systems.university.domains.pastoral.domain.health.records.db.audit import log_audit_event
@@ -5,7 +9,7 @@ from education_system.systems.university.domains.pastoral.domain.health.records.
 
 def analyze_provider_workload(auth):
     """Workload by provider: last 30d, next 7d, status mix, simple capacity util if schedules exist."""
-    if hasattr(auth, "check_permission") and not auth.check_permission("view_health_analytics"):
+    if hasattr(auth, "check_permission") and not auth.check_permission("view_health_reports"):
         print("You don't have permission to view analytics.")
         return
 
@@ -155,7 +159,7 @@ def analyze_provider_workload(auth):
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         input("\nPress Enter to return...")
 
 
@@ -163,9 +167,9 @@ def analyze_provider_workload(auth):
 def show_appointment_utilization_stats(auth):
     """
     Console analytics for appointments with graceful fallbacks.
-    Looks only at the 'appointments' table and auto-detects columns.
+    Auto-detects both the table and its columns.
     """
-    if hasattr(auth, "check_permission") and not auth.check_permission("view_health_analytics"):
+    if hasattr(auth, "check_permission") and not auth.check_permission("view_health_reports"):
         print("You don't have permission to view analytics.")
         return
 
@@ -173,18 +177,29 @@ def show_appointment_utilization_stats(auth):
     try:
         c = conn.cursor()
 
-        # Ensure table exists
-        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='appointments'")
-        if not c.fetchone():
-            print("No 'appointments' table found. Nothing to analyze.")
+        # Detect the appointments table. This looked only for a table called
+        # 'appointments'; the health schema calls it 'health_appointments', so
+        # the dashboard always reported "No 'appointments' table found" even
+        # with a diary full of bookings. Same detection the workload analysis
+        # above already used.
+        c.execute("SELECT name FROM sqlite_master WHERE type='table'"
+                  " AND name IN ('health_appointments', 'appointments')"
+                  " ORDER BY CASE name WHEN 'health_appointments' THEN 0 ELSE 1 END")
+        found = c.fetchone()
+        if not found:
+            print("No appointments table found. Nothing to analyze.")
             return
+        table = found[0]
 
         # Introspect columns
-        c.execute("PRAGMA table_info(appointments)")
+        c.execute("PRAGMA table_info([" + table + "])")
         cols = [row[1] for row in c.fetchall()]
 
         VALID_STATUS_COLS = {"status", "appointment_status"}
-        VALID_PROVIDER_COLS = {"provider_id", "practitioner_id", "staff_id"}
+        # 'provider' first: health_appointments stores the clinician's name in a
+        # text column, not an id. Without it the provider breakdown below was
+        # skipped even once the table was found.
+        VALID_PROVIDER_COLS = {"provider", "provider_id", "practitioner_id", "staff_id"}
         VALID_DT_COLS = {
             "start_time", "scheduled_time", "appointment_datetime", "appointment_time",
             "appointment_date", "date", "datetime", "start_at", "created_at",
@@ -192,12 +207,23 @@ def show_appointment_utilization_stats(auth):
         VALID_MODIFIERS = {"-30 day", "-7 day", "start of day"}
 
         status_col   = next((x for x in ("status", "appointment_status") if x in cols and x in VALID_STATUS_COLS), None)
-        provider_col = next((x for x in ("provider_id", "practitioner_id", "staff_id") if x in cols and x in VALID_PROVIDER_COLS), None)
-        dt_candidates = [x for x in (
-            "start_time", "scheduled_time", "appointment_datetime", "appointment_time",
-            "appointment_date", "date", "datetime", "start_at", "created_at"
-        ) if x in cols and x in VALID_DT_COLS]
-        dt_col = dt_candidates[0] if dt_candidates else None
+        provider_col = next((x for x in ("provider", "provider_id", "practitioner_id", "staff_id") if x in cols and x in VALID_PROVIDER_COLS), None)
+        # Build a real datetime expression rather than picking a single column.
+        # The candidate list used to put "appointment_time" ahead of
+        # "appointment_date", so on the health schema it keyed everything off a
+        # bare "10:00". SQLite reads that as 2000-01-01T10:00, which is why the
+        # 30/7/today windows all came back 0 and every appointment landed on a
+        # Saturday — 2000-01-01's weekday. Date and time are now combined.
+        if "appointment_date" in cols and "appointment_time" in cols:
+            dt_expr = "[" + table + "].appointment_date||' '||[" + table + "].appointment_time"
+            dt_col = "appointment_date"
+        else:
+            dt_candidates = [x for x in (
+                "appointment_datetime", "datetime", "start_at", "start_time",
+                "scheduled_time", "appointment_date", "date", "created_at"
+            ) if x in cols and x in VALID_DT_COLS]
+            dt_col = dt_candidates[0] if dt_candidates else None
+            dt_expr = ("[" + dt_col + "]") if dt_col else None
 
         print("\n===== Appointment Utilization =====")
 
@@ -211,20 +237,31 @@ def show_appointment_utilization_stats(auth):
             for label, mod in windows:
                 if mod not in VALID_MODIFIERS:
                     continue
+                # Bound the window at both ends. These were open-ended
+                # (">= now - 30 day"), so a booking three weeks in the future
+                # counted towards "Last 30 days" and anything later today
+                # counted towards "Today" — the labels did not describe what
+                # was being counted.
                 if mod == "start of day":
-                    c.execute("SELECT COUNT(*) FROM appointments WHERE datetime([" + dt_col + "]) >= datetime('now','localtime','start of day')")
+                    c.execute(
+                        "SELECT COUNT(*) FROM [" + table + "]"
+                        " WHERE datetime(" + dt_expr + ") >= datetime('now','localtime','start of day')"
+                        " AND datetime(" + dt_expr + ") < datetime('now','localtime','start of day','+1 day')")
                 else:
-                    c.execute("SELECT COUNT(*) FROM appointments WHERE datetime([" + dt_col + "]) >= datetime('now','localtime','" + mod + "')")
+                    c.execute(
+                        "SELECT COUNT(*) FROM [" + table + "]"
+                        " WHERE datetime(" + dt_expr + ") >= datetime('now','localtime','" + mod + "')"
+                        " AND datetime(" + dt_expr + ") <= datetime('now','localtime')")
                 total = c.fetchone()[0]
                 print(f"{label}: {total} appointments")
         else:
-            c.execute("SELECT COUNT(*) FROM appointments")
+            c.execute("SELECT COUNT(*) FROM [" + table + "]")
             total = c.fetchone()[0]
             print(f"Total appointments: {total} (no datetime column detected; skipping time windows)")
 
         # Status breakdown
         if status_col:
-            c.execute("SELECT [" + status_col + "], COUNT(*) FROM appointments GROUP BY [" + status_col + "] ORDER BY COUNT(*) DESC")
+            c.execute("SELECT [" + status_col + "], COUNT(*) FROM [" + table + "] GROUP BY [" + status_col + "] ORDER BY COUNT(*) DESC")
             rows = c.fetchall()
             if rows:
                 print("\nBy status:")
@@ -238,8 +275,9 @@ def show_appointment_utilization_stats(auth):
             if dt_col:
                 c.execute(
                     "SELECT [" + provider_col + "], COUNT(*) AS n"
-                    " FROM appointments"
-                    " WHERE datetime([" + dt_col + "]) >= datetime('now','localtime','-30 day')"
+                    " FROM [" + table + "]"
+                    " WHERE datetime(" + dt_expr + ") >= datetime('now','localtime','-30 day')"
+                    " AND datetime(" + dt_expr + ") <= datetime('now','localtime')"
                     " GROUP BY [" + provider_col + "]"
                     " ORDER BY n DESC"
                     " LIMIT 5"
@@ -247,7 +285,7 @@ def show_appointment_utilization_stats(auth):
             else:
                 c.execute(
                     "SELECT [" + provider_col + "], COUNT(*) AS n"
-                    " FROM appointments"
+                    " FROM [" + table + "]"
                     " GROUP BY [" + provider_col + "]"
                     " ORDER BY n DESC"
                     " LIMIT 5"
@@ -263,8 +301,8 @@ def show_appointment_utilization_stats(auth):
         # Hour-of-day and weekday distributions
         if dt_col:
             c.execute(
-                "SELECT strftime('%H', datetime([" + dt_col + "])) AS hh, COUNT(*)"
-                " FROM appointments"
+                "SELECT strftime('%H', datetime(" + dt_expr + ")) AS hh, COUNT(*)"
+                " FROM [" + table + "]"
                 " WHERE [" + dt_col + "] IS NOT NULL"
                 " GROUP BY hh"
                 " ORDER BY hh"
@@ -276,8 +314,8 @@ def show_appointment_utilization_stats(auth):
                     print(f" {hh}:00 -> {n}")
 
             c.execute(
-                "SELECT strftime('%w', datetime([" + dt_col + "])) AS dow, COUNT(*)"
-                " FROM appointments"
+                "SELECT strftime('%w', datetime(" + dt_expr + ")) AS dow, COUNT(*)"
+                " FROM [" + table + "]"
                 " WHERE [" + dt_col + "] IS NOT NULL"
                 " GROUP BY dow"
                 " ORDER BY dow"
@@ -304,7 +342,7 @@ def show_appointment_utilization_stats(auth):
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         input("\nPress Enter to return...")
 
 

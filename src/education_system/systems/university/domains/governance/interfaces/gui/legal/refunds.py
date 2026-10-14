@@ -24,7 +24,7 @@ class RefundsMixin:
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, pady=(10, 10), padx=10)
 
-        ttk.Label(header_frame, text=_t("legal.refunds.title", default="Legal Services Refunds"),
+        ttk.Label(header_frame, text=_t("legal.refunds.title", default="===== REFUNDS ====="),
                  font=('Arial', 14, 'bold')).pack(side=tk.LEFT)
 
         # Search frame

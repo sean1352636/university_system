@@ -1,4 +1,5 @@
 """Payment plan management GUI"""
+from education_system.systems.university.shell.gui import report_view as _rv
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -82,7 +83,7 @@ class PaymentPlansMixin:
         fees_frame = ttk.LabelFrame(dialog, text=_("finance_gui.transaction_manager.outstanding_fees_frame"), padding=15)
         fees_frame.pack(fill='both', expand=True, padx=20, pady=10)
 
-        fees_text = ScrolledText(fees_frame, height=6, font=('Courier', 10))
+        fees_text = _rv.TextReportView(fees_frame, height=6, font=('Courier', 10))
         fees_text.pack(fill='both', expand=True)
 
         def load_outstanding_fees():
@@ -213,7 +214,7 @@ class PaymentPlansMixin:
 
         template_combo.bind('<<ComboboxSelected>>', lambda e: calculate_plan_summary())
 
-        plan_summary_text = tk.Text(summary_frame, height=8, width=50, font=('Courier', 9))
+        plan_summary_text = _rv.TextReportView(summary_frame, height=8, width=50, font=('Courier', 9))
         plan_summary_text.pack(fill='x', pady=5)
 
         def create_payment_plan():

@@ -12,9 +12,13 @@ Read paths return list[dict]; write paths return bool.
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, Optional
 
-from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
+from education_system.systems.university.infrastructure.database.db import (
+    sqlite3,
+    get_connection,
+    reuse_connection,
+)
 from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
 logger = logging.getLogger(__name__)
@@ -44,7 +48,17 @@ def _all_conflicts() -> list[dict[str, Any]]:
             def __init__(self, db_path: str) -> None:
                 self.db_path = db_path
 
-        return _DetectorHost(str(UNIVERSITY_DEFAULT_DB_PATH)).detect_all_conflicts() or []
+        # The detector checks each student's timetable separately and opens a
+        # connection per check — ~25 per pass, at ~97ms each, which was most of
+        # a single pass's cost. Share one connection for the pass; the
+        # detector's own get_connection() calls pick it up unchanged.
+        #
+        # db_path and row_factory must match what the detector asks for
+        # (`get_connection(self.db_path, row_factory=False)`) — reuse is
+        # deliberately not granted across a differing row_factory, since that
+        # would hand back rows of the wrong type.
+        with reuse_connection(UNIVERSITY_DEFAULT_DB_PATH, row_factory=False):
+            return _DetectorHost(str(UNIVERSITY_DEFAULT_DB_PATH)).detect_all_conflicts() or []
     except Exception as exc:
         logger.debug("live conflict detection failed (%s); reading table",
                      exc)
@@ -69,6 +83,65 @@ def _all_conflicts() -> list[dict[str, Any]]:
     except Exception as exc:
         logger.warning("conflict table fallback failed: %s", exc)
         return []
+
+
+def find_conflicts_for_courses(
+    course_codes: "list[str] | tuple[str, ...] | set[str]",
+) -> dict[str, list[dict[str, Any]]]:
+    """Conflicts per course, computed with **one** detection pass.
+
+    ``find_conflicts_for_course`` runs the full scheduling-conflict detector
+    over the whole database on every call. Calling it once per row — which the
+    Course Management list did for each of its courses — re-ran that entire
+    detection for every course, and each pass opened its own pile of database
+    connections. That was ~50s to open the Course Management window against a
+    modest dataset.
+
+    This does the work once: one detection pass, one module lookup for every
+    course, then pure in-memory matching. Same substring-matching semantics as
+    ``find_conflicts_for_course`` (every conflict description names the modules
+    it affects), so results are identical.
+
+    Returns a dict keyed by the course codes passed in; courses with no
+    conflicts map to an empty list.
+    """
+    codes = [str(c) for c in course_codes if c]
+    result: dict[str, list[dict[str, Any]]] = {c: [] for c in codes}
+    if not codes:
+        return result
+
+    # One lookup of every course's modules, rather than two queries per course.
+    # Matched case-insensitively so the original's ``course_code.upper()``
+    # retry is covered by the same pass.
+    modules_by_course: dict[str, set[str]] = {c: set() for c in codes}
+    wanted = {c.upper(): c for c in codes}
+    try:
+        with get_connection() as conn:
+            placeholders = ",".join("?" for _ in codes)
+            rows = conn.execute(
+                "SELECT course, module_code FROM modules "
+                f"WHERE UPPER(course) IN ({placeholders})",  # nosec B608 - placeholders only
+                [c.upper() for c in codes],
+            ).fetchall()
+        for course, module_code in rows:
+            original = wanted.get(str(course).upper())
+            if original and module_code:
+                modules_by_course[original].add(str(module_code).lower())
+    except Exception as exc:
+        logger.warning("batch course module lookup failed: %s", exc)
+        return result
+
+    conflicts = _all_conflicts()
+    if not conflicts:
+        return result
+
+    descriptions = [((c.get("description") or "").lower(), c) for c in conflicts]
+    for code in codes:
+        needles = modules_by_course.get(code) or set()
+        if not needles:
+            continue
+        result[code] = [c for desc, c in descriptions if any(n in desc for n in needles)]
+    return result
 
 
 def find_conflicts_for_module(module_code: str) -> list[dict[str, Any]]:
@@ -325,7 +398,7 @@ def instructor_workload(instructor_id: int | None = None,
                     eh, em = (int(x) for x in (s["end_time"] or "00:00").split(":")[:2])
                     hours += max(0, (eh * 60 + em - sh * 60 - sm) / 60.0)
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
             out["totals"] = {
                 "teaching_hours_per_week": round(hours, 2),
                 "slot_count": len(out["teaching_slots"]),
@@ -769,6 +842,51 @@ PERIOD_KINDS = (
 )
 
 
+def _current_academic_term(target: str) -> dict[str, Any] | None:
+    """The ``academic_terms`` row covering ``target``, shaped like a period.
+
+    Returns the same keys ``current_period`` yields for a calendar event
+    (``id``/``name``/``date_start``/``date_end``/``event_type``) plus the
+    term's own ``term_type``, ``academic_year`` and ``status``, so callers
+    that only wanted a date span keep working unchanged.
+
+    Cancelled and archived terms are ignored — they are history, not "now".
+    """
+    try:
+        with get_connection() as conn:
+            tbl = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' "
+                "AND name='academic_terms'"
+            ).fetchone()
+            if not tbl:
+                return None
+            row = conn.execute(
+                "SELECT id, name, term_type, academic_year, start_date, "
+                "       end_date, status "
+                "  FROM academic_terms "
+                " WHERE start_date IS NOT NULL AND end_date IS NOT NULL "
+                "   AND start_date <= ? AND end_date >= ? "
+                "   AND LOWER(COALESCE(status, '')) "
+                "       NOT IN ('cancelled', 'archived') "
+                " ORDER BY start_date DESC LIMIT 1",
+                (target, target),
+            ).fetchone()
+            if not row:
+                return None
+            keys = ("id", "name", "term_type", "academic_year",
+                    "start_date", "end_date", "status")
+            term = dict(zip(keys, row))
+            # Period-shaped aliases, so existing callers need no changes.
+            term["date_start"] = term["start_date"]
+            term["date_end"] = term["end_date"]
+            term["date"] = None
+            term["event_type"] = "term"
+            return term
+    except Exception as exc:
+        logger.warning("could not read academic_terms: %s", exc)
+        return None
+
+
 def current_period(kind: str, *, on_date: str | None = None) -> dict[str, Any] | None:
     """Return the active period of ``kind`` covering ``on_date`` (default today).
 
@@ -782,6 +900,18 @@ def current_period(kind: str, *, on_date: str | None = None) -> dict[str, Any] |
     """
     from datetime import date as _date
     target = (on_date or _date.today().isoformat())[:10]
+
+    # Terms are not calendar events. The Calendar GUI keeps them in its own
+    # ``academic_terms`` table (Calendar → Terms), so a term defined there was
+    # invisible to every GUI asking "which term is it?" — Module Management
+    # showed "No active term / period set" while the calendar plainly listed
+    # the term. Ask the terms table first and fall back to a calendar event of
+    # type 'term' for anyone still recording them that way.
+    if (kind or "").lower() == "term":
+        term = _current_academic_term(target)
+        if term is not None:
+            return term
+
     try:
         with get_connection() as conn:
             tbl = conn.execute(
@@ -792,7 +922,7 @@ def current_period(kind: str, *, on_date: str | None = None) -> dict[str, Any] |
                 return None
             row = conn.execute(
                 "SELECT id, name, date, date_start, date_end, event_type "
-                "FROM academic_calendar_events "
+                "FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') "
                 "WHERE LOWER(event_type) = LOWER(?) "
                 "  AND ( "
                 "    (date_start IS NOT NULL AND date_end IS NOT NULL "
@@ -808,15 +938,19 @@ def current_period(kind: str, *, on_date: str | None = None) -> dict[str, Any] |
         return None
 
 
-def is_holiday(check_date: str) -> bool:
-    """``True`` if ``check_date`` falls inside any holiday period.
+def holiday_for(check_date: str) -> Optional[dict]:
+    """The holiday covering ``check_date``, or ``None``.
 
-    Checks both the Calendar's ``academic_calendar_events`` rows
+    Returns ``{"name", "start", "end", "source"}`` so callers can tell
+    the user *which* holiday blocked them and over what range — "falls
+    on a holiday" on its own leaves them with nowhere to go.
+
+    Checks the Calendar's ``academic_calendar_events`` rows
     (event_type='holiday') and the legacy ``holidays`` table.
     """
     if not check_date:
-        return False
-    target = check_date[:10]
+        return None
+    target = str(check_date)[:10]
     try:
         with get_connection() as conn:
             tables = {
@@ -825,28 +959,57 @@ def is_holiday(check_date: str) -> bool:
                 )
             }
             if "academic_calendar_events" in tables:
+                # date_start/date_end alias start_datetime/end_datetime,
+                # which carry a time component. Comparing those against a
+                # bare 'YYYY-MM-DD' fails for the start bound, because
+                # '2026-09-09 09:00' > '2026-09-09' as a string. Compare
+                # on the date portion only.
                 row = conn.execute(
-                    "SELECT 1 FROM academic_calendar_events "
+                    "SELECT name, date, date_start, date_end FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') "
                     "WHERE LOWER(event_type) = 'holiday' AND ( "
                     "  (date_start IS NOT NULL AND date_end IS NOT NULL "
-                    "   AND date_start <= ? AND date_end >= ?) "
-                    "  OR (date = ?) "
+                    "   AND substr(date_start, 1, 10) <= ? "
+                    "   AND substr(date_end, 1, 10) >= ?) "
+                    "  OR (substr(date, 1, 10) = ?) "
                     ") LIMIT 1",
                     (target, target, target),
                 ).fetchone()
                 if row:
-                    return True
+                    start = (row[2] or row[1] or target)[:10]
+                    end = (row[3] or row[1] or target)[:10]
+                    return {"name": row[0] or "Holiday", "start": start,
+                            "end": end, "source": "academic calendar"}
             if "holidays" in tables:
                 row = conn.execute(
-                    "SELECT 1 FROM holidays "
-                    "WHERE start_date <= ? AND end_date >= ? LIMIT 1",
+                    "SELECT holiday_name, start_date, end_date FROM holidays "
+                    "WHERE substr(start_date, 1, 10) <= ? "
+                    "  AND substr(end_date, 1, 10) >= ? LIMIT 1",
                     (target, target),
                 ).fetchone()
                 if row:
-                    return True
+                    return {"name": row[0] or "Holiday",
+                            "start": str(row[1])[:10],
+                            "end": str(row[2])[:10],
+                            "source": "holidays table"}
     except Exception as exc:
-        logger.warning("is_holiday(%s) failed: %s", check_date, exc)
-    return False
+        logger.warning("holiday_for(%s) failed: %s", check_date, exc)
+    return None
+
+
+def describe_holiday(check_date: str) -> str:
+    """A human phrase for the holiday on ``check_date``, or ``""``."""
+    holiday = holiday_for(check_date)
+    if not holiday:
+        return ""
+    if holiday["start"] == holiday["end"]:
+        return f"{holiday['name']} ({holiday['start']})"
+    return (f"{holiday['name']} "
+            f"({holiday['start']} to {holiday['end']})")
+
+
+def is_holiday(check_date: str) -> bool:
+    """``True`` if ``check_date`` falls inside any holiday period."""
+    return holiday_for(check_date) is not None
 
 
 def _letter(pct: float | None) -> str:

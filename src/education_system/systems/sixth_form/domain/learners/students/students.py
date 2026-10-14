@@ -119,6 +119,15 @@ class Student:
     gender: str | None = None
     date_of_birth: str | None = None
     status: str = "Active"
+    #: Set once the onward transfer has been announced successfully. The
+    #: transfer's own completion marker — ``status`` cannot serve as one,
+    #: because 'Left' also means withdrawn or finished.
+    transferred_at: str | None = None
+
+    @property
+    def transfer_complete(self) -> bool:
+        """Whether this student's onward transfer was announced."""
+        return bool(self.transferred_at)
 
     @property
     def full_name(self) -> str:
@@ -170,6 +179,11 @@ def init_db() -> None:
                 ("gender",        "TEXT"),
                 ("date_of_birth", "TEXT"),
                 ("status",        "TEXT NOT NULL DEFAULT 'Active'"),
+                # When the onward transfer completed end to end. Deliberately
+                # not derivable from ``status``: 'Left' covers transferred,
+                # withdrawn *and* finished, so it cannot answer "has this
+                # student's transfer been announced?" — see mark_transferred.
+                ("transferred_at", "TEXT"),
         ):
             if col not in existing_cols:
                 conn.execute(
@@ -206,6 +220,8 @@ def _row_to_student(row: sqlite3.Row) -> Student:
         date_of_birth=(row["date_of_birth"]
                         if "date_of_birth" in row.keys() else None),
         status=(row["status"] if "status" in row.keys() else "Active") or "Active",
+        transferred_at=(row["transferred_at"]
+                        if "transferred_at" in row.keys() else None),
     )
 
 
@@ -520,6 +536,10 @@ def create_student(data: dict[str, Any]) -> Student:
     except Exception:
         logger.debug("Journey registration skipped for student %s",
                      student.student_id, exc_info=True)
+    # After registration, so the journey exists: link the student's own
+    # login (username = student id) to it. Best-effort, never raises.
+    from education_system.platform.cross_system import login_links
+    login_links.try_sync_username(student.student_id)
     return student
 
 
@@ -810,45 +830,293 @@ def _sixthform_admin_email() -> str:
     ).strip() or SIXTHFORM_ADMIN_EMAIL_DEFAULT
 
 
-def _deactivate_login_account(student_id: str) -> bool:
-    """Set ``is_active = 0`` on the student's shared-auth user row.
 
-    Keeps the row in place (history, audit, password-history references
-    survive) but blocks future logins — the shared ``UserAuth.login``
-    flow refuses inactive accounts with a generic
-    "Invalid username or password" error, the same response unknown
-    usernames get, so account existence isn't leaked by the message.
+def disable_leaver_login(student_id: str) -> bool:
+    """Disable a leaver's login — but only once it holds nothing.
 
-    Returns ``True`` if a row was updated, ``False`` if no such auth
-    account exists. Best-effort: errors are logged but never raised so
-    transfer flow continues even if the shared DB is unavailable.
+    Public because it has two callers with different timing:
+    :func:`mark_transferred` when the learner is handed over, and the
+    university when it confirms their place — which comes first, and is
+    the point the platform now treats as the end of their sixth form.
+
+    :func:`_revoke_sixth_form_access` above deliberately stopped doing
+    this, and the reason is still good: shared auth means the row behind
+    a student id is a *person*, who may also hold a parent-portal role, a
+    part-time staff grant or superadmin. Blanket-disabling took all of
+    that with it, and put their MFA enrolment and recovery codes out of
+    reach.
+
+    So the account is disabled only when the sixth form was the last
+    thing on it. A leaver with no memberships can otherwise still sign in
+    and reach nothing, which is a live credential for somebody who has
+    gone — and that is what this closes.
+
+    The university does not reuse this login: its import provisions a
+    fresh one under the university student id, so disabling here cannot
+    lock a learner out of the system they just moved to.
+
+    Best-effort: logged, never raised, so the transfer continues.
     """
     from education_system.platform.identity.auth.db import connect as _auth_connect
+    from education_system.platform.identity.auth.role_manager import RoleManager
     try:
         with _auth_connect() as conn:
-            cur = conn.execute(
-                "UPDATE users SET is_active = 0 WHERE username = ?",
-                (student_id,),
-            )
-            # Also kill any live sessions so they're booted right now.
-            conn.execute(
-                "UPDATE sessions SET is_active = 0 WHERE user_id IN "
-                "(SELECT id FROM users WHERE username = ?)",
-                (student_id,),
-            )
-            conn.commit()
-            if cur.rowcount:
-                logger.info(
-                    "Deactivated sixth-form login for %s (sessions revoked)",
+            row = conn.execute(
+                "SELECT id, is_active FROM users WHERE username = ?",
+                (student_id,)).fetchone()
+            if row is None:
+                logger.warning(
+                    "Disable leaver account: no auth account for %s",
                     student_id)
-                return True
-            logger.warning(
-                "Deactivate-login: no auth account found for %s",
-                student_id)
+                return False
+            user_id = int(row["id"])
+
+        remaining = [s["system_key"] for s in RoleManager().get_user_systems(user_id)]
+        if remaining:
+            # Somebody who is more than this learner. Leave them alone.
+            logger.info(
+                "Leaver account %s (user_id=%s) kept active — still holds %s",
+                student_id, user_id, ", ".join(remaining))
             return False
+
+        with _auth_connect() as conn:
+            conn.execute("UPDATE users SET is_active = 0, "
+                         "updated_at = datetime('now') WHERE id = ?",
+                         (user_id,))
+            conn.execute("UPDATE sessions SET is_active = 0 WHERE user_id = ?",
+                         (user_id,))
+            conn.commit()
+        logger.info(
+            "Disabled leaver account %s (user_id=%s) — no memberships left",
+            student_id, user_id)
+        return True
     except Exception:
         logger.exception(
-            "Failed to deactivate sixth-form login for %s", student_id)
+            "Could not disable the leaver account for %s "
+            "(the transfer itself is unaffected)", student_id)
+        return False
+
+
+
+def _siblings_still_needing_access(conn) -> str:
+    """SQL counting the *other* learners keeping a parent account open.
+
+    Bound to ``(account_id, student_id)``. A sibling counts as still
+    needing the portal unless they have left — or hold a confirmed UCAS
+    place, which is the point this system now treats as the end of their
+    sixth form. Without that second clause two siblings confirmed in the
+    same cycle would hold each other's parent account open forever: each
+    is excluded from their own call and ``Active`` in the other's.
+
+    Falls back to the status test alone on a database with no UCAS
+    tables, where the question cannot be asked.
+    """
+    has_ucas = conn.execute(
+        "SELECT COUNT(*) FROM sqlite_master WHERE type='table' "
+        "AND name='ucas_applications'").fetchone()[0]
+    base = """SELECT COUNT(*) FROM parent_student_links AS l
+                JOIN students AS s ON s.student_id = l.student_id
+               WHERE l.account_id = ? AND l.student_id != ?
+                 AND s.status != 'Left'"""
+    if not has_ucas:
+        return base
+    return base + """
+                 AND NOT EXISTS (SELECT 1 FROM ucas_applications AS a
+                                  WHERE a.student_id = l.student_id
+                                    AND a.status IN ('Confirmed'))"""
+
+
+def disable_orphaned_parent_logins(student_id: str) -> list[str]:
+    """Disable parent logins that exist only for this learner.
+
+    A parent account is parent-portal-local — its own username, password
+    and ``is_active`` — and links to learners through
+    ``parent_student_links``. Crucially the link is many-to-many: one
+    account commonly covers siblings.
+
+    So an account is disabled only when *every* learner it can see has
+    gone. Disabling on the first child to leave would cut a parent off
+    from a sibling still on roll, which is a worse failure than leaving a
+    login open a little too long.
+
+    The learner this is called for is excluded from that count rather
+    than assumed to be ``Left``. It runs at two moments now — when the
+    university confirms a place, where they are still very much on roll,
+    and again at handover — and keying on their own status would have
+    meant the confirmation call could never close anything.
+
+    Returns the usernames disabled. Best-effort; never raises.
+    """
+    disabled: list[str] = []
+    try:
+        with _connect() as conn:
+            # Queried directly rather than through ``parent_portal``,
+            # whose ``init_db`` cannot run against a database whose
+            # ``parent_student_links`` predates its ``contact_id``
+            # column — which is the shape actually in the field. Calling
+            # it here would take this whole review down with it.
+            have = {r["name"] for r in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND "
+                "name IN ('parent_accounts','parent_student_links')")}
+            if len(have) < 2:
+                logger.info(
+                    "No parent-portal tables on this database — nothing to "
+                    "review for %s", student_id)
+                return disabled
+            accounts = conn.execute(
+                "SELECT DISTINCT account_id FROM parent_student_links "
+                "WHERE student_id = ?", (student_id,)).fetchall()
+            for row in accounts:
+                account_id = row["account_id"]
+                still_active = conn.execute(
+                    _siblings_still_needing_access(conn),
+                    (account_id, student_id)).fetchone()[0]
+                if still_active:
+                    logger.info(
+                        "Parent account #%s kept active — %d other learner(s) "
+                        "still on roll", account_id, still_active)
+                    continue
+                cur = conn.execute(
+                    "UPDATE parent_accounts SET is_active = 0 "
+                    "WHERE account_id = ? AND is_active = 1", (account_id,))
+                if cur.rowcount:
+                    name = conn.execute(
+                        "SELECT username FROM parent_accounts WHERE account_id = ?",
+                        (account_id,)).fetchone()
+                    disabled.append(name["username"] if name else str(account_id))
+            conn.commit()
+        if disabled:
+            logger.info(
+                "Disabled %d parent account(s) after %s left: %s",
+                len(disabled), student_id, ", ".join(disabled))
+        return disabled
+    except Exception:
+        logger.exception(
+            "Could not review parent accounts for %s "
+            "(the transfer itself is unaffected)", student_id)
+        return disabled
+
+
+
+def _close_sixth_form_enrolment(student_id: str,
+                                moved_by: str | None) -> bool:
+    """Close the learner's cross-system sixth-form enrolment.
+
+    The progression board's Submit button tells the user "this closes
+    their sixth-form enrolment", and ``university_progression.submit``
+    says the same in its docstring — but nothing did it. The
+    ``learner_enrolment`` row stayed ``active`` with no end date, so a
+    learner who had left the college was still, to every cross-system
+    reader, enrolled at it.
+
+    Closed as ``transferred`` rather than ``completed``: they are leaving
+    mid-phase for somewhere else, which is exactly the distinction that
+    status exists to draw.
+
+    Best-effort, like every other step after the status flip — a learner
+    who has gone must not be held back by a bookkeeping row.
+    """
+    try:
+        from education_system.platform.cross_system import (
+            enrolments as _enrolments,
+            identity_service as _identity,
+        )
+        journey = _identity.find_by_student("sixth_form", student_id)
+        if not journey:
+            logger.info(
+                "No cross-system journey for %s — no enrolment to close",
+                student_id)
+            return False
+        journey_id = journey.get("journey_id")
+        current = _enrolments.current_enrolment(journey_id, "sixth_form")
+        if current is None:
+            logger.info(
+                "No open sixth-form enrolment on journey %s to close",
+                journey_id)
+            return False
+        _enrolments.close_enrolment(
+            current["enrolment_id"], status="transferred",
+            reason=f"Transferred out of the sixth form"
+                   + (f" by {moved_by}" if moved_by else ""))
+        logger.info(
+            "Closed sixth-form enrolment %s for %s as transferred",
+            current["enrolment_id"], student_id)
+        return True
+    except Exception:
+        logger.exception(
+            "Could not close the sixth-form enrolment for %s "
+            "(the transfer itself is unaffected)", student_id)
+        return False
+
+
+def _revoke_sixth_form_access(student_id: str) -> bool:
+    """End the learner's sixth-form membership, leaving the person intact.
+
+    Authentication is shared across every system, so the account behind a
+    sixth-form student id is a *person*, not a sixth-form login. It may
+    also carry a parent-portal role, a part-time staff grant, or
+    superadmin. This used to run ``UPDATE users SET is_active = 0``, which
+    disabled all of that — the person could no longer sign in anywhere,
+    and their MFA enrolment, recovery codes and password history went out
+    of reach with them.
+
+    What actually ends at a transfer is one membership: the
+    ``user_systems`` row for ``sixth_form``. Credentials, MFA secret,
+    recovery codes and security questions are deliberately untouched, so a
+    learner moving up a phase keeps the identity they already have rather
+    than needing a new one.
+
+    Live sessions are still revoked. A session issued before the change
+    carries the old membership set, so it has to be re-minted — but that
+    is a re-login, not a lockout: the same password and the same second
+    factor still work.
+
+    Note that revoking the last membership does not itself block sign-in;
+    the shared login returns an empty systems list rather than refusing.
+    A leaver with nothing left can authenticate and reach nothing, which
+    is the intended "no access" state and is what lets the university
+    grant them access later without reviving a disabled account.
+
+    Returns True if a sixth-form membership was removed. Best-effort:
+    errors are logged, never raised, so the transfer continues.
+    """
+    from education_system.platform.identity.auth.db import connect as _auth_connect
+    from education_system.platform.identity.auth.role_manager import RoleManager
+    from education_system.platform.kernel.core.system_keys import canonical_system_key
+    try:
+        with _auth_connect() as conn:
+            row = conn.execute(
+                "SELECT id FROM users WHERE username = ?", (student_id,)
+            ).fetchone()
+        if row is None:
+            logger.warning(
+                "Revoke sixth-form access: no auth account for %s", student_id)
+            return False
+        user_id = int(row["id"])
+
+        system_key = canonical_system_key("sixth_form")
+        roles = RoleManager()
+        had_access = roles.get_user_role_for_system(user_id, system_key) is not None
+        roles.revoke_system_access(user_id, system_key)
+
+        # Re-mint sessions against the new membership set.
+        with _auth_connect() as conn:
+            conn.execute(
+                "UPDATE sessions SET is_active = 0 WHERE user_id = ?",
+                (user_id,),
+            )
+            conn.commit()
+
+        remaining = [s["system_key"] for s in roles.get_user_systems(user_id)]
+        logger.info(
+            "Revoked sixth-form access for %s (user_id=%s); account remains "
+            "active with %s", student_id, user_id,
+            ", ".join(remaining) if remaining
+            else "no remaining system access")
+        return had_access
+    except Exception:
+        logger.exception(
+            "Failed to revoke sixth-form access for %s", student_id)
         return False
 
 
@@ -859,10 +1127,16 @@ def mark_transferred(student_id: str,
     Composite, idempotent-ish operation:
 
       1. Updates the student row's ``status`` to ``'Left'``.
-      2. Deactivates the shared-auth login (``users.is_active = 0``)
-         and revokes any live sessions, so the student can no longer
-         sign in with their sixth-form credentials.
-      3. Sends an email to the sixth-form admin inbox via the
+      2. Removes the ``sixth_form`` membership from the shared-auth
+         account and revokes live sessions. The account itself stays
+         active with its MFA and credentials intact — it is the person,
+         who may hold other roles and who keeps one identity across a
+         change of education phase.
+      3. Anchors the canonical cross-system journey, records the
+         ``sixth_form -> <destination>`` transition on it, and — when the
+         destination is this university — publishes the handover onto the
+         durable bus for the admissions intake to pick up.
+      4. Sends an email to the sixth-form admin inbox via the
          ``student_transferred_to_university`` template, naming the
          student and quoting their id.
 
@@ -870,17 +1144,29 @@ def mark_transferred(student_id: str,
     email steps are best-effort: failures are logged but do not block
     the status update or each other, so a successful import in the
     university system can never be left half-applied.
+
+    **Safe to call again.** Completion is recorded in ``transferred_at``,
+    not in ``status``, and the announcement carries a deterministic
+    idempotency key. A call that failed part-way leaves ``transferred_at``
+    unset and can simply be repeated; a call that already succeeded
+    re-announces into a no-op. Use :func:`list_incomplete_transfers` to
+    find students left in that state.
     """
     init_db()
     student = get_student(student_id)
     if student is None:
         raise ValidationError(f"No student with id {student_id}")
 
-    # Already transferred? The status flip and login deactivation below
-    # are idempotent no-ops, but the notification email is not — so only
-    # send it the first time to avoid duplicate admin notices on a
-    # repeated/accidental call.
-    already_left = student.status == "Left"
+    # Has *this transfer* already completed? Keyed on ``transferred_at``,
+    # never on ``status``: 'Left' is also what a withdrawal and a completed
+    # course leave behind, so it cannot distinguish "already announced"
+    # from "gone for some other reason". It used to gate the announcement,
+    # which meant a failed publish stranded the student — the status was
+    # already 'Left', so the retry skipped the very step that had failed
+    # and they vanished from the sixth form without reaching the
+    # university. The announcement is now always attempted and is
+    # idempotent on the bus; only the non-idempotent email is gated.
+    already_transferred = student.transfer_complete
 
     # 1) Flip status to Left — independent of any side-effects below.
     with _connect() as conn:
@@ -894,20 +1180,49 @@ def mark_transferred(student_id: str,
         student_id, student.full_name,
     )
 
-    # 2) Deactivate the auth login.
-    _deactivate_login_account(student_id)
+    # 2) End the sixth-form membership. Not the account — shared auth means
+    #    the account is the person, who may hold other roles entirely.
+    _revoke_sixth_form_access(student_id)
 
-    # 2b) Register the canonical cross-system identity and publish a
-    #     progression event onto the durable bus so the university
-    #     system can admit the student. Only on the first transfer.
-    if not already_left:
-        _publish_progression(student, moved_by)
+    # 2a) Close the account down once nothing is left on it, and take
+    #     any parent logins that existed only for this learner with it.
+    disable_leaver_login(student_id)
+    disable_orphaned_parent_logins(student_id)
+    _close_sixth_form_enrolment(student_id, moved_by)
 
-    # 3) Notify the sixth-form admin inbox — only on the first transfer.
-    if already_left:
+    # 2b) Register the canonical cross-system identity and route the
+    #     leaver: a progression event onto the durable bus when they are
+    #     coming to this university, an ``external`` transition when they
+    #     are not. Always attempted — the announcement is idempotent, so a
+    #     repeat call is a no-op when it previously succeeded and a genuine
+    #     retry when it did not.
+    announced = _publish_progression(student, moved_by)
+
+    # 2c) Stamp completion only on a successful announcement. This is what
+    #     makes the operation retryable: a failure leaves transferred_at
+    #     unset, so the student shows up in list_incomplete_transfers() and
+    #     the next call redoes the work.
+    if announced and not already_transferred:
+        with _connect() as conn:
+            conn.execute(
+                "UPDATE students SET transferred_at = datetime('now') "
+                "WHERE student_id = ?",
+                (student_id,),
+            )
+            conn.commit()
+
+    # 3) Notify the sixth-form admin inbox — only on the first completed
+    #    transfer, since the email is the one step that is not idempotent.
+    if already_transferred:
         logger.info(
-            "Student %s was already 'Left' — skipping duplicate "
-            "transfer notification email", student_id,
+            "Transfer for %s already completed at %s — skipping duplicate "
+            "notification email", student_id, student.transferred_at,
+        )
+    elif not announced:
+        logger.warning(
+            "Not sending a transfer notification for %s — the announcement "
+            "failed, so there is nothing to notify anyone about yet",
+            student_id,
         )
     else:
         try:
@@ -944,54 +1259,172 @@ def mark_transferred(student_id: str,
             )
 
     # Return the refreshed Student row so callers can see the new
-    # status without an extra fetch.
+    # status and transferred_at without an extra fetch.
     out = get_student(student_id)
     assert out is not None
     return out
 
 
+def list_incomplete_transfers() -> list[Student]:
+    """Students marked Left whose transfer never completed.
+
+    A row appears here when :func:`mark_transferred` flipped the status
+    but the announcement failed — the student has gone from the sixth-form
+    workflow without reaching anywhere. Calling ``mark_transferred`` again
+    for each one retries the announcement; it is safe whether the earlier
+    attempt failed before or after the bus write.
+
+    Rows predating the ``transferred_at`` column also surface here, since
+    their marker is NULL. That is the honest answer — nothing recorded
+    whether their announcement landed — and re-running them is harmless.
+    """
+    init_db()
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT * FROM students WHERE status = 'Left' "
+            "AND transferred_at IS NULL ORDER BY student_id"
+        ).fetchall()
+    return [_row_to_student(r) for r in rows]
+
+
 def _publish_progression(student, moved_by: str | None) -> None:
-    """Best-effort: register the canonical journey and publish a
-    ``student.progression.completed`` event for the university system.
+    """Best-effort: register the canonical journey, then route the leaver.
+
+    A ``student.progression.completed`` event is published for the
+    university only when that is where the learner is actually going —
+    see :func:`university_handover.resolve`. A leaver whose Firm choice
+    is an institution this platform does not run gets a transition
+    recorded against ``external`` instead, so the journey says where they
+    went without announcing an arrival nobody is expecting.
 
     Requires name + DOB to anchor the canonical identity; if the
     sixth-form record is missing a DOB we skip the bus (the status
     flip / email still apply) rather than create an unmatchable journey.
+
+    Either route anchors the canonical journey and records the hop on it
+    (idempotently — this function is re-entered on every retry). Only the
+    home route also publishes; ``external`` has no consumer to publish to.
+
+    Returns True only when the learner was actually announced — either
+    published to the university or recorded as having gone elsewhere.
+    The caller stamps ``transferred_at`` on that answer, so a False here
+    leaves the transfer visibly unfinished and retryable rather than
+    silently swallowed.
     """
     if not (student.first_name and student.last_name
             and student.date_of_birth):
-        logger.info(
-            "Skipping cross-system publish for %s — needs name + DOB "
-            "to anchor a canonical identity", student.student_id)
-        return
+        logger.warning(
+            "Cannot announce transfer for %s — needs name + DOB to anchor "
+            "a canonical identity. The status flip and login deactivation "
+            "still apply; the transfer stays incomplete and retryable.",
+            student.student_id)
+        return False
     try:
         from education_system.platform.cross_system import identity_service
         from education_system.platform.integrations.external import cross_system_bus
+        from education_system.systems.sixth_form.domain.progression import (
+            university_handover,
+        )
         journey_id = identity_service.get_or_create_journey(
             first_name=student.first_name,
             last_name=student.last_name,
             date_of_birth=student.date_of_birth,
             system="sixth_form", student_id=student.student_id)
+        # Only a Firm choice at this university is an arrival here. An
+        # Insurance choice, a declined offer or a place elsewhere used to
+        # publish all the same, creating an applicant in a university the
+        # learner never accepted.
+        destination = university_handover.resolve(student)
+        journey = identity_service.get(journey_id) or {}
+        _pk_col, uni_id_col = identity_service.SYSTEM_SLOTS[
+            university_handover.DESTINATION_SYSTEM]
+        already_admitted = journey.get(uni_id_col)
+
+        if not destination.is_home:
+            if already_admitted:
+                # A completed admission outranks the UCAS record: the
+                # university's import picker fills this slot before calling
+                # us, and a learner demonstrably enrolled here did not go
+                # somewhere else, whatever their choices say.
+                logger.info(
+                    "Firm choice for %s names %s, but they are already "
+                    "university student %s — publishing as normal",
+                    student.student_id,
+                    destination.institution or "another institution",
+                    already_admitted)
+            else:
+                identity_service.record_transition_once(
+                    journey_id, from_system="sixth_form",
+                    to_system=destination.system,
+                    reason=destination.reason, actor_user_id=None)
+                logger.info(
+                    "Sixth-form leaver %s recorded as %s (%s) — no "
+                    "university progression event published",
+                    student.student_id, destination.system,
+                    destination.institution or "institution not named")
+                _emit_transfer_webhook(student, journey_id, moved_by)
+                return True
+
+        released = university_handover.build(student)
+        # Two layers travel together, and they are not competing
+        # vocabularies. The flat identity keys are the platform's envelope
+        # convention — ProgressionIntake matches on them and adapter_intake
+        # back-fills them from the journey when a producer omits them. The
+        # spec-keyed fields are this boundary's own dataset, filtered by
+        # SIXTH_FORM_TO_UNIVERSITY. Merged into one dict rather than
+        # double-splatted so a future spec field named like an envelope key
+        # is an override, not a TypeError at the transfer.
+        payload = {
+            "sf_student_id": student.student_id,
+            "first_name": student.first_name,
+            "middle_name": student.middle_name,
+            "last_name": student.last_name,
+            "date_of_birth": student.date_of_birth,
+            "gender": student.gender,
+            "title": student.title,
+            "moved_by": moved_by,
+            "handover_boundary": released.boundary,
+            "handover_missing": released.missing_required,
+        }
+        payload.update(released.payload)
+        # A deterministic key makes re-publication a no-op: the outbox is
+        # ON CONFLICT(idempotency_key) DO NOTHING and hands back the
+        # original event_id. That is what lets a failed transfer be retried
+        # by simply calling mark_transferred() again — without it, every
+        # attempt minted a fresh uuid and a second call would double-admit,
+        # which is why publication used to be gated on the student not
+        # already being 'Left'.
         cross_system_bus.publish_cross_system(
             cross_system_bus.EVENT_STUDENT_PROGRESSION_COMPLETED,
             source_system="sixth_form",
             source_module="sixthform_system.students",
             journey_id=journey_id, target_system="university",
-            sf_student_id=student.student_id,
-            first_name=student.first_name,
-            middle_name=student.middle_name,
-            last_name=student.last_name,
-            date_of_birth=student.date_of_birth,
-            gender=student.gender, title=student.title,
-            moved_by=moved_by)
+            idempotency_key=f"sixth_form:progression:{student.student_id}",
+            **payload)
+        # Record the hop on the journey itself, exactly as the external
+        # branch above does. The home route used to publish and stop
+        # there: a learner coming to *this* university left no transition
+        # at all, so their cross-system history said "sixth form" and
+        # then nothing, while a leaver who went somewhere else — the case
+        # the platform knows least about — was properly recorded. Once,
+        # because mark_transferred() is deliberately re-callable.
+        identity_service.record_transition_once(
+            journey_id, from_system="sixth_form", to_system="university",
+            reason=destination.reason, actor_user_id=None)
         logger.info(
-            "Published progression event for %s (journey %s) to "
-            "university", student.student_id, journey_id)
+            "Published progression event for %s (journey %s) to university "
+            "with %d handover field(s): %s", student.student_id, journey_id,
+            len(released.included), ", ".join(released.included) or "none")
         _emit_transfer_webhook(student, journey_id, moved_by)
+        return True
     except Exception:
         logger.exception(
-            "Cross-system progression publish failed for %s "
-            "(status/login/email still applied)", student.student_id)
+            "Transfer announcement failed for %s — the student is marked "
+            "Left with their login disabled but has NOT reached the "
+            "university. transferred_at stays unset, so calling "
+            "mark_transferred() again will retry the announcement.",
+            student.student_id)
+        return False
 
 
 def _emit_transfer_webhook(student, journey_id: str,

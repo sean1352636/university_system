@@ -88,7 +88,7 @@ def get_course_integrity_settings(module_code: str) -> Dict:
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
 
 def update_course_integrity_settings(module_code: str,
@@ -129,6 +129,7 @@ def update_course_integrity_settings(module_code: str,
                 ]
                 # We can't bind datetime('now') as a placeholder; use a
                 # literal in the SET clause instead.
+                # db-audit: ignore[DBW001] - literal collection
                 conn.execute(
                     f"UPDATE course_integrity_settings "  # nosec B608
                     f"SET {set_parts}, updated_at = datetime('now'), "
@@ -167,7 +168,7 @@ def update_course_integrity_settings(module_code: str,
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
 
 def is_plagiarism_enabled(module_code: str) -> bool:

@@ -212,7 +212,7 @@ def test_contact_sheet(fresh_db):
 
 def test_api_blueprint_routes():
     flask = pytest.importorskip("flask")
-    from education_system.systems.sixth_form.interfaces.api.routes import advanced_search_bp
+    from education_system.api.sixth_form.routes import advanced_search_bp
     app = flask.Flask(__name__)
     app.register_blueprint(advanced_search_bp)
     rules = {r.rule for r in app.url_map.iter_rules()}

@@ -1,8 +1,12 @@
 """Methods _render_transcript through run."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 from .. import progress_gui_shared as _shared
+import tkinter.simpledialog  # noqa: F401 - registers tk.simpledialog
 globals().update({name: value for name, value in _shared.__dict__.items() if not name.startswith("__")})
 
 
@@ -32,7 +36,7 @@ class AcademicProgressGUI:
                     middle_str = f' {middle} ' if middle else ' '
                     student_name = f'{first}{middle_str}{last}'
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         lines.append(sep)
         lines.append('ACADEMIC TRANSCRIPT')
@@ -139,7 +143,7 @@ class AcademicProgressGUI:
         ttk.Button(selector_frame, text=_t('gui.assessment.academic_progress.progress_gui_parts.academicprogressgui_render_transcript.buttons.comprehensive_progress_report', default="Comprehensive Progress Report"),
                    command=self.generate_comprehensive_report).pack(side=tk.LEFT, padx=5)
 
-        self.analytics_text = scrolledtext.ScrolledText(analytics_tab, height=30, wrap=tk.WORD)
+        self.analytics_text = ReportPane(analytics_tab, title=_t('academic_progress.tabs.analytics_title', default="Progress Analytics"))
         self.analytics_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Configure tags once
@@ -297,7 +301,7 @@ class AcademicProgressGUI:
         ttk.Button(button_frame, text=_t('gui.assessment.academic_progress.progress_gui_parts.academicprogressgui_render_transcript.buttons.create_snapshot', default="Create Snapshot"),
                   command=self.create_snapshot_gui).pack(side=tk.LEFT, padx=5)
 
-        self.history_text = scrolledtext.ScrolledText(history_tab, height=30, wrap=tk.WORD)
+        self.history_text = ReportPane(history_tab, title=_t('academic_progress.tabs.history_title', default="Progress History"))
         self.history_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     def load_progress_history(self):

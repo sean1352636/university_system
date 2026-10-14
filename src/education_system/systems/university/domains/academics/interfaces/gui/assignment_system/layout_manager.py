@@ -1,9 +1,13 @@
 """UI layout and styling management"""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
 import os
 import shutil
 import threading
@@ -275,13 +279,16 @@ class LayoutManager:
             instructor_buttons = [
                 ("➕ Create Assignment", self.gui.show_create_assignment),
                 ("📝 Create Assessment", self.gui.show_create_assessment),
+                ("❓ Create Quiz", self.gui.show_create_quiz),
                 ("👥 Create Group Assignment", self.gui.show_create_group_assignment),
                 ("📶 Create Multi-Stage Assignment", self.gui.create_multi_stage_assignment),
                 ("📊 Manage Assignments", self.gui.show_manage_assignments),
                 ("🎯 Manage Assessments", self.gui.show_manage_assessments),
+                ("❓ Quizzes", self.gui.show_quizzes),
                 ("📶 Multi-Stage Assignments", self.gui.show_multi_stage_assignments),
-                ("✅ Grade Submissions", self.gui.show_grade_submissions),
-                ("⭐ Grade with Rubrics", self.gui.grade_with_rubrics),
+                # Marking lives in Grade Tracking now; these open it there.
+                ("✅ Grade Submissions →", self.gui.show_grade_submissions),
+                ("⭐ Grade with Rubrics →", self.gui.grade_with_rubrics),
                 ("🤖 Auto-Grading", self.gui.show_auto_grading),
                 ("📋 View All Submissions", self.gui.view_all_submissions),
                 ("✏️ Annotate Submissions", self.gui.show_annotation_summary),
@@ -447,7 +454,7 @@ class LayoutManager:
         try:
             c.configure(takefocus=1)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         def scroll_units(n):
             c.yview_scroll(n, "units")
@@ -493,7 +500,7 @@ class LayoutManager:
         try:
             c.configure(yscrollincrement=20)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         def _on_keypress(event):
             if self.sidebar_scrollbar.winfo_viewable():

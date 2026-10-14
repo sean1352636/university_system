@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>University Management System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/portal/static/css/portal.css">
+  <script>
+    // Applied before first paint: reading the preference here avoids the
+    // white flash you get if the theme is only set once portal.js loads.
+    (function () {
+      try {
+        var t = localStorage.getItem("edu.theme");
+        if (t === "dark" || t === "light") {
+          document.documentElement.setAttribute("data-theme", t);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
+</head>
+<body>
+  <div id="topbar"></div>
+
+  <main class="main-window">
+    <section class="welcome">
+      <h1>Welcome to the University Management System</h1>
+      <p class="sub" id="welcome-sub">Search for any part of the system, or pick up where you left off.</p>
+    </section>
+
+    <section class="search-panel">
+      <label class="visually-hidden" for="site-search">Search the system</label>
+      <div class="search-wrap">
+        <span class="search-icon" aria-hidden="true">&#9906;</span>
+        <input id="site-search" type="search" autocomplete="off"
+               placeholder="Search students, modules, attendance, finance&hellip;"
+               aria-controls="search-results" aria-expanded="false" role="combobox">
+        <button type="button" id="search-clear" class="search-clear hidden"
+                aria-label="Clear search">&times;</button>
+      </div>
+      <div id="search-results" class="search-results" role="listbox" hidden></div>
+      <p class="search-hint" id="search-hint">
+        Type to search. <kbd>/</kbd> focuses the box, <kbd>Esc</kbd> clears it.
+      </p>
+    </section>
+
+    <section class="actions">
+      <a class="btn" id="go-dashboard" href="/portal/dashboard.html">Open dashboard</a>
+      <button type="button" class="btn btn-ghost" id="btn-theme" data-theme-toggle>&#9790; Dark</button>
+      <button type="button" class="btn btn-ghost" id="btn-logout">Log out</button>
+      <button type="button" class="btn btn-danger" id="btn-shutdown">Shut down</button>
+    </section>
+
+    <div id="notice" class="alert hidden" role="status"></div>
+  </main>
+
+  <footer class="site-footer">
+    Education System &middot; University Management System
+  </footer>
+
+  <script src="/portal/static/js/portal.js"></script>
+  <script>
+    (function () {
+      EduPortal.initTheme();
+      EduPortal.renderTopbar("home");
+
+      const user     = EduPortal.getUser();
+      const input    = document.getElementById("site-search");
+      const results  = document.getElementById("search-results");
+      const clearBtn = document.getElementById("search-clear");
+      const notice   = document.getElementById("notice");
+      const sub      = document.getElementById("welcome-sub");
+
+      function say(msg, kind) {
+        notice.textContent = msg;
+        notice.className = "alert alert-" + (kind || "info");
+      }
+
+      // ── Signed-in state ────────────────────────────────────────────
+      if (user) {
+        sub.textContent = "Signed in as " + (user.display_name || user.username)
+                        + ". Search for any part of the system below.";
+      } else {
+        sub.textContent = "Sign in to search and open the systems you have access to.";
+        document.getElementById("btn-logout").classList.add("hidden");
+        document.getElementById("btn-shutdown").classList.add("hidden");
+        document.getElementById("go-dashboard").setAttribute("href", "/portal/login.html");
+        document.getElementById("go-dashboard").textContent = "Sign in";
+      }
+
+      // ── Search ─────────────────────────────────────────────────────
+      // The catalogue is fetched once, lazily, then filtered in memory —
+      // a keystroke must not become a request.
+      let catalogue = null;
+      let activeIndex = -1;
+
+      async function ensureCatalogue() {
+        if (catalogue === null) catalogue = await EduPortal.searchIndex();
+        return catalogue;
+      }
+
+      function render(matches, query) {
+        activeIndex = -1;
+        if (!query) {
+          results.hidden = true;
+          results.innerHTML = "";
+          input.setAttribute("aria-expanded", "false");
+          return;
+        }
+        if (!matches.length) {
+          results.innerHTML =
+            '<p class="search-empty">Nothing matches &ldquo;'
+            + EduPortal.escapeHtml(query) + '&rdquo;.</p>';
+        } else {
+          results.innerHTML = matches.slice(0, 12).map(function (m, i) {
+            return '<a class="search-item" role="option" data-i="' + i + '" href="'
+              + EduPortal.escapeHtml(m.path) + '">'
+              + '<span class="search-item-label">' + EduPortal.escapeHtml(m.label) + '</span>'
+              + '<span class="search-item-area">' + EduPortal.escapeHtml(m.area) + '</span>'
+              + '</a>';
+          }).join("");
+        }
+        results.hidden = false;
+        input.setAttribute("aria-expanded", "true");
+      }
+
+      let matches = [];
+      async function runSearch() {
+        const q = input.value;
+        clearBtn.classList.toggle("hidden", !q);
+        const entries = await ensureCatalogue();
+        matches = EduPortal.searchEntries(entries, q);
+        render(matches, q);
+      }
+
+      input.addEventListener("input", runSearch);
+
+      input.addEventListener("keydown", function (ev) {
+        const items = results.querySelectorAll(".search-item");
+        if (ev.key === "Escape") { input.value = ""; runSearch(); input.blur(); return; }
+        if (!items.length) return;
+        if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {
+          ev.preventDefault();
+          activeIndex += (ev.key === "ArrowDown" ? 1 : -1);
+          if (activeIndex < 0) activeIndex = items.length - 1;
+          if (activeIndex >= items.length) activeIndex = 0;
+          items.forEach(function (el, i) { el.classList.toggle("active", i === activeIndex); });
+          items[activeIndex].scrollIntoView({ block: "nearest" });
+        } else if (ev.key === "Enter") {
+          // Enter with nothing highlighted takes the top hit, which is
+          // what people expect from a search box.
+          const target = items[activeIndex >= 0 ? activeIndex : 0];
+          if (target) { ev.preventDefault(); location.href = target.getAttribute("href"); }
+        }
+      });
+
+      clearBtn.addEventListener("click", function () {
+        input.value = ""; runSearch(); input.focus();
+      });
+
+      document.addEventListener("keydown", function (ev) {
+        if (ev.key === "/" && document.activeElement !== input) {
+          ev.preventDefault(); input.focus();
+        }
+      });
+
+      document.addEventListener("click", function (ev) {
+        if (!results.hidden && !ev.target.closest(".search-panel")) results.hidden = true;
+      });
+
+      // ── Log out ────────────────────────────────────────────────────
+      // Listener, not onclick="": the page's CSP grants a nonce to this
+      // script block but never authorises inline handler attributes.
+      document.getElementById("btn-theme")
+        .addEventListener("click", () => EduPortal.toggleTheme());
+
+      document.getElementById("btn-logout").addEventListener("click", async function (ev) {
+        ev.target.disabled = true;
+        ev.target.textContent = "Signing out…";
+        await EduPortal.logout();   // redirects on completion
+      });
+
+      // ── Shut down ──────────────────────────────────────────────────
+      document.getElementById("btn-shutdown").addEventListener("click", async function (ev) {
+        if (!confirm("Shut down the server?\n\nEveryone using it will be "
+                   + "disconnected, and you will need to start it again "
+                   + "from the command line.")) return;
+        ev.target.disabled = true;
+        ev.target.textContent = "Shutting down…";
+        try {
+          await EduPortal.shutdown();
+          say("The server is shutting down. This page will stop responding.", "success");
+          document.querySelectorAll(".actions button, .actions a")
+            .forEach(function (el) { el.classList.add("hidden"); });
+        } catch (e) {
+          say(e.message || "Shutdown failed.", "error");
+          ev.target.disabled = false;
+          ev.target.textContent = "Shut down";
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

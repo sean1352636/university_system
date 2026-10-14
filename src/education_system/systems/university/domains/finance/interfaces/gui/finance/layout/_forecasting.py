@@ -1,4 +1,5 @@
 """Forecasting and projections mixin for LayoutManager."""
+from education_system.systems.university.shell.gui import report_view as _rv
 
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -208,7 +209,7 @@ class ForecastingMixin:
             window.geometry("900x700")
             window.transient(self.root)
 
-            text_widget = ScrolledText(window, font=('Courier', 10), wrap=tk.WORD)
+            text_widget = _rv.TextReportView(window, font=('Courier', 10), wrap=tk.WORD)
             text_widget.pack(fill='both', expand=True, padx=10, pady=10)
             text_widget.insert('1.0', report)
             text_widget.config(state='disabled')
@@ -328,7 +329,7 @@ class ForecastingMixin:
             window.geometry("900x700")
             window.transient(self.root)
 
-            text_widget = ScrolledText(window, font=('Courier', 10), wrap=tk.WORD)
+            text_widget = _rv.TextReportView(window, font=('Courier', 10), wrap=tk.WORD)
             text_widget.pack(fill='both', expand=True, padx=10, pady=10)
             text_widget.insert('1.0', report)
             text_widget.config(state='disabled')

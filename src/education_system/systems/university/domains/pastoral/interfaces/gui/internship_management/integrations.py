@@ -45,7 +45,7 @@ class IntegrationsMixin:
         grade_btn_frame = tk.Frame(grade_frame, bg='white')
         grade_btn_frame.pack(anchor='w')
 
-        if self.auth.check_permission('view_grades') or self.auth.check_permission('view_student_grades'):
+        if self.auth.check_permission('view_all_grades') or self.auth.check_permission('view_all_grades'):
             tk.Button(grade_btn_frame, text=_t('gui.pastoral.internship_management.integrations.buttons.view_student_grades', default="View Student Grades"),
                      command=self.open_grade_gui,
                      bg='#3498db', fg='white', font=('Arial', 10),
@@ -94,7 +94,7 @@ class IntegrationsMixin:
     def open_email_manager(self):
         """Open email manager GUI"""
         try:
-            from education_system.systems.university.interfaces.gui.shell.email.email_gui import EmailManagerGUI
+            from education_system.systems.university.shell.gui.email.email_gui import EmailManagerGUI
             email_window = tk.Toplevel(self.root)
             email_window.title(_t('gui.pastoral.internship_management.integrations.windows.email_manager', default="Email Manager"))
             email_window.geometry("800x600")
@@ -115,13 +115,25 @@ class IntegrationsMixin:
             else:
                 # Running standalone, need to create main GUI
                 root_widget.destroy()
-                from education_system.systems.university.interfaces.gui.shell.main import UnifiedManagementGUI
+                from education_system.systems.university.shell.gui.main import UnifiedManagementGUI
                 app = UnifiedManagementGUI(self.auth)
                 app.run()
         except Exception as e:
             print(f"Error returning to main menu: {e}")
             import traceback
             traceback.print_exc()
+
+    def open_grade_gui(self):
+        """Open grade tracking GUI"""
+        try:
+            from education_system.systems.university.domains.academics.interfaces.gui._cross_launchers import (
+                open_grade_gui as _open_grade_gui,
+            )
+            _open_grade_gui(self.root, auth=self.auth)
+        except ImportError:
+            messagebox.showerror(_t('gui.pastoral.internship_management.integrations.dialogs.error', default="Error"), _t('gui.pastoral.internship_management.integrations.dialogs.grade_gui_not_available', default="Grade Tracking GUI not available"))
+        except Exception as e:
+            messagebox.showerror(_t('gui.pastoral.internship_management.integrations.dialogs.error', default="Error"), f"Error opening Grade Tracking GUI: {e}")
 
     def open_finance_gui(self):
         """Open finance management GUI"""

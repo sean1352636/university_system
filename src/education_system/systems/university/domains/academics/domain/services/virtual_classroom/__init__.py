@@ -6,18 +6,18 @@ Provides comprehensive virtual classroom capabilities including:
 - Session scheduling and management
 - Participant tracking and attendance
 - Recording management
-- Breakout rooms
-- Live polling and quizzes
-- Chat and Q&A
+- Attendance published to the central attendance records
+
+Chat, polls and breakout rooms were removed: the meeting itself runs on
+Zoom/Teams/Meet, which provide all three natively, and nothing synced
+them back — the local copies could only ever be a second, emptier record
+of what happened in the real meeting.
 
 Managers:
     - VirtualClassroomManager: Create and manage virtual classrooms
     - SessionManager: Schedule and manage sessions
     - ParticipantManager: Track participants and attendance
     - RecordingManager: Manage session recordings
-    - BreakoutRoomManager: Create and manage breakout rooms
-    - PollManager: Create polls and quizzes
-    - ChatManager: Handle chat messages
 
 Example Usage:
     from education_system.systems.university.domains.academics.domain.services.virtual_classroom import (
@@ -47,18 +47,14 @@ from education_system.systems.university.domains.academics.domain.services.virtu
 from education_system.systems.university.domains.academics.domain.services.virtual_classroom.session_manager import SessionManager
 from education_system.systems.university.domains.academics.domain.services.virtual_classroom.participant_manager import ParticipantManager
 from education_system.systems.university.domains.academics.domain.services.virtual_classroom.recording_manager import RecordingManager
-from education_system.systems.university.domains.academics.domain.services.virtual_classroom.breakout_room_manager import BreakoutRoomManager
-from education_system.systems.university.domains.academics.domain.services.virtual_classroom.poll_manager import PollManager
-from education_system.systems.university.domains.academics.domain.services.virtual_classroom.chat_manager import ChatManager
 from education_system.systems.university.domains.academics.domain.services.virtual_classroom.schema import create_virtual_classroom_tables
+from education_system.systems.university.domains.academics.domain.services.virtual_classroom.attendance_sync import sync_session_attendance
 
 __all__ = [
     'VirtualClassroomManager',
     'SessionManager',
     'ParticipantManager',
     'RecordingManager',
-    'BreakoutRoomManager',
-    'PollManager',
-    'ChatManager',
-    'create_virtual_classroom_tables'
+    'create_virtual_classroom_tables',
+    'sync_session_attendance',
 ]

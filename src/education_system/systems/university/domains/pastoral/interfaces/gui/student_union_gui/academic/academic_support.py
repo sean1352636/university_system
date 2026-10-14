@@ -1021,7 +1021,7 @@ class LearningIntegrationDialog:
 
         cce_tree.pack(fill='both', expand=True)
 
-        # Create credit_events tracking table and load events from union_events
+        # Create credit_events tracking table and load events from (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union')
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
@@ -1038,14 +1038,14 @@ class LearningIntegrationDialog:
             conn.commit()
             user_id = str(self.auth.current_user.get('id', ''))
 
-            # Find credit-bearing events from union_events (academic/course categories)
+            # Find credit-bearing events from (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') (academic/course categories)
             cursor.execute('''
                 SELECT e.event_id, e.event_name, e.event_date, e.category,
                        CASE
                            WHEN cr.status IS NOT NULL THEN cr.status
                            ELSE 'available'
                        END as reg_status
-                FROM union_events e
+                FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e
                 LEFT JOIN course_credit_registrations cr
                     ON e.event_id = cr.event_id AND cr.user_id = ?
                 WHERE LOWER(e.category) IN ('academic', 'course', 'conference',

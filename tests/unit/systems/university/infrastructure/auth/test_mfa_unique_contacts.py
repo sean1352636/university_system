@@ -20,7 +20,7 @@ def test_unique_email_enforcement():
 
     # Simulate User 1 registering email for MFA
     print("\n1. User 1 (ID: 100) registers email: admin@university.edu")
-    result1 = service.generate_email_otp(100, "admin@university.edu")
+    result1 = service.generate_email_otp(100, "admin@university.edu", allow_new_identifier=True)
 
     if result1['success']:
         print("   ✓ User 1 successfully registered email for MFA")
@@ -30,7 +30,7 @@ def test_unique_email_enforcement():
 
     # Simulate User 2 trying to register the SAME email
     print("\n2. User 2 (ID: 200) attempts to register SAME email: admin@university.edu")
-    result2 = service.generate_email_otp(200, "admin@university.edu")
+    result2 = service.generate_email_otp(200, "admin@university.edu", allow_new_identifier=True)
 
     if not result2['success'] and 'already registered' in result2.get('error', '').lower():
         print("   ✓ CORRECTLY REJECTED - Email already in use")
@@ -42,7 +42,7 @@ def test_unique_email_enforcement():
 
     # User 1 can update their own email
     print("\n3. User 1 (ID: 100) updates to different email: admin2@university.edu")
-    result3 = service.generate_email_otp(100, "admin2@university.edu")
+    result3 = service.generate_email_otp(100, "admin2@university.edu", allow_new_identifier=True)
 
     if result3['success']:
         print("   ✓ User 1 successfully updated their email")
@@ -52,7 +52,7 @@ def test_unique_email_enforcement():
 
     # Now User 2 can register the previously used email (since User 1 no longer uses it)
     print("\n4. User 2 (ID: 200) can now register the freed email: admin@university.edu")
-    result4 = service.generate_email_otp(200, "admin@university.edu")
+    result4 = service.generate_email_otp(200, "admin@university.edu", allow_new_identifier=True)
 
     if result4['success']:
         print("   ✓ User 2 successfully registered freed email")
@@ -73,7 +73,7 @@ def test_unique_phone_enforcement():
 
     # Simulate User 3 registering phone for MFA
     print("\n1. User 3 (ID: 300) registers phone: +447700900123")
-    result1 = service.generate_sms_otp(300, "+447700900123")
+    result1 = service.generate_sms_otp(300, "+447700900123", allow_new_identifier=True)
 
     if result1['success']:
         print("   ✓ User 3 successfully registered phone for MFA")
@@ -83,7 +83,7 @@ def test_unique_phone_enforcement():
 
     # Simulate User 4 trying to register the SAME phone
     print("\n2. User 4 (ID: 400) attempts to register SAME phone: +447700900123")
-    result2 = service.generate_sms_otp(400, "+447700900123")
+    result2 = service.generate_sms_otp(400, "+447700900123", allow_new_identifier=True)
 
     if not result2['success'] and 'already registered' in result2.get('error', '').lower():
         print("   ✓ CORRECTLY REJECTED - Phone already in use")
@@ -95,7 +95,7 @@ def test_unique_phone_enforcement():
 
     # User 3 can update their own phone
     print("\n3. User 3 (ID: 300) updates to different phone: +447700900456")
-    result3 = service.generate_sms_otp(300, "+447700900456")
+    result3 = service.generate_sms_otp(300, "+447700900456", allow_new_identifier=True)
 
     if result3['success']:
         print("   ✓ User 3 successfully updated their phone")
@@ -152,7 +152,7 @@ def test_cross_user_scenario():
 
     # Admin user sets up MFA
     print("\n1. Admin (ID: 1) sets up MFA with email: security@university.edu")
-    result1 = service.generate_email_otp(1, "security@university.edu")
+    result1 = service.generate_email_otp(1, "security@university.edu", allow_new_identifier=True)
 
     if result1['success']:
         print("   ✓ Admin successfully set up email MFA")
@@ -161,7 +161,7 @@ def test_cross_user_scenario():
         return False
 
     print("\n2. Admin (ID: 1) also sets up SMS MFA: +447700900999")
-    result2 = service.generate_sms_otp(1, "+447700900999")
+    result2 = service.generate_sms_otp(1, "+447700900999", allow_new_identifier=True)
 
     if result2['success']:
         print("   ✓ Admin successfully set up SMS MFA")
@@ -171,7 +171,7 @@ def test_cross_user_scenario():
 
     # Staff user tries to use admin's email
     print("\n3. Staff (ID: 2) attempts to use Admin's email: security@university.edu")
-    result3 = service.generate_email_otp(2, "security@university.edu")
+    result3 = service.generate_email_otp(2, "security@university.edu", allow_new_identifier=True)
 
     if not result3['success']:
         print("   ✓ BLOCKED - Cannot use Admin's email")
@@ -181,7 +181,7 @@ def test_cross_user_scenario():
 
     # Staff user tries to use admin's phone
     print("\n4. Staff (ID: 2) attempts to use Admin's phone: +447700900999")
-    result4 = service.generate_sms_otp(2, "+447700900999")
+    result4 = service.generate_sms_otp(2, "+447700900999", allow_new_identifier=True)
 
     if not result4['success']:
         print("   ✓ BLOCKED - Cannot use Admin's phone")
@@ -191,7 +191,7 @@ def test_cross_user_scenario():
 
     # Staff sets up their own unique contacts
     print("\n5. Staff (ID: 2) sets up their own email: staff2@university.edu")
-    result5 = service.generate_email_otp(2, "staff2@university.edu")
+    result5 = service.generate_email_otp(2, "staff2@university.edu", allow_new_identifier=True)
 
     if result5['success']:
         print("   ✓ Staff successfully set up unique email")

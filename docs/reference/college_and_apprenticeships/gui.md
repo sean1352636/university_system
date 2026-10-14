@@ -3,7 +3,7 @@
 Apprenticeships only — `fe_college` has no GUI.
 
 ```bash
-python run.py --apprenticeships --gui
+python -m education_system --apprenticeships --gui
 ```
 
 Launched by the unified launcher after the shared login.
@@ -15,13 +15,20 @@ unauthenticated session — there is no per-system login screen.
 ```
 interfaces/gui/
 ├── gui_main.py    # The shell: header, sidebar, content pane, NAV_BY_ROLE
+├── session.py     # Login -> Actor, capability summary, dashboard payload
 ├── widgets.py     # The toolkit every window builds on
-├── controllers/
 └── windows/
-    ├── admin/               (10)   apprentice/  (9)
-    ├── staff/               (9)    employer/    (7)
-    ├── end_point_assessor/  (5)    system/      (5)
+    ├── admin/               (11)   apprentice/  (7)
+    ├── staff/               (7)    employer/    (6)
+    ├── end_point_assessor/  (5)    system/      (3)
+    └── shared/              (20)   opened by several roles: tasks, calendar,
+                                     search, learning plan, actions, assignments,
+                                     documents, signatures, complaints, …
 ```
+
+A nav entry names its module relative to `windows/`, so a shared screen
+is listed as `"shared.email"` under each role that opens it rather than
+re-exported into each role's package.
 
 One window, three regions: a header, a navigation sidebar and a content
 pane every screen renders into. 1400x900, minimum 1200x800, `grid` for

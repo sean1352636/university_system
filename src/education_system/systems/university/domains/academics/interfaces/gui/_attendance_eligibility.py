@@ -283,7 +283,7 @@ def bulk_recompute_for_exam(
                     exam_id=int(exam_id), module_code=module_code,
                     action="eligibility_recomputed")
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     return out
 
@@ -301,7 +301,7 @@ def _parse_enrolled_ids(raw: Any) -> Iterable[str]:
         if isinstance(parsed, list):
             return [str(x) for x in parsed]
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     # Last-ditch CSV fallback
     return [s.strip() for s in str(raw).split(",") if s.strip()]
 

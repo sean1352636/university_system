@@ -15,6 +15,9 @@ Public surface:
   hook for ``schedule_hearing`` to add SU support attendees.
 * Events:     ``publish_event`` — writes to the academic calendar,
   fires ``EVENT_CALENDAR_CHANGED``.
+* Calendar:   ``add_calendar_entry`` — the generic mirror every SU
+  create-flow calls so anything booked, scheduled or founded in the
+  Union lands on the university calendar automatically.
 * Internal discipline: handled via existing cases_bus
   (``kind='su_internal'``).
 """
@@ -378,6 +381,163 @@ def list_advocacy_requests_for(student_id: str | int,
 # Events on the academic calendar
 # ---------------------------------------------------------------------------
 
+_CALENDAR_TABLE = "academic_calendar_events"
+
+# Columns the mirror would like to write. The table has grown over
+# time and older databases predate start_time/location/status, so the
+# insert is narrowed to whatever the live table actually has.
+_CALENDAR_OPTIONAL_COLS = (
+    "start_time", "end_time", "location", "status", "organizer",
+)
+
+
+def _calendar_columns(conn: sqlite3.Connection) -> set[str]:
+    try:
+        # db-audit: ignore[DBW001] - module constant
+        return {r[1] for r in conn.execute(
+            f"PRAGMA table_info({_CALENDAR_TABLE})"
+        ).fetchall()}
+    except Exception:
+        return set()
+
+
+def add_calendar_entry(*, name: str,
+                       date: str | None = None,
+                       date_start: str | None = None,
+                       date_end: str | None = None,
+                       description: str | None = None,
+                       kind: str = "event",
+                       source_table: str | None = None,
+                       source_id: Any = None,
+                       created_by: str | int | None = None,
+                       start_time: str | None = None,
+                       end_time: str | None = None,
+                       location: str | None = None,
+                       organizer: str | None = None,
+                       conn: sqlite3.Connection | None = None) -> str | None:
+    """Mirror anything the Student Union creates onto the university calendar.
+
+    This is the single writer behind "anything created in the SU shows
+    up on the calendar": clubs, events, elections, competitions, room
+    and facility bookings, mentorship sessions, volunteering, study
+    groups. It writes an ``academic_calendar_events`` row tagged
+    ``su_<kind>`` and fires ``EVENT_CALENDAR_CHANGED`` so every
+    calendar view refreshes.
+
+    ``source_table``/``source_id`` give the row a deterministic id
+    (``SU-<table>-<id>``) so re-running a create flow for the same
+    record updates the calendar entry instead of duplicating it.
+
+    Date handling follows the table's CHECK constraint: a row uses
+    *either* a single ``date`` *or* a ``date_start``/``date_end``
+    range, never both. Dates may be passed as ``YYYY-MM-DD`` or as a
+    full ``YYYY-MM-DD HH:MM`` — the time half is split off into
+    ``start_time``/``end_time`` when those columns exist.
+
+    Best-effort by design: a calendar failure must never lose the SU
+    record the caller just wrote, so every error is logged and
+    swallowed. Returns the calendar event id, or ``None``.
+    """
+    if not name:
+        return None
+
+    def _split(value: str | None) -> tuple[str | None, str | None]:
+        """Return (date, time) from 'YYYY-MM-DD[ HH:MM[:SS]]'."""
+        if not value:
+            return None, None
+        text = str(value).strip().replace("T", " ")
+        if not text:
+            return None, None
+        day, _, rest = text.partition(" ")
+        return day[:10] or None, (rest.strip()[:8] or None)
+
+    date, t = _split(date)
+    start_time = start_time or t
+    date_start, t = _split(date_start)
+    start_time = start_time or t
+    date_end, t = _split(date_end)
+    end_time = end_time or t
+
+    # Collapse a degenerate range to a single date, and never send both
+    # forms — the table's valid_event_dates CHECK rejects an inverted
+    # range outright.
+    if date_start and date_end and date_start > date_end:
+        date_end = date_start
+    if date_start and not date_end:
+        date, date_start = date_start, None
+    elif date_end and not date_start:
+        date, date_end = date_end, None
+    elif date_start and date_end and date_start == date_end:
+        date, date_start, date_end = date_start, None, None
+    if date and (date_start or date_end):
+        date = None
+    if not (date or date_start):
+        # Undated things (a club being founded, a group being formed)
+        # still belong on the calendar — put them on today.
+        date = datetime.now().strftime("%Y-%m-%d")
+
+    if source_table and source_id is not None:
+        event_id = f"SU-{source_table}-{source_id}"
+    else:
+        event_id = f"SU-{uuid.uuid4()}"
+
+    now = datetime.now().isoformat()
+    event_type = f"su_{kind}" if not kind.startswith("su_") else kind
+
+    values: dict[str, Any] = {
+        "id": event_id,
+        "name": name,
+        "date": date,
+        "date_start": date_start,
+        "date_end": date_end,
+        "description": description or f"Student Union {kind}",
+        "event_type": event_type,
+        "date_added": now,
+        "last_modified": now,
+        "created_by": str(created_by) if created_by is not None else None,
+        "start_time": start_time,
+        "end_time": end_time,
+        "location": location,
+        "status": "scheduled",
+        "organizer": organizer or "Students' Union",
+    }
+
+    def _write(c: sqlite3.Connection) -> None:
+        available = _calendar_columns(c)
+        cols = [k for k in values
+                if k not in _CALENDAR_OPTIONAL_COLS or k in available]
+        c.execute(
+            f"INSERT OR REPLACE INTO {_CALENDAR_TABLE} "
+            f"({', '.join(cols)}) "
+            f"VALUES ({', '.join('?' for _ in cols)})",
+            tuple(values[k] for k in cols),
+        )
+        c.commit()
+
+    try:
+        if conn is not None:
+            _write(conn)
+        else:
+            with get_connection() as owned:
+                _write(owned)
+    except Exception as exc:
+        logger.warning("add_calendar_entry(%s) failed: %s", name, exc)
+        return None
+
+    try:
+        from education_system.systems.university.infrastructure.event_bus import (
+            publish, EVENT_CALENDAR_CHANGED,
+        )
+        publish(EVENT_CALENDAR_CHANGED, event_id=event_id, name=name,
+                event_type=event_type, action="created", date=date,
+                date_start=date_start, date_end=date_end,
+                source="student_union")
+    except Exception as exc:
+        logger.debug("calendar publish failed: %s", exc)
+
+    return event_id
+
+
 def publish_event(*, name: str, when: str,
                   location: str | None = None,
                   description: str | None = None,
@@ -415,10 +575,9 @@ def publish_event(*, name: str, when: str,
     try:
         with get_connection() as conn:
             conn.execute(
-                "INSERT INTO academic_calendar_events "
-                "(id, name, date, description, event_type, "
-                " date_added, last_modified, created_by) "
-                "VALUES (?, ?, ?, ?, 'su_event', ?, ?, ?)",
+                "INSERT INTO unified_events "
+                "(source_event_id, title, event_date, description, event_type, created_at, updated_at, created_by, source_type) "
+                "VALUES (?, ?, ?, ?, 'su_event', ?, ?, ?, 'academic_calendar')",
                 (event_id, name, when[:10],
                  description or "Student Union event",
                  now, now,
@@ -439,7 +598,7 @@ def publish_event(*, name: str, when: str,
                 approval_status=approval_status,
                 tags=list(tags) if tags else [])
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
     if needs_clearance:
         # Open a security-desk clearance case and a date-bounded
@@ -609,7 +768,7 @@ __all__ = [
     "list_clubs_for", "is_member_of", "join_club", "leave_club",
     "charge_membership_fee", "list_outstanding_su_charges",
     "request_advocacy", "record_advocacy", "list_advocacy_requests_for",
-    "publish_event",
+    "publish_event", "add_calendar_entry",
     "student_hall", "list_hall_residents", "list_hall_clubs",
     "set_club_hall", "hall_eligible_for",
 ]

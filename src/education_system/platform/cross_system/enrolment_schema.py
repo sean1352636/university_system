@@ -94,6 +94,14 @@ TRANSITION_CANCELLED = "cancelled"
 ALL_TRANSITION_STATUSES: frozenset[str] = frozenset(
     TRANSITION_STATUSES) | {TRANSITION_CANCELLED}
 
+# The admissions decision recorded on a transition. A rejection is not a
+# new status: the transition ends as ``cancelled`` (so every existing "is
+# it still live?" check keeps working), and ``decision = 'rejected'`` says
+# why.
+DECISION_ACCEPTED = "accepted"
+DECISION_REJECTED = "rejected"
+TRANSITION_DECISIONS: tuple[str, ...] = (DECISION_ACCEPTED, DECISION_REJECTED)
+
 
 _SCHEMA_SQL = """
 -- ── Enrolment history ───────────────────────────────────────────────
@@ -116,6 +124,12 @@ CREATE TABLE IF NOT EXISTS learner_enrolment (
     year_group       TEXT,
     exit_reason      TEXT,
     notes            TEXT,
+    -- Programme/course of study, how the spell ended (grade, destination,
+    -- "completed", ...), and which system wrote the row — the lineage the
+    -- Learner 360 shows. Also added by guarded ALTER for existing DBs.
+    programme        TEXT,
+    outcome          TEXT,
+    source_system    TEXT,
     created_at       TEXT    NOT NULL DEFAULT (datetime('now')),
     updated_at       TEXT    NOT NULL DEFAULT (datetime('now'))
 );
@@ -154,6 +168,29 @@ CREATE TABLE IF NOT EXISTS learner_transition (
     handover_approved_at     TEXT,
     consent_reference        TEXT,
     cancelled_reason         TEXT,
+    -- The destination's reference for the application (a UCAS personal id
+    -- on the college->university routes) and the ranked choice list, as
+    -- JSON. Both used to be published to the bus and then dropped, so
+    -- every reader of the row — including the university's own applicant
+    -- list — showed a blank course and no UCAS id.
+    application_reference    TEXT,
+    choices_json             TEXT,
+    -- The date the move takes effect (start at the destination / leave the
+    -- source). Used to be passed through to the enrolments only, so a
+    -- transition could not say when it was due.
+    effective_date           TEXT,
+    -- The admissions decision, with who made it and why. A rejection used
+    -- to be an anonymous cancel(reason) with no decision at all.
+    decision                 TEXT,
+    decided_by               TEXT,
+    decided_at               TEXT,
+    decision_reason          TEXT,
+    -- The receiving institution confirming the handover arrived.
+    acknowledged_by          TEXT,
+    acknowledged_at          TEXT,
+    -- JSON list of {key, label, owner, done, done_by, done_at}, seeded
+    -- from the boundary's HandoverSpec checklist.
+    checklist_json           TEXT,
     updated_at               TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_transition_journey
@@ -163,6 +200,30 @@ CREATE INDEX IF NOT EXISTS idx_transition_status
 CREATE INDEX IF NOT EXISTS idx_transition_dest_enrolment
     ON learner_transition(destination_enrolment_id)
     WHERE destination_enrolment_id IS NOT NULL;
+
+-- ── Transition audit trail ──────────────────────────────────────────
+-- One row for everything that happens to a transition: each workflow
+-- step, a rejection, the receiver's acknowledgement, a checklist tick, a
+-- change of effective date. learner_transition holds only the latest
+-- state, and student_journey_transitions is written only on completion,
+-- so "who released what, and what was withheld" had no answer before.
+-- released_fields / withheld_fields are JSON lists of handover KEYS, never
+-- values. The payload itself stays on learner_transition.
+CREATE TABLE IF NOT EXISTS learner_transition_event (
+    event_id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    transition_id   TEXT    NOT NULL
+                    REFERENCES learner_transition(transition_id),
+    step            TEXT    NOT NULL,
+    from_status     TEXT,
+    actor           TEXT,
+    at              TEXT    NOT NULL DEFAULT (datetime('now')),
+    effective_date  TEXT,
+    note            TEXT,
+    released_fields TEXT,
+    withheld_fields TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_transition_event_transition
+    ON learner_transition_event(transition_id, event_id);
 
 -- ── Canonical journey, in enrolment vocabulary ──────────────────────
 -- A view, not a table: student_journey already owns legal identity and is
@@ -183,7 +244,93 @@ CREATE VIEW IF NOT EXISTS learner_journey AS
 """
 
 
+# ── learner_enrolment migration ─────────────────────────────────────
+#: Columns added to ``learner_enrolment`` after the table shipped. The DDL
+#: above carries them for a fresh database; these guarded ALTERs bring an
+#: existing one up to date (CREATE TABLE IF NOT EXISTS never would).
+_ENROLMENT_COLUMNS: tuple[tuple[str, str], ...] = (
+    ("programme", "TEXT"),
+    ("outcome", "TEXT"),
+    ("source_system", "TEXT"),
+)
+
+#: Year-group history. ``learner_enrolment.year_group`` holds only the
+#: current value, so a repeated year used to overwrite itself and leave no
+#: trace; enrolments.py appends a row here for every change and every
+#: explicit repeat. Run after the ALTERs, in the same ensure pass.
+_ENROLMENT_POST_SQL = """
+CREATE TABLE IF NOT EXISTS enrolment_year_history (
+    history_id      INTEGER PRIMARY KEY AUTOINCREMENT,
+    enrolment_id    TEXT    NOT NULL REFERENCES learner_enrolment(enrolment_id),
+    journey_id      TEXT    NOT NULL,
+    system          TEXT    NOT NULL,
+    from_year_group TEXT,
+    to_year_group   TEXT    NOT NULL,
+    change_type     TEXT    NOT NULL,
+    academic_year   TEXT,
+    note            TEXT,
+    recorded_at     TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_year_history_enrolment
+    ON enrolment_year_history(enrolment_id, history_id);
+CREATE INDEX IF NOT EXISTS idx_year_history_journey
+    ON enrolment_year_history(journey_id);
+"""
+
+
+def _migrate_enrolment_columns(conn) -> None:
+    held = {r["name"] for r in conn.execute(
+        "PRAGMA table_info(learner_enrolment)").fetchall()}
+    for name, decl in _ENROLMENT_COLUMNS:
+        if name in held:
+            continue
+        conn.execute(
+            f"ALTER TABLE learner_enrolment ADD COLUMN {name} {decl}")  # nosec B608
+        logger.info("Added learner_enrolment.%s", name)
+    conn.executescript(_ENROLMENT_POST_SQL)
+
+
 _initialised: set[str] = set()
+
+#: Columns added to ``learner_transition`` after the table shipped.
+#: ``CREATE TABLE IF NOT EXISTS`` is a no-op on a database that already has
+#: the table, so a column added to the DDL above never reaches an existing
+#: deployment without an ALTER — and any index or query naming it then
+#: fails there and only there.
+_TRANSITION_COLUMNS: tuple[tuple[str, str], ...] = (
+    ("application_reference", "TEXT"),
+    ("choices_json", "TEXT"),
+    ("effective_date", "TEXT"),
+    ("decision", "TEXT"),
+    ("decided_by", "TEXT"),
+    ("decided_at", "TEXT"),
+    ("decision_reason", "TEXT"),
+    ("acknowledged_by", "TEXT"),
+    ("acknowledged_at", "TEXT"),
+    ("checklist_json", "TEXT"),
+)
+
+#: Indexes over the added columns, applied after the ALTERs for the same
+#: reason: they cannot live in the script that runs before them.
+_POST_MIGRATION_SQL = """
+CREATE INDEX IF NOT EXISTS idx_transition_reference
+    ON learner_transition(destination_system, application_reference)
+    WHERE application_reference IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_transition_effective
+    ON learner_transition(effective_date, status)
+    WHERE effective_date IS NOT NULL;
+"""
+
+
+def _migrate_transition_columns(conn) -> None:
+    held = {r["name"] for r in conn.execute(
+        "PRAGMA table_info(learner_transition)").fetchall()}
+    for name, decl in _TRANSITION_COLUMNS:
+        if name in held:
+            continue
+        conn.execute(
+            f"ALTER TABLE learner_transition ADD COLUMN {name} {decl}")  # nosec B608
+        logger.info("Added learner_transition.%s", name)
 
 
 def ensure_enrolment_schema(db_path: str | None = None) -> None:
@@ -203,6 +350,9 @@ def ensure_enrolment_schema(db_path: str | None = None) -> None:
     conn = connect(db_path)
     try:
         conn.executescript(_SCHEMA_SQL)
+        _migrate_enrolment_columns(conn)
+        _migrate_transition_columns(conn)
+        conn.executescript(_POST_MIGRATION_SQL)
         conn.commit()
     finally:
         conn.close()
@@ -263,8 +413,10 @@ def backfill_enrolments(*, db_path: str | None = None) -> dict[str, int]:
     summary = {"journeys": 0, "created": 0, "existing": 0, "no_slots": 0}
     conn = connect(db_path)
     try:
+        # Merged tombstones have no slots left; their history moved with them.
         rows = conn.execute(
-            "SELECT * FROM student_journey").fetchall()
+            "SELECT * FROM student_journey "
+            "WHERE COALESCE(status, '') != 'merged'").fetchall()
         existing = {
             (r["journey_id"], r["system"], r["local_student_id"])
             for r in conn.execute(
@@ -297,6 +449,7 @@ def backfill_enrolments(*, db_path: str | None = None) -> dict[str, int]:
                     status="active" if is_current else "completed",
                     exit_reason=None if is_current else "progressed",
                     notes="backfilled from student_journey slot",
+                    source_system=phase,
                     db_path=db_path,
                 )
                 summary["created"] += 1
@@ -322,6 +475,9 @@ __all__ = [
     "TRANSITION_STATUSES",
     "TRANSITION_CANCELLED",
     "ALL_TRANSITION_STATUSES",
+    "DECISION_ACCEPTED",
+    "DECISION_REJECTED",
+    "TRANSITION_DECISIONS",
     "ensure_enrolment_schema",
     "reset_schema_cache_for_test",
     "backfill_enrolments",

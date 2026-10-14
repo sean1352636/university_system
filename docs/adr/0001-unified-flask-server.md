@@ -57,7 +57,7 @@ systems without repetition.
 - A system with a large number of blueprints adds startup latency for all systems
 
 ### Neutral
-- `run.py --college --api` and `run.py --university --api` both start the same unified server;
+- `python -m education_system --college --api` and `python -m education_system --university --api` both start the same unified server;
   the `--system` flag no longer selects an isolated process
 
 ---

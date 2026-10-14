@@ -26,7 +26,7 @@ class LearningOutcomesMixin:
             return
 
         if not (self.auth.check_permission('manage_grades') or
-                self.auth.check_permission('manage_learning_outcomes')):
+                self.auth.check_permission('learning_outcomes')):
             messagebox.showerror(_("common.error"), _("grades.outcomes.no_permission_manage"))
             return
 
@@ -47,7 +47,7 @@ class LearningOutcomesMixin:
             return
 
         if not (self.auth.check_permission('manage_grades') or
-                self.auth.check_permission('record_outcomes')):
+                self.auth.check_permission('learning_outcomes')):
             messagebox.showerror(_("common.error"), _("grades.outcomes.no_permission_record"))
             return
 

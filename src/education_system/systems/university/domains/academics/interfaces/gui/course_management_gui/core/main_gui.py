@@ -3,6 +3,10 @@
 # Composes CourseManagementGUI from focused mixin modules.
 # Each mixin lives in its own file under this ``core`` package.
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core._imports import _, tk, ttk, UserAuth, get_auth
 
 from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core.db import DatabaseMixin
@@ -14,7 +18,6 @@ from education_system.systems.university.domains.academics.interfaces.gui.course
 from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core.instructors import InstructorsMixin
 from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core.data_io import DataIOMixin
 from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core.dialogs import DialogsMixin
-from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core.lms_tab import LMSTabMixin
 from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core.academic_tabs import (
     DegreeAuditTabMixin, CourseEvalTabMixin,
 )
@@ -49,7 +52,6 @@ class CourseManagementGUI(
     InstructorsMixin,
     DataIOMixin,
     DialogsMixin,
-    LMSTabMixin,
     DegreeAuditTabMixin,
     CourseEvalTabMixin,
     # Curriculum extensions — ExtCommonMixin first so its helpers/schema are
@@ -152,11 +154,11 @@ class CourseManagementGUI(
                                 self.course_tree.see(iid)
                                 break
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
             subscribe_tk(EVENT_SELECTION_CHANGED, self.root, _on_selection)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def update_status(self, message, error=False):
         # Defensive: if someone calls this very early, ensure widgets exist
@@ -172,7 +174,7 @@ class CourseManagementGUI(
             if hasattr(self, 'status_label'):
                 self.status_label.configure(foreground=("red" if error else "black"))
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         self.root.update_idletasks()
 
     def get_user_role(self):

@@ -30,6 +30,10 @@ logger = configure_logging(name="ai_detector")
 # Application imports
 from education_system.systems.university.infrastructure.database.db import sqlite3, DatabaseManager
 from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+
+# Re-exported under its historic unprefixed name — ai_detector modules import
+# DEFAULT_DB_PATH from here (see detector/database_mixin.py).
+DEFAULT_DB_PATH = UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.infrastructure.shared_context import get_auth
 

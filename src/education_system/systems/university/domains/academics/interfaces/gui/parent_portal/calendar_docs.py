@@ -534,7 +534,7 @@ def show_documents_interface(self):
     # Link to full Document Manager GUI
     def open_document_manager():
         try:
-            from education_system.systems.university.interfaces.gui.shell.document_manager.main_gui import DocumentManagerGUI
+            from education_system.systems.university.shell.gui.document_manager.main_gui import DocumentManagerGUI
             # Create a new top-level window for document manager
             doc_window = tk.Toplevel(self.root)
             doc_gui = DocumentManagerGUI(doc_window)
@@ -738,7 +738,7 @@ def show_calendar_interface(self):
                            '08:00' as start_time, '17:00' as end_time,
                            'Campus' as location,
                            COALESCE(event_type, 'Academic') as event_type
-                    FROM academic_calendar_events
+                    FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar')
                     WHERE COALESCE(date, date_start) >= ?
                     ORDER BY event_date
                     """, (today,))
@@ -749,7 +749,7 @@ def show_calendar_interface(self):
                            '08:00' as start_time, '17:00' as end_time,
                            'Campus' as location,
                            COALESCE(event_type, 'Academic') as event_type
-                    FROM academic_calendar_events
+                    FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar')
                     WHERE COALESCE(date, date_start) >= ?
                       AND LOWER(COALESCE(event_type, 'Academic')) = ?
                     ORDER BY event_date
@@ -893,7 +893,7 @@ def _fetch_all_calendar_events(self):
                    '08:00' as start_time, '17:00' as end_time,
                    'Campus' as location,
                    COALESCE(event_type, 'Academic') as event_type
-            FROM academic_calendar_events
+            FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar')
             WHERE COALESCE(date, date_start) >= ?
             ORDER BY event_date
             """, (today,))

@@ -20,11 +20,13 @@ class ModuleTab(ttk.Frame):
         raise NotImplementedError
 
     def people_choices(self, role=None):
-        if role:
-            rows = self.db.query(
-                "SELECT id,name,department FROM research_people WHERE role=? ORDER BY name",
-                (role,))
-        else:
-            rows = self.db.query(
-                "SELECT id,name,department FROM research_people ORDER BY name")
-        return [(r["id"], f"{r['name']} ({r['department'] or '—'})") for r in rows]
+        """Choices for a person field, from the university's own registers.
+
+        Keys are composite (``"staff:12"``) because staff, students and
+        external examiners live in three separate tables with independent
+        primary keys. See ``university_research_parts.people``.
+        """
+        return person_choices(self.db, role)
+
+    def person_name(self, key):
+        return person_name(self.db, key)

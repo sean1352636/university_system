@@ -1,40 +1,11 @@
-"""Composed betting shop GUI application."""
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.interfaces.gui.betting.application`` (campus commerce plugin).
 
-from .base import BettingShopBaseMixin
-from .services import PaymentMixin, ReceiptMixin
-from .shared import _t, messagebox, traceback
-from .tabs import (
-    AccountTabMixin,
-    AdminTabMixin,
-    CasinoTabMixin,
-    PredictionsTabMixin,
-    SportsTabMixin,
-)
+The old name *is* the new module object, so ``mock.patch`` and
+``monkeypatch`` targets still act on the real code. Delete once nothing
+imports the old path.
+"""
+# layout-shim: education_system.systems.university.plugins.campus_commerce.interfaces.gui.betting.application
+import importlib as _importlib
+import sys as _sys
 
-
-class BettingShopGUI(
-    BettingShopBaseMixin,
-    SportsTabMixin,
-    PredictionsTabMixin,
-    CasinoTabMixin,
-    AccountTabMixin,
-    PaymentMixin,
-    ReceiptMixin,
-    AdminTabMixin,
-):
-    """University betting shop window composed from focused UI mixins."""
-
-
-def launch_betting_shop_gui(root, auth):
-    """Launch the Betting Shop GUI"""
-    try:
-        BettingShopGUI(root, auth)
-    except Exception as e:
-        messagebox.showerror(
-            _t("common.error", default="Error"),
-            _t("betting.errors.launch_failed", default="Failed to launch Betting Shop: {error}").format(error=str(e))
-        )
-        print(f"Betting Shop GUI error: {traceback.format_exc()}")
-
-
-__all__ = ["BettingShopGUI", "launch_betting_shop_gui"]
+_sys.modules[__name__] = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.interfaces.gui.betting.application")

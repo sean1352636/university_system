@@ -1,5 +1,4 @@
 # Auto-generated module (split from student_crud_gui.py)
-import os
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import logging
@@ -9,7 +8,7 @@ import json
 import csv
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from datetime import datetime
-from education_system.systems.university.interfaces.gui.shell.main._tk_callback_filter import install_clean_close as _install_clean_close
+from education_system.platform.delivery.gui.tk_callback_filter import install_clean_close as _install_clean_close
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import get_db_connection, get_connection, transaction
@@ -28,6 +27,7 @@ except ImportError:
     ACTIVITY_LOGGER_AVAILABLE = False
 
 from .widgets import _safe_set_combobox, _safe_entry_insert
+from education_system.systems.university.infrastructure.email.sign_off import office_name
 
 def view_student_attendance(self, student_id, email, first_name, last_name):
     """Display student attendance table and send email if below 90%"""
@@ -116,14 +116,8 @@ def view_student_attendance(self, student_id, email, first_name, last_name):
             # Send email alert
             email_sent = False
             try:
-                import json
                 from education_system.systems.university.infrastructure.email.email_service import send_email
-                from education_system.paths import UNIVERSITY_TEMPLATES_DIR
-
-                # Load email template
-                template_path = os.path.join(UNIVERSITY_TEMPLATES_DIR, 'email', 'academics', 'low_attendance_alert.json')
-                with open(template_path, 'r') as f:
-                    template = json.load(f)
+                from education_system.systems.university.infrastructure.email.template_utils import render_template
 
                 # Build attendance summary
                 attendance_summary = (
@@ -132,16 +126,30 @@ def view_student_attendance(self, student_id, email, first_name, last_name):
                     f"- Sessions Missed: {total_count - present_count}"
                 )
 
-                # Replace placeholders in template
-                student_name = f"{first_name} {last_name}"
-                subject = template['subject'].replace('$student_name', student_name)
-                message = template['body'].replace('$student_name', student_name)
-                message = message.replace('$module_name', 'All Modules')
-                message = message.replace('$attendance_percentage', f"{attendance_percentage:.1f}")
-                message = message.replace('$attendance_summary', attendance_summary)
-                message = message.replace('$signature', 'University Administration')
+                # Resolved through render_template rather than a hand-built
+                # path: this used to open
+                # ``templates/email/academics/low_attendance_alert.json``,
+                # which does not exist — the template lives two directories
+                # deeper, under ``academics/student_support/low_attendance/``.
+                # Every alert died on FileNotFoundError inside the except
+                # below, so the window only ever showed "Email notification
+                # failed". render_template also handles the $placeholder
+                # substitution this block was doing by hand.
+                subject, message = render_template(
+                    'academics/student_support/low_attendance/low_attendance_alert',
+                    {
+                        'student_name': f"{first_name} {last_name}",
+                        'module_name': 'All Modules',
+                        'attendance_percentage': f"{attendance_percentage:.1f}",
+                        'attendance_summary': attendance_summary,
+                        'signature': office_name('Administration'),
+                    },
+                )
 
-                email_sent = send_email(email, subject, message)
+                if subject and message:
+                    email_sent = send_email(email, subject, message)
+                else:
+                    print("Failed to send attendance alert email: template could not be rendered")
 
             except Exception as e:
                 print(f"Failed to send attendance alert email: {e}")

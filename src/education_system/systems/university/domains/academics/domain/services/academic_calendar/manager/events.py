@@ -1,4 +1,7 @@
 """Extracted AcademicCalendarManager events methods."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from ._shared import *  # noqa: F401,F403
 
@@ -42,9 +45,9 @@ class EventsMixin:
         try:
             with self.db_manager.transaction():
                 self.db_manager.execute_update(
-                    """INSERT INTO academic_calendar_events (id, name, date, date_start, date_end, description,
-                       event_type, date_added, last_modified, created_by)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    """INSERT INTO unified_events (
+                    source_event_id, title, event_date, start_datetime, end_datetime, description, event_type, created_at, updated_at, created_by, source_type
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'academic_calendar')""",
                     (event_id, name, date, date_start, date_end,
                      description, event_type, current_time, current_time, user_id)
                 )
@@ -75,7 +78,7 @@ class EventsMixin:
                     action="created",
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             return {
                 'success': True,
@@ -96,7 +99,7 @@ class EventsMixin:
             raise ValidationError("Invalid event ID format")
 
         # Get existing event
-        rows = self.db_manager.execute_query("SELECT * FROM academic_calendar_events WHERE id = ?", (event_id,))
+        rows = self.db_manager.execute_query("SELECT * FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') WHERE id = ?", (event_id,))
         if not rows:
             raise ValidationError(f"Event with ID {event_id} not found")
 
@@ -129,18 +132,31 @@ class EventsMixin:
                 set_clauses = []
                 params = []
 
+                # Calendar events live in unified_events. This UPDATE used to
+                # target the retired academic_calendar_events table, which is
+                # empty, so it matched no row and every edit was silently lost
+                # while reporting success. Map the calendar's field names onto
+                # the unified columns and require that a row actually changed.
+                column_for = {
+                    'name': 'title', 'date': 'event_date', 'date_start': 'start_datetime',
+                    'date_end': 'end_datetime', 'description': 'description',
+                    'event_type': 'event_type',
+                }
                 from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608
                 for field, value in sanitized_updates.items():
-                    safe_field = validate_identifier(field, "column")
+                    safe_field = validate_identifier(column_for[field], "column")
                     set_clauses.append("[" + safe_field + "] = ?")
                     params.append(value)
 
-                set_clauses.append("[last_modified] = ?")
+                set_clauses.append("[updated_at] = ?")
                 params.append(datetime.now().isoformat())
                 params.append(event_id)
 
-                query = "UPDATE [academic_calendar_events] SET " + ", ".join(set_clauses) + " WHERE id = ?"
-                self.db_manager.execute_update(query, tuple(params))
+                query = ("UPDATE [unified_events] SET " + ", ".join(set_clauses)
+                         + " WHERE source_type = 'academic_calendar' AND source_event_id = ?")
+                updated = self.db_manager.execute_update(query, tuple(params))
+                if not updated:
+                    raise DatabaseError(f"Event {event_id} was not updated")
 
                 # Log the action
                 user_id = self.auth_manager.current_user['id'] if self.auth_manager.current_user else None
@@ -162,7 +178,7 @@ class EventsMixin:
                 publish(EVENT_CALENDAR_CHANGED,
                         event_id=event_id, action="updated")
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             return {'success': True, 'message': 'Event updated successfully'}
 
@@ -179,7 +195,7 @@ class EventsMixin:
             raise ValidationError("Invalid event ID format")
 
         # Get existing event for audit log
-        rows = self.db_manager.execute_query("SELECT * FROM academic_calendar_events WHERE id = ?", (event_id,))
+        rows = self.db_manager.execute_query("SELECT * FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') WHERE id = ?", (event_id,))
         if not rows:
             raise ValidationError(f"Event with ID {event_id} not found")
 
@@ -188,7 +204,7 @@ class EventsMixin:
         try:
             with self.db_manager.transaction():
                 # Delete the event (cascade will handle related records)
-                rows_affected = self.db_manager.execute_update("DELETE FROM academic_calendar_events WHERE id = ?", (event_id,))
+                rows_affected = self.db_manager.execute_update("DELETE FROM unified_events WHERE source_type = 'academic_calendar' AND (source_event_id = ?)", (event_id,))
 
                 if rows_affected > 0:
                     # Log the action
@@ -210,7 +226,7 @@ class EventsMixin:
                 publish(EVENT_CALENDAR_CHANGED,
                         event_id=event_id, action="deleted")
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             return {'success': True, 'message': 'Event deleted successfully'}
 
@@ -232,7 +248,7 @@ class EventsMixin:
 
         try:
             query = """
-                SELECT * FROM academic_calendar_events
+                SELECT * FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar')
                 WHERE ((date BETWEEN ? AND ?)
                 OR (date_start <= ? AND date_end >= ?)
                 OR (date_start BETWEEN ? AND ?)
@@ -263,7 +279,7 @@ class EventsMixin:
                 SELECT s.name AS semester_name, s.start_date AS semester_start, s.end_date AS semester_end,
                        e.name AS event_name, e.date, e.date_start, e.date_end, e.description, e.event_type
                 FROM semesters s
-                LEFT JOIN academic_calendar_events e ON (
+                LEFT JOIN (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') e ON (
                     (e.date BETWEEN s.start_date AND s.end_date) OR
                     (e.date_start BETWEEN s.start_date AND s.end_date) OR
                     (e.date_end BETWEEN s.start_date AND s.end_date)
@@ -389,8 +405,9 @@ class EventsMixin:
                             )
 
                             self.db_manager.execute_update(
-                                """INSERT INTO academic_calendar_events (id, name, date_start, date_end, description,
-                                   event_type, date_added, last_modified, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                                """INSERT INTO unified_events (
+                    source_event_id, title, start_datetime, end_datetime, description, event_type, created_at, updated_at, created_by, source_type
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'academic_calendar')""",
                                 (event_id,
                                  ValidationUtils.sanitize_string(event_name, 255),
                                  start_dt.strftime("%Y-%m-%d"),
@@ -429,7 +446,7 @@ class EventsMixin:
 
     def _get_existing_events_index(self) -> List[Dict]:
         """Get index of existing events for conflict detection"""
-        query = "SELECT id, name, date, date_start, date_end, event_type FROM academic_calendar_events"
+        query = "SELECT id, name, date, date_start, date_end, event_type FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar')"
         rows = self.db_manager.execute_query(query)
 
         events = []
@@ -472,7 +489,7 @@ class EventsMixin:
 
     def _event_exists(self, event_id: str) -> bool:
         """Check if event already exists"""
-        rows = self.db_manager.execute_query("SELECT 1 FROM academic_calendar_events WHERE id = ?", (event_id,))
+        rows = self.db_manager.execute_query("SELECT 1 FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') WHERE id = ?", (event_id,))
         return len(rows) > 0
 
     def _get_upcoming_deadlines(self, days_ahead: int = 7) -> List[Dict]:
@@ -482,7 +499,7 @@ class EventsMixin:
 
         query = """
             SELECT name, COALESCE(date, date_start) as due_date
-            FROM academic_calendar_events
+            FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar')
             WHERE event_type = 'Assignment'
             AND COALESCE(date, date_start) BETWEEN ? AND ?
             ORDER BY COALESCE(date, date_start)
@@ -500,24 +517,21 @@ class EventsMixin:
         exams, holidays, and ad-hoc events."""
         now = datetime.now().isoformat()
         existing = self.db_manager.execute_query(
-            "SELECT id FROM academic_calendar_events WHERE id = ?",
+            "SELECT id FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') WHERE id = ?",
             (event_id,),
         )
         if existing:
             self.db_manager.execute_update(
-                """UPDATE academic_calendar_events
-                   SET name = ?, date_start = ?, date_end = ?,
-                       description = ?, event_type = ?, last_modified = ?
-                   WHERE id = ?""",
+                """UPDATE unified_events SET title = ?, start_datetime = ?, end_datetime = ?,
+                       description = ?, event_type = ?, updated_at = ? WHERE source_type = 'academic_calendar' AND (source_event_id = ?)""",
                 (name, date_start, date_end, description, event_type, now,
                  event_id),
             )
         else:
             self.db_manager.execute_update(
-                """INSERT INTO academic_calendar_events
-                   (id, name, date_start, date_end, description,
-                    event_type, date_added, last_modified)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                """INSERT INTO unified_events (
+                    source_event_id, title, start_datetime, end_datetime, description, event_type, created_at, updated_at, source_type
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'academic_calendar')""",
                 (event_id, name, date_start, date_end, description,
                  event_type, now, now),
             )

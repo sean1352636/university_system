@@ -1,13 +1,119 @@
+import html
+
 from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management import _common
 from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management._common import sqlite3, get_text, logging, datetime, log_create, log_read, log_update, log_delete
 from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management.database import safe_db_operation
+from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management import payments
 
 logger = logging.getLogger(__name__)
+
+RECEIPT_TEMPLATE = 'campus_services/mobility/trip_registration_receipt'
+CANCELLATION_TEMPLATE = 'campus_services/mobility/trip_cancellation_refund'
 
 
 def _run_db_operation(operation):
     from education_system.systems.university.domains.operations.domain.campus.mobility.services import trip_management as _tm
     return _tm.safe_db_operation(operation)
+
+
+def _format_trip_dates(start_date, end_date):
+    """One date for a single-day trip, a range otherwise."""
+    if not end_date or start_date == end_date:
+        return start_date
+    return get_text(
+        "mobility.trip_management.receipt.date_range", "{start_date} to {end_date}",
+    ).format(start_date=start_date, end_date=end_date)
+
+
+def _send_trip_email(template, recipient, variables, *, what):
+    """Render ``template`` and hand it to the email service.
+
+    Never raises: an email that cannot be sent must not undo a payment or a
+    cancellation that has already gone through Finance.
+    """
+    if not recipient:
+        logger.info("No email address on file; %s not sent", what)
+        return False
+
+    try:
+        from education_system.systems.university.infrastructure.email.template_utils import render_template
+        from education_system.systems.university.infrastructure.email.email_service import send_email
+    except Exception as exc:
+        logger.warning("Email service unavailable; %s not sent: %s", what, exc)
+        return False
+
+    try:
+        subject, body = render_template(template, variables)
+        if not subject or not body:
+            raise ValueError(f"{template} rendered no content")
+
+        send_email(recipient_email=recipient, subject=subject, body=body)
+        return True
+    except Exception as exc:
+        logger.warning("Could not send %s to %s: %s", what, recipient, exc)
+        return False
+
+
+def send_registration_receipt(booking):
+    """Email a payment receipt for a paid trip registration.
+
+    ``booking`` is the dict :func:`register_for_trip` assembles.
+    """
+    balance_line = ''
+    if booking.get('balance_after') is not None:
+        balance_line = get_text(
+            "mobility.trip_management.receipt.balance_line",
+            "Remaining student finance account balance: £{balance:.2f}",
+        ).format(balance=booking['balance_after'])
+
+    # The renderer does not escape, and it prefers the HTML body — so free
+    # text has to be escaped here, as the report dialog does.
+    return _send_trip_email(RECEIPT_TEMPLATE, booking.get('email'), {
+        'participant_name': html.escape(booking.get('name') or ''),
+        'trip_name': html.escape(booking['trip_name']),
+        'destination': html.escape(booking['destination']),
+        'trip_dates': html.escape(_format_trip_dates(booking['start_date'], booking['end_date'])),
+        'registration_reference': html.escape(booking['reference']),
+        'amount_paid': f"{booking['amount']:.2f}",
+        'payment_method': html.escape(payments.method_label(booking['method'])),
+        'payment_reference': html.escape(str(booking.get('payment_reference') or '')),
+        'payment_date': booking['paid_at'],
+        'balance_line': html.escape(balance_line),
+    }, what="trip receipt")
+
+
+def send_cancellation_receipt(cancellation):
+    """Email confirmation of a cancelled registration and its refund.
+
+    ``cancellation`` is the dict :func:`cancel_trip_registration` assembles,
+    with the refund outcome merged in.
+    """
+    if cancellation.get('balance_after') is not None:
+        settlement = get_text(
+            "mobility.trip_management.refund.credited_line",
+            "This has been credited back to your student finance account "
+            "(balance: £{balance:.2f}).",
+        ).format(balance=cancellation['balance_after'])
+    else:
+        settlement = get_text(
+            "mobility.trip_management.refund.settlement_line",
+            "The refund will be returned to your original payment method by the "
+            "finance office.",
+        )
+
+    return _send_trip_email(CANCELLATION_TEMPLATE, cancellation.get('email'), {
+        'participant_name': html.escape(cancellation.get('name') or ''),
+        'trip_name': html.escape(cancellation['trip_name']),
+        'destination': html.escape(cancellation['destination']),
+        'trip_dates': html.escape(_format_trip_dates(cancellation['start_date'],
+                                                     cancellation.get('end_date'))),
+        'registration_reference': html.escape(cancellation['reference']),
+        'refund_amount': f"{cancellation['amount']:.2f}",
+        'payment_method': html.escape(payments.method_label(cancellation['method'])),
+        'refund_reference': html.escape(str(cancellation.get('refund_reference') or '')),
+        'refund_date': cancellation['refunded_at'],
+        'settlement_line': html.escape(settlement),
+    }, what="trip cancellation receipt")
 
 
 @log_create(module="trips", description="Registering for trip")
@@ -19,7 +125,7 @@ def register_for_trip():
         if 'pytest' in sys.modules:
             auth = auth or _common.get_auth()
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
     if not auth or not auth.current_user:
         print(get_text("mobility.trip_management.auth.must_login_register", "You must be logged in to register for trips."))
@@ -74,13 +180,35 @@ def register_for_trip():
                     from education_system.systems.university.domains.operations.domain.campus.mobility.services import trip_management as _tm
                     _tm.log_activity('create', 'trip_registration')
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
             return result
     except Exception:
         logger.warning("Trip registration failed", exc_info=True)
 
     def register_operation(conn):
         cursor = conn.cursor()
+
+        # Resolve who is paying up front: students have a finance account
+        # keyed by student_id, and their contact details live on the
+        # students row.
+        student_id, name, email = _resolve_payer(cursor, auth.current_user)
+
+        # Finance hold gate — the same check trip_bus.register_student
+        # applies. Refuse before the user picks a trip and types in their
+        # details, rather than at the payment step.
+        holds = payments.active_holds(student_id)
+        if holds:
+            print(get_text(
+                "mobility.trip_management.payment.hold_blocked",
+                "\nYou have an active finance hold, so you cannot register for trips:",
+            ))
+            for line in payments.describe_holds(holds):
+                print(line)
+            print(get_text(
+                "mobility.trip_management.payment.hold_advice",
+                "Settle the outstanding charges with the finance office, then try again.",
+            ))
+            return False
 
         # Get available trips
         cursor.execute('''
@@ -142,21 +270,25 @@ def register_for_trip():
             print(get_text("mobility.trip_management.registration.already_registered", "You are already registered for this trip."))
             return False
 
-        # Get student ID if user is a student
-        student_id = None
-        if auth.current_user['role'] == 'student':
-            cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-            result = cursor.fetchone()
-            if result:
-                student_id = result[0]
-
         # Get additional information
         print(get_text("mobility.trip_management.registration.registering_for", "\nRegistering for: {trip_name}").format(trip_name=selected_trip[1]))
-        print(get_text("mobility.trip_management.registration.cost_display", "Cost: £{cost:.2f}").format(cost=selected_trip[6] or 0))
+        cost = float(selected_trip[6] or 0)
+        print(get_text("mobility.trip_management.registration.cost_display", "Cost: £{cost:.2f}").format(cost=cost))
 
         emergency_contact = input(get_text("mobility.trip_management.registration.emergency_contact_prompt", "Emergency Contact (Name and Phone): ")).strip()
         medical_info = input(get_text("mobility.trip_management.registration.medical_info_prompt", "Medical Information (optional): ")).strip()
         dietary_requirements = input(get_text("mobility.trip_management.registration.dietary_prompt", "Dietary Requirements (optional): ")).strip()
+
+        # Choose how to pay before anything is written. The payment itself
+        # is taken after this transaction commits, because Finance manages
+        # its own transactions.
+        method = None
+        if cost > 0:
+            balance = payments.account_balance(student_id) if student_id else None
+            method = payments.select_payment_method(cost, balance=balance)
+            if method is None:
+                print(get_text("mobility.trip_management.registration.cancelled", "\nRegistration cancelled — no payment method chosen."))
+                return False
 
         # Register for trip
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -164,27 +296,166 @@ def register_for_trip():
         cursor.execute('''
         INSERT INTO trip_participants (
             trip_id, student_id, user_id, registration_date,
-            emergency_contact, medical_info, dietary_requirements
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            emergency_contact, medical_info, dietary_requirements,
+            payment_status, payment_method
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             trip_id, student_id, auth.current_user['id'], timestamp,
-            emergency_contact, medical_info, dietary_requirements
+            emergency_contact, medical_info, dietary_requirements,
+            'paid' if cost <= 0 else 'pending', method
         ))
+        participant_id = cursor.lastrowid
 
         print(get_text("mobility.trip_management.registration.success", "\nSuccessfully registered for '{trip_name}'!").format(trip_name=selected_trip[1]))
-        print(get_text("mobility.trip_management.registration.status_pending", "Registration Status: Pending"))
-        print(get_text("mobility.trip_management.registration.payment_pending", "Payment Status: Pending"))
-        print(get_text("mobility.trip_management.registration.further_info", "\nYou will receive further information about payment and trip details."))
 
-        try:
-            from education_system.systems.university.domains.operations.domain.campus.mobility.services import trip_management as _tm
-            _tm.log_activity('create', 'trip_registration')
-        except Exception:
-            pass
+        return {
+            'participant_id': participant_id,
+            'reference': f"TRIP-{trip_id}-{participant_id}",
+            'trip_id': trip_id,
+            'trip_name': selected_trip[1],
+            'destination': selected_trip[2],
+            'start_date': selected_trip[3],
+            'end_date': selected_trip[4],
+            'amount': cost,
+            'method': method,
+            'student_id': student_id,
+            'name': name,
+            'email': email,
+            'registered_at': timestamp,
+        }
 
+    booking = _run_db_operation(register_operation)
+    if not booking:
+        return False
+
+    try:
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services import trip_management as _tm
+        _tm.log_activity('create', 'trip_registration')
+    except Exception:
+        logger.debug("Suppressed exception", exc_info=True)
+
+    if not booking['amount']:
+        print(get_text("mobility.trip_management.registration.no_payment_required", "No payment is required for this trip."))
+        print(get_text("mobility.trip_management.registration.further_info", "\nYou will receive further information about the trip."))
         return True
 
-    return _run_db_operation(register_operation)
+    return _settle_trip_payment(booking, processed_by=_common.auth.current_user.get('username'))
+
+
+def _resolve_payer(cursor, current_user):
+    """Return ``(student_id, display_name, email)`` for the logged-in user."""
+    student_id = name = email = None
+
+    try:
+        cursor.execute(
+            'SELECT student_id, first_name, last_name, email FROM users WHERE id = ?',
+            (current_user['id'],))
+        row = cursor.fetchone()
+        if row:
+            student_id = row[0]
+            name = " ".join(part for part in (row[1], row[2]) if part).strip() or None
+            email = row[3]
+    except sqlite3.Error as e:
+        logger.warning("Could not resolve user %s: %s", current_user.get('id'), e)
+
+    # Students keep their contact details on the students row, which is
+    # also what the finance account and its FK are keyed on.
+    if student_id:
+        try:
+            cursor.execute(
+                'SELECT first_name, last_name, email_address FROM students WHERE student_id = ?',
+                (student_id,))
+            row = cursor.fetchone()
+            if row:
+                name = " ".join(part for part in (row[0], row[1]) if part).strip() or name
+                email = row[2] or email
+        except sqlite3.Error as e:
+            logger.warning("Could not resolve student %s: %s", student_id, e)
+
+    return student_id, name or current_user.get('username'), email
+
+
+def _settle_trip_payment(booking, *, processed_by=None):
+    """Take payment for a committed registration, then email the receipt.
+
+    Re-prompts for another method while payment keeps failing. Backing out
+    leaves the registration in place with payment outstanding, which is a
+    state staff can settle from Manage Participants.
+    """
+    method = booking['method']
+    amount = booking['amount']
+
+    while True:
+        outcome = payments.take_payment(
+            method=method, amount=amount,
+            student_id=booking['student_id'],
+            trip_id=booking['trip_id'], trip_name=booking['trip_name'],
+            processed_by=processed_by,
+        )
+
+        if outcome['success']:
+            break
+
+        print("\n" + (outcome['message'] or get_text(
+            "mobility.trip_management.payment.declined", "The payment was declined.")))
+        balance = payments.account_balance(booking['student_id']) if booking['student_id'] else None
+        method = payments.select_payment_method(amount, balance=balance)
+        if method is None:
+            print(get_text(
+                "mobility.trip_management.payment.outstanding",
+                "\nYour place is held but payment is still outstanding. "
+                "Payment Status: Pending",
+            ))
+            return True
+
+    booking['method'] = method
+    booking['payment_reference'] = outcome.get('reference')
+    booking['balance_after'] = outcome.get('balance_after')
+    booking['paid_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    _mark_registration_paid(booking)
+
+    print(get_text(
+        "mobility.trip_management.payment.taken",
+        "Payment of £{amount:.2f} received by {method}.",
+    ).format(amount=amount, method=payments.method_label(method)))
+    if booking['balance_after'] is not None:
+        print(get_text(
+            "mobility.trip_management.payment.remaining_balance",
+            "Remaining student finance account balance: £{balance:.2f}",
+        ).format(balance=booking['balance_after']))
+
+    if send_registration_receipt(booking):
+        print(get_text(
+            "mobility.trip_management.receipt.sent",
+            "A receipt has been emailed to {email}.",
+        ).format(email=booking['email']))
+
+    return True
+
+
+def _mark_registration_paid(booking):
+    """Flip the registration to paid once Finance has the money."""
+    def mark_paid_operation(conn):
+        conn.execute(
+            "UPDATE trip_participants "
+            "SET payment_status = 'paid', payment_method = ?, payment_reference = ? "
+            "WHERE id = ?",
+            (booking['method'], booking.get('payment_reference'),
+             booking['participant_id']),
+        )
+        return True
+
+    if not _run_db_operation(mark_paid_operation):
+        # The money is in Finance either way; surface the mismatch rather
+        # than letting the registration silently read as unpaid.
+        logger.error("Trip payment %s taken but registration %s not marked paid",
+                     booking.get('payment_reference'), booking['participant_id'])
+        print(get_text(
+            "mobility.trip_management.payment.status_not_updated",
+            "Payment was taken (reference {reference}) but the registration could not "
+            "be marked as paid. Please contact the trips office.",
+        ).format(reference=booking.get('payment_reference')))
 
 @log_read(module="trips", description="Viewing own trip registrations")
 def view_my_trip_registrations():
@@ -218,7 +489,7 @@ def view_my_trip_registrations():
 
             return _run_db_operation(view_registrations_operation)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
     def view_registrations_operation(conn):
         cursor = conn.cursor()
@@ -300,7 +571,14 @@ def manage_trip_participants():
 
         while True:
             try:
-                trip_id = int(input(get_text("mobility.trip_management.participants.enter_trip_id_manage", "\nEnter Trip ID to manage participants (0 to exit): ")))
+                choice = input(get_text("mobility.trip_management.participants.enter_trip_id_manage", "\nEnter Trip ID to manage participants (blank to return to the menu): ")).strip()
+                # Pressing Enter on its own is the way out — previously the
+                # only exits were "0" or an exception, so a blank line just
+                # re-prompted and the menu was unreachable.
+                if not choice:
+                    break
+
+                trip_id = int(choice)
                 if trip_id == 0:
                     break
 
@@ -506,7 +784,9 @@ def cancel_trip_registration():
         # Get user's current registrations
         cursor.execute('''
         SELECT tp.id, t.id as trip_id, t.trip_name, t.destination, t.start_date,
-               tp.registration_date, tp.payment_status, tp.status
+               tp.registration_date, tp.payment_status, tp.status,
+               t.cost, tp.payment_method, tp.payment_reference, tp.student_id,
+               t.end_date
         FROM trip_participants tp
         JOIN trips t ON tp.trip_id = t.id
         WHERE tp.user_id = ? AND tp.status = 'registered'
@@ -525,13 +805,16 @@ def cancel_trip_registration():
         print("-" * 100)
 
         for reg in registrations:
-            reg_id, trip_id, name, destination, start_date, reg_date, payment_status, status = reg
+            reg_id, _trip_id, name, destination, start_date, reg_date, payment_status = reg[:7]
             print(f"{reg_id:<5} {name[:24]:<25} {destination[:19]:<20} {start_date:<12} {payment_status.title():<10} {reg_date[:10]:<12}")
 
         print("=" * 100)
 
         try:
-            registration_id = int(input(get_text("mobility.trip_management.cancel.enter_registration_id", "\nEnter Registration ID to cancel (0 to exit): ")))
+            choice = input(get_text("mobility.trip_management.cancel.enter_registration_id", "\nEnter Registration ID to cancel (blank to return to the menu): ")).strip()
+            if not choice:
+                return True
+            registration_id = int(choice)
             if registration_id == 0:
                 return True
 
@@ -546,18 +829,24 @@ def cancel_trip_registration():
                 print(get_text("mobility.trip_management.cancel.invalid_registration_id", "Invalid registration ID."))
                 return False
 
-            reg_id, trip_id, trip_name, destination, start_date, reg_date, payment_status, status = selected_reg
+            (reg_id, trip_id, trip_name, destination, start_date, reg_date,
+             payment_status, status, cost, payment_method, payment_reference,
+             student_id, end_date) = selected_reg
 
             print(get_text("mobility.trip_management.cancel.cancelling_for", "\nCancelling registration for: {trip_name}").format(trip_name=trip_name))
             print(get_text("mobility.trip_management.cancel.destination", "Destination: {destination}").format(destination=destination))
             print(get_text("mobility.trip_management.cancel.start_date", "Start Date: {start_date}").format(start_date=start_date))
             print(get_text("mobility.trip_management.cancel.payment_status", "Payment Status: {status}").format(status=payment_status.title()))
 
-            if payment_status == 'paid':
-                print(get_text("mobility.trip_management.cancel.warning_paid", "\nWarning: You have paid for this trip. Cancellation may involve refund processing."))
+            refundable = payment_status in ('paid', 'partial') and float(cost or 0) > 0
+            if refundable:
+                print(get_text(
+                    "mobility.trip_management.cancel.refund_due",
+                    "\nYou paid £{amount:.2f} by {method}. Cancelling will raise a refund.",
+                ).format(amount=float(cost or 0), method=payments.method_label(payment_method)))
 
             confirm = input(get_text("mobility.trip_management.cancel.confirm", "\nAre you sure you want to cancel this registration? (y/n): ")).lower()
-            if confirm != 'y':
+            if confirm not in ('y', 'yes'):
                 print(get_text("mobility.trip_management.cancel.aborted", "Cancellation aborted."))
                 return True
 
@@ -570,10 +859,27 @@ def cancel_trip_registration():
 
             print(get_text("mobility.trip_management.cancel.success", "\nRegistration for '{trip_name}' has been cancelled successfully.").format(trip_name=trip_name))
 
-            if payment_status in ['paid', 'partial']:
-                print(get_text("mobility.trip_management.cancel.contact_admin_refund", "Please contact administration regarding refund processing."))
+            if not refundable:
+                return True
 
-            return True
+            # Hand the refund back to the caller: Finance manages its own
+            # transactions, so it is posted once this one has committed.
+            _student_id, name, email = _resolve_payer(cursor, auth.current_user)
+            return {
+                'participant_id': reg_id,
+                'reference': f"TRIP-{trip_id}-{reg_id}",
+                'trip_id': trip_id,
+                'trip_name': trip_name,
+                'destination': destination,
+                'start_date': start_date,
+                'end_date': end_date,
+                'amount': float(cost or 0),
+                'method': payment_method,
+                'payment_reference': payment_reference,
+                'student_id': student_id,
+                'name': name,
+                'email': email,
+            }
 
         except ValueError:
             print(get_text("mobility.trip_management.cancel.invalid_registration_id", "Invalid registration ID."))
@@ -583,4 +889,78 @@ def cancel_trip_registration():
             logging.error(get_text("mobility.trip_management.errors.in_cancel_registration", "Error in cancel_trip_registration: {error}").format(error=e))
             return False
 
-    return safe_db_operation(cancel_registration_operation)
+    result = _run_db_operation(cancel_registration_operation)
+    if isinstance(result, dict):
+        _refund_trip_payment(result, processed_by=auth.current_user.get('username'))
+        return True
+    return result
+
+
+def _refund_trip_payment(cancellation, *, processed_by=None):
+    """Raise the refund for a cancelled registration in the Finance system.
+
+    Money paid from the student finance account is credited straight back to
+    the balance; cash and card refunds are recorded against the original
+    method for the finance office to settle.
+    """
+    outcome = payments.refund_payment(
+        method=cancellation['method'],
+        amount=cancellation['amount'],
+        student_id=cancellation['student_id'],
+        trip_id=cancellation['trip_id'],
+        trip_name=cancellation['trip_name'],
+        payment_reference=cancellation.get('payment_reference'),
+        processed_by=processed_by,
+    )
+
+    if not outcome['success']:
+        print(get_text(
+            "mobility.trip_management.cancel.refund_failed",
+            "Your place has been released, but the refund could not be raised "
+            "automatically. Please contact the finance office.",
+        ))
+        logger.error("Trip refund failed for registration %s: %s",
+                     cancellation['participant_id'], outcome['message'])
+        return False
+
+    _mark_registration_refunded(cancellation['participant_id'])
+
+    cancellation['refund_reference'] = outcome.get('reference')
+    cancellation['balance_after'] = outcome.get('balance_after')
+    cancellation['refunded_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    if outcome['balance_after'] is not None:
+        print(get_text(
+            "mobility.trip_management.cancel.refund_to_account",
+            "£{amount:.2f} has been credited back to your student finance account "
+            "(balance: £{balance:.2f}).",
+        ).format(amount=cancellation['amount'], balance=outcome['balance_after']))
+    else:
+        print(get_text(
+            "mobility.trip_management.cancel.refund_raised",
+            "A refund of £{amount:.2f} has been raised to your original payment "
+            "method ({method}).",
+        ).format(amount=cancellation['amount'],
+                 method=payments.method_label(cancellation['method'])))
+
+    if send_cancellation_receipt(cancellation):
+        print(get_text(
+            "mobility.trip_management.refund.receipt_sent",
+            "A refund confirmation has been emailed to {email}.",
+        ).format(email=cancellation['email']))
+
+    return True
+
+
+def _mark_registration_refunded(participant_id):
+    """Record the refund against the registration."""
+    def mark_refunded_operation(conn):
+        conn.execute(
+            "UPDATE trip_participants SET payment_status = 'refunded' WHERE id = ?",
+            (participant_id,),
+        )
+        return True
+
+    if not _run_db_operation(mark_refunded_operation):
+        logger.error("Refund raised but registration %s not marked refunded",
+                     participant_id)

@@ -1,9 +1,11 @@
-"""Extracted function implementation."""
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.interfaces.gui.butcher.butcher_gui_parts.launch_butcher_gui`` (campus commerce plugin).
 
-from .. import butcher_gui_shared as _shared
-globals().update({name: value for name, value in _shared.__dict__.items() if not name.startswith("__")})
+The old name *is* the new module object, so ``mock.patch`` and
+``monkeypatch`` targets still act on the real code. Delete once nothing
+imports the old path.
+"""
+# layout-shim: education_system.systems.university.plugins.campus_commerce.interfaces.gui.butcher.butcher_gui_parts.launch_butcher_gui
+import importlib as _importlib
+import sys as _sys
 
-
-def launch_butcher_gui(parent=None, auth=None):
-    """Launch the Butcher Shop GUI"""
-    return ButcherGUI(parent, auth)
+_sys.modules[__name__] = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.interfaces.gui.butcher.butcher_gui_parts.launch_butcher_gui")

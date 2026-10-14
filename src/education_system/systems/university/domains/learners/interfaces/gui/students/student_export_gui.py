@@ -6,7 +6,7 @@ import logging
 import sqlite3
 from datetime import datetime
 from education_system.systems.university.infrastructure.i18n import get_text as _t
-from education_system.systems.university.interfaces.gui.shell.main._tk_callback_filter import install_clean_close as _install_clean_close
+from education_system.platform.delivery.gui.tk_callback_filter import install_clean_close as _install_clean_close
 
 # Import database connection
 from education_system.systems.university.infrastructure.database.db import get_db_connection, get_connection, transaction
@@ -734,6 +734,8 @@ def export_data_dialog(self):
                            COALESCE(s.email_address, ''),
                            COALESCE(s.course, ''),
                            COALESCE(s.status, ''),
+                           COALESCE(s.pronouns, ''),
+                           COALESCE(s.emergency_contact, ''),
                            COALESCE(DATE(s.registration_datetime), '')
                     FROM students s
                     ORDER BY s.last_name, s.first_name
@@ -838,13 +840,17 @@ def export_data_dialog(self):
                     _t("student_export.headers.email"),
                     _t("student_export.headers.course"),
                     "Status",
+                    "Pronouns",
+                    # Personal data: this export leaves the system, so treat
+                    # the file as confidential once written.
+                    "Emergency Contact",
                     _t("student_export.headers.registration_date"),
                     "# Modules",
                     "Enrolled Modules",
                 ]
                 # Index of the consolidated module columns within each row.
-                MODULE_COUNT_IDX = 12
-                MODULES_IDX = 13
+                MODULE_COUNT_IDX = 14
+                MODULES_IDX = 15
 
                 processed_rows = []
                 for row in student_rows:
@@ -864,7 +870,9 @@ def export_data_dialog(self):
                         row[8],   # Email
                         row[9],   # Course
                         row[10],  # Status
-                        row[11],  # Registration Date
+                        row[11],  # Pronouns
+                        row[12],  # Emergency Contact
+                        row[13],  # Registration Date
                     ]
 
                     # Consolidate ALL of the student's modules into one tidy
@@ -926,7 +934,7 @@ def export_data_dialog(self):
                         wb.save(filename)
                     except Exception:
                         # Formatting is best-effort; the data export already succeeded.
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
 
                 elif export_format == "PDF":
                     try:

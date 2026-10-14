@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 # gui_course_management.py
 import tkinter as tk
@@ -36,7 +40,7 @@ def _patched_sqlite_connect(database, *args, **kwargs):
         if not database or db_name in (str(DEFAULT_DB_PATH), "courses.db"):
             return _original_sqlite_connect(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return _original_sqlite_connect(database, *args, **kwargs)
 
 sqlite3.connect = _patched_sqlite_connect
@@ -48,23 +52,12 @@ from typing import List, Dict, Optional, Tuple
 import threading
 import logging
 
-# Import chart generation utility
-try:
-    import matplotlib
-    matplotlib.use('TkAgg')
-    import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-    from matplotlib.figure import Figure
-    import seaborn as sns
-    import numpy as np
-    CHARTS_AVAILABLE = True
-except ImportError:
-    CHARTS_AVAILABLE = False
-    plt = None
-    Figure = None
-    FigureCanvasTkAgg = None
-    sns = None
-    np = None
+# Chart generation utilities — deferred, see _lazy_charts. Importing seaborn
+# here pulled matplotlib, pandas and scipy (~4.7s) into every Course Management
+# open, for charts only the analytics dialogs draw.
+from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui._lazy_charts import (
+    CHARTS_AVAILABLE, plt, Figure, FigureCanvasTkAgg, sns, np,
+)
 
 # Import email service
 try:
@@ -435,36 +428,34 @@ class ImportExportDialog:
             self.progress_text.insert(tk.END, f"Starting export to {file_path}...\n")
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-            try:
-                cursor = conn.cursor()
+            cursor = conn.cursor()
 
-                # Build query with filters
-                conditions = []
-                params = []
+            # Build query with filters
+            conditions = []
+            params = []
 
-                if self.dept_var.get():
-                    conditions.append("department = ?")
-                    params.append(self.dept_var.get())
+            if self.dept_var.get():
+                conditions.append("department = ?")
+                params.append(self.dept_var.get())
 
-                if self.level_var.get():
-                    conditions.append("level = ?")
-                    params.append(self.level_var.get())
+            if self.level_var.get():
+                conditions.append("level = ?")
+                params.append(self.level_var.get())
 
-                if self.status_var.get():
-                    conditions.append("status = ?")
-                    params.append(self.status_var.get())
+            if self.status_var.get():
+                conditions.append("status = ?")
+                params.append(self.status_var.get())
 
-                query = "SELECT * FROM courses"
-                if conditions:
-                    query += " WHERE " + " AND ".join(conditions)
-                query += " ORDER BY course_code"
+            query = "SELECT * FROM courses"
+            if conditions:
+                query += " WHERE " + " AND ".join(conditions)
+            query += " ORDER BY course_code"
 
-                cursor.execute(query, params)
-                courses = cursor.fetchall()
+            cursor.execute(query, params)
+            courses = cursor.fetchall()
 
-                if not courses:
-                    self.progress_text.insert(tk.END, "No courses found to export.\n")
-            finally:
+            if not courses:
+                self.progress_text.insert(tk.END, "No courses found to export.\n")
                 conn.close()
                 return
 

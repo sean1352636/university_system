@@ -1,6 +1,7 @@
 """Tkinter views for Sixth Form User Accounts admin."""
 
 from __future__ import annotations
+from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_viewable
 
 import logging
 import tkinter as tk
@@ -333,7 +334,7 @@ class NewUserDialog:
         self.win = tk.Toplevel(parent)
         self.win.title("New User")
         self.win.transient(parent)
-        self.win.after_idle(self.win.grab_set)
+        grab_when_viewable(self.win)
         self._build()
 
     def _build(self) -> None:
@@ -440,7 +441,7 @@ class EditProfileDialog:
         self.win = tk.Toplevel(parent)
         self.win.title(f"Edit profile — {user.username}")
         self.win.transient(parent)
-        self.win.after_idle(self.win.grab_set)
+        grab_when_viewable(self.win)
         self._build()
 
     def _build(self) -> None:
@@ -491,7 +492,7 @@ class ResetPasswordDialog:
         self.win = tk.Toplevel(parent)
         self.win.title(f"Reset password — {user.username}")
         self.win.transient(parent)
-        self.win.after_idle(self.win.grab_set)
+        grab_when_viewable(self.win)
         self._build()
 
     def _build(self) -> None:
@@ -564,7 +565,7 @@ class RolesDialog:
         self.win = tk.Toplevel(parent)
         self.win.title(f"Roles — {user.username}")
         self.win.transient(parent)
-        self.win.after_idle(self.win.grab_set)
+        grab_when_viewable(self.win)
         self._build()
 
     def _build(self) -> None:

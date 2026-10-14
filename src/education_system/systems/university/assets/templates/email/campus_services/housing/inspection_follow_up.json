@@ -1,0 +1,10 @@
+{
+    "subject": "🔁 Follow-up inspection scheduled - $building_name Room $room_number on $follow_up_date",
+    "body": "Dear $student_name,\n\nA follow-up inspection of your room has been scheduled. This is because the previous inspection could not be signed off yet — the reason is set out below.\n\n=== WHY A FOLLOW-UP IS NEEDED ===\n$follow_up_reason\n\n=== NEW INSPECTION DATE ===\nFollow-Up Date: $follow_up_date\nBuilding: $building_name\nRoom Number: $room_number\nFloor Number: $floor_number\nInspector: $inspector_name\nInspection Type: $inspection_type\n\n=== THE ORIGINAL INSPECTION ===\nInspection Reference: $inspection_id\nOriginal Date: $inspection_date\nStatus: $status\n\nFindings recorded at the time:\n$findings\n\nAction required from you:\n$action_required\n\n=== WHAT YOU NEED TO DO BEFORE THE FOLLOW-UP ===\n1. Address each of the points under 'Action required' above.\n2. Make sure the room is accessible on the follow-up date.\n3. If you need help — a repair, a replacement, or more time — contact the Housing Office before the date rather than after it.\n\n=== IF THE DATE DOES NOT WORK ===\nContact the Housing Office as soon as possible and we will try to rearrange. Not being present does not stop the inspection going ahead.\n\n=== CONTACT INFORMATION ===\nHousing Office: housing@university.edu\nPhone: (555) 123-4567\nOffice Hours: Monday-Friday, 9:00 AM - 5:00 PM\n\nBest regards,\nUniversity Housing Administration\n\n$signature",
+    "variables": {
+        "findings": {"default": "No findings were recorded."},
+        "action_required": {"default": "No specific action was recorded."},
+        "follow_up_reason": {"default": "The inspection needs to be repeated."},
+        "floor_number": {"default": "-"}
+    }
+}

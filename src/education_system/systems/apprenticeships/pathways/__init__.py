@@ -1,1 +1,0 @@
-"""Apprenticeships pathways package."""

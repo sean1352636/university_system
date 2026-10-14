@@ -403,18 +403,6 @@ def validate_parent_conference_create(data: dict[str, Any]) -> None:
     _require_fields(data, ["parent_id", "teacher_id", "datetime"])
 
 
-def validate_lms_course_create(data: dict[str, Any]) -> None:
-    _require_fields(data, ["module_code", "instructor_id"])
-
-
-def validate_lms_quiz_create(data: dict[str, Any]) -> None:
-    _require_fields(data, ["lms_course_id", "title"])
-
-
-def validate_lms_forum_create(data: dict[str, Any]) -> None:
-    _require_fields(data, ["lms_course_id", "topic"])
-
-
 def validate_misconduct_case_create(data: dict[str, Any]) -> None:
     _require_fields(data, ["student_id", "student_name", "course", "violation_type", "severity"])
     if data.get("severity") and data["severity"] not in ("Minor", "Moderate", "Major", "Severe"):

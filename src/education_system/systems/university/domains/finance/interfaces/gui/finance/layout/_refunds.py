@@ -1,4 +1,8 @@
 """Refunds management mixin for LayoutManager."""
+from education_system.systems.university.shell.gui import report_view as _rv
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -408,7 +412,7 @@ class RefundsMixin:
             if auth and getattr(auth, 'current_user', None):
                 username = auth.current_user.get('username', 'system')
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         today = datetime.now().strftime('%Y-%m-%d')
         try:
@@ -499,7 +503,7 @@ class RefundsMixin:
             title_label.pack(fill='x')
 
             # Summary text area
-            summary_text = ScrolledText(summary_window, font=('Courier', 10), wrap='word')
+            summary_text = _rv.TextReportView(summary_window, font=('Courier', 10), wrap='word')
             summary_text.pack(fill='both', expand=True, padx=10, pady=10)
 
             # Generate summary data
@@ -521,7 +525,7 @@ class RefundsMixin:
                     club_revenue = cursor.fetchone()[0] or 0
                     total_revenue += club_revenue
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 # Add housing payments to total revenue
                 try:
@@ -529,7 +533,7 @@ class RefundsMixin:
                     housing_revenue = cursor.fetchone()[0] or 0
                     total_revenue += housing_revenue
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 summary += f"Total Revenue (All Sources): \u00a3{total_revenue:,.2f}\n"
             except Exception:
@@ -559,7 +563,7 @@ class RefundsMixin:
                     library_fines = cursor.fetchone()[0] or 0
                     outstanding += library_fines
                 except Exception:
-                    pass  # Table may not exist
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 # Add late fees to outstanding amount
                 try:
@@ -571,7 +575,7 @@ class RefundsMixin:
                     late_fees = cursor.fetchone()[0] or 0
                     outstanding += late_fees
                 except Exception:
-                    pass  # Table may not exist
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 summary += f"Total Outstanding Fees: \u00a3{outstanding:,.2f}\n"
             except Exception:

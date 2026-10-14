@@ -90,7 +90,7 @@ class QADashboardGUI:
                 self.app._eqa_dash = self
                 self.window.bind("<Destroy>", self._on_destroy, add="+")
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
     def _on_destroy(self, event) -> None:
         if event.widget is not self.window:
@@ -99,7 +99,7 @@ class QADashboardGUI:
             if getattr(self.app, "_eqa_dash", None) is self:
                 self.app._eqa_dash = None
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     # ------------------------------------------------------------------
     # Open-in bar — deep-links to sibling UnifiedManagementGUI launchers
@@ -210,7 +210,7 @@ class QADashboardGUI:
         try:
             self.app._last_academic_context = context
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         try:
             fn()
         except Exception as exc:
@@ -394,7 +394,7 @@ class QADashboardGUI:
                 messagebox.showerror(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.mc', default="MC"), f"Could not open MC GUI: {exc}",
                                      parent=self.window)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
     def _refresh_submissions(self):
         self.sub_tree.delete(*self.sub_tree.get_children())

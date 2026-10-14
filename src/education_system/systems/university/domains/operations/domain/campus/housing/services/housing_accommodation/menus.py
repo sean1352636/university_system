@@ -1,11 +1,11 @@
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import common as _common
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common import (
-    get_text, display_language_menu_option, log_menu_navigation,
+    get_text, log_menu_navigation,
 )
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.database import init_housing_db
-from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.buildings import create_building, create_rooms_for_building, view_building, update_building, delete_building
+from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.buildings import create_building, create_rooms_for_building, view_building, update_building, delete_building, delete_room
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.applications import create_application, view_application, process_application
-from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.assignments import view_assignment, update_assignment_status
+from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.assignments import view_assignment, update_assignment_status, create_assignment
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.maintenance import create_maintenance_request, view_maintenance_requests, update_maintenance_request
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.payments import record_payment, view_payment_history
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.deposits import (
@@ -22,7 +22,10 @@ from education_system.systems.university.domains.operations.domain.campus.housin
     view_deposit_state,
 )
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.inventory import manage_inventory
-from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.inspections import create_inspection, view_inspections
+from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.inspections import (
+    create_inspection, view_inspections, update_inspection,
+    update_inspection_status, delete_inspection,
+)
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.reports import display_reports_menu
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.extended_cli import display_extended_housing_menu
 
@@ -67,10 +70,9 @@ def display_housing_accommodation_menu(auth_instance=None):
             print("   - Move-out · Waitlist · Vacancy board · Bulk ops · "
                   "Broadcasts · Resident search · Keys · Contracts · "
                   "Checklists · Guests · Damages · Audit log · Roommate finder")
-            print(f"10. {get_text('housing.menu.language', default='Language')}")
-            print(f"11. {get_text('housing.menu.return_main', default='Return to Main Menu')}")
+            print(f"10. {get_text('housing.menu.return_main', default='Return to Main Menu')}")
 
-            choice = input(f"\n{get_text('housing.prompt.choice', default='Enter your choice (1-11)')}: ")
+            choice = input(f"\n{get_text('housing.prompt.choice', default='Enter your choice (1-10)')}: ")
 
             if choice == '1':
                 display_building_menu()
@@ -91,8 +93,6 @@ def display_housing_accommodation_menu(auth_instance=None):
             elif choice == '9':
                 display_extended_housing_menu()
             elif choice == '10':
-                display_language_menu_option()
-            elif choice == '11':
                 return
             else:
                 print("Invalid choice. Please try again.")
@@ -105,10 +105,9 @@ def display_housing_accommodation_menu(auth_instance=None):
             print(f"4. {get_text('housing.menu.view_maintenance', default='View Maintenance Requests')}")
             print(f"5. {get_text('housing.menu.view_payments', default='View Payment History')}")
             print(f"6. {get_text('housing.menu.view_inspections', default='View Room Inspections')}")
-            print(f"7. {get_text('housing.menu.language', default='Language')}")
-            print(f"8. {get_text('housing.menu.return_main', default='Return to Main Menu')}")
+            print(f"7. {get_text('housing.menu.return_main', default='Return to Main Menu')}")
 
-            choice = input(f"\n{get_text('housing.prompt.choice_8', default='Enter your choice (1-8)')}: ")
+            choice = input(f"\n{get_text('housing.prompt.choice_7', default='Enter your choice (1-7)')}: ")
 
             if choice == '1':
                 view_building()
@@ -123,8 +122,6 @@ def display_housing_accommodation_menu(auth_instance=None):
             elif choice == '6':
                 view_inspections()
             elif choice == '7':
-                display_language_menu_option()
-            elif choice == '8':
                 return
             else:
                 print(get_text('housing.invalid_choice', default='Invalid choice. Please try again.'))
@@ -140,10 +137,9 @@ def display_housing_accommodation_menu(auth_instance=None):
             print(f"   - {get_text('housing.student.report_issue', default='Report Maintenance Issues')}")
             print(f"   - {get_text('housing.student.view_requests', default='View My Maintenance Requests')}")
             print("4. My Deposit Deductions (review / dispute)")
-            print(f"5. {get_text('housing.menu.language', default='Language')}")
-            print(f"6. {get_text('housing.menu.return_main', default='Return to Main Menu')}")
+            print(f"5. {get_text('housing.menu.return_main', default='Return to Main Menu')}")
 
-            choice = input("\nEnter your choice (1-6): ")
+            choice = input("\nEnter your choice (1-5): ")
 
             if choice == '1':
                 # Display student application menu
@@ -194,8 +190,6 @@ def display_housing_accommodation_menu(auth_instance=None):
             elif choice == '4':
                 student_review_deductions()
             elif choice == '5':
-                display_language_menu_option()
-            elif choice == '6':
                 return
             else:
                 print(get_text('housing.invalid_choice', default='Invalid choice. Please try again.'))
@@ -213,10 +207,12 @@ def display_building_menu():
         print("1. View Buildings")
         print("2. Add New Building")
         print("3. Update Building")
-        print("4. Delete Building")
-        print("5. Back to Housing Menu")
+        print("4. Add Rooms to a Building")
+        print("5. Delete Room")
+        print("6. Delete Building")
+        print("7. Back to Housing Menu")
 
-        choice = input("\nEnter your choice (1-5): ")
+        choice = input("\nEnter your choice (1-7): ")
 
         if choice == '1':
             view_building()
@@ -225,8 +221,12 @@ def display_building_menu():
         elif choice == '3':
             update_building()
         elif choice == '4':
-            delete_building()
+            create_rooms_for_building()
         elif choice == '5':
+            delete_room()
+        elif choice == '6':
+            delete_building()
+        elif choice == '7':
             return
         else:
             print("Invalid choice. Please try again.")
@@ -262,16 +262,19 @@ def display_assignment_menu():
         print("\nHousing Assignment Management")
         print("============================")
         print("1. View Assignments")
-        print("2. Update Assignment Status")
-        print("3. Back to Housing Menu")
+        print("2. Create New Assignment")
+        print("3. Update Assignment Status")
+        print("4. Back to Housing Menu")
 
-        choice = input("\nEnter your choice (1-3): ")
+        choice = input("\nEnter your choice (1-4): ")
 
         if choice == '1':
             view_assignment()
         elif choice == '2':
-            update_assignment_status()
+            create_assignment()
         elif choice == '3':
+            update_assignment_status()
+        elif choice == '4':
             return
         else:
             print("Invalid choice. Please try again.")
@@ -351,17 +354,26 @@ def display_inspection_menu():
     while True:
         print("\nRoom Inspection Management")
         print("=========================")
-        print("1. Create New Inspection")
+        print("1. Schedule New Inspection")
         print("2. View Inspections")
-        print("3. Back to Housing Menu")
+        print("3. Update Inspection Details")
+        print("4. Update Inspection Status (record the outcome)")
+        print("5. Delete Inspection")
+        print("6. Back to Housing Menu")
 
-        choice = input("\nEnter your choice (1-3): ")
+        choice = input("\nEnter your choice (1-6): ")
 
         if choice == '1':
             create_inspection()
         elif choice == '2':
             view_inspections()
         elif choice == '3':
+            update_inspection()
+        elif choice == '4':
+            update_inspection_status()
+        elif choice == '5':
+            delete_inspection()
+        elif choice == '6':
             return
         else:
             print("Invalid choice. Please try again.")

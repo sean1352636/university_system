@@ -3,7 +3,8 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 
 from education_system.systems.university.domains.academics.interfaces.gui.assignment_system.group_manager.assignment_creation import AssignmentCreationMixin

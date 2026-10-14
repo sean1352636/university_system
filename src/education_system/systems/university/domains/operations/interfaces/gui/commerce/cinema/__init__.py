@@ -1,5 +1,13 @@
-# Cinema GUI module
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.cinema.cinema_gui.core.main_gui import CinemaApp
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.cinema.cinema_gui.database import init_database as init_cinema_database
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.interfaces.gui.cinema`` (campus commerce plugin).
 
-__all__ = ['CinemaApp', 'init_cinema_database']
+A mirror, not an alias: an aliased package would resolve this package's
+submodules through the new ``__path__`` and load each one a second time.
+Submodules are aliased individually; this copies the package's names.
+"""
+# layout-shim: education_system.systems.university.plugins.campus_commerce.interfaces.gui.cinema
+import importlib as _importlib
+
+_new = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.interfaces.gui.cinema")
+globals().update({k: v for k, v in vars(_new).items()
+                  if not (k.startswith("__") and k.endswith("__"))})
+del _importlib, _new

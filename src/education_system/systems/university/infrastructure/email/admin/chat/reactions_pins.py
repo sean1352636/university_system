@@ -73,6 +73,7 @@ class ReactionsPinsMixin:
         placeholders = ','.join('?' for _ in ids)
 
         def _get(cursor):
+            # db-audit: ignore[DBW001] - module constant
             cursor.execute(
                 f'''SELECT message_id, emoji, COUNT(*),
                           SUM(CASE WHEN user_id = ? THEN 1 ELSE 0 END)

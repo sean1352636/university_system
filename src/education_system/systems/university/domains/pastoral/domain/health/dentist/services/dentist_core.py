@@ -171,6 +171,33 @@ def init_dentist_db():
             # NOTE: dentist transactions now use the unified 'transactions' table
             # with source_type = 'dentist'
 
+            # Idempotent column guards.
+            #
+            # The CREATE TABLE IF NOT EXISTS statements above are no-ops when
+            # the table already exists — and the baseline migration creates
+            # dentist_appointments *without* patient_name or fee, both of
+            # which the appointment queries use. On a migrated database that
+            # meant booking and listing appointments failed with "no such
+            # column". Adding what is missing preserves existing rows, which
+            # rewriting the queries to drop the fields would not.
+            for table, column, ddl in (
+                ('dentist_appointments', 'patient_name', 'TEXT'),
+                ('dentist_appointments', 'fee', 'REAL'),
+                ('dentist_appointments', 'duration_minutes', 'INTEGER'),
+                ('dentist_appointments', 'reminder_sent', 'INTEGER DEFAULT 0'),
+                ('dentist_treatments', 'procedure_notes', 'TEXT'),
+                ('dentist_treatments', 'dentist_name', 'TEXT'),
+            ):
+                try:
+                    existing = {row[1] for row in
+                                # db-audit: ignore[DBW001] - loop over a literal table
+                                conn.execute(f"PRAGMA table_info({table})")}
+                    if existing and column not in existing:
+                        # db-audit: ignore[DBW001] - loop over a literal table
+                        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
+                except Exception as exc:
+                    print(f"Could not add {table}.{column}: {exc}")
+
         return True
     except Exception as e:
         print(f"Error initializing dentist database: {e}")

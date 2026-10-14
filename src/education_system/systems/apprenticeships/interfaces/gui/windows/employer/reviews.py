@@ -31,9 +31,10 @@ _COLUMNS = (
 )
 
 _TARGET_COLUMNS = (
-    ("description", "Target", 420),
+    ("description", "Target", 380),
+    ("owner", "Owner", 100),
     ("due", "Due", 110),
-    ("ksbs", "KSBs", 140),
+    ("ksbs", "KSBs", 120),
     ("status", "Status", 130),
 )
 
@@ -152,7 +153,7 @@ def _detail(gui, detail, review_id: int) -> None:
         table = widgets.DataTable(targets, _TARGET_COLUMNS, height=min(6, len(review.targets)))
         table.populate(
             review.targets,
-            lambda t: (t.description, t.due_date, t.ksb_codes, t.status),
+            lambda t: (t.description, t.owner, t.due_date, t.ksb_codes, t.status),
             identity=lambda t: t.target_id,
             tag=lambda t: "Red" if t.is_overdue else None,
             noun="target",

@@ -3,7 +3,8 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
 import os
 import shutil
 import threading
@@ -17,6 +18,7 @@ from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system import paths
 from education_system.systems.university.infrastructure.i18n import get_text as _
 from collections import deque
+from education_system.systems.university.domains.academics.interfaces.gui._field_pickers import attach_date
 
 
 
@@ -371,7 +373,7 @@ class ExtensionManager:
         # New due date
         ttk.Label(form_frame, text=_t('gui.academics.assignment_system.extension_manager.labels.requested_due_date', default="Requested Due Date:")).grid(row=1, column=0, sticky='w', pady=5)
         self.ext_date_var = tk.StringVar()
-        ttk.Entry(form_frame, textvariable=self.ext_date_var, width=20).grid(row=1, column=1, sticky='w', pady=5, padx=(10, 0))
+        attach_date(form_frame, id_var=self.ext_date_var).grid(row=1, column=1, sticky='w', pady=5, padx=(10, 0))
 
         # Reason
         ttk.Label(form_frame, text=_t('gui.academics.assignment_system.extension_manager.labels.reason', default="Reason:")).grid(row=2, column=0, sticky='nw', pady=5)

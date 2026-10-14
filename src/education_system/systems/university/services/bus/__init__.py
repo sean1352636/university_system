@@ -15,7 +15,7 @@ here pulled in the entire health-portal GUI tree, the betting-shop GUI
 (through ``services.cli``'s eager package init), ``docx``, ``textract``,
 ``boto3`` and friends every time *any* code imported
 ``education_system.systems.university.services.bus`` — including
-``bus_migrations`` at launcher startup, costing ~10s on ``run.py --gui``.
+``bus_migrations`` at launcher startup, costing ~10s on ``python -m education_system --gui``.
 """
 
 from __future__ import annotations
@@ -42,7 +42,7 @@ def __getattr__(name):
     if name in _LAZY_GUI:
         try:
             mod = importlib.import_module(
-                "education_system.systems.university.interfaces.gui.shell.services"
+                "education_system.systems.university.shell.gui.services"
             )
             value = getattr(mod, name, None)
         except ImportError:
@@ -52,7 +52,7 @@ def __getattr__(name):
     if name in _LAZY_CLI:
         try:
             mod = importlib.import_module(
-                "education_system.systems.university.interfaces.cli.shell.services"
+                "education_system.systems.university.shell.cli.services"
             )
             value = getattr(mod, name, None)
         except ImportError:

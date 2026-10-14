@@ -4,8 +4,99 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from tkinter.simpledialog import Dialog
 from datetime import datetime
+import logging
+
+# Dates are picked from dropdowns: the stored format is exact and a
+# typed date was a validation error waiting to happen.
+from education_system.platform.delivery.gui.date_picker import (
+    DatePicker,
+    recent_years,
+)
 
 from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui._imports import safe_db_operation
+
+
+def _format_trip_dates(start, end):
+    """One date for a single-day trip, a span for a longer one."""
+    start = (start or "").strip()
+    end = (end or "").strip()
+    if not start:
+        return end or "to be confirmed"
+    if not end or end == start:
+        return start
+    return f"{start} to {end}"
+
+
+def notify_trip_participants(trip_id, template_name, extra_vars=None):
+    """Email everyone registered on a trip, via the system's email service.
+
+    Uses the existing ``send_template_email`` and the JSON templates under
+    ``assets/templates/email/campus_services/mobility/``. Returns the number
+    of participants emailed.
+
+    Never raises: a mail problem must not roll back or hide the trip change
+    the operator just made. Failures are logged and reported as a count.
+    """
+    from education_system.systems.university.infrastructure.email import (
+        send_template_email,
+    )
+
+    def _load(conn):
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT trip_name, destination, start_date, end_date, status "
+            "  FROM trips WHERE id = ?", (trip_id,))
+        trip = cursor.fetchone()
+        if not trip:
+            return None, []
+        # Participants who still hold a place; a cancelled registration
+        # should not receive an update about a trip they have left.
+        cursor.execute(
+            """SELECT COALESCE(u.email, u.username),
+                      COALESCE(NULLIF(TRIM(COALESCE(u.first_name,'') || ' ' ||
+                                           COALESCE(u.last_name,'')), ''),
+                               p.student_id, 'Participant')
+                 FROM trip_participants p
+                 LEFT JOIN users u ON u.id = p.user_id
+                WHERE p.trip_id = ?
+                  AND LOWER(COALESCE(p.status, 'registered')) != 'cancelled'""",
+            (trip_id,))
+        return trip, cursor.fetchall()
+
+    try:
+        trip, participants = safe_db_operation(_load) or (None, [])
+    except Exception:
+        logging.getLogger(__name__).warning(
+            "trip %s: could not load participants to notify", trip_id,
+            exc_info=True)
+        return 0
+    if not trip:
+        return 0
+
+    name, destination, start, end, status = trip
+    base = {
+        "trip_name": name or "",
+        "destination": destination or "",
+        "trip_dates": _format_trip_dates(start, end),
+        "trip_status": (status or "").title(),
+    }
+    base.update(extra_vars or {})
+
+    sent = 0
+    for email, participant_name in participants:
+        if not email or "@" not in str(email):
+            continue
+        try:
+            send_template_email(
+                f"campus_services/mobility/{template_name}",
+                email,
+                dict(base, participant_name=participant_name),
+            )
+            sent += 1
+        except Exception:
+            logging.getLogger(__name__).warning(
+                "trip %s: could not email %s", trip_id, email, exc_info=True)
+    return sent
 
 
 class TripDetailsDialog(Dialog):
@@ -101,15 +192,31 @@ class CreateTripDialog(Dialog):
         self.destination_var = tk.StringVar()
         ttk.Entry(master, textvariable=self.destination_var, width=40).grid(row=2, column=1, padx=5, pady=5)
 
-        # Start date
-        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.start_date_yyyy_mm_dd', default="Start Date (YYYY-MM-DD):")).grid(row=3, column=0, sticky=tk.W, padx=5, pady=5)
-        self.start_date_var = tk.StringVar()
-        ttk.Entry(master, textvariable=self.start_date_var, width=40).grid(row=3, column=1, padx=5, pady=5)
+        # Duration — a day trip only needs one date, so asking for two was
+        # busywork and invited "end before start" errors.
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.duration', default="Duration:")).grid(row=3, column=0, sticky=tk.W, padx=5, pady=5)
+        self.duration_var = tk.StringVar(value="single")
+        duration_frame = ttk.Frame(master)
+        duration_frame.grid(row=3, column=1, sticky=tk.W, padx=5, pady=5)
+        ttk.Radiobutton(duration_frame,
+                        text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.single_day', default="Single day"),
+                        variable=self.duration_var, value="single",
+                        command=self._toggle_duration).pack(side=tk.LEFT, padx=(0, 16))
+        ttk.Radiobutton(duration_frame,
+                        text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.multiple_days', default="Multiple days"),
+                        variable=self.duration_var, value="multi",
+                        command=self._toggle_duration).pack(side=tk.LEFT)
 
-        # End date
-        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.end_date_yyyy_mm_dd', default="End Date (YYYY-MM-DD):")).grid(row=4, column=0, sticky=tk.W, padx=5, pady=5)
-        self.end_date_var = tk.StringVar()
-        ttk.Entry(master, textvariable=self.end_date_var, width=40).grid(row=4, column=1, padx=5, pady=5)
+        # Start date (also "the date" for a single-day trip)
+        self.start_label = ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.date', default="Date:"))
+        self.start_label.grid(row=4, column=0, sticky=tk.W, padx=5, pady=5)
+        self.start_date_picker = DatePicker(master, years=recent_years(ahead=3, back=1))
+        self.start_date_picker.grid(row=4, column=1, sticky=tk.W, padx=5, pady=5)
+
+        # End date — only shown for a multi-day trip
+        self.end_label = ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.end_date', default="End Date:"))
+        self.end_date_picker = DatePicker(master, years=recent_years(ahead=3, back=1))
+        self._toggle_duration()
 
         # Max participants
         ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.max_participants', default="Max Participants:")).grid(row=5, column=0, sticky=tk.W, padx=5, pady=5)
@@ -130,6 +237,26 @@ class CreateTripDialog(Dialog):
 
         return self.name_entry  # Initial focus
 
+    def _toggle_duration(self):
+        """Show the end date only when the trip spans more than one day."""
+        if self.duration_var.get() == "multi":
+            self.start_label.configure(
+                text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.start_date', default="Start Date:"))
+            self.end_label.grid(row=5, column=0, sticky=tk.W, padx=5, pady=5)
+            self.end_date_picker.grid(row=5, column=1, sticky=tk.W, padx=5, pady=5)
+        else:
+            self.start_label.configure(
+                text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.date', default="Date:"))
+            self.end_label.grid_remove()
+            self.end_date_picker.grid_remove()
+
+    def _dates(self):
+        """(start, end) — a single-day trip ends the day it starts."""
+        start = self.start_date_picker.get()
+        if self.duration_var.get() == "multi":
+            return start, self.end_date_picker.get()
+        return start, start
+
     def validate(self):
         """Validate form data"""
         try:
@@ -143,15 +270,23 @@ class CreateTripDialog(Dialog):
                 return False
 
             # Validate dates
-            start_date = datetime.strptime(self.start_date_var.get(), '%Y-%m-%d')
-            end_date = datetime.strptime(self.end_date_var.get(), '%Y-%m-%d')
+            raw_start, raw_end = self._dates()
+            if not raw_start or not raw_end:
+                messagebox.showerror(
+                    _t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.validation_error', default="Validation Error"),
+                    _t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.pick_the_dates', default="Pick the trip date(s)."))
+                return False
+            start_date = datetime.strptime(raw_start, '%Y-%m-%d')
+            end_date = datetime.strptime(raw_end, '%Y-%m-%d')
 
             if start_date.date() <= datetime.now().date():
                 messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.start_date_must_be_in_the_future', default="Start date must be in the future."))
                 return False
 
-            if end_date.date() <= start_date.date():
-                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.end_date_must_be_after_start_date', default="End date must be after start date."))
+            # A single-day trip ends the day it starts, so only a multi-day
+            # trip requires the end to be strictly later.
+            if end_date.date() < start_date.date():
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.end_date_must_be_after_start_date', default="End date must be on or after the start date."))
                 return False
 
             # Validate numbers
@@ -186,8 +321,8 @@ class CreateTripDialog(Dialog):
                 self.name_var.get().strip(),
                 self.description_text.get(1.0, tk.END).strip(),
                 self.destination_var.get().strip(),
-                self.start_date_var.get(),
-                self.end_date_var.get(),
+                self._dates()[0],
+                self._dates()[1],
                 int(self.max_participants_var.get()),
                 float(self.cost_var.get()),
                 self.status_var.get(),
@@ -259,13 +394,15 @@ class UpdateTripDialog(Dialog):
 
         # Start date
         ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.start_date_yyyy_mm_dd', default="Start Date (YYYY-MM-DD):")).grid(row=3, column=0, sticky=tk.W, padx=5, pady=5)
-        self.start_date_var = tk.StringVar(value=trip[4])
-        ttk.Entry(master, textvariable=self.start_date_var, width=40).grid(row=3, column=1, padx=5, pady=5)
+        self.start_date_picker = DatePicker(master, value=trip[4],
+                                            years=recent_years(ahead=3, back=3))
+        self.start_date_picker.grid(row=3, column=1, sticky=tk.W, padx=5, pady=5)
 
         # End date
         ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.end_date_yyyy_mm_dd', default="End Date (YYYY-MM-DD):")).grid(row=4, column=0, sticky=tk.W, padx=5, pady=5)
-        self.end_date_var = tk.StringVar(value=trip[5])
-        ttk.Entry(master, textvariable=self.end_date_var, width=40).grid(row=4, column=1, padx=5, pady=5)
+        self.end_date_picker = DatePicker(master, value=trip[5],
+                                          years=recent_years(ahead=3, back=3))
+        self.end_date_picker.grid(row=4, column=1, sticky=tk.W, padx=5, pady=5)
 
         # Max participants
         ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.max_participants', default="Max Participants:")).grid(row=5, column=0, sticky=tk.W, padx=5, pady=5)
@@ -300,8 +437,13 @@ class UpdateTripDialog(Dialog):
                 return False
 
             # Validate dates
-            datetime.strptime(self.start_date_var.get(), '%Y-%m-%d')
-            datetime.strptime(self.end_date_var.get(), '%Y-%m-%d')
+            if not self.start_date_picker.get() or not self.end_date_picker.get():
+                messagebox.showerror(
+                    _t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.validation_error', default="Validation Error"),
+                    _t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.pick_the_dates', default="Pick the trip date(s)."))
+                return False
+            datetime.strptime(self.start_date_picker.get(), '%Y-%m-%d')
+            datetime.strptime(self.end_date_picker.get(), '%Y-%m-%d')
 
             # Validate numbers
             max_participants = int(self.max_participants_var.get())
@@ -320,6 +462,29 @@ class UpdateTripDialog(Dialog):
             messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.validation_error', default="Validation Error"), f"Invalid input: {e}")
             return False
 
+    def _describe_changes(self):
+        """One line per changed field, for the participant email.
+
+        Only fields a participant would care about — an internal description
+        edit is not worth mailing 40 people over.
+        """
+        before = getattr(self, "trip_data", None)
+        if not before:
+            return ""
+        fields = [
+            ("Trip name", before[1], self.name_var.get().strip()),
+            ("Destination", before[3], self.destination_var.get().strip()),
+            ("Start date", before[4], self.start_date_picker.get()),
+            ("End date", before[5], self.end_date_picker.get()),
+            ("Cost", f"{float(before[7] or 0):.2f}",
+             f"{float(self.cost_var.get() or 0):.2f}"),
+            ("Status", before[8], self.status_var.get()),
+        ]
+        lines = [f"{label}: {old or '—'} -> {new or '—'}"
+                 for label, old, new in fields
+                 if str(old or "").strip() != str(new or "").strip()]
+        return "\n".join(lines)
+
     def apply(self):
         """Apply the changes"""
         def update_trip_operation(conn):
@@ -336,8 +501,8 @@ class UpdateTripDialog(Dialog):
                 self.name_var.get().strip(),
                 self.description_text.get(1.0, tk.END).strip(),
                 self.destination_var.get().strip(),
-                self.start_date_var.get(),
-                self.end_date_var.get(),
+                self.start_date_picker.get(),
+                self.end_date_picker.get(),
                 int(self.max_participants_var.get()),
                 float(self.cost_var.get()),
                 self.status_var.get(),
@@ -349,7 +514,18 @@ class UpdateTripDialog(Dialog):
 
 
         if safe_db_operation(update_trip_operation):
-            messagebox.showinfo(_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.success', default="Success"), _t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.trip_updated_successfully', default="Trip updated successfully!"))
+            # Tell the people who are going. Done after the write so a mail
+            # failure cannot cost the operator their edit.
+            changes = self._describe_changes()
+            note = ""
+            if changes:
+                sent = notify_trip_participants(
+                    self.trip_id, "trip_updated", {"changes": changes})
+                if sent:
+                    note = f"\n\n{sent} participant(s) emailed about the change."
+            messagebox.showinfo(
+                _t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.success', default="Success"),
+                _t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.trip_updated_successfully', default="Trip updated successfully!") + note)
             if self.refresh_callback:
                 self.refresh_callback()
         else:

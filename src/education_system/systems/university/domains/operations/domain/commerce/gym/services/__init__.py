@@ -1,27 +1,13 @@
-"""Gym/Fitness Center Core Services Module"""
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.domain.gym.services`` (campus commerce plugin).
 
-from education_system.systems.university.domains.operations.domain.commerce.gym.services.gym_core import (
-    MembershipManager,
-    ClassManager,
-    PTSessionManager,
-    EquipmentManager,
-    TransactionManager,
-    ReportManager,
-    init_gym_db,
-    MEMBERSHIP_TYPES,
-    CLASS_TYPES,
-    PT_SESSION_FEES
-)
+A mirror, not an alias: an aliased package would resolve this package's
+submodules through the new ``__path__`` and load each one a second time.
+Submodules are aliased individually; this copies the package's names.
+"""
+# layout-shim: education_system.systems.university.plugins.campus_commerce.domain.gym.services
+import importlib as _importlib
 
-__all__ = [
-    'MembershipManager',
-    'ClassManager',
-    'PTSessionManager',
-    'EquipmentManager',
-    'TransactionManager',
-    'ReportManager',
-    'init_gym_db',
-    'MEMBERSHIP_TYPES',
-    'CLASS_TYPES',
-    'PT_SESSION_FEES'
-]
+_new = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.domain.gym.services")
+globals().update({k: v for k, v in vars(_new).items()
+                  if not (k.startswith("__") and k.endswith("__"))})
+del _importlib, _new

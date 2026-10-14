@@ -4,9 +4,12 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
+from tkinter import ttk, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
+from education_system.systems.university.domains.academics.interfaces.gui._field_pickers import attach_datetime
 
 
 class ManagementMixin:
@@ -288,7 +291,7 @@ class ManagementMixin:
                 return
 
             # Create edit window
-            edit_window = tk.Toplevel(self.root)
+            edit_window = make_toplevel(self.root)
             edit_window.title(f"Edit Assignment - {assignment['title']}")
             edit_window.geometry("700x700")
             edit_window.transient(self.root)
@@ -324,7 +327,7 @@ class ManagementMixin:
             # Due Date
             ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.labels.due_date_yyyy_mm_dd_hh_mm', default="Due Date (YYYY-MM-DD HH:MM):")).grid(row=2, column=0, sticky='w', pady=5)
             due_var = tk.StringVar(value=assignment['due_date'])
-            ttk.Entry(form_frame, textvariable=due_var, width=30).grid(row=2, column=1, sticky='w', pady=5, padx=(10, 0))
+            attach_datetime(form_frame, id_var=due_var).grid(row=2, column=1, sticky='w', pady=5, padx=(10, 0))
 
             # Max Marks
             ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.labels.max_marks', default="Max Marks:")).grid(row=3, column=0, sticky='w', pady=5)

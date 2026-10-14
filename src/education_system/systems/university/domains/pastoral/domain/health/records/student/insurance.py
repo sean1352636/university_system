@@ -6,7 +6,7 @@ from education_system.systems.university.domains.pastoral.domain.health.services
 
 
 def view_insurance_info(auth):
-    if not (auth.check_permission('update_insurance_info') or auth.current_user['role'] in ['admin', 'health_provider']):
+    if not (auth.check_permission('view_own_health_record') or auth.current_user['role'] in ['admin', 'health_provider']):
         print("You don't have permission to view insurance information.")
         return
 
@@ -75,7 +75,7 @@ def view_insurance_info(auth):
 
 
 def update_insurance_info(auth):
-    if not (auth.check_permission('update_insurance_info') or auth.current_user['role'] in ['admin', 'health_provider']):
+    if not (auth.check_permission('view_own_health_record') or auth.current_user['role'] in ['admin', 'health_provider']):
         print("You don't have permission to update insurance information.")
         return
 

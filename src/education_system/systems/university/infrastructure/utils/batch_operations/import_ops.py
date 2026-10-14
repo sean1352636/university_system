@@ -30,7 +30,7 @@ class ImportOpsMixin:
 
         # Create backup before import
         backup_path = self.create_database_backup(auto=True)
-        print(_t("shared.utils.batch_operations.backup_created", path=backup_path))
+        print(_t("shared.utils.batch_operations.backup_created", path=backup_path, default="Backup Created {path}"))
 
         try:
             # Read and validate file
@@ -54,13 +54,13 @@ class ImportOpsMixin:
                 required_headers = ['first_name', 'last_name', 'gender', 'dob', 'course']
                 missing_headers = [h for h in required_headers if h not in reader.fieldnames]
                 if missing_headers:
-                    print(_t("shared.utils.batch_operations.error_missing_headers", headers=', '.join(missing_headers)))
+                    print(_t("shared.utils.batch_operations.error_missing_headers", headers=', '.join(missing_headers), default="Error Missing Headers. {headers}"))
                     return
 
                 # Count total records first
                 records = list(reader)
                 total_records = len(records)
-                print(_t("shared.utils.batch_operations.found_records", count=total_records))
+                print(_t("shared.utils.batch_operations.found_records", count=total_records, default="Found Records {count}"))
 
                 # Initialize progress tracker
                 progress = ProgressTracker(total_records, "Validating records")
@@ -88,7 +88,7 @@ class ImportOpsMixin:
                     progress.update()
 
                 # Report validation results
-                print("\n" + _t("shared.utils.batch_operations.validation_complete", valid=len(valid_records), errors=len(error_records)))
+                print("\n" + _t("shared.utils.batch_operations.validation_complete", valid=len(valid_records), errors=len(error_records), default="Validation Complete {errors} {valid}"))
 
                 if error_records:
                     self.display_validation_errors(error_records)
@@ -111,7 +111,7 @@ class ImportOpsMixin:
 
         except Exception as e:
             logger.error(f"Error reading CSV file: {e}")
-            print(_t("shared.utils.batch_operations.error_reading_csv", error=str(e)))
+            print(_t("shared.utils.batch_operations.error_reading_csv", error=str(e), default="Error Reading CSV. {error}"))
 
     def import_from_excel(self):
         """Enhanced Excel import with sheet selection"""
@@ -144,7 +144,7 @@ class ImportOpsMixin:
 
             # Create backup
             backup_path = self.create_database_backup(auto=True)
-            print(_t("shared.utils.batch_operations.backup_created", path=backup_path))
+            print(_t("shared.utils.batch_operations.backup_created", path=backup_path, default="Backup Created {path}"))
 
             # Read the Excel file
             df = pd.read_excel(file_path, sheet_name=sheet_name)
@@ -160,13 +160,13 @@ class ImportOpsMixin:
             required_columns = ['first_name', 'last_name', 'gender', 'dob', 'course']
             missing_columns = [c for c in required_columns if c not in df.columns]
             if missing_columns:
-                print(_t("shared.utils.batch_operations.error_missing_columns", columns=', '.join(missing_columns)))
+                print(_t("shared.utils.batch_operations.error_missing_columns", columns=', '.join(missing_columns), default="Error Missing Columns. {columns}"))
                 return
 
             # Convert to records and process
             records = df.to_dict('records')
             total_records = len(records)
-            print(_t("shared.utils.batch_operations.found_records_sheet", count=total_records, sheet=sheet_name))
+            print(_t("shared.utils.batch_operations.found_records_sheet", count=total_records, sheet=sheet_name, default="Found Records Sheet {count} {sheet}"))
 
             # Process with progress tracking
             progress = ProgressTracker(total_records, "Processing Excel records")
@@ -192,7 +192,7 @@ class ImportOpsMixin:
                 progress.update()
 
             # Handle results similar to CSV import
-            print("\n" + _t("shared.utils.batch_operations.validation_complete", valid=len(valid_records), errors=len(error_records)))
+            print("\n" + _t("shared.utils.batch_operations.validation_complete", valid=len(valid_records), errors=len(error_records), default="Validation Complete {errors} {valid}"))
 
             if error_records:
                 self.display_validation_errors(error_records)
@@ -211,7 +211,7 @@ class ImportOpsMixin:
 
         except Exception as e:
             logger.error(f"Error reading Excel file: {e}")
-            print(_t("shared.utils.batch_operations.error_reading_excel", error=str(e)))
+            print(_t("shared.utils.batch_operations.error_reading_excel", error=str(e), default="Error Reading Excel. {error}"))
 
     def multi_file_import(self):
         """Import from multiple files in a directory"""
@@ -233,24 +233,24 @@ class ImportOpsMixin:
             print(_t("shared.utils.batch_operations.error_no_supported_files"))
             return
 
-        print("\n" + _t("shared.utils.batch_operations.found_files", count=len(files)))
+        print("\n" + _t("shared.utils.batch_operations.found_files", count=len(files), default="Found Files {count}"))
         for i, file in enumerate(files, 1):
             print(f"{i}. {file.name}")
 
-        confirm = input("\n" + _t("shared.utils.batch_operations.prompt_process_all", count=len(files)))
+        confirm = input("\n" + _t("shared.utils.batch_operations.prompt_process_all", count=len(files), default="Prompt Process All {count}"))
         if confirm.lower() != 'y':
             return
 
         # Create backup
         backup_path = self.create_database_backup(auto=True)
-        print(_t("shared.utils.batch_operations.backup_created", path=backup_path))
+        print(_t("shared.utils.batch_operations.backup_created", path=backup_path, default="Backup Created {path}"))
 
         # Process each file
         total_imported = 0
         total_errors = 0
 
         for file_path in files:
-            print("\n" + _t("shared.utils.batch_operations.processing_file", filename=file_path.name))
+            print("\n" + _t("shared.utils.batch_operations.processing_file", filename=file_path.name, default="Processing File {filename}"))
 
             try:
                 if file_path.suffix.lower() == '.csv':
@@ -262,15 +262,15 @@ class ImportOpsMixin:
                     result = self.import_valid_records(records)
                     total_imported += result.successful_imports
                     total_errors += result.failed_imports
-                    print(_t("shared.utils.batch_operations.records_imported_from", count=result.successful_imports, filename=file_path.name))
+                    print(_t("shared.utils.batch_operations.records_imported_from", count=result.successful_imports, filename=file_path.name, default="Records Imported From {count} {filename}"))
 
             except Exception as e:
-                print(_t("shared.utils.batch_operations.error_processing_file", filename=file_path.name, error=str(e)))
+                print(_t("shared.utils.batch_operations.error_processing_file", filename=file_path.name, error=str(e), default="Error Processing File. {error} {filename}"))
                 total_errors += 1
 
         print("\n" + _t("shared.utils.batch_operations.multi_file_complete"))
-        print(_t("shared.utils.batch_operations.total_imported", count=total_imported))
-        print(_t("shared.utils.batch_operations.total_errors", count=total_errors))
+        print(_t("shared.utils.batch_operations.total_imported", count=total_imported, default="Total Imported {count}"))
+        print(_t("shared.utils.batch_operations.total_errors", count=total_errors, default="Total Errors {count}"))
 
     def import_with_duplicate_detection(self):
         """Import with intelligent duplicate detection"""
@@ -289,17 +289,17 @@ class ImportOpsMixin:
         if not records:
             return
 
-        print("\n" + _t("shared.utils.batch_operations.processing_duplicates", count=len(records)))
+        print("\n" + _t("shared.utils.batch_operations.processing_duplicates", count=len(records), default="Processing Duplicates {count}"))
 
         # Create backup
         backup_path = self.create_database_backup(auto=True)
-        print(_t("shared.utils.batch_operations.backup_created", path=backup_path))
+        print(_t("shared.utils.batch_operations.backup_created", path=backup_path, default="Backup Created {path}"))
 
         # Check for duplicates
         duplicates = self.find_duplicates_in_import(records)
 
         if duplicates:
-            print("\n" + _t("shared.utils.batch_operations.found_duplicates", count=len(duplicates)))
+            print("\n" + _t("shared.utils.batch_operations.found_duplicates", count=len(duplicates), default="Found Duplicates {count}"))
 
             for i, dup in enumerate(duplicates[:5], 1):  # Show first 5
                 print(f"{i}. {dup['import_record']['first_name']} {dup['import_record']['last_name']} "
@@ -307,7 +307,7 @@ class ImportOpsMixin:
                       f"(ID: {dup['existing_record'][0]}) - Confidence: {dup['confidence']:.0%}")
 
             if len(duplicates) > 5:
-                print(_t("shared.utils.batch_operations.and_more", count=len(duplicates) - 5))
+                print(_t("shared.utils.batch_operations.and_more", count=len(duplicates) - 5, default="And More {count}"))
 
             print("\n" + _t("shared.utils.batch_operations.duplicate_options"))
             print(_t("shared.utils.batch_operations.option_skip_duplicates"))
@@ -341,7 +341,7 @@ class ImportOpsMixin:
         if not records:
             return
 
-        print("\n" + _t("shared.utils.batch_operations.preview_of_records", count=len(records)))
+        print("\n" + _t("shared.utils.batch_operations.preview_of_records", count=len(records), default="Preview Of Records {count}"))
         print("-" * 80)
 
         # Show first few records
@@ -350,17 +350,17 @@ class ImportOpsMixin:
                   f"({record.get('course', 'N/A')}) - {record.get('email_address', 'Auto-generated')}")
 
         if len(records) > 5:
-            print(_t("shared.utils.batch_operations.and_more_records", count=len(records) - 5))
+            print(_t("shared.utils.batch_operations.and_more_records", count=len(records) - 5, default="And More Records {count}"))
 
         # Check for duplicates
         duplicates = self.find_duplicates_in_import(records)
         if duplicates:
-            print("\n" + _t("shared.utils.batch_operations.duplicates_detected", count=len(duplicates)))
+            print("\n" + _t("shared.utils.batch_operations.duplicates_detected", count=len(duplicates), default="Duplicates Detected {count}"))
 
         # Show what modules would be assigned
         sample_record = records[0]
         course = sample_record.get('course', 'CS')
-        print("\n" + _t("shared.utils.batch_operations.modules_assigned", course=course))
+        print("\n" + _t("shared.utils.batch_operations.modules_assigned", course=course, default="Modules Assigned {course}"))
         print(f"- {compulsory_module_1['name']} (Compulsory)")
         print(f"- {compulsory_module_2['name']} (Compulsory)")
         print(f"- {optional_module_1['name']} (Optional)")
@@ -395,7 +395,7 @@ class ImportOpsMixin:
         for i, file in enumerate(resume_files, 1):
             # Extract timestamp from filename
             timestamp = file.stem.replace('import_resume_', '')
-            print(f"{i}. {_t('shared.utils.batch_operations.import_from', timestamp=timestamp)}")
+            print(f"{i}. {_t('shared.utils.batch_operations.import_from', timestamp=timestamp, default='Import From {timestamp}')}")
 
         try:
             choice = int(input(_t("shared.utils.batch_operations.prompt_select_import"))) - 1
@@ -410,8 +410,8 @@ class ImportOpsMixin:
                 original_total = saved_state['original_total']
                 processed_count = original_total - len(remaining_records)
 
-                print("\n" + _t("shared.utils.batch_operations.resuming_import", processed=processed_count, total=original_total))
-                print(_t("shared.utils.batch_operations.records_remaining", count=len(remaining_records)))
+                print("\n" + _t("shared.utils.batch_operations.resuming_import", processed=processed_count, total=original_total, default="Resuming Import {processed} {total}"))
+                print(_t("shared.utils.batch_operations.records_remaining", count=len(remaining_records), default="Records Remaining {count}"))
 
                 confirm = input(_t("shared.utils.batch_operations.prompt_continue_remaining"))
                 if confirm.lower() == 'y':
@@ -426,7 +426,7 @@ class ImportOpsMixin:
                 print(_t("shared.utils.batch_operations.invalid_selection"))
 
         except (ValueError, FileNotFoundError, json.JSONDecodeError) as e:
-            print(_t("shared.utils.batch_operations.error_resuming", error=str(e)))
+            print(_t("shared.utils.batch_operations.error_resuming", error=str(e), default="Error Resuming. {error}"))
 
     def read_csv_file(self, file_path: str) -> List[Dict]:
         """Read and validate CSV file, return cleaned records"""

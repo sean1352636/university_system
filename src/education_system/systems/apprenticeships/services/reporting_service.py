@@ -21,10 +21,13 @@ from typing import Any
 
 from education_system import paths
 from education_system.systems.apprenticeships import config
+from education_system.systems.apprenticeships.domain.training import attendance as attendance_rules
 from education_system.systems.apprenticeships.domain.training import off_the_job_hours as otj
+from education_system.systems.apprenticeships.domain.training.attendance import AttendanceSummary
 from education_system.systems.apprenticeships.infrastructure.persistence.repositories import (
     apprentice_repository,
     compliance_repository,
+    degree_apprenticeship_repository,
     employer_repository,
     epa_repository,
     funding_repository,
@@ -33,6 +36,15 @@ from education_system.systems.apprenticeships.infrastructure.persistence.reposit
     review_repository,
     staff_repository,
     training_repository,
+)
+from education_system.systems.apprenticeships.services import (
+    action_plan_service,
+    appeal_service,
+    complaint_service,
+    employer_risk_service,
+    signature_service,
+    task_service,
+    welfare_service,
 )
 from education_system.systems.apprenticeships.services.access import Actor, require
 
@@ -73,6 +85,7 @@ def admin_dashboard(actor: Actor) -> dict[str, Any]:
     caseloads = staff_repository.list_caseloads()
     overloaded = [c for c in caseloads if c.is_over_threshold]
     flagged = compliance_repository.flagged_apprentices()
+    attendance_concerns = _attendance_concerns(active, _attendance(active))
 
     return {
         "role": config.ADMIN,
@@ -83,6 +96,11 @@ def admin_dashboard(actor: Actor) -> dict[str, Any]:
             ("In EPA", sum(1 for s in active if s.apprentice.status == "EPA")),
             ("Behind on off-the-job", len(behind)),
             ("Compliance flags", len(flagged)),
+            ("Attendance concerns", len(attendance_concerns)),
+            ("Open complaints", _open_count(complaint_service.list_complaints, actor)),
+            ("Open appeals", _open_count(appeal_service.list_appeals, actor)),
+            ("High-risk employers", _high_risk_employers(actor)),
+            ("My tasks", _task_total(actor)),
             ("Overdue payments",
              f"{config.CURRENCY_SYMBOL}{money['overdue']:,.0f}"),
         ],
@@ -91,6 +109,7 @@ def admin_dashboard(actor: Actor) -> dict[str, Any]:
         "by_employer": apprentice_repository.count_by_employer(),
         "behind_on_otj": behind[:15],
         "compliance_flags": flagged[:15],
+        "attendance_concerns": attendance_concerns[:15],
         "overloaded_caseloads": overloaded,
         "money": money,
         "contracted_value": funding_repository.contracted_value(),
@@ -282,6 +301,9 @@ def staff_dashboard(actor: Actor) -> dict[str, Any]:
     scope = {"tutor_id": actor.staff_id} if actor.staff_id is not None else {"tutor_id": -1}
     summaries = apprentice_repository.list_summaries(**scope, active_only=True)
     behind = [s for s in summaries if s.is_behind]
+    concerns = _attendance_concerns(summaries, _attendance(summaries))
+    upcoming = _upcoming_reviews(**scope)
+    epa_soon = _epa_upcoming({s.apprentice.apprentice_id for s in summaries})
 
     return {
         "role": config.STAFF,
@@ -290,6 +312,8 @@ def staff_dashboard(actor: Actor) -> dict[str, Any]:
         "caseload": caseload,
         "kpis": [
             ("Caseload", len(summaries)),
+            ("At risk", _at_risk_count(actor)),
+            ("Attendance concerns", len(concerns)),
             ("Behind on off-the-job", len(behind)),
             ("Reviews overdue", review_repository.count_overdue(**scope)),
             ("Evidence to assess",
@@ -297,11 +321,17 @@ def staff_dashboard(actor: Actor) -> dict[str, Any]:
             ("Hours to approve", training_repository.pending_count(tutor_id=actor.staff_id)),
             ("At gateway",
              sum(1 for s in summaries if s.apprentice.status == "Gateway")),
+            ("Reviews due (14 days)", len(upcoming)),
+            ("Overdue actions", _action_count(actor, "overdue")),
+            ("EPA upcoming", len(epa_soon)),
+            ("My tasks", _task_total(actor)),
         ],
         "apprentices": summaries,
         "behind_on_otj": behind,
+        "attendance_concerns": concerns,
         "reviews_overdue": review_repository.list_reviews(**scope, overdue_only=True),
-        "reviews_upcoming": _upcoming_reviews(**scope),
+        "reviews_upcoming": upcoming,
+        "epa_upcoming": epa_soon,
         "evidence_queue": portfolio_repository.list_evidence(
             status="Submitted", tutor_id=actor.staff_id, limit=20
         ),
@@ -357,9 +387,14 @@ def apprentice_dashboard(actor: Actor) -> dict[str, Any]:
         else None
     )
     compliance = compliance_repository.build_status(apprentice_id)
+    attendance = training_repository.attendance_summary(apprentice_id)
     reviews = review_repository.list_reviews(
         apprentice_id=apprentice_id, with_children=True, limit=10
     )
+    next_review = _next_review(reviews)
+    bookings = epa_repository.list_bookings(apprentice_id=apprentice_id)
+    degree_link = degree_apprenticeship_repository.get_link(apprentice_id)
+    academic = degree_apprenticeship_repository.academic_projection(apprentice_id)
 
     return {
         "role": config.APPRENTICE,
@@ -372,26 +407,41 @@ def apprentice_dashboard(actor: Actor) -> dict[str, Any]:
             ("KSBs competent",
              f"{portfolio.competent_ksbs}/{portfolio.total_ksbs}" if portfolio else "—"),
             ("Programme elapsed", f"{summary.progress_percent:.0f}%"),
+            ("Attendance",
+             f"{attendance.attendance_rate:.0f}%" if attendance.is_rated else "—"),
             ("Status", record.status),
             ("Gateway", summary.gateway_status),
+            ("Next review", next_review.scheduled_date if next_review else "—"),
+            ("EPA", _epa_label(bookings)),
+            ("Outstanding actions", _action_count(actor, "open")),
+            ("Awaiting my signature", _signature_count(actor)),
+            ("My tasks", _task_total(actor)),
         ],
         "hours": hours,
+        "attendance": attendance,
         "portfolio": portfolio,
         "gaps": portfolio.gaps[:10] if portfolio else [],
         "compliance": compliance,
         "functional_skills": compliance.functional_skills,
         "reviews": reviews,
-        "next_review": _next_review(reviews),
+        "next_review": next_review,
         "open_targets": review_repository.list_targets(
             apprentice_id=apprentice_id, open_only=True
         ),
         "recent_hours": training_repository.list_entries(
             apprentice_id=apprentice_id, limit=10
         ),
-        "bookings": epa_repository.list_bookings(apprentice_id=apprentice_id),
+        "bookings": bookings,
         "results": epa_repository.list_results(apprentice_id=apprentice_id),
         "sessions_upcoming": training_repository.list_sessions(
             programme_id=record.programme_id, upcoming_only=True
+        ),
+        "degree_link": degree_link,
+        "academic_progress": academic,
+        "reconciliation_warning": (
+            degree_link.reconciliation_state
+            if degree_link and degree_link.reconciliation_state not in {"In Sync", "Pending"}
+            else None
         ),
     }
 
@@ -415,6 +465,8 @@ def employer_dashboard(actor: Actor) -> dict[str, Any]:
     summaries = apprentice_repository.list_summaries(employer_id=employer_id)
     active = [s for s in summaries if s.apprentice.is_active]
     behind = [s for s in active if s.is_behind]
+    attendance = _attendance(active)
+    upcoming = _upcoming_reviews(employer_id=employer_id)
 
     return {
         "role": config.EMPLOYER,
@@ -428,10 +480,18 @@ def employer_dashboard(actor: Actor) -> dict[str, Any]:
             ("Reviews to sign",
              review_repository.count_awaiting_signature(employer_id=employer_id)),
             ("Behind on off-the-job", len(behind)),
+            ("Average attendance", _average_attendance(attendance)),
             ("At gateway",
              sum(1 for s in active if s.apprentice.status == "Gateway")),
             ("Completed",
              sum(1 for s in summaries if s.apprentice.status == "Completed")),
+            ("On a break",
+             sum(1 for s in summaries if s.apprentice.status == "Break in Learning")),
+            ("Off-the-job compliance", _otj_compliance(active)),
+            ("Reviews due (14 days)", len(upcoming)),
+            ("Actions outstanding", _action_count(actor, "mine")),
+            ("Awaiting my signature", _signature_count(actor)),
+            ("My tasks", _task_total(actor)),
         ],
         "apprentices": summaries,
         "behind_on_otj": behind,
@@ -441,11 +501,143 @@ def employer_dashboard(actor: Actor) -> dict[str, Any]:
         "reviews_to_sign": review_repository.list_reviews(
             employer_id=employer_id, status="Awaiting Signatures", with_children=True
         ),
-        "reviews_upcoming": _upcoming_reviews(employer_id=employer_id),
+        "reviews_upcoming": upcoming,
+        "attendance_concerns": _attendance_concerns(active, attendance),
         "workplaces": employer_repository.list_workplaces(employer_id),
         "funding": funding_repository.totals(employer_id=employer_id),
         "levy": _levy_for(employer),
     }
+
+
+# ═════════════════════════════════════════════════════════════════════
+# Attendance, shared by the dashboards
+# ═════════════════════════════════════════════════════════════════════
+
+def _attendance(summaries: list[Any]) -> dict[int, AttendanceSummary]:
+    """Attendance for a cohort, from one query rather than one per apprentice."""
+    marks = training_repository.attendance_by_apprentice(
+        s.apprentice.apprentice_id for s in summaries
+    )
+    return {aid: attendance_rules.summarise(aid, records) for aid, records in marks.items()}
+
+
+def _attendance_concerns(
+    summaries: list[Any], attendance: dict[int, AttendanceSummary]
+) -> list[tuple[Any, AttendanceSummary]]:
+    """Apprentices whose attendance needs following up, lowest rate first."""
+    rows = [
+        (s, attendance[s.apprentice.apprentice_id])
+        for s in summaries
+        if s.apprentice.apprentice_id in attendance
+        and attendance[s.apprentice.apprentice_id].is_concern
+    ]
+    rows.sort(key=lambda pair: pair[1].attendance_rate)
+    return rows
+
+
+def _average_attendance(attendance: dict[int, AttendanceSummary]) -> str:
+    """Mean rate across the apprentices with enough sessions to be rated."""
+    rated = [a.attendance_rate for a in attendance.values() if a.is_rated]
+    return f"{sum(rated) / len(rated):.0f}%" if rated else "—"
+
+
+# ═════════════════════════════════════════════════════════════════════
+# Headline helpers
+# ═════════════════════════════════════════════════════════════════════
+
+def _epa_upcoming(apprentice_ids: set[int]) -> list[dict[str, Any]]:
+    """Open assessments booked for these apprentices in the next fortnight."""
+    if not apprentice_ids:
+        return []
+    today = date.today()
+    horizon = today + timedelta(days=UPCOMING_DAYS)
+    return [
+        b for b in epa_repository.list_bookings(
+            date_from=today.isoformat(), date_to=horizon.isoformat(), open_only=True,
+        )
+        if b.get("apprentice_id") in apprentice_ids
+    ]
+
+
+def _epa_label(bookings: list[dict[str, Any]]) -> str:
+    """Where an apprentice's end-point assessment stands, as a date or a word."""
+    open_bookings = [
+        b for b in bookings if b.get("status") in ("Requested", "Scheduled", "In Progress")
+    ]
+    dated = sorted(b["scheduled_date"] for b in open_bookings if b.get("scheduled_date"))
+    if dated:
+        return dated[0]
+    if open_bookings:
+        return "Requested"
+    if any(b.get("status") == "Assessed" for b in bookings):
+        return "Assessed"
+    return "Not booked"
+
+
+def _otj_compliance(active: list[Any]) -> str:
+    """Share of active apprentices on track with their off-the-job hours."""
+    if not active:
+        return "—"
+    on_track = sum(1 for s in active if not s.is_behind)
+    return f"{on_track / len(active) * 100:.0f}%"
+
+
+def _task_total(actor: Actor) -> int:
+    """The "My tasks" headline. A failure shows 0 rather than breaking the dashboard."""
+    try:
+        return task_service.counts(actor)["Total"]
+    except Exception:
+        logger.exception("Could not count tasks for %s", actor.username)
+        return 0
+
+
+def _high_risk_employers(actor: Actor) -> int | str:
+    """Employers at the top risk level; "—" if the rating cannot be built."""
+    try:
+        return employer_risk_service.risk_counts(actor).get(config.EMPLOYER_RISK_LEVELS[-1], 0)
+    except Exception:
+        logger.exception("Could not rate employers for %s", actor.username)
+        return "—"
+
+
+def _signature_count(actor: Actor) -> int | str:
+    """Plans and agreements waiting for this person's signature."""
+    try:
+        return len(signature_service.awaiting_signature(actor))
+    except Exception:
+        logger.exception("Could not count signatures for %s", actor.username)
+        return "—"
+
+
+def _action_count(actor: Actor, key: str) -> int | str:
+    """One of the action-plan headline counts; "—" if they cannot be read."""
+    try:
+        return action_plan_service.action_summary(actor)[key]
+    except Exception:
+        logger.exception("Could not count actions for %s", actor.username)
+        return "—"
+
+
+def _open_count(lister: Any, actor: Actor) -> int | str:
+    """How many open items a scoped list function returns; "—" if it fails."""
+    try:
+        return len(lister(actor, open_only=True))
+    except Exception:
+        logger.exception("Could not count open items for %s", actor.username)
+        return "—"
+
+
+def _at_risk_count(actor: Actor) -> int | str:
+    """Apprentices whose combined warning signs put them at risk.
+
+    "—" when the risk view cannot be read, so a failure is not mistaken
+    for a caseload with nobody at risk.
+    """
+    try:
+        return len(welfare_service.at_risk(actor))
+    except Exception:
+        logger.exception("Could not build the risk list for %s", actor.username)
+        return "—"
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -482,6 +674,7 @@ def assessor_dashboard(actor: Actor) -> dict[str, Any]:
             ("Resits requested",
              len(epa_repository.list_resits(status="Requested"))),
             ("Graded this month", _graded_this_month()),
+            ("My tasks", _task_total(actor)),
         ],
         "my_bookings": mine,
         "diary": epa_repository.list_bookings(

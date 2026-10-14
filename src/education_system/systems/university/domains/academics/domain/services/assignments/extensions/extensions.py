@@ -17,23 +17,21 @@ class ExtensionsMixin:
                 return
 
             conn = sqlite3.connect(self.db_path)
-            try:
-                cursor = conn.cursor()
+            cursor = conn.cursor()
 
-                cursor.execute('''
-                SELECT a.id, a.title, a.due_date, a.module_code
-                FROM assignments a
-                JOIN student_modules sm ON a.module_code = sm.module_code
-                WHERE sm.student_id = ? AND a.is_active = 1
-                AND a.due_date > datetime('now')
-                ORDER BY a.due_date
-                ''', (student_id,))
+            cursor.execute('''
+            SELECT a.id, a.title, a.due_date, a.module_code
+            FROM assignments a
+            JOIN student_modules sm ON a.module_code = sm.module_code
+            WHERE sm.student_id = ? AND a.is_active = 1
+            AND a.due_date > datetime('now')
+            ORDER BY a.due_date
+            ''', (student_id,))
 
-                assignments = cursor.fetchall()
+            assignments = cursor.fetchall()
 
-                if not assignments:
-                    print("No upcoming assignments found.")
-            finally:
+            if not assignments:
+                print("No upcoming assignments found.")
                 conn.close()
                 return
 

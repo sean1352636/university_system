@@ -1,4 +1,7 @@
 """Methods show_refunds through _complete_train_refund."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -13,7 +16,7 @@ class TrainStationApp:
 
         # Title
         title = tk.Label(self.content_frame,
-                        text=_t("train.refunds.title", default="Train Ticket Refunds"),
+                        text=_t("train.refunds.title", default="===== REFUNDS ====="),
                         font=("Helvetica", 18, "bold"),
                         bg="#f0f4f8", fg="#1a365d")
         title.pack(pady=(0, 15))
@@ -342,7 +345,7 @@ class TrainStationApp:
             try:
                 cursor.execute("ALTER TABLE train_station_tickets ADD COLUMN status TEXT DEFAULT 'active'")
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Update status if column exists (optional - status is now derived from unified_refunds)
             try:
@@ -352,7 +355,7 @@ class TrainStationApp:
                     WHERE ticket_number = ?
                 """, (ticket_number,))
             except Exception:
-                pass  # Column doesn't exist, status will be derived from unified_refunds table
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Get processed_by info
             processed_by = None
@@ -403,7 +406,7 @@ class TrainStationApp:
                 try:
                     self.refresh_refunds_list()
                 except Exception:
-                    pass  # Refunds view not currently active
+                    logger.debug("Suppressed exception", exc_info=True)
 
             messagebox.showinfo(_t("common.success", default="Success"),
                               f"Refund processed successfully!\nReference: {refund_ref}")

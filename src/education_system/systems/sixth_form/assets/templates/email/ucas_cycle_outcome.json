@@ -1,0 +1,11 @@
+{
+  "template_id": "ucas_cycle_outcome",
+  "description": "Sent to the sixth-form student when the university closes their UCAS cycle — either confirming their place after results day, or recording that they have entered Clearing. Quotes the course and the offer it was conditional on, and says what happens next in each case. Sent from the university admissions address.",
+  "channel": "Email",
+  "category": "General",
+  "priority": "Normal",
+  "from_name": "{{university}} Admissions",
+  "from_address": "admissions@teesside.ac.uk",
+  "subject": "{{subject_line}}",
+  "body": "Hi {{first_name}},\n\n{{outcome_block}}\n\n  Course        : {{course_name}}{{course_code_suffix}}\n  Offer         : {{decision_status}}\n  Conditions    : {{offer_terms}}\n  Entry year    : {{entry_year}}\n  Cycle         : {{cycle_year}}\n  UCAS ID       : {{ucas_id}}\n\n{{next_steps}}\n\nUCAS Track (track.ucas.com) is the formal record — check that it shows the same thing. If it does not, or if this email describes something you did not expect, contact us at {{contact_email}} and tell your sixth-form tutor.\n\nThe Admissions Team\n{{university}}"
+}

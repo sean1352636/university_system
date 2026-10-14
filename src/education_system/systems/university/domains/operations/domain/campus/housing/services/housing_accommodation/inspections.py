@@ -1,9 +1,154 @@
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import common as _common
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common import (
     sqlite3, datetime, get_text, get_connection, generate_id,
-    log_create, log_read,
+    log_create, log_read, log_update, log_delete,
 )
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.maintenance import create_maintenance_request
+
+
+# An inspection starts life booked, not judged: the outcome is recorded later
+# through update_inspection_status.
+#
+# This is the single vocabulary for inspection status across the CLI, the GUI
+# and the database. The GUI had drifted onto its own set — Completed / Issues
+# Found / Follow-up Required — so the same inspection read differently
+# depending on which interface you opened it in, and status filters silently
+# missed rows written by the other one. The names below are the original ones
+# the schema and reports were built around; the GUI now imports them from
+# here rather than repeating string literals.
+SCHEDULED_STATUS = "Scheduled"
+OUTCOME_STATUSES = ["Passed", "Failed", "Needs Follow-up", "Incomplete"]
+ALL_STATUSES = [SCHEDULED_STATUS] + OUTCOME_STATUSES
+
+# Statuses the GUI used to write, mapped onto the canonical set. Kept so rows
+# already in the database keep their meaning, and so anything still passing an
+# old name lands on the right value instead of creating a sixth status.
+LEGACY_STATUS_MAP = {
+    "Completed": "Passed",
+    "Issues Found": "Failed",
+    "Follow-up Required": "Needs Follow-up",
+    "Pending": SCHEDULED_STATUS,
+    "In Progress": SCHEDULED_STATUS,
+}
+
+
+def normalise_status(status):
+    """Map any legacy inspection status onto the canonical vocabulary."""
+    if not status:
+        return status
+    if status in ALL_STATUSES:
+        return status
+    return LEGACY_STATUS_MAP.get(status, status)
+
+
+def is_outcome(status):
+    """True when *status* records a finished inspection rather than a booking."""
+    return normalise_status(status) in OUTCOME_STATUSES
+
+
+def _inspection_email_context(cursor, inspection_id):
+    """Everything the inspection emails need, plus the room's residents.
+
+    Returns ``None`` if the inspection has gone. The residents list can be
+    empty — an inspection of an empty room is perfectly normal, and the
+    caller reports that rather than treating it as a failure.
+    """
+    cursor.execute("""
+    SELECT i.inspection_id, i.room_id, i.inspector, i.inspection_date,
+           i.inspection_type, i.status, i.findings, i.action_required,
+           i.follow_up_date, b.building_name, r.room_number, r.floor_number
+    FROM housing_inspections i
+    JOIN housing_rooms r ON i.room_id = r.room_id
+    JOIN housing_buildings b ON r.building_id = b.building_id
+    WHERE i.inspection_id = ?
+    """, (inspection_id,))
+    row = cursor.fetchone()
+    if not row:
+        return None
+
+    context = {
+        'inspection_id': row[0], 'room_id': row[1], 'inspector': row[2],
+        'inspection_date': row[3], 'inspection_type': row[4], 'status': row[5],
+        'findings': row[6], 'action_required': row[7], 'follow_up_date': row[8],
+        'building_name': row[9], 'room_number': row[10], 'floor_number': row[11],
+    }
+    context['residents'] = _common.room_occupants(cursor, row[1])
+    return context
+
+
+def _notify_residents(context, send_fn, label):
+    """Send one inspection email per resident of the room. Prints a summary."""
+    residents = context.get('residents') or []
+    if not residents:
+        print(f"{label}: nobody is currently assigned to this room, so no email was sent.")
+        return 0, 0
+
+    sent = failed = 0
+    for person in residents:
+        payload = dict(context)
+        payload['student_name'] = person['student_name']
+        payload['student_id'] = person['student_id']
+        payload['student_email'] = person['email_address']
+        if send_fn(payload):
+            sent += 1
+        else:
+            failed += 1
+    print(f"{label}: {sent} email(s) sent, {failed} failed.")
+    return sent, failed
+
+
+def _select_inspection(cursor, prompt="Select inspection"):
+    """Pick a recent inspection. Returns its id, or None."""
+    cursor.execute("""
+    SELECT i.inspection_id, b.building_name, r.room_number, i.inspection_date,
+           i.inspection_type, i.status
+    FROM housing_inspections i
+    JOIN housing_rooms r ON i.room_id = r.room_id
+    JOIN housing_buildings b ON r.building_id = b.building_id
+    ORDER BY i.created_at DESC
+    LIMIT 50
+    """)
+    rows = cursor.fetchall()
+    if not rows:
+        print("No inspections found.")
+        return None
+
+    print(f"\n{prompt}:")
+    print("=" * 60)
+    for i, row in enumerate(rows, 1):
+        print(f"{i}. {row[1]} room {row[2]} - {row[3]} - {row[4]} [{row[5]}]")
+
+    while True:
+        raw = input(f"\nSelect inspection (1-{len(rows)}, or 'q' to cancel): ").strip()
+        if raw.lower() in ('q', 'quit', 'cancel', 'back', 'exit'):
+            return None
+        if not raw:
+            print("This field cannot be left blank. Please try again.")
+            continue
+        try:
+            choice = int(raw)
+        except ValueError:
+            print("Please enter a valid number.")
+            continue
+        if 1 <= choice <= len(rows):
+            return rows[choice - 1][0]
+        print(f"Please enter a number between 1 and {len(rows)}.")
+
+
+def _prompt_date(label, allow_blank=True):
+    """Ask for a YYYY-MM-DD date, re-asking until it parses."""
+    while True:
+        raw = input(f"{label}: ").strip()
+        if not raw:
+            if allow_blank:
+                return None
+            print("This field cannot be left blank. Please try again.")
+            continue
+        try:
+            datetime.datetime.strptime(raw, '%Y-%m-%d')
+            return raw
+        except ValueError:
+            print("Invalid date format. Please use YYYY-MM-DD.")
 
 
 def _capture_proposed_deductions(cursor, conn, inspection_id, room_id, *, created_by):
@@ -183,43 +328,18 @@ def create_inspection():
             except ValueError:
                 print("Please enter a valid number.")
 
-        print("\nSelect Inspection Status:")
-        status_types = ["Passed", "Failed", "Needs Follow-up", "Incomplete"]
+        # A brand-new inspection has not happened yet, so it starts as
+        # Scheduled. The outcome is recorded later through Update Inspection
+        # Status, which is also what emails the student their results — asking
+        # for a Passed/Failed verdict at creation time meant booking an
+        # inspection and judging it in the same breath.
+        inspection_status = SCHEDULED_STATUS
 
-        for i, status in enumerate(status_types, 1):
-            print(f"{i}. {status}")
+        inspection_time = input("Inspection Time (e.g. 10:00, optional): ").strip() or None
 
-        while True:
-            try:
-                choice = int(input("\nSelect status (enter number): "))
-                if 1 <= choice <= len(status_types):
-                    inspection_status = status_types[choice - 1]
-                    break
-                else:
-                    print(f"Please enter a number between 1 and {len(status_types)}.")
-            except ValueError:
-                print("Please enter a valid number.")
-
-        findings = input("Findings/Notes: ").strip() or None
-
+        findings = input("Notes for the resident (optional): ").strip() or None
         action_required = None
-        if inspection_status in ["Failed", "Needs Follow-up"]:
-            action_required = input("Action Required: ").strip() or None
-
         follow_up_date = None
-        if inspection_status == "Needs Follow-up":
-            while True:
-                follow_up = input("Follow-up Date (YYYY-MM-DD): ").strip()
-                if not follow_up:
-                    break
-
-                try:
-                    # Validate date format
-                    datetime.datetime.strptime(follow_up, '%Y-%m-%d')
-                    follow_up_date = follow_up
-                    break
-                except ValueError:
-                    print("Invalid date format. Please use YYYY-MM-DD.")
 
         # Create inspection record
         inspection_id = generate_id('INS')
@@ -235,8 +355,12 @@ def create_inspection():
             inspection_status, findings, action_required, follow_up_date, timestamp, timestamp
         ))
 
+        context = _inspection_email_context(cursor, inspection_id)
+
         conn.commit()
         print(f"\nInspection created successfully with ID: {inspection_id}")
+        print(f"Status: {inspection_status} — record the outcome later via "
+              f"'Update Inspection Status'.")
 
         # Move-out inspections feed the deposit refund: capture proposed
         # deductions now so they're already itemised when the refund is processed.
@@ -246,19 +370,14 @@ def create_inspection():
                 created_by=auth.current_user['username'],
             )
 
-        # If inspection failed and action is required, ask if they want to create a maintenance request
-        if inspection_status in ["Failed", "Needs Follow-up"] and action_required:
-            create_maint = input("\nDo you want to create a maintenance request based on this inspection? (y/n): ").lower()
-
-            if create_maint == 'y':
-                conn.close()  # Close current connection before creating maintenance request
-
-                # Pass state to maintenance request function if implemented
-                # For now, just call the function and let the user select the room again
-                create_maintenance_request()
-                return
-
         conn.close()
+
+        # Tell whoever lives in the room that an inspection is booked. After
+        # the commit, so nothing is announced that rolled back.
+        if context:
+            context['inspection_time'] = inspection_time
+            _notify_residents(context, _common.send_inspection_scheduled_email,
+                              "Inspection notice")
 
     except sqlite3.Error as e:
         print(f"Database error: {e}")
@@ -601,3 +720,277 @@ def view_inspections():
         print(f"Database error: {e}")
     except Exception as e:
         print(f"Error viewing inspections: {e}")
+
+
+@log_update(module="housing", description="Updating room inspection")
+def update_inspection():
+    """Edit an inspection's details (date, type, inspector, notes)."""
+    auth = _common.auth
+
+    if not auth or not auth.current_user:
+        print("You must be logged in to update inspections.")
+        return
+    if not auth.check_permission('manage_accommodations'):
+        print("You don't have permission to update inspections.")
+        return
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        inspection_id = _select_inspection(cursor, "Select inspection to update")
+        if not inspection_id:
+            conn.close()
+            return
+
+        cursor.execute('''
+        SELECT inspector, inspection_date, inspection_type, findings, action_required
+        FROM housing_inspections WHERE inspection_id = ?
+        ''', (inspection_id,))
+        current = cursor.fetchone()
+        if not current:
+            print("Inspection not found.")
+            conn.close()
+            return
+
+        print("\nLeave a field blank to keep its current value.")
+        inspector = input(f"Inspector [{current[0]}]: ").strip() or current[0]
+
+        new_date = _prompt_date(f"Inspection Date (YYYY-MM-DD) [{current[1]}]")
+        inspection_date = new_date or current[1]
+        date_changed = new_date is not None and new_date != current[1]
+
+        print("\nInspection Type:")
+        inspection_types = ["Move-in", "Monthly", "Quarterly", "Annual",
+                            "Move-out", "Complaint", "Maintenance Follow-up"]
+        for i, itype in enumerate(inspection_types, 1):
+            print(f"{i}. {itype}")
+        raw = input(f"Select type (1-{len(inspection_types)}) [{current[2]}]: ").strip()
+        inspection_type = current[2]
+        if raw:
+            try:
+                choice = int(raw)
+                if 1 <= choice <= len(inspection_types):
+                    inspection_type = inspection_types[choice - 1]
+                else:
+                    print(f"Out of range — keeping '{current[2]}'.")
+            except ValueError:
+                print(f"Not a number — keeping '{current[2]}'.")
+
+        findings = input(f"Notes/Findings [{current[3] or 'none'}]: ").strip() or current[3]
+        action_required = input(
+            f"Action Required [{current[4] or 'none'}]: ").strip() or current[4]
+
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        cursor.execute('''
+        UPDATE housing_inspections
+        SET inspector = ?, inspection_date = ?, inspection_type = ?,
+            findings = ?, action_required = ?, updated_at = ?
+        WHERE inspection_id = ?
+        ''', (inspector, inspection_date, inspection_type, findings,
+              action_required, timestamp, inspection_id))
+
+        context = _inspection_email_context(cursor, inspection_id)
+        conn.commit()
+        print(f"\nInspection {inspection_id} updated.")
+        conn.close()
+
+        # Only bother the resident when the date moved — an inspector name or
+        # a note correction is not something they need an email about.
+        if date_changed and context:
+            print("The inspection date changed, so the resident(s) will be re-notified.")
+            _notify_residents(context, _common.send_inspection_scheduled_email,
+                              "Updated inspection notice")
+
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")
+    except Exception as e:
+        print(f"Error updating inspection: {e}")
+
+
+@log_update(module="housing", description="Updating inspection status")
+def update_inspection_status():
+    """Record the outcome of an inspection and tell the resident.
+
+    This is where a Scheduled inspection becomes Passed / Failed /
+    Needs Follow-up / Incomplete. Choosing 'Needs Follow-up' asks for the new
+    date and the reason, and the resident is emailed both.
+    """
+    auth = _common.auth
+
+    if not auth or not auth.current_user:
+        print("You must be logged in to update inspections.")
+        return
+    if not auth.check_permission('manage_accommodations'):
+        print("You don't have permission to update inspections.")
+        return
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        inspection_id = _select_inspection(cursor, "Select inspection to update the status of")
+        if not inspection_id:
+            conn.close()
+            return
+
+        cursor.execute('''
+        SELECT status, findings, action_required, follow_up_date
+        FROM housing_inspections WHERE inspection_id = ?
+        ''', (inspection_id,))
+        current = cursor.fetchone()
+        if not current:
+            print("Inspection not found.")
+            conn.close()
+            return
+
+        print(f"\nCurrent status: {current[0]}")
+        print("\nSelect Inspection Status:")
+        for i, status in enumerate(ALL_STATUSES, 1):
+            print(f"{i}. {status}")
+
+        new_status = None
+        while new_status is None:
+            raw = input(f"\nSelect status (1-{len(ALL_STATUSES)}, or 'q' to cancel): ").strip()
+            if raw.lower() in ('q', 'quit', 'cancel', 'back', 'exit'):
+                print("Operation cancelled.")
+                conn.close()
+                return
+            if not raw:
+                print("This field cannot be left blank. Please try again.")
+                continue
+            try:
+                choice = int(raw)
+            except ValueError:
+                print("Please enter a valid number.")
+                continue
+            if 1 <= choice <= len(ALL_STATUSES):
+                new_status = ALL_STATUSES[choice - 1]
+            else:
+                print(f"Please enter a number between 1 and {len(ALL_STATUSES)}.")
+
+        findings = input(f"Findings [{current[1] or 'none'}]: ").strip() or current[1]
+
+        action_required = current[2]
+        follow_up_date = current[3]
+        follow_up_reason = None
+
+        if new_status in ("Failed", "Needs Follow-up"):
+            action_required = input(
+                f"Action Required [{current[2] or 'none'}]: ").strip() or current[2]
+
+        if new_status == "Needs Follow-up":
+            # A follow-up without a date is the thing that leaves a resident
+            # with no idea when someone is coming back, so insist on one.
+            follow_up_date = _prompt_date("Follow-up Date (YYYY-MM-DD)", allow_blank=False)
+            while True:
+                follow_up_reason = input("Reason a follow-up is needed: ").strip()
+                if follow_up_reason:
+                    break
+                print("This field cannot be left blank. Please try again.")
+        elif new_status == "Passed":
+            follow_up_date = None
+
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        cursor.execute('''
+        UPDATE housing_inspections
+        SET status = ?, findings = ?, action_required = ?, follow_up_date = ?, updated_at = ?
+        WHERE inspection_id = ?
+        ''', (new_status, findings, action_required, follow_up_date,
+              timestamp, inspection_id))
+
+        context = _inspection_email_context(cursor, inspection_id)
+        conn.commit()
+        print(f"\nInspection {inspection_id} is now '{new_status}'.")
+        conn.close()
+
+        if context:
+            context['follow_up_reason'] = follow_up_reason
+            if new_status == "Needs Follow-up":
+                _notify_residents(context, _common.send_inspection_follow_up_email,
+                                  "Follow-up notice")
+            elif new_status == SCHEDULED_STATUS:
+                _notify_residents(context, _common.send_inspection_scheduled_email,
+                                  "Inspection notice")
+            else:
+                # Passed / Failed / Incomplete are all completed outcomes the
+                # resident is entitled to see.
+                _notify_residents(context, _common.send_inspection_completed_email,
+                                  "Inspection results")
+
+        # A failed inspection with an action is the usual trigger for a repair.
+        if new_status in ("Failed", "Needs Follow-up") and action_required:
+            if input("\nCreate a maintenance request for this? (y/n): ").strip().lower() == 'y':
+                create_maintenance_request()
+
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")
+    except Exception as e:
+        print(f"Error updating inspection status: {e}")
+
+
+@log_delete(module="housing", description="Deleting room inspection")
+def delete_inspection():
+    """Delete an inspection record."""
+    auth = _common.auth
+
+    if not auth or not auth.current_user:
+        print("You must be logged in to delete inspections.")
+        return
+    if not auth.check_permission('manage_accommodations'):
+        print("You don't have permission to delete inspections.")
+        return
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        inspection_id = _select_inspection(cursor, "Select inspection to delete")
+        if not inspection_id:
+            conn.close()
+            return
+
+        cursor.execute('''
+        SELECT i.inspection_date, i.inspection_type, i.status, b.building_name, r.room_number
+        FROM housing_inspections i
+        JOIN housing_rooms r ON i.room_id = r.room_id
+        JOIN housing_buildings b ON r.building_id = b.building_id
+        WHERE i.inspection_id = ?
+        ''', (inspection_id,))
+        detail = cursor.fetchone()
+        if not detail:
+            print("Inspection not found.")
+            conn.close()
+            return
+
+        # Move-out inspections justify money taken off a deposit. Deleting one
+        # out from under its deductions would leave those charges unevidenced,
+        # so say so before anything is removed.
+        cursor.execute('''
+        SELECT COUNT(*) FROM housing_deposit_deductions WHERE inspection_id = ?
+        ''', (inspection_id,))
+        deduction_count = cursor.fetchone()[0]
+
+        print(f"\nAbout to delete inspection {inspection_id}:")
+        print(f"  {detail[3]} room {detail[4]} - {detail[0]} - {detail[1]} [{detail[2]}]")
+        if deduction_count:
+            print(f"\n  WARNING: {deduction_count} deposit deduction(s) cite this "
+                  f"inspection as their evidence.")
+            print("  Deleting it leaves those charges unevidenced. Resolve them in "
+                  "Process Deposit Refund first if that is not what you want.")
+
+        if input("\nDelete this inspection? (y/n): ").strip().lower() != 'y':
+            print("Operation cancelled.")
+            conn.close()
+            return
+
+        cursor.execute('DELETE FROM housing_inspections WHERE inspection_id = ?',
+                       (inspection_id,))
+        conn.commit()
+        print(f"\nInspection {inspection_id} deleted.")
+        conn.close()
+
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")
+    except Exception as e:
+        print(f"Error deleting inspection: {e}")

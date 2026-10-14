@@ -6,6 +6,9 @@ Window sizing follows the project convention (1400x900, minsize
 """
 
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -93,7 +96,7 @@ class InformationRightsGUI:
                 self.app._ir_window = self
                 self.root.bind("<Destroy>", self._on_destroy, add="+")
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
     def _on_destroy(self, event) -> None:
         if event.widget is not self.root:
@@ -102,7 +105,7 @@ class InformationRightsGUI:
             if getattr(self.app, "_ir_window", None) is self:
                 self.app._ir_window = None
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     # ---------------------------------------------------------------- UI
     def _build_ui(self) -> None:
@@ -662,7 +665,7 @@ class InformationRightsGUI:
         try:
             self.app._last_academic_context = context
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         try:
             fn()
         except Exception as exc:
@@ -838,14 +841,14 @@ class InformationRightsGUI:
                         try:
                             fn(req)
                         except Exception:
-                            pass
+                            logger.debug("Suppressed exception", exc_info=True)
                     if not tab:
                         try:
                             self.notebook.select(self.tab_detail)
                         except Exception:
-                            pass
+                            logger.debug("Suppressed exception", exc_info=True)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     @classmethod
     def register_open_in(cls, label: str, method_name: str,

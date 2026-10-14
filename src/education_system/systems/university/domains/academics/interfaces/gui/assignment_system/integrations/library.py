@@ -72,6 +72,7 @@ def fetch_module_resources(
 
             if "reading_lists" in tables:
                 placeholders = ",".join("?" * len(categories))
+                # db-audit: ignore[DBW001] - join of placeholders
                 cur.execute(
                     f"""
                     SELECT rl.list_id, rl.name, rl.description,
@@ -97,6 +98,7 @@ def fetch_module_resources(
                     )
                     title_col = "b.title" if "books" in tables else "rli.book_id"
                     author_col = "b.author" if "books" in tables else "''"
+                    # db-audit: ignore[DBW001] - conditional between literals; join of placeholders
                     cur.execute(
                         f"""
                         SELECT rli.item_id, rli.list_id, rl.name AS list_name,
@@ -122,6 +124,7 @@ def fetch_module_resources(
                 )
                 title_col = "b.title" if "books" in tables else "br.book_id"
                 author_col = "b.author" if "books" in tables else "''"
+                # db-audit: ignore[DBW001] - conditional between literals
                 cur.execute(
                     f"""
                     SELECT br.book_id, {title_col} AS title, {author_col} AS author,

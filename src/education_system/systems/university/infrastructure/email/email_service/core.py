@@ -293,10 +293,16 @@ def send_email_db_only(recipient_email, subject, body, cc, bcc, attachments, cur
                                 VALUES (?, ?, ?, ?, ?, ?, ?)
                             ''', (system_username, first, last, sender_email, 'admin', current_time, current_time))
                         except sqlite3.OperationalError:
+                            # The old fallback here inserted an empty
+                            # password_hash, inventing a credential column on
+                            # a table that has none. A system sender needs a
+                            # directory row, not an account: retry with the
+                            # canonical columns and no credentials.
                             cursor.execute('''
-                                INSERT INTO users (username, password_hash, email, first_name, last_name)
-                                VALUES (?, ?, ?, ?, ?)
-                            ''', (system_username, '', sender_email, first, last))
+                                INSERT INTO users (username, first_name, last_name, email, role, created_at, updated_at, service_account)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+                            ''', (system_username, first, last, sender_email,
+                                  'system', current_time, current_time))
                         sender_id = cursor.lastrowid
                 except sqlite3.Error as e:
                     log_event('warning', f"System sender fallback failed (database error): {e}")

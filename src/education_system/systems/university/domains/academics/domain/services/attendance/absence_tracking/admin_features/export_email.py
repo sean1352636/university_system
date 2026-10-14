@@ -106,6 +106,7 @@ def _email_admin(db, subject: str, body: str,
         if "sent_at" in msg_cols:
             cols.append("sent_at"); vals.append(now)
         try:
+            # db-audit: ignore[DBW001] - join of placeholders; join over a code-controlled list
             db.cur.execute(
                 f"INSERT INTO messages ({', '.join(cols)}) "
                 f"VALUES ({', '.join('?' * len(cols))})", vals)
@@ -126,6 +127,7 @@ def _email_admin(db, subject: str, body: str,
             usable = [k for k in se_vals if k in se_cols]
             if usable:
                 try:
+                    # db-audit: ignore[DBW001] - join of placeholders; join over a code-controlled list
                     db.cur.execute(
                         f"INSERT INTO stored_emails ({', '.join(usable)}) "
                         f"VALUES ({', '.join('?' * len(usable))})",
@@ -146,6 +148,7 @@ def _email_admin(db, subject: str, body: str,
             usable = [k for k in el_vals if k in el_cols]
             if usable:
                 try:
+                    # db-audit: ignore[DBW001] - join of placeholders; join over a code-controlled list
                     db.cur.execute(
                         f"INSERT INTO email_log ({', '.join(usable)}) "
                         f"VALUES ({', '.join('?' * len(usable))})",

@@ -4,22 +4,20 @@ Provides a text-based management console matching the GUI SuperAdminDashboard,
 covering all sections: dashboard, system health, user management, analytics,
 misconduct, notifications, student search, student journey, permission matrix,
 audit log, backup/restore, batch operations, active sessions, quick launch,
-and password policy.
+and password policy — plus the linked-platform items 17-24 (tasks, Learner
+360, transfer and event monitors, system registry, identity, cross-system
+reports, transfer boards) from ``superadmin_linked_cli``.
 """
 
 import getpass
 from datetime import datetime
 
-SYSTEM_KEYS = ["nursery", "primary", "secondary", "sixth_form", "university",
-               "apprenticeships"]
-SYSTEM_LABELS = {
-    "university": "University",
-    "sixth_form":    "Sixth Form College",
-    "secondary":     "Secondary School",
-    "primary":    "Primary School",
-    "nursery":    "Nursery",
-    "apprenticeships": "Apprenticeships",
-}
+from education_system import paths as _paths
+
+# Read from paths rather than restated here. The local copy had drifted to six
+# systems while the platform had ten, so the console could not reach the rest.
+SYSTEM_KEYS = list(_paths.SYSTEM_ORDER)
+SYSTEM_LABELS = dict(_paths.SYSTEM_LABELS)
 
 
 # ---------------------------------------------------------------------------
@@ -1609,11 +1607,28 @@ def run(user_info, auth):
    7) Student Search            14) Quick Launch
   15) Password Policy          16) ICT Security Training
 
+  -- Linked platform --
+  17) Cross-system Tasks       21) System Registry
+  18) Learner 360              22) Identity & Duplicates
+  19) Transfer Monitor         23) Cross-system Reports
+  20) Event Monitor            24) Transfer Boards
+
    G) Switch to GUI Dashboard
    0) Logout                    Q) Shutdown
 """)
 
         choice = input("  Select: ").strip()
+
+        from education_system.platform.delivery.cli.superadmin_linked_cli import (
+            MENU_ITEMS as _LINKED_ITEMS,
+        )
+        if choice in _LINKED_ITEMS:
+            try:
+                _LINKED_ITEMS[choice][1](user_info)
+            except Exception as exc:
+                print(f"\n  [!] {_LINKED_ITEMS[choice][0]} failed: {exc}")
+                _pause()
+            continue
 
         if choice == "1":
             _dashboard(user_info)

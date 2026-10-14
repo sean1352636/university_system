@@ -2,7 +2,24 @@ from education_system.systems.university.domains.pastoral.domain.student_life.st
     datetime, sqlite3, get_connection,
 )
 import education_system.systems.university.domains.pastoral.domain.student_life.student_union.clubs.club_management._imports as _state
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.calendar_bridge import (
+    mirror as _mirror_to_calendar,
+)
 from education_system.systems.university.domains.pastoral.domain.student_life.student_union.clubs.club_management.competitions import auto_award_points
+from education_system.systems.university.infrastructure.database.schemas.unified_events_link import (
+    PUBLIC_EVENTS_SRC, SOURCE_COMMUNITY, start_datetime as _start_datetime,
+)
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.identity import (
+    contact_email as _contact_email,
+)
+try:
+    from education_system.systems.university.infrastructure.email import send_email
+except Exception:  # pragma: no cover - optional dependency
+    def send_email(*_args, **_kwargs):
+        return False
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.identity import (
+    current_student_id as _current_student_id,
+)
 
 
 def manage_community_engagement():
@@ -18,15 +35,13 @@ def manage_community_engagement():
         cursor = conn.cursor()
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, auth)
 
-        if not result:
+        if not student_id:
             print("No student record is associated with your account.")
             conn.close()
             return
 
-        student_id = result[0]
 
         while True:
             print("\n🤝 Community Engagement")
@@ -97,7 +112,7 @@ def engagement_trend_analysis(cursor):
             SUM(e.current_attendees) as total_attendance,
             AVG(e.current_attendees) as avg_attendance,
             COUNT(DISTINCT e.organizer_id) as active_clubs
-        FROM union_events e
+        FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e
         WHERE e.event_date >= date('now', '-12 months')
         GROUP BY strftime('%Y-%m', e.event_date)
         ORDER BY month
@@ -356,6 +371,16 @@ def manage_book_clubs(student_id, cursor, conn):
                 print(f"Book club '{club_name}' created successfully!")
                 print(f"Club ID: {book_club_id}")
 
+                if _mirror_to_calendar(
+                    name=f"SU Book Club: {club_name}", kind="book_club",
+                    description=(f"Meets {meeting_schedule}. "
+                                 f"{description}").strip(),
+                    created_by=student_id,
+                    source_table="book_clubs", source_id=book_club_id,
+                    conn=conn,
+                ):
+                    print("Added to the university academic calendar.")
+
                 # Award points for creating book club
                 auto_award_points(student_id, "Learning", 30,
                                 f"Created book club: {club_name}", cursor, conn)
@@ -512,18 +537,8 @@ def _ensure_community_tables(cursor, conn):
         submitted_at TEXT,
         status TEXT DEFAULT 'open'
     )''')
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS public_events (
-        event_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        event_name TEXT,
-        organizer_id TEXT,
-        event_date TEXT,
-        location TEXT,
-        description TEXT,
-        expected_attendance INTEGER DEFAULT 0,
-        status TEXT DEFAULT 'planned',
-        created_at TEXT
-    )''')
+    # Public events are rows in ``unified_events`` tagged
+    # ``source_type = 'community'``; there is no ``public_events`` table.
     conn.commit()
 
 
@@ -748,6 +763,125 @@ def view_local_partnerships(cursor):
         print(f"An error occurred: {e}")
 
 
+def _my_social_impact_projects(student_id, cursor):
+    """Return the projects this account leads, newest first."""
+    cursor.execute('''
+    SELECT project_id, project_name, impact_area, target_beneficiaries,
+           status, description
+    FROM social_impact_projects
+    WHERE lead_student_id = ?
+    ORDER BY created_at DESC
+    ''', (student_id,))
+    return cursor.fetchall()
+
+
+def _pick_my_project(student_id, cursor, prompt):
+    """List the caller's projects and return the one they choose."""
+    mine = _my_social_impact_projects(student_id, cursor)
+    if not mine:
+        print("You are not leading any social impact projects.")
+        return None
+
+    print("\nYour projects:")
+    for index, pr in enumerate(mine, 1):
+        print(f"{index}. [{pr[0]}] {pr[1]} — {pr[2] or 'General'} ({pr[4] or 'planning'})")
+
+    raw = input(f"\n{prompt} (1-{len(mine)}, blank to cancel): ").strip()
+    if not raw.isdigit() or not (1 <= int(raw) <= len(mine)):
+        print("Cancelled.")
+        return None
+    return mine[int(raw) - 1]
+
+
+def _update_social_impact_project(student_id, cursor, conn):
+    """Edit a project you lead. Blank keeps the current value."""
+    project = _pick_my_project(student_id, cursor, "Select the project to update")
+    if not project:
+        return
+
+    project_id, name, area, target, status, description = project
+    print("\nLeave a field blank to keep its current value.")
+
+    new_name = input(f"Project name [{name}]: ").strip() or name
+    new_description = input(f"Description [{description or 'none'}]: ").strip() or description
+    new_area = input(f"Impact area [{area or 'General'}]: ").strip() or area
+
+    new_target = target
+    raw = input(f"Target beneficiaries [{target if target is not None else 0}]: ").strip()
+    if raw:
+        try:
+            new_target = int(raw)
+        except ValueError:
+            print("Not a number — keeping the current target.")
+
+    statuses = ['planning', 'active', 'on_hold', 'completed', 'cancelled']
+    print(f"Status options: {', '.join(statuses)}")
+    raw = input(f"Status [{status or 'planning'}]: ").strip().lower()
+    new_status = raw if raw in statuses else status
+
+    try:
+        cursor.execute('''
+        UPDATE social_impact_projects
+        SET project_name = ?, description = ?, impact_area = ?,
+            target_beneficiaries = ?, status = ?
+        WHERE project_id = ? AND lead_student_id = ?
+        ''', (new_name, new_description, new_area, new_target, new_status,
+              project_id, student_id))
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Could not update the project: {e}")
+        return
+
+    if cursor.rowcount:
+        print(f"Project '{new_name}' updated.")
+        # Keep the calendar entry in step with the project.
+        _mirror_to_calendar(
+            name=f"SU Project: {new_name}", kind="impact_project",
+            description=new_description or f"{new_area or 'Community'} social impact project",
+            created_by=student_id,
+            source_table="social_impact_projects", source_id=project_id,
+            conn=conn,
+        )
+    else:
+        print("Nothing was updated — the project may no longer be yours.")
+
+
+def _delete_social_impact_project(student_id, cursor, conn):
+    """Delete a project you lead, after confirming."""
+    project = _pick_my_project(student_id, cursor, "Select the project to delete")
+    if not project:
+        return
+
+    project_id, name = project[0], project[1]
+    if input(f"Delete '{name}'? This cannot be undone (y/n): ").strip().lower() != 'y':
+        print("Deletion cancelled.")
+        return
+
+    try:
+        cursor.execute('''
+        DELETE FROM social_impact_projects
+        WHERE project_id = ? AND lead_student_id = ?
+        ''', (project_id, student_id))
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Could not delete the project: {e}")
+        return
+
+    if cursor.rowcount:
+        print(f"Project '{name}' deleted.")
+        try:
+            with get_connection() as cal_conn:
+                cal_conn.execute(
+                    "DELETE FROM unified_events WHERE source_type = 'academic_calendar' AND (source_event_id = ?)",
+                    (f"SU-social_impact_projects-{project_id}",),
+                )
+                cal_conn.commit()
+        except sqlite3.Error:
+            pass
+    else:
+        print("Nothing was deleted — the project may no longer be yours.")
+
+
 def manage_social_impact_projects(student_id, cursor, conn):
     """Browse and create social impact projects"""
     try:
@@ -758,7 +892,9 @@ def manage_social_impact_projects(student_id, cursor, conn):
             print("1. Browse projects")
             print("2. Create project")
             print("3. My projects")
-            print("4. Return")
+            print("4. Update a project")
+            print("5. Delete a project")
+            print("6. Return")
 
             choice = input("Choose option: ").strip()
 
@@ -804,7 +940,17 @@ def manage_social_impact_projects(student_id, cursor, conn):
                       'planning', datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
                 conn.commit()
 
-                print(f"Social impact project '{project_name}' created (ID: {cursor.lastrowid}).")
+                project_id = cursor.lastrowid
+                print(f"Social impact project '{project_name}' created (ID: {project_id}).")
+                if _mirror_to_calendar(
+                    name=f"SU Project: {project_name}", kind="impact_project",
+                    description=(description
+                                 or f"{impact_area} social impact project"),
+                    created_by=student_id,
+                    source_table="social_impact_projects",
+                    source_id=project_id, conn=conn,
+                ):
+                    print("Added to the university academic calendar.")
                 auto_award_points(student_id, "Community", 40,
                                   f"Created social impact project: {project_name}", cursor, conn)
 
@@ -826,6 +972,12 @@ def manage_social_impact_projects(student_id, cursor, conn):
                     print(f"  [{pr[0]}] {pr[1]} — {pr[2] or 'General'} ({pr[3] or 'planning'})")
 
             elif choice == '4':
+                _update_social_impact_project(student_id, cursor, conn)
+
+            elif choice == '5':
+                _delete_social_impact_project(student_id, cursor, conn)
+
+            elif choice == '6':
                 break
             else:
                 print("Invalid choice.")
@@ -873,8 +1025,32 @@ def submit_community_feedback(student_id, cursor, conn):
                 ''', (student_id, category, subject, message, rating,
                       datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 'open'))
                 conn.commit()
+                feedback_id = cursor.lastrowid
 
                 print("Thank you! Your feedback has been recorded.")
+
+                # Thank them by email as well, through the university mail system.
+                recipient = _contact_email(cursor, student_id)
+                if recipient:
+                    body = (
+                        "Thank you for taking the time to send the Students' Union "
+                        "your feedback.\n\n"
+                        f"Reference: {feedback_id}\n"
+                        f"Category:  {category}\n"
+                        f"Subject:   {subject}\n"
+                    )
+                    if rating is not None:
+                        body += f"Rating:    {rating}/5\n"
+                    if message:
+                        body += f"\nWhat you told us:\n{message}\n"
+                    body += ("\nA member of the community engagement team reads every "
+                             "submission. We will be in touch if it needs a reply.\n")
+                    try:
+                        send_email(recipient,
+                                   f"Thank you for your feedback ({subject})", body)
+                        print(f"A thank-you email has been sent to {recipient}.")
+                    except Exception as e:
+                        print(f"Could not send the thank-you email: {e}")
 
             elif choice == '2':
                 cursor.execute('''
@@ -921,12 +1097,11 @@ def coordinate_public_events(student_id, cursor, conn):
             choice = input("Choose option: ").strip()
 
             if choice == '1':
-                cursor.execute('''
-                SELECT event_id, event_name, event_date, location, expected_attendance, status
-                FROM public_events
-                WHERE event_date >= date('now') OR event_date IS NULL
-                ORDER BY event_date
-                ''')
+                cursor.execute(
+                    "SELECT event_id, event_name, event_date, location, expected_attendance, status "
+                    "FROM " + PUBLIC_EVENTS_SRC + " e "
+                    "WHERE event_date >= date('now') OR event_date IS NULL "
+                    "ORDER BY event_date")
                 events = cursor.fetchall()
 
                 if not events:
@@ -954,25 +1129,35 @@ def coordinate_public_events(student_id, cursor, conn):
                     continue
 
                 cursor.execute('''
-                INSERT INTO public_events (
-                    event_name, organizer_id, event_date, location, description,
-                    expected_attendance, status, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (event_name, student_id, event_date, location, description,
+                INSERT INTO unified_events (
+                    source_type, title, organizer_id, event_date, start_datetime,
+                    location, description, max_capacity, status, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (SOURCE_COMMUNITY, event_name, student_id, event_date,
+                      _start_datetime(event_date), location, description,
                       expected, 'planned', datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
                 conn.commit()
 
-                print(f"Public event '{event_name}' proposed (ID: {cursor.lastrowid}).")
+                public_event_id = cursor.lastrowid
+                print(f"Public event '{event_name}' proposed (ID: {public_event_id}).")
+                if _mirror_to_calendar(
+                    name=f"SU Community Event: {event_name}",
+                    kind="community_event", date=event_date,
+                    location=location or None,
+                    description=description or "Student Union community event",
+                    created_by=student_id,
+                    source_table="public_events", source_id=public_event_id,
+                    conn=conn,
+                ):
+                    print("Added to the university academic calendar.")
                 auto_award_points(student_id, "Community", 35,
                                   f"Proposed public event: {event_name}", cursor, conn)
 
             elif choice == '3':
-                cursor.execute('''
-                SELECT event_id, event_name, event_date, status
-                FROM public_events
-                WHERE organizer_id = ?
-                ORDER BY event_date
-                ''', (student_id,))
+                cursor.execute(
+                    "SELECT event_id, event_name, event_date, status "
+                    "FROM " + PUBLIC_EVENTS_SRC + " e "
+                    "WHERE organizer_id = ? ORDER BY event_date", (student_id,))
                 mine = cursor.fetchall()
 
                 if not mine:
@@ -994,6 +1179,90 @@ def coordinate_public_events(student_id, cursor, conn):
         print(f"An error occurred: {e}")
 
 
+def _update_volunteer_opportunity(cursor, conn):
+    """Edit an existing volunteer opportunity. Blank keeps the current value."""
+    cursor.execute('''
+    SELECT opportunity_id, organization_name, contact_person, contact_email,
+           description, location, start_date, end_date, hours_required,
+           skills_needed, max_volunteers, status
+    FROM volunteer_opportunities
+    ORDER BY opportunity_id DESC
+    ''')
+    opportunities = cursor.fetchall()
+
+    if not opportunities:
+        print("No volunteer opportunities to update.")
+        return
+
+    print("\nOpportunities:")
+    for index, o in enumerate(opportunities, 1):
+        print(f"{index}. [{o[0]}] {o[1]} — {o[5] or 'location TBC'} ({o[11] or 'open'})")
+
+    raw = input(f"\nSelect an opportunity (1-{len(opportunities)}, blank to cancel): ").strip()
+    if not raw.isdigit() or not (1 <= int(raw) <= len(opportunities)):
+        print("Cancelled.")
+        return
+
+    (opp_id, organization, contact_person, contact_email_addr, description,
+     location, start_date, end_date, hours_required, skills, max_volunteers,
+     status) = opportunities[int(raw) - 1]
+
+    print("\nLeave a field blank to keep its current value.")
+    organization = input(f"Organization [{organization}]: ").strip() or organization
+    contact_person = input(f"Contact person [{contact_person or 'none'}]: ").strip() or contact_person
+    contact_email_addr = input(f"Contact email [{contact_email_addr or 'none'}]: ").strip() or contact_email_addr
+    description = input(f"Description [{description or 'none'}]: ").strip() or description
+    location = input(f"Location [{location or 'TBD'}]: ").strip() or location
+    start_date = input(f"Start date [{start_date or 'none'}]: ").strip() or start_date
+    end_date = input(f"End date [{end_date or 'none'}]: ").strip() or end_date
+    skills = input(f"Skills needed [{skills or 'none'}]: ").strip() or skills
+
+    entered = input(f"Hours required [{hours_required if hours_required is not None else 0}]: ").strip()
+    if entered:
+        try:
+            hours_required = int(entered)
+        except ValueError:
+            print("Not a number — keeping the current hours.")
+
+    entered = input(f"Max volunteers [{max_volunteers if max_volunteers is not None else 0}]: ").strip()
+    if entered:
+        try:
+            max_volunteers = int(entered)
+        except ValueError:
+            print("Not a number — keeping the current limit.")
+
+    statuses = ['open', 'closed', 'full', 'cancelled']
+    print(f"Status options: {', '.join(statuses)}")
+    entered = input(f"Status [{status or 'open'}]: ").strip().lower()
+    if entered in statuses:
+        status = entered
+
+    try:
+        cursor.execute('''
+        UPDATE volunteer_opportunities
+        SET organization_name = ?, contact_person = ?, contact_email = ?,
+            description = ?, location = ?, start_date = ?, end_date = ?,
+            hours_required = ?, skills_needed = ?, max_volunteers = ?, status = ?
+        WHERE opportunity_id = ?
+        ''', (organization, contact_person, contact_email_addr, description,
+              location, start_date, end_date, hours_required, skills,
+              max_volunteers, status, opp_id))
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Could not update the opportunity: {e}")
+        return
+
+    print(f"Opportunity '{organization}' updated.")
+    _mirror_to_calendar(
+        name=f"SU Volunteering: {organization}", kind="volunteering",
+        date_start=start_date or None, date_end=end_date or None,
+        location=location or None,
+        description=description or "Student Union volunteering opportunity",
+        organizer=organization,
+        source_table="volunteer_opportunities", source_id=opp_id, conn=conn,
+    )
+
+
 def manage_volunteer_programs_admin(cursor, conn):
     """Admin: create and manage volunteer opportunities"""
     try:
@@ -1002,7 +1271,8 @@ def manage_volunteer_programs_admin(cursor, conn):
             print("1. List all opportunities")
             print("2. Create opportunity")
             print("3. Close opportunity")
-            print("4. Return")
+            print("4. Update opportunity")
+            print("5. Return")
 
             choice = input("Choose option: ").strip()
 
@@ -1057,7 +1327,19 @@ def manage_volunteer_programs_admin(cursor, conn):
                       max_volunteers, 0, 'open'))
                 conn.commit()
 
-                print(f"Opportunity created (ID: {cursor.lastrowid}).")
+                opportunity_id = cursor.lastrowid
+                print(f"Opportunity created (ID: {opportunity_id}).")
+                if _mirror_to_calendar(
+                    name=f"SU Volunteering: {organization}",
+                    kind="volunteering",
+                    date_start=start_date or None, date_end=end_date or None,
+                    location=location or None,
+                    description=description or "Student Union volunteering opportunity",
+                    organizer=organization,
+                    source_table="volunteer_opportunities",
+                    source_id=opportunity_id, conn=conn,
+                ):
+                    print("Added to the university academic calendar.")
 
             elif choice == '3':
                 opp_id = input("Opportunity ID to close: ").strip()
@@ -1078,6 +1360,9 @@ def manage_volunteer_programs_admin(cursor, conn):
                 print(f"Opportunity '{found[0]}' closed.")
 
             elif choice == '4':
+                _update_volunteer_opportunity(cursor, conn)
+
+            elif choice == '5':
                 break
             else:
                 print("Invalid choice.")
@@ -1209,13 +1494,15 @@ def measure_social_impact(cursor):
         # Optional supporting tables — degrade gracefully if absent
         for label, table in (("Community partnerships", "community_partnerships"),
                               ("Social impact projects", "social_impact_projects"),
-                              ("Public events", "public_events"),
                               ("Community feedback entries", "community_feedback")):
             try:
+                # db-audit: ignore[DBW001] - loop over a literal table
                 cursor.execute(f'SELECT COUNT(*) FROM {table}')
                 print(f"{label}: {cursor.fetchone()[0]}")
             except sqlite3.OperationalError:
                 print(f"{label}: 0")
+        cursor.execute("SELECT COUNT(*) FROM " + PUBLIC_EVENTS_SRC + " e")
+        print(f"Public events: {cursor.fetchone()[0]}")
 
         try:
             cursor.execute('SELECT AVG(rating) FROM community_feedback WHERE rating IS NOT NULL')

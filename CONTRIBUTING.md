@@ -46,7 +46,7 @@ Thank you for your interest in contributing to the Education System project. Thi
 
 6. **Initialise the databases** (SQLite files are created automatically on first run):
    ```bash
-   python run.py --mode cli
+   python -m education_system --mode cli
    ```
 
 7. **Verify everything works**:
@@ -322,9 +322,9 @@ education_system/<new_system>/
         db_files/            # SQLite databases created at runtime
 ```
 
-### 2. Register in `run.py`
+### 2. Register with the launcher
 
-Update `run.py` (project root) to:
+Update `src/education_system/launcher/systems.py` to:
 - Import the new system's launcher.
 - Add it to the system selection logic so the universal login can route authenticated users to it.
 
@@ -368,7 +368,7 @@ This mounts all routes under `/api/v1/<new_system>/`.
 - [ ] Database schema with `initialise_database()`
 - [ ] Shared auth wrappers in `infrastructure/auth/`
 - [ ] Default user accounts seeded via shared auth
-- [ ] Registered in `run.py` system selection
+- [ ] Registered in `launcher/systems.py` system selection
 - [ ] API routes under `shared/api/<new_system>/`
 - [ ] Blueprints registered in `unified_server.py`
 - [ ] Tests with `conftest.py` and initial coverage

@@ -62,9 +62,9 @@ class RecurringEventManager:
             with self.db_manager.transaction():
                 # Create base event
                 self.db_manager.execute_update(
-                    """INSERT INTO academic_calendar_events (id, name, date, date_start, date_end, description,
-                       event_type, date_added, last_modified, created_by)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    """INSERT INTO unified_events (
+                    source_event_id, title, event_date, start_datetime, end_datetime, description, event_type, created_at, updated_at, created_by, source_type
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'academic_calendar')""",
                     (base_event_id,
                      ValidationUtils.sanitize_string(base_event_data['name']),
                      base_event_data.get('date'),
@@ -104,6 +104,132 @@ class RecurringEventManager:
         except Exception as e:
             logger.error(f"Failed to create recurring event: {e}")
             raise CalendarError(f"Error creating recurring event: {str(e)}")
+
+    # Occurrences are stored as ordinary calendar events named
+    # "<base name> (Recurring)" — the schema has no column linking them back to
+    # the series — so listing and deleting a series matches on that name.
+    OCCURRENCE_SUFFIX = " (Recurring)"
+
+    def list_recurring_events(self) -> list:
+        """Return every recurring series with its base event and occurrence count."""
+        if not self.auth_manager.check_permission('manage_schedules'):
+            raise PermissionError("Insufficient permissions to view recurring events")
+
+        try:
+            rows = self.db_manager.execute_query(
+                """SELECT r.id, r.base_event_id, r.frequency, r.interval_count,
+                          r.end_date, r.occurrence_count, r.date_added,
+                          e.name, e.date, e.date_start, e.description, e.event_type,
+                          (SELECT COUNT(*) FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') o
+                            WHERE o.name = e.name || ?) AS generated_count
+                   FROM recurring_events r
+                   JOIN (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') e ON e.id = r.base_event_id
+                   ORDER BY r.date_added DESC""",
+                (self.OCCURRENCE_SUFFIX,)
+            )
+            return [dict(row) for row in rows]
+
+        except Exception as e:
+            logger.error(f"Failed to list recurring events: {e}")
+            raise CalendarError(f"Error listing recurring events: {str(e)}")
+
+    def get_recurring_event(self, recurring_id: str):
+        """Return a single recurring series, or None if the id is unknown."""
+        for series in self.list_recurring_events():
+            if str(series['id']) == str(recurring_id):
+                return series
+        return None
+
+    def update_recurring_event(self, recurring_id: str, updates: Dict) -> Tuple[bool, str]:
+        """Update a series' name, description or event type.
+
+        The recurrence *pattern* is not editable: its occurrences are already
+        materialised as individual events, so changing the frequency would mean
+        regenerating them. Delete the series and create it again for that.
+        Renaming carries through to the generated occurrences, which is also
+        what keeps them findable — they are matched by name.
+        """
+        if not self.auth_manager.check_permission('manage_schedules'):
+            raise PermissionError("Insufficient permissions to update recurring events")
+
+        allowed = {'name', 'description', 'event_type'}
+        changes = {k: v for k, v in updates.items() if k in allowed and v is not None}
+        if not changes:
+            return False, "Nothing to update."
+
+        series = self.get_recurring_event(recurring_id)
+        if not series:
+            return False, f"No recurring event found with ID {recurring_id}"
+
+        try:
+            current_time = datetime.now().isoformat()
+            old_occurrence_name = series['name'] + self.OCCURRENCE_SUFFIX
+
+            with self.db_manager.transaction():
+                assignments = ", ".join(f"{field} = ?" for field in changes)
+                params = [ValidationUtils.sanitize_string(str(v), 1000 if k == 'description' else 255)
+                          for k, v in changes.items()]
+
+                self.db_manager.execute_update(
+                    f"UPDATE unified_events SET {assignments}, updated_at = ? WHERE source_type = 'academic_calendar' AND (source_event_id = ?)",
+                    tuple(params + [current_time, series['base_event_id']])
+                )
+
+                # Carry the same change across the generated occurrences.
+                occurrence_changes = dict(changes)
+                if 'name' in occurrence_changes:
+                    occurrence_changes['name'] = (
+                        ValidationUtils.sanitize_string(str(changes['name'])) + self.OCCURRENCE_SUFFIX
+                    )
+                occ_assignments = ", ".join(f"{field} = ?" for field in occurrence_changes)
+                occ_params = [ValidationUtils.sanitize_string(str(v), 1000 if k == 'description' else 255)
+                              if k != 'name' else v
+                              for k, v in occurrence_changes.items()]
+
+                updated = self.db_manager.execute_update(
+                    f"UPDATE unified_events SET {occ_assignments}, updated_at = ? WHERE source_type = 'academic_calendar' AND (title = ?)",
+                    tuple(occ_params + [current_time, old_occurrence_name])
+                )
+
+            logger.info(f"Recurring event {recurring_id} updated")
+            return True, f"Recurring event updated ({updated} occurrences also updated)."
+
+        except Exception as e:
+            logger.error(f"Failed to update recurring event: {e}")
+            raise CalendarError(f"Error updating recurring event: {str(e)}")
+
+    def delete_recurring_event(self, recurring_id: str, delete_occurrences: bool = True) -> Tuple[bool, str]:
+        """Delete a series: its pattern, its base event and (optionally) its occurrences."""
+        if not self.auth_manager.check_permission('manage_schedules'):
+            raise PermissionError("Insufficient permissions to delete recurring events")
+
+        series = self.get_recurring_event(recurring_id)
+        if not series:
+            return False, f"No recurring event found with ID {recurring_id}"
+
+        try:
+            removed = 0
+            with self.db_manager.transaction():
+                if delete_occurrences:
+                    removed = self.db_manager.execute_update(
+                        "DELETE FROM unified_events WHERE source_type = 'academic_calendar' AND (title = ?)",
+                        (series['name'] + self.OCCURRENCE_SUFFIX,)
+                    )
+
+                self.db_manager.execute_update(
+                    "DELETE FROM recurring_events WHERE id = ?", (recurring_id,)
+                )
+                self.db_manager.execute_update(
+                    "DELETE FROM unified_events WHERE source_type = 'academic_calendar' AND (source_event_id = ?)", (series['base_event_id'],)
+                )
+
+            logger.info(f"Recurring event {recurring_id} deleted ({removed} occurrences)")
+            kept = "" if delete_occurrences else " (occurrences kept)"
+            return True, f"Deleted '{series['name']}' and {removed} occurrences{kept}."
+
+        except Exception as e:
+            logger.error(f"Failed to delete recurring event: {e}")
+            raise CalendarError(f"Error deleting recurring event: {str(e)}")
 
     def _generate_recurring_occurrences(self, base_event_id: str, pattern: Dict, base_event: Dict) -> Tuple[bool, str]:
         """Generate individual event occurrences from pattern"""
@@ -158,9 +284,9 @@ class RecurringEventManager:
                         occurrence_end = (occurrence_date + timedelta(days=duration_days)).strftime("%Y-%m-%d")
 
                     self.db_manager.execute_update(
-                        """INSERT INTO academic_calendar_events (id, name, date, date_start, date_end, description,
-                           event_type, date_added, last_modified, created_by)
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                        """INSERT INTO unified_events (
+                    source_event_id, title, event_date, start_datetime, end_datetime, description, event_type, created_at, updated_at, created_by, source_type
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'academic_calendar')""",
                         (occurrence_id,
                          f"{base_event['name']} (Recurring)",
                          occurrence_date.strftime("%Y-%m-%d") if base_event.get('date') else None,

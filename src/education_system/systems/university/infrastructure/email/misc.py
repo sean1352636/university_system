@@ -4,11 +4,11 @@ from education_system.systems.university.infrastructure.i18n import get_text
 def debug_function_definition():
     """Debug the function definition issue"""
 
-    print(get_text("email.misc.debugging_function_definition"))
+    print(get_text("email.misc.debugging_function_definition", default="Debugging Function Definition"))
     print("="*60)
 
     # Check 1: Look for syntax errors before the function
-    print(get_text("email.misc.checking_syntax_errors"))
+    print(get_text("email.misc.checking_syntax_errors", default="Checking Syntax Errors"))
 
     # Check 2: Verify the function is actually being defined
     try:
@@ -17,33 +17,33 @@ def debug_function_definition():
 
 
         if hasattr(email_manager, 'display_chat_rooms_menu'):
-            print(get_text("email.misc.function_exists"))
+            print(get_text("email.misc.function_exists", default="Function Exists"))
         else:
-            print(get_text("email.misc.function_not_found"))
+            print(get_text("email.misc.function_not_found", default="Function Not Found"))
 
             # List all functions that start with 'display'
             display_functions = [name for name in dir(email_manager) if name.startswith('display')]
-            print(get_text("email.misc.available_display_functions", functions=display_functions))
+            print(get_text("email.misc.available_display_functions", functions=display_functions, default="Available Display Functions {functions}"))
 
     except ImportError as e:
-        print(get_text("email.misc.import_error", error=e))
+        print(get_text("email.misc.import_error", error=e, default="Import Error {error}"))
     except Exception as e:
-        print(get_text("email.misc.check_function_error", error=e))
+        print(get_text("email.misc.check_function_error", error=e, default="Check Function Error {error}"))
 
     # Check 3: Look for common issues
-    print(get_text("email.misc.common_issues_header"))
-    print(get_text("email.misc.issue_syntax_error"))
-    print(get_text("email.misc.issue_indentation"))
-    print(get_text("email.misc.issue_decorator_import"))
-    print(get_text("email.misc.issue_circular_import"))
-    print(get_text("email.misc.issue_function_order"))
+    print(get_text("email.misc.common_issues_header", default="Common Issues:"))
+    print(get_text("email.misc.issue_syntax_error", default="Issue Syntax Error"))
+    print(get_text("email.misc.issue_indentation", default="Issue Indentation"))
+    print(get_text("email.misc.issue_decorator_import", default="Issue Decorator Import"))
+    print(get_text("email.misc.issue_circular_import", default="Issue Circular Import"))
+    print(get_text("email.misc.issue_function_order", default="Issue Function Order"))
 
     # Check 4: Verify handle_exception decorator
     try:
         from education_system.systems.university.infrastructure.email.email_manager import handle_exception
-        print(get_text("email.misc.decorator_imported"))
+        print(get_text("email.misc.decorator_imported", default="Decorator Imported"))
     except ImportError:
-        print(get_text("email.misc.decorator_not_found"))
+        print(get_text("email.misc.decorator_not_found", default="Decorator Not Found"))
 
     return True
 
@@ -51,7 +51,7 @@ def debug_function_definition():
 
 def find_function_in_file(filename="email_manager.py"):
     """Search for the function definition in the file"""
-    print(get_text("email.misc.searching_function", filename=filename))
+    print(get_text("email.misc.searching_function", filename=filename, default="Searching Function {filename}"))
 
     try:
         with open(filename, 'r') as f:

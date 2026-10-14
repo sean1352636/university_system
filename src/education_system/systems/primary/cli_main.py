@@ -95,112 +95,112 @@ def _submenu(category: str, items: list[str], *, auth=None) -> None:
         label = items[int(choice) - 1]
         logger.debug("Primary CLI dispatch: %s / %s", category, label)
         try:
-            from education_system.systems.primary.domain.learners.pupils import pupil_cli
-            from education_system.systems.primary.domain.learners.pupils.onboarding import onboarding_cli
-            from education_system.systems.primary.domain.learners.pupils.bulk_operations import bulk_operations_cli
-            from education_system.systems.primary.domain.learners.pupils.leavers import leavers_cli
-            from education_system.systems.primary.domain.admissions import admissions_cli
-            from education_system.systems.primary.domain.admissions.enrolment import enrolment_cli
-            from education_system.systems.primary.domain.governance.mfa import mfa_cli
+            from education_system.systems.primary.interfaces.cli.learners.pupils import pupil_cli
+            from education_system.systems.primary.interfaces.cli.learners.pupils.onboarding import onboarding_cli
+            from education_system.systems.primary.interfaces.cli.learners.pupils.bulk_operations import bulk_operations_cli
+            from education_system.systems.primary.interfaces.cli.learners.pupils.leavers import leavers_cli
+            from education_system.systems.primary.interfaces.cli.admissions import admissions_cli
+            from education_system.systems.primary.interfaces.cli.admissions.enrolment import enrolment_cli
+            from education_system.systems.primary.interfaces.cli.governance.mfa import mfa_cli
             # Pastoral
-            from education_system.systems.primary.domain.pastoral.behaviour import behaviour_cli
-            from education_system.systems.primary.domain.safeguarding import safeguarding_cli
-            from education_system.systems.primary.domain.pastoral.send import send_cli
-            from education_system.systems.primary.domain.finance.pupil_premium import pupil_premium_cli
-            from education_system.systems.primary.domain.pastoral.accessibility import accessibility_cli
-            from education_system.systems.primary.domain.pastoral.wellbeing import wellbeing_cli
-            from education_system.systems.primary.domain.pastoral.pupil_support import pupil_support_cli
-            from education_system.systems.primary.domain.pastoral.attendance_concerns import attendance_concerns_cli
-            from education_system.systems.primary.domain.pastoral.absence_requests import absence_requests_cli
-            from education_system.systems.primary.domain.pastoral.health.first_aid import first_aid_cli
-            from education_system.systems.primary.domain.pastoral.emergency import emergency_cli
-            from education_system.systems.primary.domain.safeguarding.prevent_duty import prevent_duty_cli
-            from education_system.systems.primary.domain.pastoral.equality_diversity import equality_diversity_cli
-            from education_system.systems.primary.domain.pastoral.complaints import complaints_cli
-            from education_system.systems.primary.domain.pastoral.feedback import feedback_cli
-            from education_system.systems.primary.domain.pastoral.surveys import surveys_cli
-            from education_system.systems.primary.domain.pastoral.school_council import school_council_cli
-            from education_system.systems.primary.domain.pastoral.transport import transport_cli
+            from education_system.systems.primary.interfaces.cli.pastoral.behaviour import behaviour_cli
+            from education_system.systems.primary.interfaces.cli.safeguarding import safeguarding_cli
+            from education_system.systems.primary.interfaces.cli.pastoral.send import send_cli
+            from education_system.systems.primary.interfaces.cli.finance.pupil_premium import pupil_premium_cli
+            from education_system.systems.primary.interfaces.cli.pastoral.accessibility import accessibility_cli
+            from education_system.systems.primary.interfaces.cli.pastoral.wellbeing import wellbeing_cli
+            from education_system.systems.primary.interfaces.cli.pastoral.pupil_support import pupil_support_cli
+            from education_system.systems.primary.interfaces.cli.pastoral.attendance_concerns import attendance_concerns_cli
+            from education_system.systems.primary.interfaces.cli.pastoral.absence_requests import absence_requests_cli
+            from education_system.systems.primary.interfaces.cli.pastoral.health.first_aid import first_aid_cli
+            from education_system.systems.primary.interfaces.cli.pastoral.emergency import emergency_cli
+            from education_system.systems.primary.interfaces.cli.safeguarding.prevent_duty import prevent_duty_cli
+            from education_system.systems.primary.interfaces.cli.pastoral.equality_diversity import equality_diversity_cli
+            from education_system.systems.primary.interfaces.cli.pastoral.complaints import complaints_cli
+            from education_system.systems.primary.interfaces.cli.pastoral.feedback import feedback_cli
+            from education_system.systems.primary.interfaces.cli.pastoral.surveys import surveys_cli
+            from education_system.systems.primary.interfaces.cli.pastoral.school_council import school_council_cli
+            from education_system.systems.primary.interfaces.cli.pastoral.transport import transport_cli
             # Academics
-            from education_system.systems.primary.domain.academics.academic_year import academic_year_cli
-            from education_system.systems.primary.domain.academics.calendar import calendar_cli
-            from education_system.systems.primary.domain.academics.subjects import subjects_cli
-            from education_system.systems.primary.domain.academics.classes import classes_cli
-            from education_system.systems.primary.domain.assessment.phonics import phonics_cli
-            from education_system.systems.primary.domain.assessment.reading_levels import reading_levels_cli
-            from education_system.systems.primary.domain.academics.enrichment.clubs import clubs_cli
-            from education_system.systems.primary.domain.assessment.phonics_screening import phonics_screening_cli
-            from education_system.systems.primary.domain.assessment import assessment_cli
-            from education_system.systems.primary.domain.assessment.mtc import mtc_cli
-            from education_system.systems.primary.domain.assessment.ks1_sats import ks1_sats_cli
-            from education_system.systems.primary.domain.assessment.ks2_sats import ks2_sats_cli
-            from education_system.systems.primary.domain.assessment.eyfs_profile import eyfs_profile_cli
-            from education_system.systems.primary.domain.assessment.target_setting import target_setting_cli
-            from education_system.systems.primary.domain.operations.reporting.pupil_reports import pupil_reports_cli
-            from education_system.systems.primary.domain.staff.class_teachers import class_teachers_cli
-            from education_system.systems.primary.domain.pastoral.house_points import house_points_cli
-            from education_system.systems.primary.domain.pastoral.health.medical_records import medical_records_cli
-            from education_system.systems.primary.domain.operations.daily_care.wraparound import wraparound_cli
-            from education_system.systems.primary.domain.staff.teaching_assistants import teaching_assistants_cli
-            from education_system.systems.primary.domain.operations.communications.newsletters import newsletters_cli
-            from education_system.systems.primary.domain.finance.dinner_money import dinner_money_cli
-            from education_system.systems.primary.domain.operations.reporting.attendance_report import attendance_report_cli
-            from education_system.systems.primary.domain.operations.reporting.progress_report import progress_report_cli
-            from education_system.systems.primary.domain.academics.timetable import timetable_cli
-            from education_system.systems.primary.domain.academics.attendance import attendance_cli
-            from education_system.systems.primary.domain.academics.lesson_plans import lesson_plans_cli
-            from education_system.systems.primary.domain.staff.cover import cover_cli
-            from education_system.systems.primary.domain.academics.homework import homework_cli
-            from education_system.systems.primary.domain.academics.library import library_cli
-            from education_system.systems.primary.domain.academics.year_groups import year_groups_cli
+            from education_system.systems.primary.interfaces.cli.academics.academic_year import academic_year_cli
+            from education_system.systems.primary.interfaces.cli.academics.calendar import calendar_cli
+            from education_system.systems.primary.interfaces.cli.academics.subjects import subjects_cli
+            from education_system.systems.primary.interfaces.cli.academics.classes import classes_cli
+            from education_system.systems.primary.interfaces.cli.assessment.phonics import phonics_cli
+            from education_system.systems.primary.interfaces.cli.assessment.reading_levels import reading_levels_cli
+            from education_system.systems.primary.interfaces.cli.academics.enrichment.clubs import clubs_cli
+            from education_system.systems.primary.interfaces.cli.assessment.phonics_screening import phonics_screening_cli
+            from education_system.systems.primary.interfaces.cli.assessment import assessment_cli
+            from education_system.systems.primary.interfaces.cli.assessment.mtc import mtc_cli
+            from education_system.systems.primary.interfaces.cli.assessment.ks1_sats import ks1_sats_cli
+            from education_system.systems.primary.interfaces.cli.assessment.ks2_sats import ks2_sats_cli
+            from education_system.systems.primary.interfaces.cli.assessment.eyfs_profile import eyfs_profile_cli
+            from education_system.systems.primary.interfaces.cli.assessment.target_setting import target_setting_cli
+            from education_system.systems.primary.interfaces.cli.operations.reporting.pupil_reports import pupil_reports_cli
+            from education_system.systems.primary.interfaces.cli.staff.class_teachers import class_teachers_cli
+            from education_system.systems.primary.interfaces.cli.pastoral.house_points import house_points_cli
+            from education_system.systems.primary.interfaces.cli.pastoral.health.medical_records import medical_records_cli
+            from education_system.systems.primary.interfaces.cli.operations.daily_care.wraparound import wraparound_cli
+            from education_system.systems.primary.interfaces.cli.staff.teaching_assistants import teaching_assistants_cli
+            from education_system.systems.primary.interfaces.cli.operations.communications.newsletters import newsletters_cli
+            from education_system.systems.primary.interfaces.cli.finance.dinner_money import dinner_money_cli
+            from education_system.systems.primary.interfaces.cli.operations.reporting.attendance_report import attendance_report_cli
+            from education_system.systems.primary.interfaces.cli.operations.reporting.progress_report import progress_report_cli
+            from education_system.systems.primary.interfaces.cli.academics.timetable import timetable_cli
+            from education_system.systems.primary.interfaces.cli.academics.attendance import attendance_cli
+            from education_system.systems.primary.interfaces.cli.academics.lesson_plans import lesson_plans_cli
+            from education_system.systems.primary.interfaces.cli.staff.cover import cover_cli
+            from education_system.systems.primary.interfaces.cli.academics.homework import homework_cli
+            from education_system.systems.primary.interfaces.cli.academics.library import library_cli
+            from education_system.systems.primary.interfaces.cli.academics.year_groups import year_groups_cli
             # Assessment
-            from education_system.systems.primary.domain.assessment.intervention_tracking import intervention_tracking_cli
-            from education_system.systems.primary.domain.assessment.early_warning import early_warning_cli
-            from education_system.systems.primary.domain.assessment.observations import observations_cli
+            from education_system.systems.primary.interfaces.cli.assessment.intervention_tracking import intervention_tracking_cli
+            from education_system.systems.primary.interfaces.cli.assessment.early_warning import early_warning_cli
+            from education_system.systems.primary.interfaces.cli.assessment.observations import observations_cli
             # Staff comms
-            from education_system.systems.primary.domain.staff import staff_cli
-            from education_system.systems.primary.domain.staff.staff_hr import staff_hr_cli
-            from education_system.systems.primary.domain.staff.departments import departments_cli
-            from education_system.systems.primary.domain.staff.staff_absence import staff_absence_cli
-            from education_system.systems.primary.domain.staff.staff_wellbeing import staff_wellbeing_cli
-            from education_system.systems.primary.domain.staff.recruitment import recruitment_cli
-            from education_system.systems.primary.domain.staff.appraisals import appraisals_cli
-            from education_system.systems.primary.domain.staff.cpd import cpd_cli
-            from education_system.systems.primary.domain.staff.dbs_checks import dbs_checks_cli
-            from education_system.systems.primary.domain.operations.visitors import visitors_cli
-            from education_system.systems.primary.domain.operations.communications.parent_contacts import parent_contacts_cli
-            from education_system.systems.primary.domain.operations.communications.parents_evenings import parents_evenings_cli
-            from education_system.systems.primary.domain.operations.communications.announcements import announcements_cli
-            from education_system.systems.primary.domain.operations.communications.notifications import notifications_cli
-            from education_system.systems.primary.domain.operations.communications.activity_feed import activity_feed_cli
-            from education_system.systems.primary.domain.operations.communications.messages import messages_cli
-            from education_system.systems.primary.domain.operations.communications.letter_templates import letter_templates_cli
-            from education_system.systems.primary.domain.operations.document_hub import document_hub_cli
-            from education_system.systems.primary.domain.operations.attachments import attachments_cli
+            from education_system.systems.primary.interfaces.cli.staff import staff_cli
+            from education_system.systems.primary.interfaces.cli.staff.staff_hr import staff_hr_cli
+            from education_system.systems.primary.interfaces.cli.staff.departments import departments_cli
+            from education_system.systems.primary.interfaces.cli.staff.staff_absence import staff_absence_cli
+            from education_system.systems.primary.interfaces.cli.staff.staff_wellbeing import staff_wellbeing_cli
+            from education_system.systems.primary.interfaces.cli.staff.recruitment import recruitment_cli
+            from education_system.systems.primary.interfaces.cli.staff.appraisals import appraisals_cli
+            from education_system.systems.primary.interfaces.cli.staff.cpd import cpd_cli
+            from education_system.systems.primary.interfaces.cli.staff.dbs_checks import dbs_checks_cli
+            from education_system.systems.primary.interfaces.cli.operations.visitors import visitors_cli
+            from education_system.systems.primary.interfaces.cli.operations.communications.parent_contacts import parent_contacts_cli
+            from education_system.systems.primary.interfaces.cli.operations.communications.parents_evenings import parents_evenings_cli
+            from education_system.systems.primary.interfaces.cli.operations.communications.announcements import announcements_cli
+            from education_system.systems.primary.interfaces.cli.operations.communications.notifications import notifications_cli
+            from education_system.systems.primary.interfaces.cli.operations.communications.activity_feed import activity_feed_cli
+            from education_system.systems.primary.interfaces.cli.operations.communications.messages import messages_cli
+            from education_system.systems.primary.interfaces.cli.operations.communications.letter_templates import letter_templates_cli
+            from education_system.systems.primary.interfaces.cli.operations.document_hub import document_hub_cli
+            from education_system.systems.primary.interfaces.cli.operations.attachments import attachments_cli
             # Finance
-            from education_system.systems.primary.domain.finance.trips import trips_cli
-            from education_system.systems.primary.domain.finance.receipts import receipts_cli
-            from education_system.systems.primary.domain.finance.expense_claims import expense_claims_cli
-            from education_system.systems.primary.domain.finance.funding import funding_cli
-            from education_system.systems.primary.domain.governance.compliance.census import census_cli
+            from education_system.systems.primary.interfaces.cli.finance.trips import trips_cli
+            from education_system.systems.primary.interfaces.cli.finance.receipts import receipts_cli
+            from education_system.systems.primary.interfaces.cli.finance.expense_claims import expense_claims_cli
+            from education_system.systems.primary.interfaces.cli.finance.funding import funding_cli
+            from education_system.systems.primary.interfaces.cli.governance.compliance.census import census_cli
             # Reports
-            from education_system.systems.primary.domain.assessment.progress import progress_cli
-            from education_system.systems.primary.domain.operations.reporting.kpi_dashboard import kpi_dashboard_cli
-            from education_system.systems.primary.domain.operations.reporting.data_dashboard import data_dashboard_cli
-            from education_system.systems.primary.domain.operations.reporting.mobile_dashboard import mobile_dashboard_cli
-            from education_system.systems.primary.domain.governance.audit.audit_reports import audit_reports_cli
-            from education_system.systems.primary.domain.operations.reporting.data_export import data_export_cli
-            from education_system.systems.primary.domain.operations.reporting.custom_export import custom_export_cli
+            from education_system.systems.primary.interfaces.cli.assessment.progress import progress_cli
+            from education_system.systems.primary.interfaces.cli.operations.reporting.kpi_dashboard import kpi_dashboard_cli
+            from education_system.systems.primary.interfaces.cli.operations.reporting.data_dashboard import data_dashboard_cli
+            from education_system.systems.primary.interfaces.cli.operations.reporting.mobile_dashboard import mobile_dashboard_cli
+            from education_system.systems.primary.interfaces.cli.governance.audit.audit_reports import audit_reports_cli
+            from education_system.systems.primary.interfaces.cli.operations.reporting.data_export import data_export_cli
+            from education_system.systems.primary.interfaces.cli.operations.reporting.custom_export import custom_export_cli
             # Governance
-            from education_system.systems.primary.domain.governance.compliance import compliance_cli
-            from education_system.systems.primary.domain.governance import governance_cli
-            from education_system.systems.primary.domain.governance.policies import policies_cli
-            from education_system.systems.primary.domain.governance.gdpr import gdpr_cli
-            from education_system.systems.primary.domain.governance.risk_management import risk_management_cli
-            from education_system.systems.primary.domain.governance.health_safety import health_safety_cli
-            from education_system.systems.primary.domain.operations.assets import assets_cli
-            from education_system.systems.primary.domain.operations.todo import todo_cli
-            from education_system.systems.primary.domain.governance.user_management import user_management_cli
+            from education_system.systems.primary.interfaces.cli.governance.compliance import compliance_cli
+            from education_system.systems.primary.interfaces.cli.governance import governance_cli
+            from education_system.systems.primary.interfaces.cli.governance.policies import policies_cli
+            from education_system.systems.primary.interfaces.cli.governance.gdpr import gdpr_cli
+            from education_system.systems.primary.interfaces.cli.governance.risk_management import risk_management_cli
+            from education_system.systems.primary.interfaces.cli.governance.health_safety import health_safety_cli
+            from education_system.systems.primary.interfaces.cli.operations.assets import assets_cli
+            from education_system.systems.primary.interfaces.cli.operations.todo import todo_cli
+            from education_system.systems.primary.interfaces.cli.governance.user_management import user_management_cli
             # Shared
             from education_system.systems.primary.interfaces.cli import (
                 change_password_cli, user_accounts_cli, settings_cli, about_cli,
@@ -386,7 +386,7 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
     if shared_auth is None or not getattr(shared_auth, "current_user", None):
         logger.error("primarysch CLI invoked without a shared_auth session")
         raise RuntimeError(
-            "primarysch_system CLI must be launched via run.py — "
+            "primarysch_system CLI must be launched via python -m education_system — "
             "no standalone login is available."
         )
     cu = shared_auth.current_user or {}
@@ -396,5 +396,5 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
 
 
 if __name__ == "__main__":
-    print("Launch via: python run.py --cli  (then choose Primary School)")
+    print("Launch via: python -m education_system --cli  (then choose Primary School)")
     raise SystemExit(2)

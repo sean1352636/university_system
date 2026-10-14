@@ -1,16 +1,13 @@
-"""Barber Shop GUI - Tab creation mixins."""
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.interfaces.gui.barber.tabs`` (campus commerce plugin).
 
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.barber.tabs.appointments_tab import AppointmentsTabMixin
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.barber.tabs.services_tab import ServicesTabMixin
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.barber.tabs.staff_tab import StaffTabMixin
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.barber.tabs.customers_tab import CustomersTabMixin
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.barber.tabs.finance_tab import FinanceTabMixin
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.barber.tabs.analytics_tab import AnalyticsTabMixin
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.barber.tabs.reports_tab import ReportsTabMixin
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.barber.tabs.refunds_tab import RefundsTabMixin
+A mirror, not an alias: an aliased package would resolve this package's
+submodules through the new ``__path__`` and load each one a second time.
+Submodules are aliased individually; this copies the package's names.
+"""
+# layout-shim: education_system.systems.university.plugins.campus_commerce.interfaces.gui.barber.tabs
+import importlib as _importlib
 
-__all__ = [
-    'AppointmentsTabMixin', 'ServicesTabMixin', 'StaffTabMixin',
-    'CustomersTabMixin', 'FinanceTabMixin', 'AnalyticsTabMixin',
-    'ReportsTabMixin', 'RefundsTabMixin',
-]
+_new = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.interfaces.gui.barber.tabs")
+globals().update({k: v for k, v in vars(_new).items()
+                  if not (k.startswith("__") and k.endswith("__"))})
+del _importlib, _new

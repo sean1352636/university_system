@@ -10,6 +10,7 @@ Combines all security features:
 - Vulnerability Scanning
 """
 
+import logging
 import os
 import sys
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -30,6 +31,14 @@ import time
 # query, which requires a computationally-expensive / password-safe KDF for
 # sensitive credentials. Iteration count is kept modest because the raw key is
 # already 256 bits of entropy from ``secrets.token_urlsafe(32)``.
+
+# Module logger. The HIBP breach-check paths below call logger.warning();
+# without this they raised NameError inside their own except blocks,
+# masking the real failure. Propagates to the root handler like every
+# other module here.
+logger = logging.getLogger(__name__)
+
+
 def _resolve_pepper() -> bytes:
     """Pepper for key hashing — required in production, defaulted only in dev."""
     pepper = os.environ.get("API_KEY_PEPPER")
@@ -95,14 +104,26 @@ class APISecurityManager:
 
             expires_at = datetime.now() + timedelta(days=expires_days)
 
+            # api_keys.api_key is NOT NULL, so the INSERT has to put something
+            # there — and this method deliberately does not store the key, so
+            # every call failed with "NOT NULL constraint failed:
+            # api_keys.api_key" and no key could be issued at all.
+            #
+            # A masked hint satisfies the constraint without keeping the
+            # secret: enough to recognise a key in a list, useless to anyone
+            # who steals the table. The hash stays the only material that can
+            # validate a key. Nothing reads this column expecting a usable
+            # key.
+            masked_key = f"{api_key[:4]}{'*' * 8}{api_key[-4:]}"
+
             cursor.execute("""
                 INSERT INTO api_keys (
-                    user_id, key_hash, key_name, permissions,
-                    expires_at, rate_limit
+                    user_id, api_key, key_hash, key_name, permissions,
+                    expires_at, rate_limit, created_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (user_id, key_hash, key_name, json.dumps(permissions),
-                  expires_at, rate_limit))
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (user_id, masked_key, key_hash, key_name, json.dumps(permissions),
+                  expires_at, rate_limit, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
             conn.commit()
 

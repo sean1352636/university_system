@@ -22,12 +22,59 @@ from education_system.systems.university.infrastructure.i18n import (
     get_text,
     get_current_language,
 )
-from education_system.systems.university.infrastructure.utils.language_selector import (
-    display_language_menu_option,
-)
 
 # Setup logging
 logger = logging.getLogger(__name__)
+
+
+# Columns this module needs that an older copy of a table may not have.
+# ``CREATE TABLE IF NOT EXISTS`` is a no-op once the table exists, so a table
+# created from an earlier definition silently keeps its old shape — which is
+# how queries here ended up failing with "no such column: is_active",
+# "no such column: theme" and "table mobile_sessions has no column named
+# ip_address". Adding them explicitly makes init self-healing.
+_REQUIRED_COLUMNS = {
+    'mobile_devices': {
+        'is_active': 'BOOLEAN DEFAULT 1',
+    },
+    'mobile_sessions': {
+        'ip_address': 'TEXT',
+        'location': 'TEXT',
+    },
+    'mobile_preferences': {
+        'theme': "TEXT DEFAULT 'light'",
+        'offline_mode_enabled': 'BOOLEAN DEFAULT 1',
+        'data_saver_mode': 'BOOLEAN DEFAULT 0',
+        'auto_sync': 'BOOLEAN DEFAULT 1',
+    },
+    'mobile_analytics': {
+        'device_id': 'INTEGER',
+    },
+}
+
+
+def _ensure_mobile_columns(conn):
+    """Add any missing columns to the mobile tables. Idempotent."""
+    added = []
+    for table, columns in _REQUIRED_COLUMNS.items():
+        try:
+            existing = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+        except Exception as e:
+            logger.debug("Could not inspect %s: %s", table, e)
+            continue
+        if not existing:
+            continue  # table absent; the CREATE above owns it
+        for column, definition in columns.items():
+            if column in existing:
+                continue
+            try:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+                added.append(f"{table}.{column}")
+            except Exception as e:
+                logger.warning("Could not add %s.%s: %s", table, column, e)
+    if added:
+        logger.info("Mobile App schema brought up to date: %s", ", ".join(added))
+    return added
 
 
 def init_mobile_app_database():
@@ -37,12 +84,64 @@ def init_mobile_app_database():
 
         with transaction() as conn:
             conn.executescript(MOBILE_APP_SCHEMA)
+            _ensure_mobile_columns(conn)
 
         logger.info("Mobile App database tables initialized successfully")
         return True
     except Exception as e:
         logger.error(f"Error initializing database: {e}")
         return False
+
+
+# ==================== Input helpers ====================
+
+def _fetch_rows(query, params=()):
+    """Run a read-only query and return all rows."""
+    conn = get_connection()
+    try:
+        return conn.execute(query, params).fetchall()
+    finally:
+        conn.close()
+
+
+def _prompt_known_id(label, query, params=(), *, empty_message=None,
+                     optional=False):
+    """Prompt for an id, accepting only ones that exist in the database.
+
+    ``query`` must select ``(id, description)`` pairs for the valid choices;
+    they are listed so the user can see what to pick. Re-prompts on anything
+    else, and a blank line backs out — previously any number at all was
+    accepted, which then failed deep in the query as a foreign-key error or
+    silently updated nothing.
+
+    Returns the chosen id (int), or ``None`` if the user backed out or there
+    is nothing to choose from. With ``optional=True`` a blank line is a
+    deliberate "leave it unset" and also returns ``None``.
+    """
+    rows = _fetch_rows(query, params)
+    if not rows and not optional:
+        print(f"\n📋 {empty_message or f'No {label.lower()}s available'}")
+        return None
+
+    valid = {}
+    for row in rows:
+        valid[str(row[0])] = row[1] if len(row) > 1 else ''
+
+    if valid:
+        print(f"\nAvailable {label}s:")
+        for key, description in list(valid.items())[:20]:
+            print(f"  {key}: {description}")
+        if len(valid) > 20:
+            print(f"  … and {len(valid) - 20} more")
+
+    suffix = " (blank to skip)" if optional else " (blank to cancel)"
+    while True:
+        raw = input(f"Enter {label}{suffix}: ").strip()
+        if not raw:
+            return None
+        if raw in valid:
+            return int(raw)
+        print(f"❌ {raw} is not a valid {label}. Choose one of the ids listed above.")
 
 
 # ==================== Mobile Devices Management ====================
@@ -54,9 +153,16 @@ def register_mobile_device():
     print("="*60)
 
     try:
-        user_id = input("Enter User ID: ").strip()
-        if not user_id:
-            print("❌ User ID is required")
+        # mobile_devices.user_id is FK→users(id); an unknown id used to blow
+        # up as "FOREIGN KEY constraint failed" after all the prompts.
+        user_id = _prompt_known_id(
+            "User ID",
+            "SELECT id, username || ' (' || COALESCE(role, 'user') || ')' "
+            "FROM users ORDER BY id",
+            empty_message="No users on file to register a device against",
+        )
+        if user_id is None:
+            print("❌ Registration cancelled")
             return
 
         print("\nDevice Types:")
@@ -78,13 +184,16 @@ def register_mobile_device():
         push_token = secrets.token_urlsafe(32)
 
         with transaction() as conn:
+            # last_active is set explicitly: the live column carries no
+            # DEFAULT, so leaving it out registered devices with a NULL that
+            # then broke the device listing's column formatting.
             cursor = conn.execute('''
                 INSERT INTO mobile_devices (
                     user_id, device_type, device_name, push_token,
-                    os_version, app_version
-                ) VALUES (?, ?, ?, ?, ?, ?)
-            ''', (user_id, device_type, device_name, push_token,
-                  os_version or None, app_version))
+                    os_version, app_version, last_active
+                ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ''', (user_id, device_type, device_name or 'Unnamed device',
+                  push_token, os_version or None, app_version))
 
             device_id = cursor.lastrowid
 
@@ -130,10 +239,14 @@ def view_mobile_devices():
 
         for device in devices:
             dev_id, user_id, dtype, dname, os_ver, app_ver, last_active, active, registered = device
+            # Rows predating the current schema can carry NULLs in any of
+            # these; formatting None with a width spec raises.
             status = "✅ Active" if active else "❌ Inactive"
-            version_str = f"{os_ver or 'N/A'}/{app_ver}"
+            version_str = f"{os_ver or 'N/A'}/{app_ver or 'N/A'}"
+            name = (dname or 'Unnamed device')[:23]
+            seen = last_active or registered or 'Never'
 
-            print(f"{dev_id:<6} {user_id:<8} {dtype:<10} {dname[:23]:<25} {version_str:<10} {last_active:<20} {status:<10}")
+            print(f"{dev_id:<6} {user_id or '—':<8} {dtype or 'unknown':<10} {name:<25} {version_str:<10} {seen:<20} {status:<10}")
 
         log_activity('view', 'mobile_devices', details={'count': len(devices)})
 
@@ -149,9 +262,15 @@ def deactivate_mobile_device():
     print("="*60)
 
     try:
-        device_id = input("Enter Device ID to deactivate: ").strip()
-        if not device_id:
-            print("❌ Device ID is required")
+        device_id = _prompt_known_id(
+            "Device ID",
+            "SELECT device_id, device_name || ' (' || device_type || ', user ' "
+            "|| user_id || ')' FROM mobile_devices "
+            "WHERE COALESCE(is_active, 1) = 1 ORDER BY device_id",
+            empty_message="No active devices to deactivate",
+        )
+        if device_id is None:
+            print("❌ Deactivation cancelled")
             return
 
         confirm = input(f"\n⚠️ Deactivate device {device_id}? (yes/no): ").strip().lower()
@@ -184,14 +303,24 @@ def create_mobile_session():
     print("="*60)
 
     try:
-        device_id = input("Enter Device ID: ").strip()
-        if not device_id:
-            print("❌ Device ID is required")
+        device_id = _prompt_known_id(
+            "Device ID",
+            "SELECT device_id, device_name || ' (' || device_type || ', user ' "
+            "|| user_id || ')' FROM mobile_devices "
+            "WHERE COALESCE(is_active, 1) = 1 ORDER BY device_id",
+            empty_message="No active devices — register one first",
+        )
+        if device_id is None:
+            print("❌ Session creation cancelled")
             return
 
-        user_id = input("Enter User ID: ").strip()
-        if not user_id:
-            print("❌ User ID is required")
+        user_id = _prompt_known_id(
+            "User ID",
+            "SELECT id, username FROM users ORDER BY id",
+            empty_message="No users on file",
+        )
+        if user_id is None:
+            print("❌ Session creation cancelled")
             return
 
         # Generate session token
@@ -276,9 +405,17 @@ def end_mobile_session():
     print("="*60)
 
     try:
-        session_id = input("Enter Session ID to end: ").strip()
-        if not session_id:
-            print("❌ Session ID is required")
+        session_id = _prompt_known_id(
+            "Session ID",
+            "SELECT ms.session_id, 'user ' || ms.user_id || ' on ' || "
+            "COALESCE(md.device_name, 'unknown device') || ' since ' || ms.login_time "
+            "FROM mobile_sessions ms "
+            "LEFT JOIN mobile_devices md ON ms.device_id = md.device_id "
+            "WHERE ms.logout_time IS NULL ORDER BY ms.session_id",
+            empty_message="No active sessions to end",
+        )
+        if session_id is None:
+            print("❌ Cancelled")
             return
 
         with transaction() as conn:
@@ -414,9 +551,13 @@ def view_mobile_preferences():
     print("="*60)
 
     try:
-        user_id = input("Enter User ID: ").strip()
-        if not user_id:
-            print("❌ User ID is required")
+        user_id = _prompt_known_id(
+            "User ID",
+            "SELECT id, username FROM users ORDER BY id",
+            empty_message="No users on file",
+        )
+        if user_id is None:
+            print("❌ Cancelled")
             return
 
         conn = get_connection()
@@ -463,9 +604,13 @@ def update_mobile_preferences():
     print("="*60)
 
     try:
-        user_id = input("Enter User ID: ").strip()
-        if not user_id:
-            print("❌ User ID is required")
+        user_id = _prompt_known_id(
+            "User ID",
+            "SELECT id, username FROM users ORDER BY id",
+            empty_message="No users on file",
+        )
+        if user_id is None:
+            print("❌ Cancelled")
             return
 
         print("\nTheme Options:")
@@ -619,8 +764,19 @@ def log_mobile_event():
     print("="*60)
 
     try:
-        user_id = input("Enter User ID (optional): ").strip()
-        device_id = input("Enter Device ID (optional): ").strip()
+        # Both are optional here, but an id that is supplied must be real:
+        # mobile_analytics has FKs to users and mobile_devices.
+        user_id = _prompt_known_id(
+            "User ID",
+            "SELECT id, username FROM users ORDER BY id",
+            optional=True,
+        )
+        device_id = _prompt_known_id(
+            "Device ID",
+            "SELECT device_id, device_name || ' (' || device_type || ')' "
+            "FROM mobile_devices ORDER BY device_id",
+            optional=True,
+        )
 
         print("\nCommon Event Types:")
         print("1. page_view")
@@ -643,7 +799,7 @@ def log_mobile_event():
                 INSERT INTO mobile_analytics (
                     user_id, device_id, event_type, event_data
                 ) VALUES (?, ?, ?, ?)
-            ''', (user_id or None, device_id or None, event_type, event_data or None))
+            ''', (user_id, device_id, event_type, event_data or None))
 
         log_activity('log', 'mobile_event', details={'event_type': event_type})
 
@@ -683,12 +839,10 @@ def display_mobile_app_pwa_menu(auth=None):
         print(f"\n📊 {get_text('mobile_app.sections.analytics', default='ANALYTICS')}")
         print(f"11. {get_text('mobile_app.menu.analytics', default='View Analytics Dashboard')}")
         print(f"12. {get_text('mobile_app.menu.log_event', default='Log Analytics Event')}")
-        print(f"\n🌐 {get_text('mobile_app.sections.settings', default='SETTINGS')}")
-        print(f"13. {get_text('mobile_app.menu.language', default='Language')}")
-        print(f"\n14. {get_text('mobile_app.menu.return', default='Return to Main Menu')}")
+        print(f"\n13. {get_text('mobile_app.menu.return', default='Return to Main Menu')}")
         print("="*60)
 
-        choice = input(f"\n{get_text('mobile_app.prompt.choice', default='Enter your choice (1-14)')}: ").strip()
+        choice = input(f"\n{get_text('mobile_app.prompt.choice', default='Enter your choice (1-13)')}: ").strip()
 
         if choice == '1':
             register_mobile_device()
@@ -715,8 +869,6 @@ def display_mobile_app_pwa_menu(auth=None):
         elif choice == '12':
             log_mobile_event()
         elif choice == '13':
-            display_language_menu_option()
-        elif choice == '14':
             print(get_text('mobile_app.returning', default='Returning to main menu...'))
             break
         else:

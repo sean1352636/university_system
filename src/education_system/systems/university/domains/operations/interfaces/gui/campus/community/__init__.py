@@ -1,5 +1,13 @@
-"""Community Services GUI modules - Church Management."""
+"""Moved to ``education_system.systems.university.plugins.community_services.interfaces.gui`` (community services plugin).
 
-from education_system.systems.university.domains.operations.interfaces.gui.campus.community.church_management_gui import ChurchManagementSystem
+A mirror, not an alias: an aliased package would resolve this package's
+submodules through the new ``__path__`` and load each one a second time.
+Submodules are aliased individually; this copies the package's names.
+"""
+# layout-shim: education_system.systems.university.plugins.community_services.interfaces.gui
+import importlib as _importlib
 
-__all__ = ['ChurchManagementSystem']
+_new = _importlib.import_module("education_system.systems.university.plugins.community_services.interfaces.gui")
+globals().update({k: v for k, v in vars(_new).items()
+                  if not (k.startswith("__") and k.endswith("__"))})
+del _importlib, _new

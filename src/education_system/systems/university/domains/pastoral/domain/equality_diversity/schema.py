@@ -11,6 +11,7 @@ import sqlite3
 from typing import Iterable
 
 from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608 - identifier validation
 
 
 def get_connection() -> sqlite3.Connection:
@@ -246,15 +247,21 @@ _INCIDENT_COLUMNS = [
 ]
 
 
+# db-audit: ignore[DBW001] - parameter passed through a validator
 def _existing_columns(conn: sqlite3.Connection, table: str) -> set[str]:
+    # Identifiers cannot be parameterised, so they are validated instead.
+    table = validate_identifier(table)
     return {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}
 
 
 def _add_missing_columns(conn: sqlite3.Connection, table: str, columns: Iterable[tuple[str, str]]) -> None:
+    # db-audit: ignore[DBW001] - parameter passed through a validator; passed through validate_identifier()
+    # Identifiers cannot be parameterised, so they are validated instead.
+    table = validate_identifier(table)
     have = _existing_columns(conn, table)
     for name, decl in columns:
         if name not in have:
-            conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {decl}")
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {validate_identifier(name)} {decl}")
 
 
 def _seed_benchmarks(conn: sqlite3.Connection) -> None:

@@ -3,7 +3,9 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
+from tkinter import ttk, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 
@@ -24,7 +26,7 @@ class EmailNotificationsMixin:
         assignment_due_date = item['values'][3]
 
         # Create email reminder dialog
-        email_window = tk.Toplevel(self.root)
+        email_window = make_toplevel(self.root)
         email_window.title(f"Email Reminders - {assignment_title}")
         email_window.geometry("600x500")
         email_window.transient(self.root)
@@ -149,7 +151,7 @@ class EmailNotificationsMixin:
                 recipient_type = recipient_var.get()
                 recipients = self._get_assignment_email_recipients(assignment_id, recipient_type)
 
-                preview_window = tk.Toplevel(email_window)
+                preview_window = make_toplevel(email_window)
                 preview_window.title(_t('gui.academics.assignment_system.assignment_manager.email_notifications.windows.email_recipients_preview', default="Email Recipients Preview"))
                 preview_window.geometry("500x400")
                 preview_window.transient(email_window)
@@ -232,7 +234,7 @@ class EmailNotificationsMixin:
         """Try to send emails via email GUI"""
         try:
             # Try to import and use email GUI
-            from education_system.systems.university.interfaces.gui.shell.email.email_gui import EmailManagerGUI as EmailGUI
+            from education_system.systems.university.shell.gui.email.email_gui import EmailManagerGUI as EmailGUI
 
             # Create email GUI instance
             email_gui = EmailGUI(self.root, self.auth)
@@ -260,7 +262,7 @@ class EmailNotificationsMixin:
 
     def _show_email_fallback_dialog(self, recipients, subject, message):
         """Show fallback dialog with email details for manual sending"""
-        fallback_window = tk.Toplevel(self.root)
+        fallback_window = make_toplevel(self.root)
         fallback_window.title(_t('gui.academics.assignment_system.assignment_manager.email_notifications.windows.email_details_manual_send', default="Email Details - Manual Send"))
         fallback_window.geometry("700x500")
         fallback_window.transient(self.root)
@@ -296,24 +298,22 @@ class EmailNotificationsMixin:
             from datetime import datetime
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            try:
-                cursor = conn.cursor()
+            cursor = conn.cursor()
 
-                # Get assignments that are overdue
-                current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            # Get assignments that are overdue
+            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-                cursor.execute('''
-                    SELECT a.id, a.title, a.module_code, m.module_name, a.due_date
-                    FROM assignments a
-                    JOIN modules m ON a.module_code = m.module_code
-                    WHERE a.due_date < ? AND a.is_active = 1
-                ''', (current_time,))
+            cursor.execute('''
+                SELECT a.id, a.title, a.module_code, m.module_name, a.due_date
+                FROM assignments a
+                JOIN modules m ON a.module_code = m.module_code
+                WHERE a.due_date < ? AND a.is_active = 1
+            ''', (current_time,))
 
-                overdue_assignments = cursor.fetchall()
+            overdue_assignments = cursor.fetchall()
 
-                if not overdue_assignments:
-                    print("No overdue assignments found")
-            finally:
+            if not overdue_assignments:
+                print("No overdue assignments found")
                 conn.close()
                 return 0
 

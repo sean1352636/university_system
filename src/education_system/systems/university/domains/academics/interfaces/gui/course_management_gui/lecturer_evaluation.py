@@ -25,6 +25,9 @@ import sys
 import tkinter as tk
 from datetime import datetime
 from tkinter import ttk, messagebox, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui._student_enrolment import (
+    enrolment_summary, module_lecturers,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -509,9 +512,26 @@ class StudentDashboard:
                    command=self.load_modules).pack(side="left", padx=10)
 
     def load_modules(self):
+        """List the modules this student is enrolled on.
+
+        This listed the whole 380-module catalogue, so a student had to
+        find their own among them and could submit feedback on a module
+        they had never taken.
+        """
         self.tree.delete(*self.tree.get_children())
         evaluated = self.db.evaluated_module_codes(self.student_id)
-        for code, name, dept, sem in self.db.get_modules():
+
+        summary = enrolment_summary(self.student_id)
+        enrolled = {m["code"] for m in summary["modules"]}
+        rows = [r for r in self.db.get_modules() if r[0] in enrolled]
+
+        if not rows:
+            self.tree.insert("", "end", values=(
+                "", summary["reason"] or "You are not enrolled on any modules.",
+                "", "", ""))
+            return
+
+        for code, name, dept, sem in rows:
             done = code in evaluated
             status = "✓ Evaluated" if done else "Pending"
             tag = "done" if done else "pending"
@@ -524,12 +544,26 @@ class StudentDashboard:
             messagebox.showinfo(_t('gui.academics.course_management_gui.lecturer_evaluation.dialogs.no_selection', default="No Selection"), _t('gui.academics.course_management_gui.lecturer_evaluation.dialogs.please_select_a_module_to_evaluate', default="Please select a module to evaluate."))
             return
         module_code = sel[0]
+        if not module_code:
+            return
         module_name = self.tree.item(module_code)["values"][1]
-        lecturers = self.db.get_lecturers()
+
+        # Only the lecturers who actually teach this module. The form
+        # offered every instructor in the directory, so a student could
+        # rate someone who had never taught them — and the rating would
+        # be stored against this module as though they had.
+        teaching = module_lecturers(module_code)
+        lecturers = [
+            (int(l["id"]) if str(l["id"]).isdigit() else l["id"],
+             l["name"], l["department"], l["email"], l["title"])
+            for l in teaching
+        ]
         if not lecturers:
             messagebox.showwarning(
                 _t('gui.academics.course_management_gui.lecturer_evaluation.dialogs.no_lecturers', default="No Lecturers"),
-                _t('gui.academics.course_management_gui.lecturer_evaluation.dialogs.no_lecturers_are_listed_in_the_directory_yet_please_contact_an_a', default="No lecturers are listed in the directory yet. Please contact an administrator."))
+                f"No lecturer is recorded as teaching {module_code}.\n\n"
+                "Ask an administrator to schedule its teaching sessions "
+                "before it can be evaluated.")
             return
         EvaluationForm(self.root, self.db, self.student_id,
                        module_code, module_name, lecturers, self.load_modules)

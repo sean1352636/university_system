@@ -139,7 +139,7 @@ def move_slot(
                             reference_id=ref,
                         )
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
                 return {"ok": False, "reason": "conflicts detected",
                         "conflicts": conflicts}
 
@@ -175,7 +175,7 @@ def move_slot(
                             ),
                         })
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Apply the UPDATE.
             set_clause = ", ".join(f"{c} = ?" for c, _ in fields_to_set)
@@ -203,7 +203,7 @@ def move_slot(
             new_end_time=new_end_time, new_room_id=new_room_id,
         )
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
     return {
         "ok": True, "reason": "",

@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from education_system.systems.university.domains.learners.domain.alumni.core import get_db_connection, auth
@@ -47,7 +51,7 @@ def generate_alumni_report():
             gift_aid_total = cursor.fetchone()[0]
             print(f"Gift Aid Eligible: £{gift_aid_total:,.2f}")
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         conn.close()
         print("\nReport generated successfully!")
@@ -68,18 +72,18 @@ def get_engagement_dashboard():
             try:
                 active_mentors = cursor.execute('SELECT COUNT(*) FROM mentorships WHERE status = "active"').fetchone()[0]
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
         total_donated = cursor.execute('SELECT COALESCE(SUM(amount), 0) FROM donations').fetchone()[0]
         upcoming_events = 0
         try:
             upcoming_events = cursor.execute("SELECT COUNT(*) FROM unified_events WHERE source_type = 'alumni' AND start_datetime >= date('now')").fetchone()[0]
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         gift_aid_total = 0
         try:
             gift_aid_total = cursor.execute('SELECT COALESCE(SUM(amount), 0) FROM donations WHERE is_gift_aided = 1').fetchone()[0]
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         conn.close()
         return {
             "total_alumni": total_alumni,

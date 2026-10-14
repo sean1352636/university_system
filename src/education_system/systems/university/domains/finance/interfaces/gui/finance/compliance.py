@@ -1,4 +1,5 @@
 """Collections and compliance management"""
+from education_system.systems.university.shell.gui import report_view as _rv
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -81,6 +82,21 @@ from education_system.systems.university.domains.finance.interfaces.gui.finance.
     # System utilities
     check_required_packages,
     create_approval_workflow,
+)
+
+# Non-interactive collections API. The names imported above are the CLI menu
+# wrappers: they prompt on stdin and print, so a GUI button must not call them.
+from education_system.systems.university.domains.finance.domain.reporting.revenue_analytics.collections import (
+    CASE_STATUSES,
+    assign_case as assign_collection_case,
+    format_collection_progress,
+    list_active_agencies,
+    list_unassigned_cases,
+    set_case_status as set_collection_case_status,
+)
+from education_system.systems.university.domains.finance.domain.reporting.revenue_analytics.agencies import (
+    run_collection_workflow,
+    save_collection_workflow,
 )
 
 # Configure logging
@@ -490,7 +506,7 @@ class CollectionsManager:
             output = mystdout.getvalue()
             sys.stdout = old_stdout
 
-            text_widget = ScrolledText(dialog, height=25, width=90, font=('Courier', 10))
+            text_widget = _rv.TextReportView(dialog, height=25, width=90, font=('Courier', 10))
             text_widget.pack(fill='both', expand=True, padx=10, pady=10)
             text_widget.insert('1.0', output)
 
@@ -557,7 +573,7 @@ class CollectionsManager:
             output = mystdout.getvalue()
             sys.stdout = old_stdout
 
-            text_widget = ScrolledText(dialog, height=25, width=90, font=('Courier', 10))
+            text_widget = _rv.TextReportView(dialog, height=25, width=90, font=('Courier', 10))
             text_widget.pack(fill='both', expand=True, padx=10, pady=10)
             text_widget.insert('1.0', output)
 
@@ -725,7 +741,7 @@ class CollectionsManager:
             output = mystdout.getvalue()
             sys.stdout = old_stdout
 
-            text_widget = ScrolledText(dialog, height=25, width=80, font=('Courier', 10))
+            text_widget = _rv.TextReportView(dialog, height=25, width=80, font=('Courier', 10))
             text_widget.pack(fill='both', expand=True, padx=10, pady=10)
             text_widget.insert('1.0', output)
 
@@ -736,53 +752,86 @@ class CollectionsManager:
 
 
     def gui_assign_to_collection_agency(self):
-        """GUI wrapper for assign_to_collection_agency"""
+        """GUI wrapper for assigning a collection case to an agency."""
         dialog = tk.Toplevel(self.root)
         dialog.title(_("finance_gui.compliance.assign_to_agency_title"))
-        dialog.geometry("500x300")
+        dialog.geometry("560x360")
         dialog.transient(self.root)
         dialog.grab_set()
 
         form_frame = ttk.LabelFrame(dialog, text=_("finance_gui.compliance.assignment_details_frame"), padding=20)
         form_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        # Case ID
-        ttk.Label(form_frame, text=_("finance_gui.compliance.case_id_label")).pack(anchor='w', pady=5)
-        case_id_var = tk.StringVar()
-        ttk.Entry(form_frame, textvariable=case_id_var).pack(anchor='w', fill='x', pady=5)
+        try:
+            cases = list_unassigned_cases()
+            agencies = list_active_agencies()
+        except Exception as e:
+            messagebox.showerror(_("finance_gui.messages.error"),
+                                 _("finance_gui.compliance.failed_assign_case").format(error=e),
+                                 parent=dialog)
+            dialog.destroy()
+            return
 
-        # Agency ID
+        # Case — picked from the unassigned cases rather than typed as a raw id
+        ttk.Label(form_frame, text=_("finance_gui.compliance.case_id_label")).pack(anchor='w', pady=5)
+        case_var = tk.StringVar()
+        case_labels = {
+            f"#{c['case_id']} - {c['first_name']} {c['last_name']} (£{c['total_debt']:,.2f})": c['case_id']
+            for c in cases
+        }
+        ttk.Combobox(form_frame, textvariable=case_var, values=list(case_labels),
+                     state='readonly').pack(anchor='w', fill='x', pady=5)
+
         ttk.Label(form_frame, text=_("finance_gui.compliance.agency_id_label")).pack(anchor='w', pady=5)
-        agency_id_var = tk.StringVar()
-        ttk.Entry(form_frame, textvariable=agency_id_var).pack(anchor='w', fill='x', pady=5)
+        agency_var = tk.StringVar()
+        agency_labels = {
+            f"#{a['agency_id']} - {a['agency_name']} ({a['commission_rate']}%)": a['agency_id']
+            for a in agencies
+        }
+        ttk.Combobox(form_frame, textvariable=agency_var, values=list(agency_labels),
+                     state='readonly').pack(anchor='w', fill='x', pady=5)
+
+        if not cases or not agencies:
+            ttk.Label(
+                form_frame,
+                text=_("finance_gui.compliance.no_cases_or_agencies",
+                       default="No unassigned cases, or no active agencies to assign them to."),
+                foreground='red', wraplength=460, justify='left',
+            ).pack(anchor='w', pady=10)
 
         def assign_case():
+            case_id = case_labels.get(case_var.get())
+            agency_id = agency_labels.get(agency_var.get())
+            if case_id is None or agency_id is None:
+                messagebox.showerror(_("finance_gui.messages.error"),
+                                     _("finance_gui.compliance.case_and_agency_required",
+                                       default="Select both a case and an agency."),
+                                     parent=dialog)
+                return
             try:
-                case_id = int(case_id_var.get())
-                agency_id = int(agency_id_var.get())
-
-                assign_to_collection_agency(case_id, agency_id)
-                messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.compliance.case_assigned"))
+                result = assign_collection_case(case_id, agency_id)
+                messagebox.showinfo(_("finance_gui.messages.success"),
+                                    _("finance_gui.compliance.case_assigned_to",
+                                      default="Case #{case_id} assigned to {agency}.",
+                                      case_id=result['case_id'], agency=result['agency_name']),
+                                    parent=dialog)
                 dialog.destroy()
-
-            except ValueError:
-                messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.compliance.invalid_case_agency_id"))
             except Exception as e:
-                messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.compliance.failed_assign_case").format(error=e))
+                messagebox.showerror(_("finance_gui.messages.error"),
+                                     _("finance_gui.compliance.failed_assign_case").format(error=e),
+                                     parent=dialog)
 
         ttk.Button(form_frame, text=_("finance_gui.compliance.btn_assign_case"), command=assign_case).pack(pady=20)
 
 
     def gui_track_collection_progress(self):
-        """GUI wrapper for track_collection_progress"""
+        """GUI wrapper for collection progress tracking.
+
+        Calls the report builder directly. The CLI entry point of the same name
+        prompts on stdin for a case to update, which would hang the Tk loop.
+        """
         try:
-            old_stdout = sys.stdout
-            sys.stdout = mystdout = io.StringIO()
-
-            track_collection_progress()
-
-            output = mystdout.getvalue()
-            sys.stdout = old_stdout
+            output = format_collection_progress()
 
             self.show_text_window(_("finance_gui.compliance.collection_progress_tracking"), output)
             self.update_status(_("finance_gui.compliance.tracking_completed"))
@@ -807,12 +856,18 @@ class CollectionsManager:
         case_id_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=case_id_var).pack(anchor='w', fill='x', pady=5)
 
-        # New status
+        # New status — the statuses the domain actually accepts
         ttk.Label(form_frame, text=_("finance_gui.compliance.new_status_label")).pack(anchor='w', pady=5)
         status_var = tk.StringVar()
         status_combo = ttk.Combobox(form_frame, textvariable=status_var,
-                                   values=["active", "resolved", "closed", "transferred"])
+                                   values=list(CASE_STATUSES), state='readonly')
         status_combo.pack(anchor='w', fill='x', pady=5)
+
+        # Amount collected — recorded when a case is resolved or closed
+        ttk.Label(form_frame, text=_("finance_gui.compliance.amount_collected_label",
+                                     default="Amount Collected (£):")).pack(anchor='w', pady=5)
+        amount_var = tk.StringVar()
+        ttk.Entry(form_frame, textvariable=amount_var).pack(anchor='w', fill='x', pady=5)
 
         # Notes
         ttk.Label(form_frame, text=_("finance_gui.compliance.update_notes_label")).pack(anchor='w', pady=5)
@@ -822,21 +877,34 @@ class CollectionsManager:
         def update_status():
             try:
                 case_id = int(case_id_var.get())
-                new_status = status_var.get()
-                notes = notes_text.get("1.0", tk.END).strip()
+            except ValueError:
+                messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.compliance.invalid_case_id"), parent=dialog)
+                return
 
-                if not all([case_id, new_status]):
-                    messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.compliance.case_status_required"))
+            new_status = status_var.get()
+            if not new_status:
+                messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.compliance.case_status_required"), parent=dialog)
+                return
+
+            amount_collected = None
+            if amount_var.get().strip():
+                try:
+                    amount_collected = float(amount_var.get())
+                except ValueError:
+                    messagebox.showerror(_("finance_gui.messages.error"),
+                                         _("finance_gui.compliance.invalid_amount_collected",
+                                           default="Amount collected must be a number."),
+                                         parent=dialog)
                     return
 
-                update_collection_case_status(case_id, new_status, notes)
-                messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.compliance.status_updated"))
+            try:
+                set_collection_case_status(case_id, new_status,
+                                           notes_text.get("1.0", tk.END).strip(),
+                                           amount_collected)
+                messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.compliance.status_updated"), parent=dialog)
                 dialog.destroy()
-
-            except ValueError:
-                messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.compliance.invalid_case_id"))
             except Exception as e:
-                messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.compliance.failed_update_status").format(error=e))
+                messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.compliance.failed_update_status").format(error=e), parent=dialog)
 
         ttk.Button(form_frame, text=_("finance_gui.compliance.btn_update_status"), command=update_status).pack(pady=20)
 
@@ -935,15 +1003,93 @@ class CollectionsManager:
 
 
     def gui_setup_collection_workflows(self):
-        """GUI wrapper for setup_collection_workflows"""
-        if messagebox.askyesno(_("finance_gui.dialogs.confirm"), _("finance_gui.compliance.setup_workflows_confirm")):
+        """GUI wrapper for collection workflow setup.
+
+        Collects the thresholds in a form and saves them. The CLI entry point of
+        the same name prompts for each value on stdin, which would hang the GUI.
+        """
+        dialog = tk.Toplevel(self.root)
+        dialog.title(_("finance_gui.compliance.setup_workflows_title", default="Collection Workflow Setup"))
+        dialog.geometry("520x420")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        form_frame = ttk.LabelFrame(dialog, text=_("finance_gui.compliance.workflow_details_frame",
+                                                   default="Workflow Details"), padding=20)
+        form_frame.pack(fill='both', expand=True, padx=20, pady=20)
+
+        ttk.Label(form_frame, text=_("finance_gui.compliance.workflow_name_label",
+                                     default="Workflow Name:")).pack(anchor='w', pady=5)
+        name_var = tk.StringVar(value=_("finance_gui.compliance.default_workflow_name",
+                                        default="Default overdue workflow"))
+        ttk.Entry(form_frame, textvariable=name_var).pack(anchor='w', fill='x', pady=5)
+
+        ttk.Label(form_frame, text=_("finance_gui.compliance.minimum_debt_label",
+                                     default="Minimum Overdue Debt (£):")).pack(anchor='w', pady=5)
+        min_debt_var = tk.StringVar(value="100")
+        ttk.Entry(form_frame, textvariable=min_debt_var).pack(anchor='w', fill='x', pady=5)
+
+        ttk.Label(form_frame, text=_("finance_gui.compliance.reminder_days_label",
+                                     default="Reminder Interval (days):")).pack(anchor='w', pady=5)
+        reminder_var = tk.StringVar(value="14")
+        ttk.Entry(form_frame, textvariable=reminder_var).pack(anchor='w', fill='x', pady=5)
+
+        ttk.Label(form_frame, text=_("finance_gui.compliance.escalation_days_label",
+                                     default="Escalate After (days):")).pack(anchor='w', pady=5)
+        escalation_var = tk.StringVar(value="30")
+        ttk.Entry(form_frame, textvariable=escalation_var).pack(anchor='w', fill='x', pady=5)
+
+        auto_assign_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(form_frame, variable=auto_assign_var,
+                        text=_("finance_gui.compliance.auto_assign_label",
+                               default="Automatically assign an eligible agency")).pack(anchor='w', pady=5)
+
+        run_now_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(form_frame, variable=run_now_var,
+                        text=_("finance_gui.compliance.run_workflow_now_label",
+                               default="Run the workflow immediately")).pack(anchor='w', pady=5)
+
+        def save_workflow():
             try:
-                setup_collection_workflows()
-                messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.compliance.workflows_setup_success"))
+                minimum_debt = float(min_debt_var.get())
+                reminder_days = int(reminder_var.get())
+                escalation_days = int(escalation_var.get())
+            except ValueError:
+                messagebox.showerror(_("finance_gui.messages.error"),
+                                     _("finance_gui.compliance.invalid_workflow_values",
+                                       default="Thresholds and day counts must be numbers."),
+                                     parent=dialog)
+                return
+
+            try:
+                workflow_id = save_collection_workflow(
+                    name_var.get().strip() or _("finance_gui.compliance.default_workflow_name",
+                                                default="Default overdue workflow"),
+                    minimum_debt, reminder_days, escalation_days, auto_assign_var.get(),
+                )
+
+                summary = _("finance_gui.compliance.workflow_saved",
+                            default="Workflow saved (ID: {workflow_id}).", workflow_id=workflow_id)
+                if run_now_var.get():
+                    result = run_collection_workflow(workflow_id)
+                    summary += "\n" + _("finance_gui.compliance.workflow_run_result",
+                                        default="Created {created} case(s); assigned {assigned} case(s).",
+                                        created=result['created'], assigned=result['assigned'])
+
+                messagebox.showinfo(_("finance_gui.messages.success"), summary, parent=dialog)
                 self.update_status(_("finance_gui.compliance.workflows_configured"))
+                dialog.destroy()
 
             except Exception as e:
-                messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.compliance.failed_setup_workflows").format(error=e))
+                messagebox.showerror(_("finance_gui.messages.error"),
+                                     _("finance_gui.compliance.failed_setup_workflows").format(error=e),
+                                     parent=dialog)
+
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(pady=10)
+        ttk.Button(button_frame, text=_("finance_gui.compliance.btn_save_workflow",
+                                        default="Save Workflow"), command=save_workflow).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_("finance_gui.buttons.cancel"), command=dialog.destroy).pack(side='left', padx=5)
 
 
     def gui_send_collection_notice(self):
@@ -1135,7 +1281,7 @@ class CollectionsManager:
         ttk.Button(input_frame, text=_("finance_gui.compliance.view_details"), command=show_details).pack(side='left', padx=10)
 
         # Details display
-        details_text = ScrolledText(dialog, height=20, width=80, font=('Courier', 10))
+        details_text = _rv.TextReportView(dialog, height=20, width=80, font=('Courier', 10))
         details_text.pack(fill='both', expand=True, padx=10, pady=10)
 
 

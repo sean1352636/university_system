@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 import csv
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
@@ -115,7 +119,7 @@ class PaymentServiceMixin:
                                     VALUES (?, ?, ?, ?, ?, date("now"))
                                 ''', ('dental_clinic', self.user_id, amount, result['reference'], description))
                             except Exception:
-                                pass  # Table may not exist
+                                logger.debug("Suppressed exception", exc_info=True)
                     except Exception as e:
                         print(f"Finance integration error: {e}")
 

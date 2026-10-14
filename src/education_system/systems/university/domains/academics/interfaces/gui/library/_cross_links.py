@@ -54,7 +54,7 @@ import tkinter as tk
 logger = logging.getLogger(__name__)
 
 try:
-    from education_system.systems.university.interfaces.gui.shell.main.features.academic_link_bar import (
+    from education_system.systems.university.shell.gui.main.features.academic_link_bar import (
         request_open as _request_open,
     )
 except Exception:  # pragma: no cover
@@ -131,7 +131,7 @@ def send_overdue_notice(user_id, book_title=None, days_overdue=None,
         try:
             win.transient(parent)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     form = ttk.Frame(win, padding=10)
     form.pack(fill="both", expand=True)
@@ -250,7 +250,7 @@ def open_disciplinary_case_for_loan(user_id, *, loan_id=None, book_title=None,
         try:
             win.transient(parent)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     form = ttk.Frame(win, padding=10)
     form.pack(fill="both", expand=True)
@@ -365,7 +365,7 @@ def show_loyalty_snapshot(user_id, parent=None):
         try:
             win.transient(parent)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     header = tk.Frame(win, bg="#2c3e50", height=56)
     header.pack(fill="x")
@@ -444,7 +444,7 @@ def show_careers_snapshot(user_id, parent=None):
         try:
             win.transient(parent)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     header = tk.Frame(win, bg="#2c3e50", height=48)
     header.pack(fill="x")
@@ -530,7 +530,7 @@ def show_reading_lists_with_book(book_id, parent=None):
         try:
             win.transient(parent)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     header = tk.Frame(win, bg="#2c3e50", height=42)
     header.pack(fill="x")
@@ -842,7 +842,7 @@ def append_cross_links(menu: tk.Menu, items):
     try:
         menu.add_separator()
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     for label, cmd in items:
         try:
             menu.add_command(label=label, command=cmd)

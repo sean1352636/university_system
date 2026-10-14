@@ -15,10 +15,18 @@ from education_system.platform.identity.auth.exceptions import AuthError
 logger = logging.getLogger(__name__)
 
 
+QUIT_WORDS = {"q", "quit", "exit"}
+
+
 def _print_header(title: str):
     print(f"\n{'=' * 54}")
     print(f"  {title}")
     print(f"{'=' * 54}")
+
+
+def _wants_to_quit(value: str) -> bool:
+    """True if the user typed one of the quit words at a login prompt."""
+    return value.strip().lower() in QUIT_WORDS
 
 
 def _cli_force_password_change(user_info: dict, auth) -> bool:
@@ -72,12 +80,27 @@ def cli_login_prompt(auth: UserAuth | None = None) -> tuple[dict, UserAuth] | No
     _print_header("Education System - Login")
     print()
     print("  Default: superadmin / SuperAdmin@123")
+    print("  Type 'q' at either prompt to close the program.")
     print()
 
     user_info = None
     for attempt in range(3):
-        username = input("  Username: ").strip()
-        password = getpass.getpass("  Password: ")
+        # Quitting has to be possible from the login screen itself —
+        # otherwise the only way out is to log in and then shut down.
+        # Ctrl-C / Ctrl-D count as quitting too, rather than a traceback.
+        try:
+            username = input("  Username: ").strip()
+            if _wants_to_quit(username):
+                print("\n  Goodbye.")
+                return None
+
+            password = getpass.getpass("  Password: ")
+            if _wants_to_quit(password):
+                print("\n  Goodbye.")
+                return None
+        except (EOFError, KeyboardInterrupt):
+            print("\n\n  Goodbye.")
+            return None
 
         if not username or not password:
             print("\n  Please enter both username and password.")
@@ -94,7 +117,8 @@ def cli_login_prompt(auth: UserAuth | None = None) -> tuple[dict, UserAuth] | No
         # Handle MFA challenge (email OTP + TOTP/recovery fallback)
         if user_info.get("mfa_required"):
             from education_system.platform.delivery.cli.mfa_cli import cli_mfa_verify
-            mfa_result = cli_mfa_verify(user_info["user_id"], auth)
+            mfa_result = cli_mfa_verify(user_info["user_id"], auth,
+                                        current_user=user_info)
             if mfa_result is None:
                 continue
             user_info = mfa_result
@@ -190,11 +214,17 @@ def universal_cli_login(
         label = SYSTEMS.get(key, key.title())
         print(f"  [{idx}] {label} ({role})")
 
-    print("  [0] Cancel")
+    print("  [0] Cancel / quit")
     print()
 
-    choice = input("  Select system: ").strip()
-    if choice == "0":
+    try:
+        choice = input("  Select system: ").strip()
+    except (EOFError, KeyboardInterrupt):
+        print("\n\n  Goodbye.")
+        auth.logout()
+        return None
+
+    if choice == "0" or _wants_to_quit(choice):
         auth.logout()
         return None
 

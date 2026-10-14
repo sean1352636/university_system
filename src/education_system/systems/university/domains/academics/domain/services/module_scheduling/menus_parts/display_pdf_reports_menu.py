@@ -36,7 +36,7 @@ def display_pdf_reports_menu(scheduler):
 
         # Create combined report
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = paths.ANALYTICS_DIR / f"comprehensive_report_{timestamp}.pdf"
+        filename = paths.UNIVERSITY_ANALYTICS_DIR / f"comprehensive_report_{timestamp}.pdf"
 
         doc = SimpleDocTemplate(str(filename), pagesize=landscape(letter))
         styles = getSampleStyleSheet()

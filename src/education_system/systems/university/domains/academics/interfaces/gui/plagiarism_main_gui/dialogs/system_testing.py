@@ -84,7 +84,7 @@ class SystemTestingDialog:
 
         ttk.Button(controls_frame, text=_t("plagiarism.run_selected_tests"), command=self.run_tests).pack(side=tk.LEFT)
         ttk.Button(controls_frame, text=_t("common.select_all"), command=self.select_all_tests).pack(side=tk.LEFT, padx=(GuiConfig.PADDING_SMALL, 0))
-        ttk.Button(controls_frame, text=_t("common.select_none"), command=self.select_no_tests).pack(side=tk.LEFT, padx=(GuiConfig.PADDING_SMALL, 0))
+        ttk.Button(controls_frame, text=_t("common.select_none", default="Select None"), command=self.select_no_tests).pack(side=tk.LEFT, padx=(GuiConfig.PADDING_SMALL, 0))
 
         # Progress
         progress_frame = ttk.Frame(main_frame)

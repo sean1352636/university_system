@@ -80,7 +80,7 @@ def queue_message_for(user_id: str | int, message: str,
         )
         mirror_inbox_to_email(user_id, message, source=source)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return msg_id
 
 
@@ -106,6 +106,7 @@ def pop_messages_for(user_id: str | int,
             for r in rows:
                 out.append(dict(r))
             if mark_read and ids:
+                # db-audit: ignore[DBW001] - string literal
                 conn.execute(
                     f"UPDATE chatbot_pending_messages "
                     f"SET is_read = 1, read_at = ? "

@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection, transaction  # injected
 from education_system.systems.university.infrastructure.exceptions import (
@@ -34,7 +38,8 @@ except ImportError:
     show_gui_language_selector = lambda parent=None: "en"
 
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling._dialogs import messagebox
 from tkinter.font import Font
 import os
 import sys
@@ -64,8 +69,12 @@ except ImportError:
         class ModuleScheduler: pass
 
 class ModuleSchedulingGUI:
-    def __init__(self, root):
+    def __init__(self, root, auth=None):
         self.root = root
+        # Accepted here as well as via set_auth: most callers construct this
+        # GUI directly and never called set_auth, so the Open menu launched
+        # Grade Tracking and Exam Management with no credentials at all.
+        self._auth = auth
         self.root.title(_t("scheduling.window_title"))
         self.root.geometry("1400x900+%d+%d" % ((self.root.winfo_screenwidth() - 1400) // 2, (self.root.winfo_screenheight() - 900) // 2))
         self.root.minsize(1200, 800)
@@ -116,10 +125,20 @@ class ModuleSchedulingGUI:
     def _deferred_initial_load(self):
         """Initial data + bus subscriptions, deferred to first idle
         tick so the window can paint before doing the slow work."""
+        # Flush pending redraws before blocking. after(0) fires on the next
+        # trip round the event loop, which is not necessarily after the window
+        # has actually been drawn — so the load could start while the window
+        # was still an unpainted rectangle, and block until it finished.
+        # update_idletasks() runs the pending redraws and nothing else (unlike
+        # update(), which would also re-enter user event handlers here).
+        try:
+            self.root.update_idletasks()
+        except tk.TclError:
+            return  # window closed before the load started
         try:
             self.refresh_all_data()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Live refresh: course list / enrolments / exam / grade events
         # in sibling windows can invalidate this view's data, so re-pull.
@@ -140,7 +159,7 @@ class ModuleSchedulingGUI:
 
             # Term changes refilter all four scheduling GUIs together.
             from education_system.systems.university.infrastructure.event_bus import (
-                EVENT_TERM_CHANGED, EVENT_SELECTION_CHANGED,
+                EVENT_TERM_CHANGED,
             )
             subscribe_tk(EVENT_TERM_CHANGED, self.root, _on_external_change)
 
@@ -152,41 +171,103 @@ class ModuleSchedulingGUI:
             subscribe_tk(EVENT_CALENDAR_CHANGED, self.root, _on_external_change)
             subscribe_tk(EVENT_STAFF_AVAILABILITY_CHANGED, self.root, _on_external_change)
 
-            # Soft selection from siblings — module: highlight the row.
-            # Course: pre-fill the search box so the operator sees only
-            # that course's modules without context-switching tabs.
-            def _on_selection(**payload):
-                target_module = payload.get("module_code")
-                target_course = payload.get("course_code")
-                if target_module and hasattr(self, "modules_tree"):
-                    try:
-                        for iid in self.modules_tree.get_children():
-                            vals = self.modules_tree.item(iid, "values")
-                            if vals and len(vals) >= 2:
-                                code = vals[1]
-                                if code.startswith("⚠ "):
-                                    code = code[2:]
-                                if code == target_module:
-                                    self.modules_tree.selection_set(iid)
-                                    self.modules_tree.see(iid)
-                                    break
-                    except Exception:
-                        pass
-                # Course → module list filter. The search var triggers
-                # filter_modules via its 'w' trace.
-                if target_course and hasattr(self, "module_search_var"):
-                    try:
-                        self.module_search_var.set(str(target_course))
-                    except Exception:
-                        pass
-
-            subscribe_tk(EVENT_SELECTION_CHANGED, self.root, _on_selection)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
+
+    def _pick_module_for_timeline(self):
+        """Choose a module from a list, then show its timeline.
+
+        This used to be ``simpledialog.askstring("Module code:")``, so any
+        text at all was accepted and a typo produced an empty timeline with
+        no indication that the code did not exist.
+        """
+        from education_system.systems.university.domains.academics.interfaces.gui._cross_dialogs import (
+            show_module_timeline_dialog,
+        )
+
+        try:
+            with get_connection(str(DEFAULT_DB_PATH), row_factory=False) as conn:
+                rows = conn.execute(
+                    "SELECT module_code, module_name FROM modules "
+                    " WHERE COALESCE(TRIM(module_code), '') <> '' "
+                    " ORDER BY module_code").fetchall()
+        except Exception as exc:
+            messagebox.showerror(_t('gui.academics.module_scheduling.main.dialogs.error', default="Error"),
+                                 f"Could not load modules: {exc}")
+            return
+        if not rows:
+            messagebox.showinfo(_t('gui.academics.module_scheduling.main.dialogs.module_timeline', default="Module timeline"),
+                                "There are no modules to show a timeline for.")
+            return
+
+        dialog = tk.Toplevel(self.root)
+        dialog.title(_t('gui.academics.module_scheduling.main.dialogs.module_timeline', default="Module timeline"))
+        dialog.geometry("440x160")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        frame = ttk.Frame(dialog, padding=16)
+        frame.pack(fill=tk.BOTH, expand=True)
+        ttk.Label(frame, text=_t('gui.academics.module_scheduling.main.labels.module', default="Module:")).pack(anchor=tk.W)
+
+        codes = [r[0] for r in rows]
+        combo = ttk.Combobox(
+            frame, width=48, state="readonly",
+            values=[f"{code} - {name}" if name else code for code, name in rows])
+        combo.current(0)
+        combo.pack(fill=tk.X, pady=(4, 12))
+
+        def _show():
+            index = combo.current()
+            if index < 0:
+                return
+            code = codes[index]
+            dialog.destroy()
+            show_module_timeline_dialog(self.root, code)
+
+        buttons = ttk.Frame(frame)
+        buttons.pack(fill=tk.X)
+        ttk.Button(buttons, text=_t('gui.academics.module_scheduling.main.buttons.show', default="Show"),
+                   command=_show).pack(side=tk.LEFT)
+        ttk.Button(buttons, text=_t('gui.academics.module_scheduling.main.buttons.cancel', default="Cancel"),
+                   command=dialog.destroy).pack(side=tk.LEFT, padx=6)
+        combo.bind("<Return>", lambda _e: _show())
 
     def set_auth(self, auth):
         """Optional; accept auth context from main app."""
         self._auth = auth
+
+    @property
+    def auth(self):
+        """The signed-in session.
+
+        ``set_auth`` stores ``_auth``, but the Open menu read ``self.auth``
+        — a name nothing ever set — so it always handed ``None`` to the GUIs
+        it launched. Grade Tracking then fell back to a guest with student
+        privileges and Exam Management refused access, both while an admin
+        was signed in. Exposing the one attribute under both names removes
+        the mismatch.
+        """
+        session = getattr(self, "_auth", None)
+        if isinstance(getattr(session, "current_user", None), dict):
+            return session
+        # Nothing was passed in: fall back to the process-wide session rather
+        # than launching a sibling GUI as nobody.
+        try:
+            from education_system.systems.university.infrastructure.shared_context import (
+                get_auth,
+            )
+            fallback = get_auth()
+        except Exception:
+            logger.debug("shared-context auth unavailable", exc_info=True)
+            return session
+        if isinstance(getattr(fallback, "current_user", None), dict):
+            return fallback
+        return session or fallback
+
+    @auth.setter
+    def auth(self, value):
+        self._auth = value
 
     def get_user_role(self):
         """Get the current user's role from authentication system"""
@@ -320,12 +401,6 @@ class ModuleSchedulingGUI:
                                font=('Arial', 14, 'bold'))
         title_label.pack(side=tk.LEFT, padx=20)
 
-        # Language button - shows current language
-        lang_text = f"{_t('gui.change_language')} [{get_current_language_name()}]"
-        self.language_btn = ttk.Button(toolbar_frame, text=lang_text,
-                                       command=self.show_language_selector, style='Action.TButton')
-        self.language_btn.pack(side=tk.RIGHT, padx=5)
-
         # Embedded period strip (#11). Always-visible context: term,
         # week-of-term, exam window status. Reads the calendar via the
         # cross-services helper, refreshes on bus events.
@@ -335,7 +410,7 @@ class ModuleSchedulingGUI:
             )
             AcademicPeriodPanel(main_frame).pack(fill=tk.X, padx=10, pady=(0, 4))
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Create notebook for tabs
         self.notebook = ttk.Notebook(main_frame, style='Main.TNotebook')
@@ -349,12 +424,43 @@ class ModuleSchedulingGUI:
         self.create_timetables_tab()
         self.create_analytics_tab()
         self.create_conflicts_tab()
+        # Lesson planning: content attached to the slots above, replacing the
+        # standalone Lesson Planner and its parallel lesson_plans timetable.
+        self.create_lesson_plans_tab()
         self.create_management_tab()
         self.create_settings_tab()
-        self.create_modules_tab()
+        # Modules are managed in the Module Management window, not a tab here.
 
         # Menu bar
         self.create_menu_bar()
+
+    def open_module_management(self):
+        """Open the Module Management window, where modules are now edited."""
+        try:
+            from education_system.systems.university.domains.academics.interfaces.gui.module_management import (
+                ModuleManagementGUI,
+            )
+            from education_system.platform.delivery.gui.window_sizing import center
+
+            window = tk.Toplevel(self.root)
+            window.withdraw()
+            window.title(_t("academic_launchers.titles.module", default="Module Management"))
+            center(window, 1400, 900, minsize=(1200, 800))
+            window.transient(self.root)
+            ModuleManagementGUI(window, auth=getattr(self, "auth", None))
+            window.deiconify()
+        except Exception as e:
+            logger.exception("Failed to open Module Management")
+            messagebox.showerror(_t('gui.academics.module_scheduling.main.dialogs.error', default="Error"),
+                                 f"Failed to open Module Management: {e}", parent=self.root)
+
+    def quick_add_module(self):
+        """Dashboard quick action: the shared add-module form."""
+        from education_system.systems.university.domains.academics.interfaces.gui._module_dialog import (
+            open_module_dialog,
+        )
+        open_module_dialog(self.root, mode="add",
+                           on_saved=lambda code: self.log_activity(f"Module added: {code}"))
 
     def create_menu_bar(self):
         """Create the application menu bar with role-based access"""
@@ -385,13 +491,13 @@ class ModuleSchedulingGUI:
             file_menu.add_command(label=_t("scheduling.restore"), command=self.restore_backup)
             file_menu.add_separator()
 
-        self._bind_shortcut(file_menu, _t("menu.exit"), self.on_closing,
+        self._bind_shortcut(file_menu, _t("menu.exit", default="Exit"), self.on_closing,
                             accelerator="Ctrl+Q", sequence="<Control-q>")
 
         # Staff and Admin can manage modules
         if is_admin or is_staff:
             file_menu.add_separator()
-            file_menu.add_command(label=_t("scheduling.manage_modules"), command=self.show_modules_tab)
+            file_menu.add_command(label=_t("scheduling.manage_modules"), command=self.open_module_management)
 
         # View menu
         view_menu = tk.Menu(menubar, tearoff=0)
@@ -450,16 +556,16 @@ class ModuleSchedulingGUI:
         open_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label=_t('gui.academics.module_scheduling.main.menus.open', default="Open"), menu=open_menu)
         open_menu.add_command(
-            label=_t('gui.academics.module_scheduling.main.menus.exam_scheduler', default="Exam Scheduler"),
-            command=lambda: open_exam_gui(self.root, getattr(self, "auth", None)),
+            label=_t('gui.academics.module_scheduling.main.menus.exam_scheduler', default="Exam Management"),
+            command=lambda: open_exam_gui(self.root, self.auth),
         )
         open_menu.add_command(
             label=_t('gui.academics.module_scheduling.main.menus.grade_tracking', default="Grade Tracking"),
-            command=lambda: open_grade_gui(self.root, getattr(self, "auth", None)),
+            command=lambda: open_grade_gui(self.root, self.auth),
         )
         open_menu.add_command(
             label=_t('gui.academics.module_scheduling.main.menus.course_management', default="Course Management"),
-            command=lambda: open_course_gui(self.root, getattr(self, "auth", None)),
+            command=lambda: open_course_gui(self.root, self.auth),
         )
 
         # Cross-domain tools (instructor workload, at-risk, module timeline)
@@ -480,10 +586,7 @@ class ModuleSchedulingGUI:
         )
         cross_menu.add_command(
             label=_t('gui.academics.module_scheduling.main.menus.module_timeline', default="Module timeline…"),
-            command=lambda: (
-                lambda mc=_simpledialog.askstring("Module timeline", "Module code:"):
-                    show_module_timeline_dialog(self.root, mc) if mc else None
-            )(),
+            command=self._pick_module_for_timeline,
         )
 
         # Help menu
@@ -535,15 +638,19 @@ class ModuleSchedulingGUI:
         timestamp = datetime.now().strftime("%H:%M:%S")
         log_entry = f"[{timestamp}] {message}\n"
 
-        # Update dashboard activity
-        self.activity_text.config(state=tk.NORMAL)
-        self.activity_text.insert(1.0, log_entry)
-        # Keep only last 100 lines
-        lines = self.activity_text.get(1.0, tk.END).split('\n')
-        if len(lines) > 100:
-            self.activity_text.delete(1.0, tk.END)
-            self.activity_text.insert(1.0, '\n'.join(lines[:100]))
-        self.activity_text.config(state=tk.DISABLED)
+        # Update dashboard activity. The panel is a table over ``activity_log``
+        # now, with this window's own messages listed above the stored history;
+        # keep the newest 100 of them.
+        session = getattr(self, "_session_activity", None)
+        if session is not None:
+            session.insert(0, (timestamp, message))
+            del session[100:]
+            refresh = getattr(self, "load_recent_activity", None)
+            if callable(refresh):
+                try:
+                    refresh()
+                except Exception:
+                    logger.debug("could not refresh the activity table", exc_info=True)
 
         # Update management log
         self.log_text.config(state=tk.NORMAL)
@@ -556,16 +663,24 @@ class ModuleSchedulingGUI:
 
     def refresh_all_data(self):
         """Refresh all data in the interface"""
+        from education_system.systems.university.infrastructure.database.db import reuse_connection
         try:
             self.update_status("Refreshing data...")
-            self.refresh_dashboard()
-            self.refresh_schedules()
-            self.refresh_rooms()
-            self.refresh_instructors()
-            self.refresh_conflicts()
-            self.refresh_holidays()
-            self.load_settings()
-            self.refresh_modules()
+            # These eight refreshes opened 11 separate connections between
+            # them, and a fresh connection to student_records.db costs ~97ms
+            # (the first statement opens the file and parses the schema) —
+            # ~1.1s of pure setup before the window showed any data. Sharing
+            # one connection for the burst pays that once. The refresh methods
+            # are unchanged; their `with get_connection() as conn:` calls
+            # transparently receive the shared connection inside this block.
+            with reuse_connection():
+                self.refresh_dashboard()
+                self.refresh_schedules()
+                self.refresh_rooms()
+                self.refresh_instructors()
+                self.refresh_conflicts()
+                self.refresh_holidays()
+                self.load_settings()
             self.update_status("Data refreshed successfully")
         except Exception as e:
             self.update_status(f"Error refreshing data: {str(e)}")
@@ -579,118 +694,129 @@ class ModuleSchedulingGUI:
             except Exception as e:
                 messagebox.showerror(_t('gui.academics.module_scheduling.main.dialogs.error', default="Error"), f"Failed to return to main menu: {str(e)}", parent=self.root)
 
+    #: The user guide, as (section, accent, [(action, what it does), ...]).
+    #: Data rather than one long string, so it renders as cards and can be
+    #: edited without touching layout code.
+    _USER_GUIDE = [
+        ("Dashboard", "#3498db", [
+            ("Overview", "Live counts for schedules, rooms, instructors and open conflicts."),
+            ("Recent activity", "The recorded activity log, with anything this window has done listed above it."),
+        ]),
+        ("Schedules", "#16a34a", [
+            ("Add a session", "Pick the course first — the module list narrows to that course's modules. Rooms are listed on open and filter by building."),
+            ("Edit or delete", "Select a row, or press Delete on the list."),
+            ("Drag and drop", "Timetables → drag a session to a new slot. Confirming emails every student on the module and the instructor."),
+        ]),
+        ("Rooms and instructors", "#9b59b6", [
+            ("Rooms", "Capacity, type and equipment; used by conflict detection and by Suggest Free Rooms."),
+            ("Instructors", "Records, availability and maximum hours, which drive the workload report."),
+        ]),
+        ("Conflicts", "#dc2626", [
+            ("Detect all", "Finds room double-bookings, instructor and student clashes, and over-capacity rooms."),
+            ("Resolve selected", "Room and capacity conflicts are fixed by moving the session to a free, large-enough room. Instructor and student clashes need a person and are left with a note."),
+            ("Resolve all", "Applies that fix to every conflict it can, then reports what it changed and what it left."),
+        ]),
+        ("Analytics", "#d97706", [
+            ("Reports", "Room utilisation, instructor workload, peak usage and the comprehensive report."),
+            ("Save", "Every report saves anywhere as PDF, CSV or TXT, or emails to an administrator."),
+            ("Charts", "Generate charts, then save a copy where you want it."),
+        ]),
+        ("Settings and data", "#7f8c8d", [
+            ("System settings", "Institution name comes from Branding & Customization and the semester dates from the academic calendar. Both are shown read-only here — change them where they are owned, so every screen agrees."),
+            ("Holidays", "Adding a holiday also puts it on the academic calendar."),
+            ("Backups", "Backup, restore and validate under Management."),
+        ]),
+    ]
+
     def show_help(self):
-        """Show user guide"""
-        help_window = tk.Toplevel(self.root)
-        help_window.title(_t('gui.academics.module_scheduling.main.windows.user_guide', default="User Guide"))
-        help_window.geometry("700x500")
-
-        help_text = scrolledtext.ScrolledText(help_window, font=('Arial', 10))
-        help_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-
-        guide_content = """
-ENHANCED MODULE SCHEDULING SYSTEM - USER GUIDE
-
-OVERVIEW:
-This system provides comprehensive module scheduling and timetable management
-capabilities with advanced analytics, conflict detection, and reporting features.
-
-MAIN FEATURES:
-
-📊 DASHBOARD:
-- View system statistics and overview
-- Quick access to common actions
-- Recent activity monitoring
-
-📅 SCHEDULES:
-- Add, edit, and delete module schedules
-- Search and filter schedules
-- Automatic conflict detection
-
-🏢 ROOMS:
-- Manage room information
-- Track room utilization
-- Room capacity and equipment details
-
-👨‍🏫 INSTRUCTORS:
-- Instructor information management
-- Workload tracking and analysis
-- Department organization
-
-📋 TIMETABLES:
-- Generate student and instructor timetables
-- Multiple export formats (PDF, CSV, Excel, iCal)
-- Conflict checking for students
-
-📊 ANALYTICS:
-- Room utilization reports
-- Instructor workload analysis
-- Peak usage statistics
-- Visual charts and graphs
-
-⚠️ CONFLICTS:
-- Automatic conflict detection
-- Room and instructor double-booking detection
-- Student schedule conflict checking
-- Conflict resolution tracking
-
-💾 MANAGEMENT:
-- Database backup and restore
-- Data validation and repair
-- Import/export capabilities
-- Schedule templates
-
-⚙️ SETTINGS:
-- System configuration
-- Holiday management
-- Academic calendar
-- Email notifications
-
-GETTING STARTED:
-
-1. Start by adding rooms in the Rooms tab
-2. Add instructors in the Instructors tab
-3. Create module schedules in the Schedules tab
-4. Generate timetables in the Timetables tab
-5. Use Analytics to monitor system usage
-6. Check for conflicts regularly
-
-TIPS:
-- Use the search functionality to quickly find information
-- Regular backups are recommended
-- Check for conflicts after making schedule changes
-- Use templates to save and reuse common schedule patterns
-
-For technical support or additional features, refer to the original
-command-line interface using the CLI Mode button.
-        """
-
-        help_text.insert(tk.END, guide_content)
-        help_text.config(state=tk.DISABLED)
+        """User guide, as titled cards rather than one block of text."""
+        from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui import (
+            report_widgets as _report,
+        )
+        window, surface = _report.report_window(
+            self.root, _t('gui.academics.module_scheduling.main.windows.user_guide', default="User Guide"),
+            "780x660")
+        _report.banner(surface, "Module Scheduling — user guide",
+                       "How to do the common jobs in this window")
+        for title, accent, entries in self._USER_GUIDE:
+            body = _report.card(surface, title, accent=accent)
+            _report.kv_grid(body, entries, cols=1)
+        window.lift()
 
     def show_about(self):
-        """Show about dialog"""
-        about_text = """
-Enhanced Module Scheduling System - GUI Version
+        """About window.
 
-A comprehensive solution for academic scheduling and timetable management.
-
-Features:
-• Advanced scheduling with conflict detection
-• Analytics and reporting capabilities
-• Multiple export formats
-• Data backup and validation
-• Template management
-• Visual charts and graphs
-
-This GUI version maintains full backward compatibility with the original
-command-line interface while providing an intuitive graphical interface.
-
-Version: 2.0
-Developer: Academic Systems Team
+        Was a messagebox holding "Version: 2.0 … maintains full backward
+        compatibility with the original command-line interface" — it named
+        none of the eleven tabs that exist and was several major versions out
+        of date. A messagebox also sizes to its text, which pushed its button
+        out of view; this uses the same window style as the user guide, whose
+        close button is anchored to the bottom.
         """
+        from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui import (
+            report_widgets as _report,
+        )
+        try:
+            from importlib.metadata import version as _dist_version
+            version = _dist_version("education-system")
+        except Exception:
+            version = "unknown"
 
-        messagebox.showinfo(_t('gui.academics.module_scheduling.main.dialogs.about', default="About"), about_text, parent=self.root)
+        window, surface = _report.report_window(
+            self.root, _t('gui.academics.module_scheduling.main.dialogs.about', default="About"),
+            "720x620")
+        _report.banner(surface, "Module Scheduling",
+                       f"Part of the University System · version {version}")
+        _report.stat_strip(surface, [
+            (self._about_count("module_schedule"), "Scheduled sessions"),
+            (self._about_count("rooms"), "Rooms"),
+            (self._about_count("modules"), "Modules"),
+            (self._about_count("schedule_conflicts", "resolved = 0"), "Open conflicts"),
+        ])
+
+        body = _report.card(surface, "What this window does", accent="#3498db")
+        tk.Label(body,
+                 text="Builds and maintains the teaching timetable: sessions, "
+                      "rooms, instructors and lesson plans, with conflict "
+                      "detection, utilisation and workload reporting, and "
+                      "bulk tools for rollover and cloning.",
+                 bg=_report.CARD, fg=_report.VALUE, font=(_report.FONT, 9),
+                 wraplength=620, justify="left").pack(anchor="w")
+
+        body = _report.card(surface, "Tabs", accent="#9b59b6")
+        _report.kv_grid(body, [
+            ("Dashboard", "Counts and recorded activity"),
+            ("Schedules", "Add, edit and delete sessions"),
+            ("Rooms", "Room records and capacity"),
+            ("Instructors", "Instructor records and availability"),
+            ("Timetables", "Grid views, including drag-and-drop"),
+            ("Analytics", "Utilisation, workload, peak usage, charts"),
+            ("Conflicts", "Detect and resolve clashes"),
+            ("Lesson plans", "Per-session teaching plans"),
+            ("Management", "Backup, restore, validation, bulk reports"),
+            ("Settings", "System settings and holidays"),
+            ("Modules", "Module records"),
+        ], cols=1)
+
+        body = _report.card(surface, "Related screens", accent="#16a34a")
+        _report.kv_grid(body, [
+            ("Open menu", "Exam Management, Grade Tracking, Course Management"),
+            ("Cross-domain", "Instructor workload, at-risk students, module timeline"),
+        ], cols=1)
+
+        tk.Label(surface, text="Python · Tkinter · SQLite",
+                 bg=_report.BG, fg=_report.MUTED,
+                 font=(_report.FONT, 8)).pack(anchor="w", padx=12, pady=(4, 10))
+        window.lift()
+
+    def _about_count(self, table, where=""):
+        """Row count for the About panel, or an em dash."""
+        try:
+            with get_connection(str(DEFAULT_DB_PATH), row_factory=False) as conn:
+                clause = f" WHERE {where}" if where else ""
+                return conn.execute(f"SELECT COUNT(*) FROM {table}{clause}").fetchone()[0]
+        except Exception:
+            return "\u2014"
 
     def show_language_selector(self):
         """Show language selection dialog"""

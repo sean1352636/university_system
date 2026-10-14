@@ -90,7 +90,7 @@ class IntegrationService:
                              WHERE a.date = e.date
                                AND a.status = 'absent'),
                             0) AS abs_count
-                   FROM academic_calendar_events e
+                   FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') e
                    WHERE e.date BETWEEN ? AND ?
                    ORDER BY e.date""", (start, end)).fetchall()
         except sqlite3.Error:
@@ -219,7 +219,7 @@ class IntegrationService:
                     vals[3] = "0"
                     tree.item(node, values=vals)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             messagebox.showinfo(
                 "Auto-excused",
                 f"Excused {updated} absence(s) on {iso_date}.",
@@ -280,7 +280,7 @@ class IntegrationService:
             top = tk.Toplevel(self.ctx.parent)
             top.title(f"Module Scheduling — {mc}")
             try:
-                gui = ModuleSchedulingGUI(top)
+                gui = ModuleSchedulingGUI(top, auth=getattr(self, 'auth', None))
                 auth = getattr(self.ctx, "auth", None)
                 if auth is not None and hasattr(gui, "set_auth"):
                     try:
@@ -290,11 +290,11 @@ class IntegrationService:
                 try:
                     gui.notebook.select(1)
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
                 try:
                     gui.schedule_search_var.set(mc)
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
                 # (#5) If the caller picked a specific schedule row, open its
                 # EditScheduleDialog so they're editing the row they clicked.
                 if schedule_id is not None:
@@ -339,7 +339,7 @@ class IntegrationService:
             try:
                 _refresh()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         def _pregenerate() -> None:
             """(#1) Materialise individual session dates from the schedule rows.
@@ -362,7 +362,7 @@ class IntegrationService:
             try:
                 _refresh()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         def _populate(tree, rows):
             for r in tree.get_children():
@@ -998,7 +998,7 @@ class IntegrationService:
                         vals[3] = "✓"
                         tree.item(sel[0], values=vals)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             messagebox.showinfo(
                 "Penalty applied",
                 f"Recorded penalty for {sid} on {module} and notified "

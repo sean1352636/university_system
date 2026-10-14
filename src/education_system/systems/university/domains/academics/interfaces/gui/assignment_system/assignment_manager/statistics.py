@@ -3,7 +3,9 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 
 
@@ -13,7 +15,7 @@ class StatisticsMixin:
     def show_assignment_statistics(self):
         """Show statistics for all assignments"""
         try:
-            stats_window = tk.Toplevel(self.root)
+            stats_window = make_toplevel(self.root)
             stats_window.title(_t('gui.academics.assignment_system.assignment_manager.statistics.windows.assignment_statistics', default="Assignment Statistics"))
             stats_window.geometry("900x600")
             stats_window.transient(self.root)

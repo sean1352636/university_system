@@ -185,7 +185,7 @@ def panel_ucas_status() -> Panel:
     panel = Panel("UCAS applications", ("Status", "Applications", ""))
 
     def _go():
-        from education_system.systems.sixth_form.domain.progression.ucas import ucas
+        from education_system.systems.sixth_form.domain.progression.university import ucas
         return ucas.list_applications()
 
     apps = _safe(_go)

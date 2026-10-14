@@ -142,7 +142,7 @@ class LotsMixin:
 
         # Insert lot
         cursor.execute('''
-        INSERT INTO parking_lots VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO parking_lots (lot_id, lot_name, location, total_spaces, available_spaces, zone, hours_of_operation) VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', (
             lot_id,
             data['lot_name'],

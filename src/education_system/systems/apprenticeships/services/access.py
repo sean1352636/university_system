@@ -125,8 +125,14 @@ def resolve(user_info: dict[str, Any] | None, role: str | None = None) -> Actor:
         # the least-privileged role that can still do a day's work.
         resolved_role = _map_platform_role(resolved_role)
 
-    actor = Actor(username=username, role=resolved_role, display_name=display_name)
-    return _attach_scope(actor)
+    actor = _attach_scope(Actor(username=username, role=resolved_role, display_name=display_name))
+    if actor.role == config.APPRENTICE and actor.apprentice_id is not None:
+        # Sign-in is where an account from before automatic linking meets
+        # it, so the learner-record link is checked here too.
+        from education_system.systems.apprenticeships.services import login_links
+
+        login_links.try_sync_username(actor.username)
+    return actor
 
 
 def _role_from_user_info(user_info: dict[str, Any] | None) -> str | None:

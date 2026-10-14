@@ -1,51 +1,11 @@
-"""Barber Shop GUI - Shared imports, constants, and flags.
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.interfaces.gui.barber.common`` (campus commerce plugin).
 
-All mixin modules import from here to avoid circular dependencies
-and keep import boilerplate in one place.
+The old name *is* the new module object, so ``mock.patch`` and
+``monkeypatch`` targets still act on the real code. Delete once nothing
+imports the old path.
 """
+# layout-shim: education_system.systems.university.plugins.campus_commerce.interfaces.gui.barber.common
+import importlib as _importlib
+import sys as _sys
 
-import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
-import logging
-import csv
-import json
-from datetime import datetime, timedelta
-from typing import Optional, List, Dict
-
-from education_system.systems.university.infrastructure.i18n import get_text as _t
-from education_system.systems.university.infrastructure.database.db import get_db_connection, transaction
-from education_system.systems.university.infrastructure.activity_logger import log_activity
-
-# Authentication imports
-try:
-    from education_system.systems.university.infrastructure.shared_context import get_auth, _DummyAuth
-    AUTH_AVAILABLE = True
-except ImportError:
-    AUTH_AVAILABLE = False
-    get_auth = None
-    _DummyAuth = None
-
-# Finance integration imports
-try:
-    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
-        record_payment_to_finance,
-        get_student_finance_account_balance,
-        process_student_finance_account_payment,
-        ensure_student_finance_account_exists
-    )
-    FINANCE_AVAILABLE = True
-except ImportError:
-    FINANCE_AVAILABLE = False
-    record_payment_to_finance = None
-
-# Email imports
-try:
-    from education_system.systems.university.infrastructure.email.email_service import send_email
-    from education_system.systems.university.infrastructure.email.template_utils import render_template
-    EMAIL_AVAILABLE = True
-except ImportError:
-    EMAIL_AVAILABLE = False
-    send_email = None
-    render_template = None
-
-logger = logging.getLogger(__name__)
+_sys.modules[__name__] = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.interfaces.gui.barber.common")

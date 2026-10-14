@@ -14,7 +14,7 @@ Quick guide for system administrators to access and use monitoring features.
 
 ```bash
 source venv/bin/activate
-python run.py --cli
+python -m education_system --cli
 ```
 
 ### 2. Login as Admin

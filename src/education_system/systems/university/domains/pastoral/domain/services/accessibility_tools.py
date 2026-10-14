@@ -6,6 +6,10 @@ alternative materials, and assistive technology.
 """
 
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
+
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
@@ -142,7 +146,7 @@ class AccommodationRequestManager:
                         accommodation_type=row[1] or "general",
                     )
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
         except Exception as e:
             raise Exception(f"Error reviewing request: {e}")
 
@@ -208,7 +212,7 @@ class ExamAccommodationManager:
                     exam_id=exam_id,
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             return accommodation_id
         except Exception as e:
             raise Exception(f"Error creating accommodation: {e}")

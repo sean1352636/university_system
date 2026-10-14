@@ -267,7 +267,7 @@ def _send_email_via_gui(self, to_email, subject, message):
         """Try to send email via email GUI"""
         try:
             # Try to import and use email GUI
-            from education_system.systems.university.interfaces.gui.shell.email.email_gui import EmailManagerGUI as EmailGUI
+            from education_system.systems.university.shell.gui.email.email_gui import EmailManagerGUI as EmailGUI
 
             # Create email GUI instance (note: may need auth parameter)
             email_gui = EmailGUI(self.root, None)  # May need to pass auth if available

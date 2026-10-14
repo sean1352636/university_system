@@ -1,11 +1,11 @@
-"""Compatibility wrapper for the relocated POS GUI.
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.domain.bakery_shop.tabs_advanced.tab_pos`` (campus commerce plugin).
 
-Prefer importing :class:`POSTabMixin` from
-``education_system.systems.university.domains.operations.interfaces.gui.commerce.bakery_shop.pos``.
+The old name *is* the new module object, so ``mock.patch`` and
+``monkeypatch`` targets still act on the real code. Delete once nothing
+imports the old path.
 """
+# layout-shim: education_system.systems.university.plugins.campus_commerce.domain.bakery_shop.tabs_advanced.tab_pos
+import importlib as _importlib
+import sys as _sys
 
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.bakery_shop.pos import (
-    POSTabMixin,
-)
-
-__all__ = ["POSTabMixin"]
+_sys.modules[__name__] = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.domain.bakery_shop.tabs_advanced.tab_pos")

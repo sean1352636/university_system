@@ -341,7 +341,7 @@ def init_ai_tables():
                     sustainability_score REAL,
                     notes TEXT,
                     recorded_date TEXT,
-                    FOREIGN KEY (event_id) REFERENCES union_events (event_id),
+                    FOREIGN KEY (event_id) REFERENCES unified_events (event_id),
                     FOREIGN KEY (club_id) REFERENCES student_clubs (club_id)
                 )
         ''')

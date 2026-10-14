@@ -1,0 +1,9 @@
+{
+    "subject": "📝 Your health appointment has been updated (Ref #$appointment_id)",
+    "body": "Dear $student_name,\n\nYour appointment with the University Health Centre has been updated by $updated_by. The changes are listed below so you can see exactly what is different.\n\n=== WHAT CHANGED ===\n$change_list\n\n=== YOUR APPOINTMENT AS IT STANDS NOW ===\nReference Number: $appointment_id\nType: $appointment_type\nDate: $appointment_date\nTime: $appointment_time\nProvider: $provider\nStatus: $status\n\nReason:\n$reason\n\nNotes:\n$notes\n\nUpdated On: $updated_at\n\n=== DO YOU NEED TO DO ANYTHING? ===\nIf the date, time or provider changed, check the new details still work for you and tell us as soon as possible if they do not. If only the reason or notes changed, no action is needed.\n\n=== BEFORE YOU COME ===\nArrive 15 minutes early, bring your student ID, and let us know on arrival if your symptoms have changed.\n\n=== IF THIS IS NOT RIGHT ===\nIf you did not expect these changes, contact the Health Centre quoting reference $appointment_id. Any change can be reversed.\n\n=== CONTACT INFORMATION ===\nHealth Centre: health@university.edu\nPhone: (555) 123-4567\nOffice Hours: Monday-Friday, 9:00 AM - 5:00 PM\n\nBest regards,\nUniversity Health Centre\n\n$signature",
+    "variables": {
+        "reason": {"default": "Not recorded."},
+        "notes": {"default": "None recorded."},
+        "change_list": {"default": "  (no changes recorded)"}
+    }
+}

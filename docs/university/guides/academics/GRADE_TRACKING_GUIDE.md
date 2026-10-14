@@ -54,7 +54,7 @@ The Grade Tracking system provides comprehensive grade management with 24 specia
 Main Menu → Academics → Grade Tracking → Grade Entry
 
 # CLI
-python run.py --cli
+python -m education_system --cli
 > Select: Academic Management → Grades → Enter Grades
 ```
 
@@ -67,7 +67,7 @@ python run.py --cli
 Main Menu → Student Portal → My Grades
 
 # CLI
-python run.py --cli
+python -m education_system --cli
 > Select: Student Portal → View Grades & GPA
 ```
 

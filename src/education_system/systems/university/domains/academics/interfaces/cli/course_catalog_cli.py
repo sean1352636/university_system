@@ -466,6 +466,7 @@ def _update_course():
             set_parts.append("last_modified = CURRENT_TIMESTAMP")
             values.append(course_code)
 
+            # db-audit: ignore[DBW001] - join over a code-controlled list
             conn.execute(
                 f"UPDATE courses SET {', '.join(set_parts)} "
                 f"WHERE course_code = ?",
@@ -882,6 +883,7 @@ def _update_course_offering():
             set_parts.append("last_modified = CURRENT_TIMESTAMP")
             values.append(offering_id)
 
+            # db-audit: ignore[DBW001] - join over a code-controlled list
             conn.execute(
                 f"UPDATE course_offerings SET {', '.join(set_parts)} "
                 f"WHERE offering_id = ?",

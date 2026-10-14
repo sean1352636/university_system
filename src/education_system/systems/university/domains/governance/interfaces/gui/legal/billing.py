@@ -48,7 +48,7 @@ class BillingMixin:
                           description, self.current_user.get('username'), datetime.now().isoformat()))
                     payment_row_id = cursor.lastrowid
                 except Exception:
-                    pass  # payments table may not exist
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 # Auto-post to GL if the INSERT succeeded (never raises)
                 if payment_row_id is not None:
@@ -75,7 +75,7 @@ class BillingMixin:
                         ''', (account[0], client_id, amount, description,
                               self.current_user.get('username'), datetime.now().isoformat()))
                 except Exception:
-                    pass  # Finance tables may not exist
+                    logger.debug("Suppressed exception", exc_info=True)
 
             log_activity('record_payment', 'legal_services', details={
                 'client_id': client_id,

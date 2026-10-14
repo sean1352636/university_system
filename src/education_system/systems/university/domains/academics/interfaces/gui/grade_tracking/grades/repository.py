@@ -60,6 +60,7 @@ class GradeRepositoryMixin:
             if IMMUTABLE_AUDIT_AVAILABLE:
                 user_id, session_id = get_gui_context()
                 require_grade_audit(
+                    conn=cursor.connection,
                     action=AuditAction.RECORD_DELETE,
                     user_id=user_id,
                     resource_type='grade',

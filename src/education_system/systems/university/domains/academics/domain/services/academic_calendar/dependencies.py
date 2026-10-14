@@ -33,8 +33,8 @@ class EventDependencyManager:
                 delay_hours INTEGER DEFAULT 0,
                 is_mandatory BOOLEAN DEFAULT TRUE,
                 created_at TEXT NOT NULL,
-                FOREIGN KEY (prerequisite_event_id) REFERENCES academic_calendar_events (id) ON DELETE CASCADE,
-                FOREIGN KEY (dependent_event_id) REFERENCES academic_calendar_events (id) ON DELETE CASCADE,
+                FOREIGN KEY (prerequisite_event_id) REFERENCES unified_events (source_event_id) ON DELETE CASCADE,
+                FOREIGN KEY (dependent_event_id) REFERENCES unified_events (source_event_id) ON DELETE CASCADE,
                 UNIQUE(prerequisite_event_id, dependent_event_id)
             )''')
 
@@ -60,7 +60,7 @@ class EventDependencyManager:
                 completion_status TEXT DEFAULT 'pending',
                 completion_date TEXT,
                 FOREIGN KEY (workflow_id) REFERENCES event_workflows (id) ON DELETE CASCADE,
-                FOREIGN KEY (event_id) REFERENCES academic_calendar_events (id) ON DELETE CASCADE
+                FOREIGN KEY (event_id) REFERENCES unified_events (source_event_id) ON DELETE CASCADE
             )''')
 
         except Exception as e:
@@ -80,7 +80,7 @@ class EventDependencyManager:
                     raise ValidationError(f"Invalid event ID: {event_id}")
 
                 event_exists = self.db_manager.execute_query(
-                    "SELECT id FROM academic_calendar_events WHERE id = ?", (event_id,)
+                    "SELECT id FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') WHERE id = ?", (event_id,)
                 )
                 if not event_exists:
                     raise ValidationError(f"Event not found: {event_id}")
@@ -142,7 +142,7 @@ class EventDependencyManager:
             SELECT ed.prerequisite_event_id, ed.delay_days, ed.delay_hours,
                    e.date, e.date_end
             FROM event_dependencies ed
-            JOIN academic_calendar_events e ON ed.prerequisite_event_id = e.id
+            JOIN (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') e ON ed.prerequisite_event_id = e.id
             WHERE ed.dependent_event_id = ? AND ed.is_mandatory = TRUE
             ''', (event_id,))
 
@@ -171,9 +171,7 @@ class EventDependencyManager:
 
                 # Update the dependent event
                 self.db_manager.execute_update('''
-                UPDATE academic_calendar_events SET date_start = ?, last_modified = ?
-                WHERE id = ? AND date_start < ?
-                ''', (new_start_date.strftime("%Y-%m-%d"),
+                UPDATE unified_events SET start_datetime = ?, updated_at = ? WHERE source_type = 'academic_calendar' AND (source_event_id = ? AND start_datetime < ?)''', (new_start_date.strftime("%Y-%m-%d"),
                      datetime.now().isoformat(), event_id,
                      new_start_date.strftime("%Y-%m-%d")))
 
@@ -211,7 +209,7 @@ class EventDependencyManager:
         try:
             # Get base event
             rows = self.db_manager.execute_query(
-                "SELECT * FROM academic_calendar_events WHERE id = ?", (base_event_id,)
+                "SELECT * FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') WHERE id = ?", (base_event_id,)
             )
             if not rows:
                 return []

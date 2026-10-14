@@ -1,0 +1,18 @@
+{
+  "template_name": "outstanding_work_reminder",
+  "description": "Reminder to a student listing the assignments, assessments and online exams they have not yet submitted, each with its due date. Sent from the student record's View Grades window.",
+  "category": "academics",
+  "subject": "Outstanding work reminder — $item_count item(s) not yet submitted",
+  "body": "Dear $first_name,\n\nOur records show the following work has not been submitted yet. Please check each item and submit before its deadline.\n\nOutstanding items ($item_count)\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n$outstanding_items\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nIf you have already submitted something on this list, it may not have been recorded — contact your module leader so it can be checked.\n\nIf you are having difficulty meeting a deadline, speak to your module leader or personal tutor as early as you can. Extensions and mitigating circumstances have to be arranged before the deadline passes wherever possible.\n\nStudent ID: $student_id\nGenerated: $generated_at\n\nKind regards,\n$sender_name\nUniversity Academic Office\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nThis is an automated reminder. Please do not reply to this email.",
+  "variables": [
+    "first_name",
+    "student_id",
+    "item_count",
+    "outstanding_items",
+    "generated_at",
+    "sender_name"
+  ],
+  "recipients": ["student"],
+  "priority": "normal",
+  "active": true
+}

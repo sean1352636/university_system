@@ -244,14 +244,17 @@ SUMMARY:
 
     def create_overview_chart(self, outstanding, this_month, ytd, investment):
         """Create overview visualization"""
-        if not MATPLOTLIB_AVAILABLE:
+        # Read through _shared, not as a bare global: finance_shared resolves
+        # matplotlib on first access, so these names are absent from the
+        # globals() splice at the top of this module.
+        if not _shared.MATPLOTLIB_AVAILABLE:
             return
 
         try:
             for widget in self.overview_chart_frame.winfo_children():
                 widget.destroy()
 
-            fig = Figure(figsize=(10, 6), dpi=100)
+            fig = _shared.Figure(figsize=(10, 6), dpi=100)
 
             ax1 = fig.add_subplot(1, 2, 1)
             categories = ['Outstanding Fines', 'Collected (Month)', 'YTD Revenue', 'Book Investment']
@@ -276,7 +279,7 @@ SUMMARY:
             ax2.set_title('Financial Metrics Comparison', fontsize=12, fontweight='bold')
 
             fig.tight_layout()
-            canvas = FigureCanvasTkAgg(fig, master=self.overview_chart_frame)
+            canvas = _shared.FigureCanvasTkAgg(fig, master=self.overview_chart_frame)
             canvas.draw()
             canvas.get_tk_widget().pack(fill='both', expand=True)
 

@@ -285,6 +285,7 @@ class AttendanceDataService:
         days = int(days)  # defensive: enforce integer for the trigger DDL
         try:
             _set_setting(self.ctx.db, "lock_days", days)
+            # db-audit: ignore[DBW001] - value coerced to a scalar (last assignment before use)
             self.ctx.db.cur.executescript(f"""
                 DROP TRIGGER IF EXISTS abs_lock_update;
                 CREATE TRIGGER abs_lock_update

@@ -1670,9 +1670,7 @@ def ucas_peers(university: str,
         raise ValidationError("university is required")
     cc = (course_code or "").strip().lower() or None
     out: list[UcasPeer] = []
-    from education_system.systems.sixth_form.domain.progression.ucas import (
-        ucas as u,
-    )
+    from education_system.systems.sixth_form.domain.progression.university import ucas as u
     for app in u.list_applications():
         for ch in u.list_choices(app.application_id):
             if uni not in (ch.university or "").lower():
@@ -1689,9 +1687,7 @@ def ucas_peers(university: str,
 def ucas_choice_clusters(*, by_course: bool = False,
                          min_size: int = 2) -> list[UcasCluster]:
     """Group students by shared UCAS university (and optionally course)."""
-    from education_system.systems.sixth_form.domain.progression.ucas import (
-        ucas as u,
-    )
+    from education_system.systems.sixth_form.domain.progression.university import ucas as u
     buckets: dict[tuple[str, str | None], list[str]] = {}
     for app in u.list_applications():
         for ch in u.list_choices(app.application_id):
@@ -2750,9 +2746,7 @@ def _search_ucas(parsed: ParsedQuery,
                  _filters: dict) -> list[Hit]:
     out: list[Hit] = []
     try:
-        from education_system.systems.sixth_form.domain.progression.ucas import (
-            ucas as u,
-        )
+        from education_system.systems.sixth_form.domain.progression.university import ucas as u
         for a in u.list_applications():
             choices_text = ""
             try:
@@ -2784,9 +2778,7 @@ def _search_ucas(parsed: ParsedQuery,
     except Exception:
         logger.exception("UCAS adapter (applications) failed")
     try:
-        from education_system.systems.sixth_form.domain.progression.references import (
-            references as r,
-        )
+        from education_system.systems.sixth_form.domain.progression.university import references as r
         for ref in r.list_references():
             doc = {
                 "id":          f"ref:{ref.reference_id}",

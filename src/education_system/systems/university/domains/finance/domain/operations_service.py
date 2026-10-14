@@ -279,6 +279,7 @@ class FinanceOperationsService:
         if table not in READABLE_TABLES:
             raise ValueError("Invalid table")
         with self.connect() as c:
+            # db-audit: ignore[DBW001] - statement builds SQL without splicing a value
             return [dict(r) for r in c.execute(f"SELECT * FROM {table} ORDER BY id DESC LIMIT 500")]
 
     def cash_summary(self):

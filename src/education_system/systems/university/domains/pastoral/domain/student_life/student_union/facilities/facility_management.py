@@ -1,6 +1,7 @@
 # Standard library imports
 import os
 import random
+import re
 from education_system.systems.university.infrastructure.database.db import sqlite3
 import string
 from datetime import datetime
@@ -8,10 +9,23 @@ from typing import Optional
 
 # Local imports
 from education_system.systems.university.infrastructure.database.db import DatabaseManager, get_connection
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.calendar_bridge import (
+    mirror as _mirror_to_calendar,
+)
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.identity import (
+    current_student_id as _current_student_id,
+    contact_email as _contact_email,
+    admin_recipients as _admin_recipients,
+)
 try:
-    from education_system.systems.university.infrastructure.email import send_confirmation_email
+    from education_system.systems.university.infrastructure.email import (
+        send_confirmation_email, send_email,
+    )
 except Exception:  # pragma: no cover - optional dependency
     def send_confirmation_email(*_args, **_kwargs):
+        return False
+
+    def send_email(*_args, **_kwargs):
         return False
 
 try:
@@ -57,15 +71,13 @@ def manage_equipment_system():
         cursor = conn.cursor()
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, auth)
 
-        if not result:
+        if not student_id:
             print("No student record is associated with your account.")
             conn.close()
             return
 
-        student_id = result[0]
 
         while True:
             print("\nEquipment Management System")
@@ -219,6 +231,69 @@ def view_equipment_details(equipment_id, cursor):
     except Exception as e:
         print(f"An error occurred: {e}")
 
+def _email_checkout_confirmation(cursor, student_id, *, equipment_name,
+                                checkout_id, checkout_date, expected_return,
+                                condition_out, notes):
+    """Confirm an equipment checkout by email, through the university mail system."""
+    recipient = _contact_email(cursor, student_id)
+    if not recipient:
+        print("No email address on file — confirmation not sent.")
+        return False
+
+    body = (
+        f"You have checked out Student Union equipment.\n\n"
+        f"Equipment:  {equipment_name}\n"
+        f"Checkout ID: {checkout_id}\n"
+        f"Checked out: {checkout_date}\n"
+        f"Due back:    {expected_return}\n"
+        f"Condition at checkout: {condition_out}\n"
+    )
+    if notes:
+        body += f"Notes: {notes}\n"
+    body += ("\nPlease return the item by the due date. Reply to this message "
+             "if anything is wrong with the item or the dates above.\n")
+
+    try:
+        send_email(recipient, f"Equipment checked out: {equipment_name}", body)
+        print(f"Confirmation emailed to {recipient}.")
+        return True
+    except Exception as e:
+        print(f"Could not send the confirmation email: {e}")
+        return False
+
+
+def _email_return_confirmation(cursor, student_id, *, equipment_name, checkout_id,
+                               actual_return, condition_in, notes,
+                               flagged_for_maintenance=False):
+    """Confirm an equipment return by email, through the university mail system."""
+    recipient = _contact_email(cursor, student_id)
+    if not recipient:
+        print("No email address on file — confirmation not sent.")
+        return False
+
+    body = (
+        f"Your Student Union equipment return has been recorded.\n\n"
+        f"Equipment:   {equipment_name}\n"
+        f"Checkout ID: {checkout_id}\n"
+        f"Returned:    {actual_return}\n"
+        f"Condition on return: {condition_in}\n"
+    )
+    if notes:
+        body += f"Notes: {notes}\n"
+    if flagged_for_maintenance:
+        body += ("\nThe item has been flagged for maintenance based on its "
+                 "condition. Nothing further is needed from you.\n")
+    body += "\nThank you for returning it — nothing is outstanding on this checkout.\n"
+
+    try:
+        send_email(recipient, f"Equipment returned: {equipment_name}", body)
+        print(f"Return confirmation emailed to {recipient}.")
+        return True
+    except Exception as e:
+        print(f"Could not send the return confirmation email: {e}")
+        return False
+
+
 def check_out_equipment(student_id, cursor, conn):
     """Check out equipment to a student"""
     try:
@@ -341,6 +416,24 @@ def check_out_equipment(student_id, cursor, conn):
         print(f"Equipment checked out successfully! Checkout ID: {checkout_id}")
         print(f"Please return by: {expected_return}")
 
+        _email_checkout_confirmation(
+            cursor, student_id,
+            equipment_name=equipment_info[0], checkout_id=checkout_id,
+            checkout_date=checkout_date, expected_return=expected_return,
+            condition_out=condition_out, notes=notes,
+        )
+
+        # The return date is the part that matters on a calendar.
+        if _mirror_to_calendar(
+            name=f"SU Equipment due back: {equipment_info[0]}",
+            kind="equipment_return", date=expected_return,
+            description=notes or f"Equipment checked out on {checkout_date[:10]}",
+            created_by=student_id,
+            source_table="equipment_checkouts", source_id=checkout_id,
+            conn=conn,
+        ):
+            print("The return date is on the university academic calendar.")
+
     except sqlite3.Error as e:
         print(f"Database error: {e}")
     except Exception as e:
@@ -437,6 +530,13 @@ def return_equipment(student_id, cursor, conn):
 
         if new_availability == 'maintenance_required':
             print("Note: Equipment has been marked for maintenance due to its condition.")
+
+        _email_return_confirmation(
+            cursor, student_id,
+            equipment_name=equipment_name, checkout_id=checkout_id,
+            actual_return=actual_return, condition_in=condition_in,
+            notes=notes, flagged_for_maintenance=(new_availability == 'maintenance_required'),
+        )
 
     except sqlite3.Error as e:
         print(f"Database error: {e}")
@@ -813,8 +913,120 @@ def equipment_maintenance_tracking(cursor, conn):
     except Exception as e:
         print(f"An error occurred: {e}")
 
+def _equipment_report_dir():
+    """Where saved Student Union equipment reports land."""
+    from education_system import paths
+    directory = paths.UNIVERSITY_REPORTS_DIR / "student_union" / "equipment"
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory
+
+
+def save_equipment_report(report):
+    """Write a report payload to a timestamped JSON file.
+
+    Returns the path written, or ``None`` if it could not be saved.
+    """
+    import json
+
+    slug = re.sub(r"[^a-z0-9]+", "-", report.get("report", "report").lower()).strip("-")
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    path = _equipment_report_dir() / f"{slug}-{stamp}.json"
+    try:
+        path.write_text(json.dumps(report, indent=2, default=str))
+        return path
+    except OSError as e:
+        print(f"Could not save the report: {e}")
+        return None
+
+
+def _report_as_text(report):
+    """Render a report payload as the plain text used in the email body."""
+    lines = [report.get("title", report.get("report", "Report")),
+             f"Generated: {report.get('generated_at', '')}", ""]
+    columns = report.get("columns") or []
+    rows = report.get("rows") or []
+    if columns:
+        lines.append(" | ".join(str(c) for c in columns))
+        lines.append("-" * 60)
+    for row in rows:
+        lines.append(" | ".join("" if v is None else str(v) for v in row))
+    if not rows:
+        lines.append("(no rows)")
+    for key, value in (report.get("summary") or {}).items():
+        lines.append(f"{key.replace('_', ' ').title()}: {value}")
+    return "\n".join(lines)
+
+
+def email_equipment_report(cursor, report, saved_path=None):
+    """Send a report to the Student Union administrators.
+
+    Recipients come from the ``users`` table (admin / superadmin roles)
+    rather than a hardcoded address, and the mail itself goes through the
+    university email system.
+    """
+    recipients = _admin_recipients(cursor)
+    if not recipients:
+        print("No administrator email addresses are on file — report not sent.")
+        return False
+
+    print("\nSend to:")
+    for index, (username, email) in enumerate(recipients, 1):
+        print(f"{index}. {username} <{email}>")
+    print(f"{len(recipients) + 1}. All of the above")
+
+    choice = input(f"Choose a recipient (1-{len(recipients) + 1}, blank to cancel): ").strip()
+    if not choice.isdigit():
+        print("Not sent.")
+        return False
+    index = int(choice)
+    if index == len(recipients) + 1:
+        chosen = recipients
+    elif 1 <= index <= len(recipients):
+        chosen = [recipients[index - 1]]
+    else:
+        print("Not sent.")
+        return False
+
+    body = _report_as_text(report)
+    if saved_path:
+        body += f"\n\nSaved copy: {saved_path}"
+
+    sent = 0
+    for username, email in chosen:
+        try:
+            send_email(
+                email,
+                f"Student Union equipment report: {report.get('title', report.get('report'))}",
+                body,
+                attachments=[str(saved_path)] if saved_path else None,
+            )
+            sent += 1
+        except Exception as e:
+            print(f"Could not email {username} <{email}>: {e}")
+    if sent:
+        print(f"Report emailed to {sent} administrator(s).")
+    return bool(sent)
+
+
+def _offer_report_actions(cursor, report):
+    """Offer to save the report as JSON and email it to an administrator."""
+    if not report:
+        return
+    saved_path = None
+    if input("\nSave this report as a JSON file? (y/n): ").strip().lower() == 'y':
+        saved_path = save_equipment_report(report)
+        if saved_path:
+            print(f"Saved to {saved_path}")
+    if input("Email this report to an administrator? (y/n): ").strip().lower() == 'y':
+        email_equipment_report(cursor, report, saved_path)
+
+
 def generate_equipment_reports(cursor):
-    """Generate equipment usage and status reports (admin only)"""
+    """Generate equipment usage and status reports (admin only).
+
+    Each report can be saved as JSON and emailed to the administrators
+    on record.
+    """
     try:
         print("\nEquipment Reports")
         print("=" * 20)
@@ -826,6 +1038,9 @@ def generate_equipment_reports(cursor):
         print("5. Return to equipment menu")
 
         choice = input("Choose report: ").strip()
+
+        generated_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        report = None
 
         if choice == '1':
             # Equipment inventory summary
@@ -855,7 +1070,8 @@ def generate_equipment_reports(cursor):
             total_out_of_service = 0
 
             for cat in inventory:
-                print(f"{cat[0]:<20} {cat[1]:<8} {cat[2]:<10} {cat[3]:<12} {cat[4]:<12} {cat[5]:<15}")
+                category = cat[0] or 'Uncategorised'
+                print(f"{category:<20} {cat[1]:<8} {cat[2]:<10} {cat[3]:<12} {cat[4]:<12} {cat[5]:<15}")
                 total_items += cat[1]
                 total_available += cat[2]
                 total_checked_out += cat[3]
@@ -867,6 +1083,23 @@ def generate_equipment_reports(cursor):
 
             utilization_rate = (total_checked_out / total_items * 100) if total_items > 0 else 0
             print(f"\nOverall utilization rate: {utilization_rate:.1f}%")
+
+            report = {
+                'report': 'inventory_summary',
+                'title': 'Equipment Inventory Summary',
+                'generated_at': generated_at,
+                'columns': ['category', 'total', 'available', 'checked_out',
+                            'maintenance', 'out_of_service'],
+                'rows': [list(row) for row in inventory],
+                'summary': {
+                    'total_items': total_items,
+                    'available': total_available,
+                    'checked_out': total_checked_out,
+                    'maintenance': total_maintenance,
+                    'out_of_service': total_out_of_service,
+                    'utilization_rate_percent': round(utilization_rate, 1),
+                },
+            }
 
         elif choice == '2':
             # Usage statistics
@@ -893,15 +1126,31 @@ def generate_equipment_reports(cursor):
                 avg_days = f"{stat[2]:.1f}" if stat[2] else "N/A"
                 print(f"{stat[0][:30]:<30} {stat[1]:<16} {avg_days:<12}")
 
+            report = {
+                'report': 'usage_statistics',
+                'title': 'Equipment Usage Statistics',
+                'generated_at': generated_at,
+                'columns': ['equipment', 'total_checkouts', 'avg_days_out'],
+                'rows': [[r[0], r[1], round(r[2], 1) if r[2] else None]
+                         for r in usage_stats],
+                'summary': {'equipment_with_checkouts': len(usage_stats)},
+            }
+
         elif choice == '3':
-            # Overdue equipment report
+            # Overdue equipment report.
+            # LEFT JOIN: a checkout made by an account without a student
+            # record (staff, admin) still has to appear here — an inner
+            # join silently dropped exactly the items nobody was chasing.
             cursor.execute('''
-            SELECT e.equipment_name, s.first_name, s.last_name, s.email,
+            SELECT e.equipment_name,
+                   COALESCE(s.first_name || ' ' || s.last_name, c.borrower_id) AS borrower,
+                   COALESCE(s.email_address, u.email) AS borrower_email,
                    c.expected_return, c.checkout_date,
                    (julianday('now') - julianday(c.expected_return)) as days_overdue
             FROM equipment_checkouts c
             JOIN union_equipment e ON c.equipment_id = e.equipment_id
-            JOIN students s ON c.borrower_id = s.student_id
+            LEFT JOIN students s ON c.borrower_id = s.student_id
+            LEFT JOIN users u ON u.student_id = c.borrower_id
             WHERE c.status = 'checked_out' AND c.expected_return < date('now')
             ORDER BY days_overdue DESC
             ''')
@@ -913,13 +1162,25 @@ def generate_equipment_reports(cursor):
             print("-" * 100)
 
             for item in overdue:
-                borrower = f"{item[1]} {item[2]}"
-                print(f"{item[0][:25]:<25} {borrower[:20]:<20} {item[3][:25]:<25} {item[4]:<12} {int(item[6]):<12}")
+                borrower = item[1] or 'Unknown'
+                email = item[2] or '-'
+                print(f"{item[0][:25]:<25} {borrower[:20]:<20} {email[:25]:<25} {item[3]:<12} {int(item[5]):<12}")
 
             if overdue:
                 print(f"\nTotal overdue items: {len(overdue)}")
             else:
                 print("No overdue equipment.")
+
+            report = {
+                'report': 'overdue_equipment',
+                'title': 'Overdue Equipment',
+                'generated_at': generated_at,
+                'columns': ['equipment', 'borrower', 'email', 'due_date',
+                            'checkout_date', 'days_overdue'],
+                'rows': [[r[0], r[1], r[2], r[3], r[4], int(r[5]) if r[5] else 0]
+                         for r in overdue],
+                'summary': {'total_overdue': len(overdue)},
+            }
 
         elif choice == '4':
             # Maintenance schedule
@@ -937,16 +1198,28 @@ def generate_equipment_reports(cursor):
             print("-" * 80)
 
             for item in maintenance:
-                print(f"{item[0]:<6} {item[1][:30]:<30} {item[2]:<12} {item[3]:<12} {item[4]:<15}")
+                print(f"{item[0]:<6} {item[1][:30]:<30} {item[2]:<12} {item[3] or '-':<12} {item[4] or '-':<15}")
 
             if not maintenance:
                 print("No maintenance scheduled.")
+
+            report = {
+                'report': 'maintenance_schedule',
+                'title': 'Equipment Maintenance Schedule',
+                'generated_at': generated_at,
+                'columns': ['equipment_id', 'equipment', 'maintenance_due',
+                            'condition', 'location'],
+                'rows': [list(row) for row in maintenance],
+                'summary': {'items_scheduled': len(maintenance)},
+            }
 
         elif choice == '5':
             return
 
         else:
             print("Invalid choice.")
+
+        _offer_report_actions(cursor, report)
 
     except sqlite3.Error as e:
         print(f"Database error: {e}")
@@ -971,15 +1244,13 @@ def request_facility_booking():
         cursor = conn.cursor()
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, auth)
 
-        if not result:
+        if not student_id:
             print("No student record is associated with your account.")
             conn.close()
             return
 
-        student_id = result[0]
 
         # Show available facilities
         view_facilities()
@@ -1073,6 +1344,18 @@ def request_facility_booking():
         print(f"Booking request submitted with ID: {booking_id}")
         print("Your booking is pending approval.")
 
+        if _mirror_to_calendar(
+            name=f"SU Booking: {facility[0]}", kind="facility_booking",
+            date=date, start_time=start_time or None, end_time=end_time or None,
+            location=facility[0],
+            description=(purpose or "Student Union facility booking")
+                        + " (pending approval)",
+            created_by=student_id,
+            source_table="facility_bookings", source_id=booking_id,
+            conn=conn,
+        ):
+            print("Added to the university academic calendar.")
+
         # Send confirmation email
         send_confirmation_email(student_id, f"Facility Booking Request: {facility[0]}",
                                 f"Your booking request for {facility[0]} on {date} from {start_time} to {end_time} has been submitted and is pending approval.")
@@ -1094,15 +1377,13 @@ def view_my_bookings():
         cursor = conn.cursor()
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, auth)
 
-        if not result:
+        if not student_id:
             print("No student record is associated with your account.")
             conn.close()
             return
 
-        student_id = result[0]
 
         # Get bookings
         cursor.execute('''

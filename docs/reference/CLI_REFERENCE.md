@@ -5,13 +5,13 @@ Complete command-line interface reference for the Education System.
 ## Launching the System
 
 ```bash
-python run.py                          # Interactive mode selector
-python run.py --cli --university       # University CLI directly
-python run.py --gui --college          # College GUI directly
-python run.py --api                    # REST API server (all systems)
-python run.py --test --university      # Run university tests
-python run.py --test-all              # Run all system tests
-python run.py --seed 50 --college      # Seed college DB with 50 demo students
+python -m education_system                          # Interactive mode selector
+python -m education_system --cli --university       # University CLI directly
+python -m education_system --gui --college          # College GUI directly
+python -m education_system --api                    # REST API server (all systems)
+python -m education_system --test --university      # Run university tests
+python -m education_system --test-all              # Run all system tests
+python -m education_system --seed 50 --college      # Seed college DB with 50 demo students
 ```
 
 ### Command-Line Arguments

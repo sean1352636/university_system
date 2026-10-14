@@ -1366,7 +1366,7 @@ HelpdeskGUI._send_ticket_updated_emails_fallback = _send_ticket_updated_emails_f
 def _send_email_via_gui(self, to_email, subject, message):
     """Send email via email GUI"""
     try:
-        from education_system.systems.university.interfaces.gui.shell.email.email_gui import EmailManagerGUI
+        from education_system.systems.university.shell.gui.email.email_gui import EmailManagerGUI
         email_gui = EmailManagerGUI(self.root, auth=self.auth if hasattr(self, 'auth') else None)
 
         # If email GUI has send_email method, use it

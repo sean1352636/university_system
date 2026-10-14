@@ -111,7 +111,7 @@ Configure the database layer via environment variables:
 make db-backup
 
 # Using the enhanced backup menu
-python run.py --cli
+python -m education_system --cli
 # Navigate to: System Administration > Backup & Recovery
 ```
 

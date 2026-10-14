@@ -42,7 +42,7 @@ class WorkflowDatabase:
                     conn.execute("DROP TABLE IF EXISTS approval_requests")
                     conn.execute("DROP TABLE IF EXISTS step_history")
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Workflows table
             conn.execute('''
@@ -130,7 +130,7 @@ class WorkflowDatabase:
                     if 'version' not in columns:
                         conn.execute('ALTER TABLE workflows ADD COLUMN version TEXT DEFAULT "1.0"')
             except Exception:
-                pass  # Table doesn't exist yet or migration failed
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Create indexes
             conn.execute('''
@@ -149,7 +149,7 @@ class WorkflowDatabase:
                     ON workflows(category, is_template)
                 ''')
             except Exception:
-                pass  # Index creation failed, likely because column doesn't exist
+                logger.debug("Suppressed exception", exc_info=True)
 
     def save_workflow(self, workflow: Workflow) -> None:
         """Save a workflow definition"""

@@ -1,4 +1,5 @@
 import logging
+import shutil
 
 from education_system.systems.university.infrastructure.utils.document_manager._common import (
     os, zipfile, datetime, sqlite3,
@@ -32,24 +33,47 @@ class BackupMixin:
     def create_full_backup(self):
         """Create a full system backup"""
         try:
-            backup_dir = str(paths.BACKUP_FILES_DIR)
+            backup_dir = str(paths.UNIVERSITY_BACKUP_FILES_DIR)
             os.makedirs(backup_dir, exist_ok=True)
 
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             backup_filename = f"document_manager_backup_{timestamp}.zip"
             backup_path = os.path.join(backup_dir, backup_filename)
 
-            db_path = str(paths.DB_PATH) if hasattr(paths, 'DB_PATH') else 'university_system.db'
+            # The guard here tested for the pre-consolidation name `DB_PATH`,
+            # which stopped existing when paths gained per-system prefixes. It
+            # was therefore always False, and every "full system backup"
+            # silently archived a relative 'university_system.db' that is not
+            # the live database — i.e. backed up no data at all.
+            db_path = str(paths.UNIVERSITY_DEFAULT_DB_PATH)
+
+            # Members are stored relative to VAR_DIR so restore_from_backup can
+            # put each file back where it came from. Passing an absolute path to
+            # write() with no arcname stores it minus its leading separator —
+            # a member like `home/<user>/.../var/data/...` that only extracting
+            # at `/` would restore correctly.
+            var_root = str(paths.VAR_DIR)
+            db_arcname = os.path.basename(db_path)
+            try:
+                if os.path.commonpath([os.path.abspath(db_path), var_root]) == var_root:
+                    db_arcname = os.path.relpath(db_path, var_root)
+            except ValueError:
+                # Different drives (Windows): fall back to the bare filename.
+                pass
 
             with zipfile.ZipFile(backup_path, 'w', zipfile.ZIP_DEFLATED) as backup_zip:
                 # Backup database
                 if os.path.exists(db_path):
-                    backup_zip.write(db_path)
+                    backup_zip.write(db_path, arcname=db_arcname)
 
                 # Backup settings
+                # NOTE: this relative path resolves against the process working
+                # directory, so which settings.json is archived depends on where
+                # the app was launched from. Left as-is — the intended location
+                # is a separate decision — but it restores to VAR_DIR.
                 settings_path = 'settings.json'
                 if os.path.exists(settings_path):
-                    backup_zip.write(settings_path)
+                    backup_zip.write(settings_path, arcname=os.path.basename(settings_path))
 
             backup_size = os.path.getsize(backup_path) / (1024 * 1024)
 
@@ -80,7 +104,7 @@ class BackupMixin:
     def restore_from_backup(self):
         """Restore system from a backup file"""
         try:
-            backup_dir = str(paths.BACKUP_FILES_DIR)
+            backup_dir = str(paths.UNIVERSITY_BACKUP_FILES_DIR)
 
             if not os.path.exists(backup_dir):
                 print("No backup directory found.")
@@ -124,7 +148,7 @@ class BackupMixin:
 
             print(f"\nRestoring from {backups[choice]}...")
 
-            # Restore beneath the project root via safe_extract, never
+            # Restore beneath the runtime state tree via safe_extract, never
             # extractall(): a backup archive is untrusted input (it may have
             # been swapped on disk) and extractall would honour "../" members
             # and symlink members, writing anywhere the process can reach.
@@ -133,15 +157,48 @@ class BackupMixin:
                 safe_extract,
             )
 
-            restore_root = str(getattr(paths, 'PROJECT_ROOT', os.getcwd()))
+            # Members are written relative to VAR_DIR, so that is the restore
+            # root. This read `getattr(paths, 'PROJECT_ROOT', os.getcwd())` —
+            # but paths has never defined PROJECT_ROOT (the alias is
+            # PROGRAM_ROOT), so the default always won and restores unpacked
+            # into whatever directory the process happened to start in.
+            #
+            # safe_extract opens every member O_EXCL and so cannot overwrite a
+            # live database — extracting straight onto VAR_DIR would fail on the
+            # first existing file. Unpack into an empty staging directory, keep
+            # a copy of whatever is about to be replaced, then move into place.
+            var_root = str(paths.VAR_DIR)
+            staging = os.path.join(
+                var_root, '.restore-staging',
+                datetime.now().strftime('%Y%m%d_%H%M%S'),
+            )
             try:
                 with zipfile.ZipFile(selected_backup, 'r') as backup_zip:
-                    safe_extract(backup_zip, restore_root)
+                    extracted = safe_extract(backup_zip, staging)
             except PathSecurityError as e:
                 logger.error("Refused unsafe backup archive %s: %s", selected_backup, e)
                 print(f"❌ Restore refused — the backup archive is unsafe: {e}")
+                shutil.rmtree(staging, ignore_errors=True)
                 return
 
+            try:
+                replaced_dir = paths.maintenance_backup_dir(
+                    'document-manager-restore', create=True,
+                )
+                for extracted_path in extracted:
+                    relative = os.path.relpath(str(extracted_path), staging)
+                    destination = os.path.join(var_root, relative)
+                    os.makedirs(os.path.dirname(destination), exist_ok=True)
+                    if os.path.exists(destination):
+                        keep = os.path.join(str(replaced_dir), relative)
+                        os.makedirs(os.path.dirname(keep), exist_ok=True)
+                        shutil.copy2(destination, keep)
+                    shutil.move(str(extracted_path), destination)
+                    logger.info("Restored %s from %s", destination, selected_backup)
+            finally:
+                shutil.rmtree(staging, ignore_errors=True)
+
+            print(f"   Replaced files copied to {replaced_dir}")
             print("✅ System restored successfully!")
             print("⚠️  Please restart the application.")
 
@@ -151,7 +208,7 @@ class BackupMixin:
     def view_backup_history(self):
         """View history of backups"""
         try:
-            backup_dir = str(paths.BACKUP_FILES_DIR)
+            backup_dir = str(paths.UNIVERSITY_BACKUP_FILES_DIR)
 
             if not os.path.exists(backup_dir):
                 print("No backup directory found.")

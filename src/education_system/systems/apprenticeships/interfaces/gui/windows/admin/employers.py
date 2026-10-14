@@ -74,6 +74,9 @@ def render(gui) -> None:
         buttons.append(("Delete", lambda: _delete(gui, table)))
     buttons.append(("Workplaces…", lambda: _open_sub(gui, table, _workplaces)))
     buttons.append(("Managers…", lambda: _open_sub(gui, table, _managers)))
+    if gui.actor.can("employer.contact"):
+        buttons.append(("Contacts & commitments…",
+                        lambda: _open_sub(gui, table, _contacts_and_commitments)))
     if gui.actor.can("funding.view") or can_manage:
         buttons.append(("Levy position", lambda: _open_sub(gui, table, _levy)))
     widgets.button_bar(frame, buttons)
@@ -89,6 +92,14 @@ def _open_sub(gui, table: widgets.DataTable, screen) -> None:
 
 def _back(gui, parent) -> None:
     widgets.button_bar(parent, [("← Back to employers", lambda: render(gui))])
+
+
+def _contacts_and_commitments(gui, employer_id: int) -> None:
+    """The shared contacts screen: contact log and commitments for this employer."""
+    from education_system.systems.apprenticeships.interfaces.gui.windows.shared import (
+        employer_contacts,
+    )
+    employer_contacts.open_employer(gui, employer_id)
 
 
 def _load(gui, employer_id: int):
@@ -335,6 +346,7 @@ def _managers(gui, employer_id: int) -> None:
         frame,
         (
             ("name", "Contact", 200),
+            ("role", "Role", 160),
             ("title", "Job title", 180),
             ("email", "Email", 220),
             ("phone", "Phone", 120),
@@ -349,7 +361,8 @@ def _managers(gui, employer_id: int) -> None:
     table.populate(
         rows,
         lambda m: (
-            m.full_name, m.job_title, m.email, m.phone, m.username, m.is_primary, m.active
+            m.full_name, m.contact_role, m.job_title, m.email, m.phone, m.username,
+            m.is_primary, m.active,
         ),
         identity=lambda m: m.manager_id,
         noun="contact",
@@ -406,6 +419,9 @@ def _manager_fields(manager: Any) -> list[dict[str, Any]]:
     return [
         {"key": "full_name", "label": "Contact name", "required": True,
          "value": getattr(manager, "full_name", "")},
+        {"key": "contact_role", "label": "Role", "kind": "combo",
+         "options": ("", *config.EMPLOYER_CONTACT_ROLES),
+         "value": getattr(manager, "contact_role", "") or ""},
         {"key": "job_title", "label": "Job title",
          "value": getattr(manager, "job_title", "")},
         {"key": "email", "label": "Email", "value": getattr(manager, "email", "")},
@@ -419,7 +435,7 @@ def _manager_fields(manager: Any) -> list[dict[str, Any]]:
 def _manager_payload(values: dict[str, Any]) -> dict[str, Any]:
     return {
         key: values.get(key, "")
-        for key in ("full_name", "job_title", "email", "phone", "username")
+        for key in ("full_name", "contact_role", "job_title", "email", "phone", "username")
     }
 
 

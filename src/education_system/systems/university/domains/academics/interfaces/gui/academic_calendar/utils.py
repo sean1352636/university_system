@@ -1,10 +1,17 @@
 import logging
+
+logger = logging.getLogger(__name__)
+
+import logging
 from functools import wraps
 from typing import Any, Callable, Optional, Dict
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import ttk
 from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar.exceptions import CalendarError, ValidationError, DatabaseError, AuthenticationError, PermissionError, ExportError, SyncError
 from education_system.systems.university.infrastructure.i18n import get_text as _
+# Message boxes parented to the window that raised them, not the main
+# GUI — see _dialogs.
+from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar._dialogs import messagebox
 
 gui_logger = logging.getLogger(__name__)
 
@@ -203,7 +210,7 @@ def safe_grab_set(dialog, parent=None):
     try:
         dialog.after(50, lambda d=dialog: _attempt_grab(d, retries=5))
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
 
 def _attempt_grab(dialog, retries=5):
@@ -273,3 +280,74 @@ def safe_show_warning(title, message, parent=None):
         gui_logger.warning("Failed to show warning dialog: %s", e)
 
 
+
+
+class ScrollableFrame(tk.Frame):
+    """A frame whose contents scroll vertically when they outgrow the window.
+
+    Several calendar dialogs (Create Recurring Event, Advanced Search) pack
+    more fields than fit at the dialog's height, and the ones at the bottom —
+    including the buttons that submit the form — were simply unreachable.
+
+    Pack widgets into :attr:`body`, not into this frame. The scrollbar shows
+    only when it is needed, so a dialog that does fit looks unchanged.
+    """
+
+    def __init__(self, master, **kwargs):
+        super().__init__(master, **kwargs)
+
+        self._canvas = tk.Canvas(self, highlightthickness=0, borderwidth=0)
+        self._scrollbar = ttk.Scrollbar(self, orient="vertical",
+                                        command=self._canvas.yview)
+        self._canvas.configure(yscrollcommand=self._set_scroll)
+
+        self._canvas.pack(side="left", fill="both", expand=True)
+        # The scrollbar is packed on demand by _set_scroll.
+
+        self.body = ttk.Frame(self._canvas)
+        self._window = self._canvas.create_window((0, 0), window=self.body,
+                                                  anchor="nw")
+
+        self.body.bind("<Configure>", self._on_body_configure)
+        self._canvas.bind("<Configure>", self._on_canvas_configure)
+        # Wheel support is bound per-widget on enter/leave rather than with
+        # bind_all, so scrolling one dialog cannot move another window.
+        self._canvas.bind("<Enter>", self._bind_wheel)
+        self._canvas.bind("<Leave>", self._unbind_wheel)
+
+    def _set_scroll(self, first, last):
+        """Show the scrollbar only while the content overflows."""
+        if float(first) <= 0.0 and float(last) >= 1.0:
+            self._scrollbar.pack_forget()
+        else:
+            self._scrollbar.pack(side="right", fill="y")
+        self._scrollbar.set(first, last)
+
+    def _on_body_configure(self, _event=None):
+        self._canvas.configure(scrollregion=self._canvas.bbox("all"))
+
+    def _on_canvas_configure(self, event):
+        # Keep the inner frame as wide as the canvas so fields fill the
+        # dialog instead of hugging the left edge.
+        self._canvas.itemconfigure(self._window, width=event.width)
+
+    def _bind_wheel(self, _event=None):
+        self._canvas.bind_all("<MouseWheel>", self._on_wheel)
+        self._canvas.bind_all("<Button-4>", self._on_wheel)
+        self._canvas.bind_all("<Button-5>", self._on_wheel)
+
+    def _unbind_wheel(self, _event=None):
+        for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            try:
+                self._canvas.unbind_all(seq)
+            except tk.TclError:
+                pass
+
+    def _on_wheel(self, event):
+        if event.num == 4:
+            delta = -1
+        elif event.num == 5:
+            delta = 1
+        else:
+            delta = -1 if event.delta > 0 else 1
+        self._canvas.yview_scroll(delta, "units")

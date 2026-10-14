@@ -1,0 +1,11 @@
+{
+  "template_id": "ucas_final_decision",
+  "description": "Sent to the sixth-form student when the university records their Firm / Insurance / Declined reply against a UCAS choice. Confirms in writing which of the three was recorded and what it means on results day. Sent from the university admissions address.",
+  "channel": "Email",
+  "category": "General",
+  "priority": "Normal",
+  "from_name": "{{university}} Admissions",
+  "from_address": "admissions@teesside.ac.uk",
+  "subject": "Your {{final_decision}} reply to {{university}}: {{course_name}}",
+  "body": "Hi {{first_name}},\n\nThis confirms the reply now recorded against your UCAS choice at {{university}}:\n\n  Reply         : {{final_decision_upper}}\n  Course        : {{course_name}}{{course_code_suffix}}\n  Offer         : {{decision_status}}\n  Conditions    : {{offer_terms}}\n  Entry year    : {{entry_year}}\n  Cycle         : {{cycle_year}}\n  UCAS ID       : {{ucas_id}}\n\nWhat this means\n---------------\n{{outcome_block}}\n\nUCAS Track (track.ucas.com) is the formal record — check that it shows the same reply. If it does not, or if this email describes a decision you did not make, contact us at {{contact_email}} and tell your sixth-form tutor.\n\nThe Admissions Team\n{{university}}"
+}

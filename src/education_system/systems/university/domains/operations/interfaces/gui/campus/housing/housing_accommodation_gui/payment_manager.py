@@ -225,9 +225,9 @@ def create_payment_form(gui_instance, parent):
     gui_instance.payment_amount_entry.grid(row=1, column=1, padx=10)
 
     ttk.Label(payment_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.labels.payment_method', default="Payment Method:")).grid(row=2, column=0, sticky='w')
-    payment_methods = ["Credit Card", "Bank Transfer", "Cash", "Check", "Other"]
+    payment_methods = ["Cash", "Card", "Bank Transfer"]
     if FINANCE_ACCOUNT_AVAILABLE:
-        payment_methods.insert(0, "Student Finance Account")
+        payment_methods.append("Student Finance Account")
     gui_instance.payment_method_combo = ttk.Combobox(payment_frame, width=20, values=payment_methods)
     gui_instance.payment_method_combo.grid(row=2, column=1, padx=10)
 
@@ -497,7 +497,7 @@ def record_payment(gui_instance):
                 room_number = student_info[3]
                 building_name = student_info[4]
 
-                email_subject, email_body = render_template('housing_payment_confirmation', {
+                email_subject, email_body = render_template('finance_commerce/finance/housing_payment_confirmation', {
                     'student_name': student_name,
                     'payment_id': payment_id,
                     'amount': f"{amount:.2f}",

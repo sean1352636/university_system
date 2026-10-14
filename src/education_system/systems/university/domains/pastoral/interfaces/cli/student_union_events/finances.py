@@ -9,6 +9,9 @@ from education_system.systems.university.domains.pastoral.interfaces.cli.student
 from education_system.systems.university.domains.pastoral.domain.student_life.student_union.events.reporting.financial_report import generate_event_financial_report
 from education_system.systems.university.domains.pastoral.interfaces.cli.student_union_events.context import auth
 from education_system.systems.university.domains.pastoral.interfaces.cli.student_union_events.ticketing import manage_event_tickets
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.identity import (
+    current_student_id as _current_student_id,
+)
 
 def _track_event_finances_simple():
     """Track expenses and income for club events."""
@@ -22,14 +25,13 @@ def _track_event_finances_simple():
         conn = get_connection()
         cursor = conn.cursor()
 
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
-        if not result:
+        student_id = _current_student_id(cursor, auth)
+
+        if not student_id:
             print("No student record is associated with your account.")
             conn.close()
             return
 
-        student_id = result[0]
 
         cursor.execute('''
         SELECT c.club_id, c.club_name
@@ -46,7 +48,7 @@ def _track_event_finances_simple():
 
         cursor.execute('''
         SELECT e.event_id, e.event_name, e.event_date
-        FROM union_events e
+        FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e
         WHERE e.organizer_id IN (
             SELECT club_id FROM club_members WHERE student_id = ?
         )
@@ -142,28 +144,26 @@ def track_event_finances():
         cursor = conn.cursor()
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, auth)
 
-        if not result:
+        if not student_id:
             print("No student record is associated with your account.")
             conn.close()
             return
 
-        student_id = result[0]
 
         # Get events user can manage
         if auth.check_permission('manage_all_events'):
             cursor.execute('''
             SELECT e.event_id, e.event_name, c.club_name, e.event_date
-            FROM union_events e
+            FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e
             JOIN student_clubs c ON e.organizer_id = c.club_id
             ORDER BY e.event_date DESC
             ''')
         else:
             cursor.execute('''
             SELECT e.event_id, e.event_name, c.club_name, e.event_date
-            FROM union_events e
+            FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e
             JOIN student_clubs c ON e.organizer_id = c.club_id
             WHERE (c.president_id = ? OR c.treasurer_id = ? OR c.secretary_id = ?)
             ORDER BY e.event_date DESC

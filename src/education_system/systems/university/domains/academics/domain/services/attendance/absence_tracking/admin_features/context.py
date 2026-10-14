@@ -4,6 +4,9 @@ Also owns the shared ``logger`` instance used across the admin_features
 package. All other submodules import it from here.
 """
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 import functools
 import logging
@@ -93,6 +96,6 @@ def safe(title: str = "Error") -> Callable:
                     messagebox.showerror(
                         title, f"{fn.__name__} failed:\n{e}", parent=parent)
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
         return wrapped
     return deco

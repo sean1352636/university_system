@@ -21,9 +21,9 @@ def event_popularity_predictions(cursor):
             AVG(current_attendees) as avg_attendance,
             COUNT(*) as event_count,
             AVG(CASE WHEN current_attendees >
-                (SELECT AVG(current_attendees) FROM union_events)
+                (SELECT AVG(current_attendees) FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union'))
                 THEN 1 ELSE 0 END) as success_rate
-        FROM union_events
+        FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union')
         WHERE event_date >= date('now', '-12 months')
         GROUP BY category
         HAVING COUNT(*) >= 3
@@ -55,7 +55,7 @@ def event_popularity_predictions(cursor):
             END as day_of_week,
             AVG(current_attendees) as avg_attendance,
             COUNT(*) as event_count
-        FROM union_events
+        FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union')
         WHERE event_date >= date('now', '-6 months')
         GROUP BY strftime('%w', event_date)
         ORDER BY avg_attendance DESC
@@ -81,7 +81,7 @@ def event_popularity_predictions(cursor):
             END as time_period,
             AVG(current_attendees) as avg_attendance,
             COUNT(*) as event_count
-        FROM union_events
+        FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union')
         WHERE event_date >= date('now', '-6 months')
         GROUP BY
             CASE
@@ -134,11 +134,11 @@ def view_event_analytics():
         cursor = conn.cursor()
 
         # Total events
-        cursor.execute('SELECT COUNT(*) FROM union_events')
+        cursor.execute("SELECT COUNT(*) FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union')")
         total_events = cursor.fetchone()[0]
 
         # Total attendees across all events
-        cursor.execute('SELECT COALESCE(SUM(current_attendees), 0) FROM union_events')
+        cursor.execute("SELECT COALESCE(SUM(current_attendees), 0) FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union')")
         total_attendees = cursor.fetchone()[0]
 
         # Average attendance rate
@@ -147,7 +147,7 @@ def view_event_analytics():
                 AVG(CASE WHEN max_attendees > 0
                     THEN (current_attendees * 100.0 / max_attendees)
                     ELSE 0 END), 0)
-            FROM union_events
+            FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union')
             WHERE max_attendees > 0
         ''')
         avg_attendance_rate = cursor.fetchone()[0]
@@ -160,7 +160,7 @@ def view_event_analytics():
                         ELSE 0 END AS attendance_rate,
                    COALESCE(SUM(CASE WHEN f.amount > 0 THEN f.amount ELSE 0 END), 0) AS revenue,
                    COALESCE(SUM(CASE WHEN f.amount < 0 THEN ABS(f.amount) ELSE 0 END), 0) AS expenses
-            FROM union_events e
+            FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e
             LEFT JOIN event_finances f ON e.event_id = f.event_id
             GROUP BY e.event_id
             ORDER BY e.event_date DESC

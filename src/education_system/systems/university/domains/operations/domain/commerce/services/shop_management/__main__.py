@@ -1,21 +1,11 @@
-"""Entry point for ``python -m …shop_management``.
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.domain.services.shop_management.__main__`` (campus commerce plugin).
 
-The GUI's "Switch to CLI" button launches this package as a module.
-Without a ``__main__.py`` Python rejects the invocation with
-"package cannot be directly executed". Delegates to
-``menus.display_main_menu_extended()``, which is the existing CLI
-menu loop (handles login prompt, db init, main menu).
+The old name *is* the new module object, so ``mock.patch`` and
+``monkeypatch`` targets still act on the real code. Delete once nothing
+imports the old path.
 """
+# layout-shim: education_system.systems.university.plugins.campus_commerce.domain.services.shop_management.__main__
+import importlib as _importlib
+import sys as _sys
 
-from education_system.systems.university.infrastructure.shared_context import initialize_auth
-from education_system.systems.university.domains.operations.domain.commerce.services.shop_management.menus import (
-    display_main_menu_extended,
-)
-
-
-if __name__ == "__main__":
-    initialize_auth()
-    try:
-        display_main_menu_extended()
-    except KeyboardInterrupt:
-        print("\nShop Management CLI — interrupted. Goodbye.")
+_sys.modules[__name__] = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.domain.services.shop_management.__main__")

@@ -440,7 +440,7 @@ class ClubMediaDialog:
                    COALESCE(ue.event_name, 'N/A'), COALESCE(cm.caption, '')
             FROM club_media cm
             INNER JOIN students s ON cm.uploader_id = s.student_id
-            LEFT JOIN union_events ue ON cm.event_id = ue.event_id
+            LEFT JOIN (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') ue ON cm.event_id = ue.event_id
             WHERE cm.club_id = ?
             ORDER BY cm.upload_date DESC
             ''', (club_id,))

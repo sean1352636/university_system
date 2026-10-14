@@ -130,15 +130,56 @@ class MFAService:
         finally:
             conn.close()
 
+    @staticmethod
+    def _table_exists(conn, name: str) -> bool:
+        return conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (name,)
+        ).fetchone() is not None
+
     def is_mfa_enabled(self, user_id: int) -> bool:
-        """Check if MFA is enabled for a user."""
+        """Is a second factor actually required for this user at login?
+
+        This is the gate ``UserAuth.login`` consults, so it has to agree
+        with what the MFA settings screen reports. It used to check
+        ``mfa_secrets`` alone — the TOTP secret — while enrolment through
+        the email/SMS flows writes ``mfa_methods`` and ``mfa_user_settings``
+        and never touches ``mfa_secrets``. An email-only enrolment therefore
+        showed "ENABLED" everywhere and was silently never challenged.
+
+        True when the user has *any* enabled factor — a TOTP secret or an
+        enabled row in ``mfa_methods`` — and verification has not been
+        deliberately switched off for them.
+        """
         conn = self._conn()
         try:
+            # An explicit "don't challenge this account" wins over
+            # everything else; that is how MFA is intentionally suspended.
+            if self._table_exists(conn, "mfa_user_settings"):
+                settings = conn.execute(
+                    "SELECT COALESCE(verification_disabled, 0) AS off "
+                    "FROM mfa_user_settings WHERE user_id = ?",
+                    (user_id,),
+                ).fetchone()
+                if settings and settings["off"]:
+                    return False
+
             row = conn.execute(
                 "SELECT is_enabled FROM mfa_secrets WHERE user_id = ?",
                 (user_id,),
             ).fetchone()
-            return bool(row and row["is_enabled"])
+            if row and row["is_enabled"]:
+                return True
+
+            if self._table_exists(conn, "mfa_methods"):
+                method = conn.execute(
+                    "SELECT 1 FROM mfa_methods "
+                    "WHERE user_id = ? AND COALESCE(is_enabled, 0) = 1 LIMIT 1",
+                    (user_id,),
+                ).fetchone()
+                if method:
+                    return True
+
+            return False
         finally:
             conn.close()
 

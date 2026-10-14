@@ -1,0 +1,85 @@
+{
+  "template_id": "office_hours_booking_cancelled_instructor",
+  "category": "academics",
+  "name": "Office Hours Cancellation (Instructor Notice)",
+  "description": "Sent to the instructor when a student cancels an office-hours booking, so the slot is known to be free",
+  "version": "1.0.0",
+  "subject": "Office Hours Cancelled — $student_name on $booking_date",
+  "body_text": "Dear $instructor_name,\n\n$student_name has cancelled their office hours booking with you. The slot is free again.\n\n--------------------------------------------------\nCANCELLED BOOKING\n--------------------------------------------------\n\nBooking ID:    $booking_id\nStudent:       $student_name ($student_id)\nDate:          $booking_date  ($day_of_week)\nTime:          $start_time - $end_time\nLocation:      $location\n\nCancelled by:  $cancelled_by\nCancelled on:  $cancelled_on\nReason:        $cancellation_reason\n\n--------------------------------------------------\n\nNo action is needed. The slot has been returned to your available capacity and can be booked by another student.\n\n$signature",
+  "body_html": "<html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Office Hours Cancelled</title></head><body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'><div style='max-width: 640px; margin: 0 auto; padding: 20px;'><h2 style='color: #9b2c2c; border-bottom: 2px solid #9b2c2c; padding-bottom: 10px;'>Office Hours Cancelled</h2><p>Dear <strong>$instructor_name</strong>,</p><p><strong>$student_name</strong> has cancelled their office hours booking with you. The slot is free again.</p><table style='width: 100%; border-collapse: collapse; background-color: #fff5f5; border: 1px solid #feb2b2; border-radius: 4px; margin: 20px 0;'><tr><td style='padding: 10px 12px; color: #718096; width: 40%;'>Booking ID</td><td style='padding: 10px 12px;'>$booking_id</td></tr><tr><td style='padding: 10px 12px; color: #718096;'>Student</td><td style='padding: 10px 12px;'><strong>$student_name</strong> ($student_id)</td></tr><tr><td style='padding: 10px 12px; color: #718096;'>Date</td><td style='padding: 10px 12px;'>$booking_date ($day_of_week)</td></tr><tr><td style='padding: 10px 12px; color: #718096;'>Time</td><td style='padding: 10px 12px;'>$start_time &ndash; $end_time</td></tr><tr><td style='padding: 10px 12px; color: #718096;'>Location</td><td style='padding: 10px 12px;'>$location</td></tr></table><p style='color: #718096; font-size: 0.9em;'>Cancelled by $cancelled_by on $cancelled_on.<br>Reason: $cancellation_reason</p><p style='color: #718096; font-size: 0.9em; font-style: italic;'>No action is needed. The slot has been returned to your available capacity and can be booked by another student.</p><p style='margin-top: 30px;'>$signature</p></div></body></html>",
+  "variables": {
+    "instructor_name": {
+      "type": "string",
+      "description": "Name of the instructor whose slot was cancelled",
+      "required": true
+    },
+    "student_name": {
+      "type": "string",
+      "description": "Name of the student who cancelled",
+      "required": true
+    },
+    "student_id": {
+      "type": "string",
+      "description": "The cancelling student's id",
+      "required": true
+    },
+    "booking_id": {
+      "type": "string",
+      "description": "Id of the cancelled booking",
+      "required": true
+    },
+    "booking_date": {
+      "type": "string",
+      "description": "Date the appointment was booked for (YYYY-MM-DD)",
+      "required": true
+    },
+    "day_of_week": {
+      "type": "string",
+      "description": "Day of the week for the slot",
+      "required": true
+    },
+    "start_time": {
+      "type": "string",
+      "description": "Slot start time (HH:MM)",
+      "required": true
+    },
+    "end_time": {
+      "type": "string",
+      "description": "Slot end time (HH:MM)",
+      "required": true
+    },
+    "location": {
+      "type": "string",
+      "description": "Where the office hours were to be held",
+      "required": true
+    },
+    "cancelled_by": {
+      "type": "string",
+      "description": "Who performed the cancellation",
+      "required": false,
+      "default": "the student"
+    },
+    "cancelled_on": {
+      "type": "string",
+      "description": "Timestamp of the cancellation",
+      "required": true
+    },
+    "cancellation_reason": {
+      "type": "string",
+      "description": "Reason given, if any",
+      "required": false,
+      "default": "(no reason supplied)"
+    },
+    "signature": {
+      "type": "string",
+      "description": "Email signature; supplied by the renderer when omitted",
+      "required": false
+    }
+  },
+  "tags": [
+    "office_hours",
+    "cancellation",
+    "instructor",
+    "academics"
+  ]
+}

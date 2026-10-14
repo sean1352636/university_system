@@ -182,7 +182,7 @@ def get_completed_credits(student_id):
             row = conn.execute(
                 "SELECT COALESCE(SUM(m.credits), 0) FROM student_modules sm "
                 "JOIN modules m ON sm.module_code = m.module_code "
-                "WHERE sm.student_id = ? AND sm.status = 'completed'",
+                "WHERE sm.student_id = ? AND LOWER(sm.status) = 'completed'",
                 (student_id,),
             ).fetchone()
             return row[0] if row else 0

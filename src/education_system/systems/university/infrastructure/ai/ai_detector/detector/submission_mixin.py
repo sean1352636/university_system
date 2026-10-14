@@ -252,7 +252,7 @@ class SubmissionMixin:
             try:
                 self.fix_database_schema()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         # Method 2: Quick fix methods
         def get_statistics(self):
@@ -269,9 +269,9 @@ class SubmissionMixin:
                 try:
                     cursor.execute('ALTER TABLE ai_detector_submissions ADD COLUMN title TEXT')
                 except Exception:
-                    pass  # Column might already exist
+                    logger.debug("Suppressed exception", exc_info=True)
 
 
                 conn.close()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)

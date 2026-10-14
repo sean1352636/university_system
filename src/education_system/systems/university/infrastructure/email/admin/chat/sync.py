@@ -1,5 +1,8 @@
 """SyncMixin — extracted from chat.py."""
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.email.admin._imports import (
     datetime,
@@ -44,7 +47,7 @@ class SyncMixin:
                 ''', (user_id, str(user_id)))
                 modules.extend(cursor.fetchall())
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             seen, count = set(), 0
             for code, name in modules:
@@ -274,6 +277,29 @@ class SyncMixin:
             category='Housing', icon='🏠',
             room_type='private',
             invite_user_ids=resident_user_ids or [],
+        )
+
+    def get_or_create_course_room(self, lms_course_id, module_code,
+                                  member_user_ids=None):
+        """The chat room that stands in for a course's discussion forum.
+
+        Course rooms replace the old ``lms_discussion_forums`` board: a room
+        is real-time, already has moderation, attachments, pinning, polls and
+        retention behind it, and — because the Email GUI lists every row in
+        ``chat_rooms`` — appears there without any extra wiring.
+
+        Keyed on the LMS course id, so calling this repeatedly for one course
+        returns the same room rather than making a new one each time.
+        """
+        return self.get_or_create_linked_room(
+            'lms_course', lms_course_id,
+            name=f"Course: {module_code}",
+            description="Course discussion room.",
+            category='Courses', icon='🎓',
+            # 'course' is one of create_chat_room's valid types and is what
+            # the Email GUI groups course rooms under.
+            room_type='course',
+            invite_user_ids=member_user_ids or [],
         )
 
     def get_or_create_advisor_oh_room(self, advisor_user_id, student_user_id,

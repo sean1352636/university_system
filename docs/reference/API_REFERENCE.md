@@ -5,7 +5,7 @@ The Education System provides a unified REST API server that serves all four sub
 ## Starting the API Server
 
 ```bash
-python run.py --api
+python -m education_system --api
 ```
 
 Or directly:

@@ -255,7 +255,7 @@ def view_vaccinations(auth):
 
 
 def verify_vaccination(auth):
-    if not auth.check_permission('verify_vaccinations'):
+    if not auth.check_permission('manage_vaccinations'):
         print("You don't have permission to verify vaccinations.")
         return
 

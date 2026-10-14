@@ -178,7 +178,7 @@ class AcademicProgressGUI:
         ttk.Button(button_frame, text=_t("academic_progress.buttons.calculate_gpa", default="Calculate GPA"), command=self.calculate_what_if).pack(side=tk.LEFT, padx=5)
 
         # Results
-        self.what_if_results = scrolledtext.ScrolledText(what_if_tab, height=10, wrap=tk.WORD)
+        self.what_if_results = ReportPane(what_if_tab, title=_t('academic_progress.tabs.what_if_title', default="GPA Simulation"))
         self.what_if_results.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     def add_what_if_course(self):
@@ -293,7 +293,7 @@ class AcademicProgressGUI:
         ttk.Button(input_frame, text=_t('gui.assessment.academic_progress.progress_gui_parts.academicprogressgui_create_milestones_tab.buttons.calculate_requirements', default="Calculate Requirements"), command=self.calculate_target_gpa).grid(row=2, column=0, columnspan=2, pady=10)
 
         # Results
-        self.target_results = scrolledtext.ScrolledText(target_tab, height=20, wrap=tk.WORD)
+        self.target_results = ReportPane(target_tab, title=_t('academic_progress.tabs.target_title', default="Target GPA"))
         self.target_results.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     def calculate_target_gpa(self):
@@ -371,7 +371,7 @@ class AcademicProgressGUI:
 
         ttk.Button(history_tab, text=_t('gui.assessment.academic_progress.progress_gui_parts.academicprogressgui_create_milestones_tab.buttons.load_history', default="Load History"), command=self.load_sim_history).pack(pady=10)
 
-        self.sim_history_text = scrolledtext.ScrolledText(history_tab, height=25, wrap=tk.WORD)
+        self.sim_history_text = ReportPane(history_tab, title=_t('academic_progress.tabs.sim_history_title', default="Simulation History"))
         self.sim_history_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     def load_sim_history(self):

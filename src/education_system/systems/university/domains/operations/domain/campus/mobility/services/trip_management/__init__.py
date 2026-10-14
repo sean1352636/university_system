@@ -112,18 +112,23 @@ def safe_db_operation(operation_func, *args, max_retries: int = 3, **kwargs):
             return result
         except Exception as e:  # pragma: no cover - defensive
             last_error = e
+            # Log it: swallowing this silently is what hid a rolled-back
+            # trip insert behind a "created successfully" message.
+            logger.error("trip_management: %s failed, rolling back: %s: %s",
+                         getattr(operation_func, "__name__", operation_func),
+                         type(e).__name__, e, exc_info=True)
             try:
                 if conn:
                     conn.rollback()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             return False
         finally:
             try:
                 if conn:
                     conn.close()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
     return False
 
 
@@ -162,6 +167,8 @@ def init_trip_db():
             medical_info TEXT,
             dietary_requirements TEXT,
             status TEXT DEFAULT 'registered',
+            payment_method TEXT,
+            payment_reference TEXT,
             FOREIGN KEY (trip_id) REFERENCES trips (id) ON DELETE CASCADE,
             FOREIGN KEY (student_id) REFERENCES students (student_id),
             FOREIGN KEY (user_id) REFERENCES users (id),
@@ -213,6 +220,8 @@ def init_trip_db():
             UNIQUE (trip_id, day_number, start_time)
         )
         ''')
+
+        _database.ensure_participant_payment_columns(conn)
         return True
 
     with transaction() as conn:

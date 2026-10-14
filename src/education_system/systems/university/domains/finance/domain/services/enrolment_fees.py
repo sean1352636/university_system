@@ -239,6 +239,7 @@ def cancel_module_enrolment_fee(student_id: str, module_code: str,
                 return 0
             fee_type_ids = [f["fee_type_id"] for f in fees]
             placeholders = ",".join(["?"] * len(fee_type_ids))
+            # db-audit: ignore[DBW001] - join of placeholders
             cur = conn.execute(
                 "UPDATE student_fees "
                 "SET status = 'cancelled', updated_at = datetime('now') "

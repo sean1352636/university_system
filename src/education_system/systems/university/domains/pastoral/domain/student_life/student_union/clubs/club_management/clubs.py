@@ -2,6 +2,12 @@ from education_system.systems.university.domains.pastoral.domain.student_life.st
     datetime, sqlite3, get_auth,
 )
 import education_system.systems.university.domains.pastoral.domain.student_life.student_union.clubs.club_management._imports as _state
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.calendar_bridge import (
+    mirror as _mirror_to_calendar,
+)
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.identity import (
+    current_student_id as _current_student_id,
+)
 
 
 def create_club():
@@ -76,6 +82,16 @@ def create_club():
 
         conn.commit()
         print(f"Club '{club_name}' created successfully!")
+
+        if _mirror_to_calendar(
+            name=f"SU Club founded: {club_name}", kind="club",
+            date=founding_date,
+            description=description or f"{category or 'Student Union'} club",
+            created_by=president_id,
+            source_table="student_clubs", source_id=club_id,
+            conn=conn,
+        ):
+            print("Added to the university academic calendar.")
         conn.close()
     except sqlite3.Error as e:
         print(f"Database error: {e}")
@@ -141,15 +157,13 @@ def manage_club():
         cursor = conn.cursor()
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, auth)
 
-        if not result:
+        if not student_id:
             print("No student record is associated with your account.")
             conn.close()
             return
 
-        student_id = result[0]
 
         # If admin, show all clubs, otherwise show only clubs where user is an officer
         if auth.check_permission('manage_all_clubs'):
@@ -418,17 +432,27 @@ def manage_club():
                 max_attendees = int(max_attendees) if max_attendees.isdigit() else 0
 
                 cursor.execute('''
-                INSERT INTO union_events (
-                    event_name, description, event_date, start_time, end_time,
-                    location, organizer_id, category, max_attendees, status
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO unified_events (
+                title, description, event_date, start_time, end_time, location, organizer_id, event_category, max_capacity, status, source_type
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'union')
                 ''', (
                     event_name, description, date, start_time, end_time,
                     location, club_id, category, max_attendees, 'upcoming'
                 ))
 
                 conn.commit()
+                union_event_id = cursor.lastrowid
                 print(f"Event '{event_name}' created successfully!")
+
+                if _mirror_to_calendar(
+                    name=f"SU Event: {event_name}", kind="event",
+                    date=date, start_time=start_time or None,
+                    end_time=end_time or None, location=location or None,
+                    description=description or None,
+                    source_table="union_events", source_id=union_event_id,
+                    conn=conn,
+                ):
+                    print("Added to the university academic calendar.")
 
             elif action == '6':
                 break

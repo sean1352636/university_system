@@ -40,7 +40,7 @@ except Exception:
     _set_finance_cli_auth = None
 
 from education_system.systems.university.infrastructure.auth import UserAuth
-from education_system.systems.university.interfaces.gui.shell.theme_config import get_theme_manager
+from education_system.systems.university.shell.gui.theme_config import get_theme_manager
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 # Configure logging
@@ -171,7 +171,7 @@ class FinanceManagementGUI:
                                 try:
                                     fn()
                                 except Exception:
-                                    pass
+                                    logger.debug("Suppressed exception", exc_info=True)
                                 return
 
                     subscribe_tk(EVENT_CHARGE_RAISED, win, _on_finance_change)
@@ -217,7 +217,7 @@ class FinanceManagementGUI:
         if not self.auth.current_user:
             messagebox.showerror(
                 _t("finance_management.error.title"),
-                _t("finance_management.error.reporting_login_required"),
+                _t("finance_management.error.reporting_login_required", default="Reporting Login Required"),
             )
             return
 
@@ -231,7 +231,7 @@ class FinanceManagementGUI:
         ):
             messagebox.showerror(
                 _t("finance_management.error.title"),
-                _t("finance_management.error.reporting_no_permission"),
+                _t("finance_management.error.reporting_no_permission", default="Reporting No Permission"),
             )
             return
 
@@ -240,7 +240,7 @@ class FinanceManagementGUI:
             # Check if Finance Reporting GUI is available
             if FINANCE_REPORTING_GUI_AVAILABLE:
                 finance_reporting_window = tk.Toplevel(self.root)
-                finance_reporting_window.title(_t("finance_management.reporting.window_title"))
+                finance_reporting_window.title(_t("finance_management.reporting.window_title", default="===== WINDOW ====="))
                 finance_reporting_window.geometry("1400x900")
                 finance_reporting_window.minsize(1200, 800)
 
@@ -269,14 +269,14 @@ class FinanceManagementGUI:
             else:
                 # GUI not available, show info dialog
                 messagebox.showinfo(
-                    _t("finance_management.reporting.info_title"),
-                    _t("finance_management.reporting.not_available"),
+                    _t("finance_management.reporting.info_title", default="===== INFO ====="),
+                    _t("finance_management.reporting.not_available", default="Not Available"),
                 )
 
         except Exception as e:
             messagebox.showerror(
                 _t("finance_management.error.title"),
-                _t("finance_management.error.reporting_failed", error=str(e)),
+                _t("finance_management.error.reporting_failed", error=str(e), default="Reporting Failed {error}"),
             )
             print(f"❌ Finance Reporting Dashboard error: {e}")
 

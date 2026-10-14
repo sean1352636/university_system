@@ -46,7 +46,7 @@ _QUIET_LOGGERS: tuple[str, ...] = (
     "education_system.systems.university.infrastructure",
     "education_system.systems.university.domains.finance.interfaces.gui.finance.common_imports",
     "education_system.systems.university.domains.pastoral.domain.services.student_support.utils.audit",
-    "education_system.systems.university.interfaces.gui.shell.main.features.academic_link_bar",
+    "education_system.systems.university.shell.gui.main.features.academic_link_bar",
 )
 
 # ---------------------------------------------------------------------------

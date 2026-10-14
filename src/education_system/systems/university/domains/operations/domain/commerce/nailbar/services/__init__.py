@@ -1,25 +1,13 @@
-"""Nail Bar/Salon Core Services Module"""
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.domain.nailbar.services`` (campus commerce plugin).
 
-from education_system.systems.university.domains.operations.domain.commerce.nailbar.services.nailbar_core import (
-    TreatmentManager,
-    TechnicianManager,
-    AppointmentManager,
-    TransactionManager,
-    ReportManager,
-    init_nailbar_db,
-    TREATMENT_CATEGORIES,
-    APPOINTMENT_STATUSES,
-    TIME_SLOTS
-)
+A mirror, not an alias: an aliased package would resolve this package's
+submodules through the new ``__path__`` and load each one a second time.
+Submodules are aliased individually; this copies the package's names.
+"""
+# layout-shim: education_system.systems.university.plugins.campus_commerce.domain.nailbar.services
+import importlib as _importlib
 
-__all__ = [
-    'TreatmentManager',
-    'TechnicianManager',
-    'AppointmentManager',
-    'TransactionManager',
-    'ReportManager',
-    'init_nailbar_db',
-    'TREATMENT_CATEGORIES',
-    'APPOINTMENT_STATUSES',
-    'TIME_SLOTS'
-]
+_new = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.domain.nailbar.services")
+globals().update({k: v for k, v in vars(_new).items()
+                  if not (k.startswith("__") and k.endswith("__"))})
+del _importlib, _new

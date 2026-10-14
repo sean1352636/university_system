@@ -68,7 +68,7 @@ class SustainableEventsDialog:
                        st.carbon_footprint, st.waste_generated, st.waste_recycled,
                        st.sustainability_score, st.recorded_date
                 FROM sustainability_tracking st
-                LEFT JOIN union_events e ON st.event_id = e.event_id
+                LEFT JOIN (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e ON st.event_id = e.event_id
                 ORDER BY st.recorded_date DESC
                 LIMIT 50
             ''')

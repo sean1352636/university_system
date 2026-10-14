@@ -1,0 +1,11 @@
+{
+  "template_id": "personal_statement_feedback",
+  "description": "Sent to a sixth-form student when a reviewer releases feedback on one of their personal-statement drafts. Carries the reviewer's comments verbatim, the draft's current status, and its UCAS character/line position — stated as remaining headroom, or as an overrun that must be cut before UCAS will accept it.",
+  "channel": "Email",
+  "category": "General",
+  "priority": "Normal",
+  "from_name": "{{system_name}} UCAS Team",
+  "from_address": "ucas@sixthform.ac.uk",
+  "subject": "Feedback on your personal statement: {{title}}",
+  "body": "Hi {{first_name}},\n\n{{reviewer}} has reviewed your personal statement and left the feedback below.\n\n  Draft   : {{title}}\n  Status  : {{status}}\n  Length  : {{word_count}} words · {{char_count}}/{{max_chars}} characters · {{line_count}}/{{max_lines}} lines\n\nFeedback\n--------\n{{feedback}}\n\nLength\n------\n{{limits_block}}\n\nWhat to do next\n---------------\n  - Work through the feedback and write your next draft. Most students go through several before the one that gets sent.\n  - Bring the new draft to your tutor or the UCAS team — we would rather see it early than close to the deadline.\n  - Remember that UCAS counts characters and lines, not words, and that spaces and blank lines both count.\n\nIf anything in the feedback isn't clear, reply to this email or contact us at {{contact_email}} and we'll go through it with you.\n\nThe UCAS Team\n{{system_name}}"
+}

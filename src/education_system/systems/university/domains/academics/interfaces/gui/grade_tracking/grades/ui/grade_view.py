@@ -3,6 +3,7 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from .. import *
 from ..scale import GRADE_SYSTEMS, letter_to_gpa, letter_to_percentage, percentage_to_letter
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.utils import attr_alive, widget_alive
 
 def safe_grab_set(dialog):
     """Safely set grab on dialog window, handling TclError exceptions"""
@@ -17,9 +18,8 @@ def safe_grab_set(dialog):
 def safe_combo_update(obj, combo_attr, values):
     """Safely update combobox values, handling widget destruction"""
     try:
-        if hasattr(obj, combo_attr):
-            combo = getattr(obj, combo_attr)
-        if combo and combo.winfo_exists():
+        combo = getattr(obj, combo_attr, None)
+        if widget_alive(combo):
             combo['values'] = values
             return True
     except (tk.TclError, AttributeError):
@@ -141,6 +141,11 @@ class GradeViewMixin:
 
     def refresh_grades(self):
         """Refresh the grades list with current filters"""
+        # The tree is destroyed whenever the user navigates to another view;
+        # a stale reference here is normal, not an error.
+        if not attr_alive(self, 'grades_tree'):
+            return
+
         try:
             # Clear existing items
             for item in self.grades_tree.get_children():
@@ -310,6 +315,10 @@ class GradeViewMixin:
                     grade[7] if grade[7] else 'N/A'  # Date
                 ))
 
+        except tk.TclError:
+            # Widget torn down mid-refresh (view switched / window closed).
+            return
+
         except ConnectionError as e:
             messagebox.showerror(_t('gui.academics.grade_tracking.grades.ui.grade_view.dialogs.database_error', default="Database Error"), str(e))
         except sqlite3.Error as e:
@@ -341,7 +350,7 @@ class GradeViewMixin:
             # Populate student filter — include students with rows in
             # `grades`, `assignment_submissions`, or `student_grades`
             # (the latter is where exam scheduler results land).
-            if hasattr(self, 'grade_student_combo'):
+            if attr_alive(self, 'grade_student_combo'):
                 cursor.execute("""
                     SELECT DISTINCT s.student_id, s.first_name, s.last_name
                     FROM students s
@@ -358,7 +367,7 @@ class GradeViewMixin:
                 safe_combo_update(self, 'grade_student_combo', student_list)
 
             # Populate assessment filter (from both assessments and assignments tables)
-            if hasattr(self, 'grade_assessment_combo'):
+            if attr_alive(self, 'grade_assessment_combo'):
                 # Query assessments table
                 cursor.execute("""
                     SELECT DISTINCT a.assessment_id, a.assessment_name, m.module_name

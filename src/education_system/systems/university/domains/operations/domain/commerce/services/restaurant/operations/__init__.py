@@ -1,3 +1,13 @@
-"""operations for campus commerce."""
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.domain.services.restaurant.operations`` (campus commerce plugin).
 
-__all__ = ['audit', 'backup', 'connection', 'exports', 'financial_reporting', 'financials', 'forecasting', 'inventory_management', 'maintenance', 'miscellaneous', 'notifications', 'order_processing', 'restaurant_context', 'restaurant_core', 'settings']
+A mirror, not an alias: an aliased package would resolve this package's
+submodules through the new ``__path__`` and load each one a second time.
+Submodules are aliased individually; this copies the package's names.
+"""
+# layout-shim: education_system.systems.university.plugins.campus_commerce.domain.services.restaurant.operations
+import importlib as _importlib
+
+_new = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.domain.services.restaurant.operations")
+globals().update({k: v for k, v in vars(_new).items()
+                  if not (k.startswith("__") and k.endswith("__"))})
+del _importlib, _new

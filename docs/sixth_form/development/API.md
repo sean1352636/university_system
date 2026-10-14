@@ -40,7 +40,7 @@ def create_app(db_path: str | None = None) -> Flask:
 **Starting the server:**
 
 ```bash
-python run.py --college --api
+python -m education_system --college --api
 ```
 
 Default: `http://127.0.0.1:5000`. CORS is enabled for all origins.

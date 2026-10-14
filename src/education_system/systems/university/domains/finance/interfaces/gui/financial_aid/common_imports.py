@@ -360,9 +360,9 @@ def clear_frame(frame):
                 try:
                     widget.destroy()
                 except Exception:
-                    pass  # Widget already destroyed
+                    logger.debug("Suppressed exception", exc_info=True)
     except Exception:
-        pass  # Frame already destroyed or invalid
+        logger.debug("Suppressed exception", exc_info=True)
 
 
 # Academic year utilities

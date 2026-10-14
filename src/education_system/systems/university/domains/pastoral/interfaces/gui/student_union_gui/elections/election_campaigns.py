@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
@@ -694,7 +698,7 @@ class ViewCandidateProfilesDialog:
                 media_tree.insert('', 'end', values=row)
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Upload button
         media_btn_frame = ttk.Frame(media_content)
@@ -806,7 +810,7 @@ class ViewCandidateProfilesDialog:
                     self.tree.item(item_id, values=values)
                     break
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def endorse(self):
         """Endorse a candidate"""

@@ -378,7 +378,7 @@ class StoriesPhotosMixin:
 
         def moderate_photos(self):
             """Admin function to moderate uploaded photos"""
-            if not self.has_permission('admin') and not self.has_permission('manage_alumni'):
+            if not self.has_permission('manage_alumni'):
                 messagebox.showerror(_t('gui.learners.alumni.stories_photos.dialogs.permission_denied', default="Permission Denied"),
                                    _t('gui.learners.alumni.stories_photos.dialogs.you_don_t_have_permission_to_moderate_photos', default="You don't have permission to moderate photos."))
                 return

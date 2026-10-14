@@ -1,4 +1,7 @@
 """Status bar mixin for LayoutManager."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 import tkinter as tk
 from datetime import datetime
@@ -49,7 +52,7 @@ class StatusBarMixin:
             try:
                 self.root.after_cancel(self._time_after_id)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             self._time_after_id = None
 
     def update_status(self, message):
@@ -78,7 +81,7 @@ class StatusBarMixin:
                 self._time_after_id = self.root.after(1000, self.update_time)
             except Exception:
                 # Time display unavailable or window destroyed, silently ignore
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
 
     def update_system_status(self):

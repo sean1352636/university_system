@@ -132,7 +132,7 @@ class EventRegistrationDialog:
             cursor.execute('''
             SELECT e.event_id, e.event_name, e.event_date, e.start_time, e.location,
                    c.club_name, e.max_attendees, e.current_attendees, e.description
-            FROM union_events e
+            FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e
             JOIN student_clubs c ON e.organizer_id = c.club_id
             WHERE e.event_date >= ? AND e.status = 'upcoming'
             ORDER BY e.event_date, e.start_time
@@ -528,7 +528,7 @@ class EventAttendanceDialog:
 
             cursor.execute('''
             SELECT event_id, event_name, event_date, event_time
-            FROM union_events
+            FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union')
             WHERE event_date >= date('now', '-30 days')
             ORDER BY event_date DESC
             ''')
@@ -570,7 +570,7 @@ class EventAttendanceDialog:
 
             cursor.execute('''
             SELECT COALESCE(er.student_id, 'N/A'), u.username, er.registration_date, er.status
-            FROM union_event_registrations er
+            FROM unified_event_registrations er
             JOIN users u ON er.user_id = u.id
             WHERE er.event_id = ?
             ORDER BY u.username

@@ -1,40 +1,11 @@
-from .. import *
+"""Moved to ``education_system.systems.university.plugins.community_services.interfaces.gui.church_management.services.payments`` (community services plugin).
 
-def get_student_account_balance(student_id):
-    """Get student's finance account balance."""
-    try:
-        from education_system.systems.university.domains.finance.infrastructure.finance_integration import get_student_finance_account_balance
-        return get_student_finance_account_balance(student_id)
-    except ImportError:
-        return None
+The old name *is* the new module object, so ``mock.patch`` and
+``monkeypatch`` targets still act on the real code. Delete once nothing
+imports the old path.
+"""
+# layout-shim: education_system.systems.university.plugins.community_services.interfaces.gui.church_management.services.payments
+import importlib as _importlib
+import sys as _sys
 
-def process_student_payment(student_id, amount, description, transaction_ref):
-    """Process payment from student account."""
-    try:
-        from education_system.systems.university.domains.finance.infrastructure.finance_integration import process_student_finance_account_payment
-        return process_student_finance_account_payment(
-            student_id=student_id,
-            amount=amount,
-            description=description,
-            transaction_source="Church",
-            transaction_ref=transaction_ref
-        )
-    except ImportError:
-        return {'success': False, 'message': 'Finance integration not available'}
-
-def record_revenue(student_id, amount, category, transaction_ref, payment_method, notes=None):
-    """Record revenue to the central finance system."""
-    try:
-        from education_system.systems.university.domains.finance.infrastructure.finance_integration import record_revenue_to_finance
-        return record_revenue_to_finance(
-            student_id=student_id or "EXTERNAL",
-            amount=amount,
-            revenue_category=category,
-            transaction_source="Church",
-            transaction_ref=transaction_ref,
-            payment_method=payment_method,
-            notes=notes
-        )
-    except ImportError:
-        logger.warning("Finance integration not available for revenue recording")
-        return None
+_sys.modules[__name__] = _importlib.import_module("education_system.systems.university.plugins.community_services.interfaces.gui.church_management.services.payments")

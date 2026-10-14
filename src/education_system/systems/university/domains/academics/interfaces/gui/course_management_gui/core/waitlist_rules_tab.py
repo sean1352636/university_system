@@ -305,6 +305,7 @@ class WaitlistRulesTabMixin:
             with self._ext_db(write=True) as conn:
                 cur = conn.cursor()
                 placeholders = ",".join("?" for _ in ids)
+                # db-audit: ignore[DBW001] - string literal
                 cur.execute(
                     f"UPDATE course_waitlist SET status='Promoted' "
                     f"WHERE id IN ({placeholders})", ids)

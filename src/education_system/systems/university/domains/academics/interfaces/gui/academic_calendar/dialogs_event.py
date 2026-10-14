@@ -2,11 +2,18 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import logging
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
+from tkinter import ttk, scrolledtext
 from datetime import datetime, timedelta
 from typing import Any, Optional, List, Dict
 from education_system.systems.university.infrastructure.i18n import get_text as _
 from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar.utils import safe_grab_set
+# Dates are picked, not typed: every stored date is YYYY-MM-DD and the
+# validators reject anything else, so a free-text box was a format error
+# waiting to happen.
+from education_system.platform.delivery.gui.date_picker import DatePicker, recent_years
+# Message boxes parented to the window that raised them, not the main
+# GUI — see _dialogs.
+from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar._dialogs import messagebox
 
 gui_logger = logging.getLogger(__name__)
 
@@ -47,6 +54,7 @@ class AddEventDialog:
                                 values=["Academic", "Holiday", "Administrative", "Social",
                                        "Sports", "Trip", "Deadline"])
         type_combo.pack(fill=tk.X, pady=(5, 15))
+        type_combo.bind("<<ComboboxSelected>>", lambda _e: self._toggle_trip_fields())
 
         # Date type selection
         date_type_frame = ttk.LabelFrame(main_frame, text=_("academic_calendar.labels.date_configuration"), padding=10)
@@ -62,23 +70,28 @@ class AddEventDialog:
         self.single_date_frame = ttk.Frame(date_type_frame)
         self.single_date_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(self.single_date_frame, text=_("academic_calendar.labels.date_format")).pack(anchor=tk.W)
-        self.single_date_var = tk.StringVar()
-        ttk.Entry(self.single_date_frame, textvariable=self.single_date_var, width=47).pack(fill=tk.X)
+        ttk.Label(self.single_date_frame, text=_("academic_calendar.labels.date")).pack(anchor=tk.W)
+        self.single_date_picker = DatePicker(self.single_date_frame,
+                                             years=recent_years(ahead=5, back=3))
+        self.single_date_picker.pack(anchor=tk.W, pady=(2, 0))
 
         # Date range
         self.date_range_frame = ttk.Frame(date_type_frame)
 
-        ttk.Label(self.date_range_frame, text=_("academic_calendar.labels.start_date_format")).pack(anchor=tk.W)
-        self.start_date_var = tk.StringVar()
-        ttk.Entry(self.date_range_frame, textvariable=self.start_date_var, width=47).pack(fill=tk.X)
+        ttk.Label(self.date_range_frame, text=_("academic_calendar.labels.start_date")).pack(anchor=tk.W)
+        self.start_date_picker = DatePicker(self.date_range_frame,
+                                            years=recent_years(ahead=5, back=3))
+        self.start_date_picker.pack(anchor=tk.W, pady=(2, 0))
 
-        ttk.Label(self.date_range_frame, text=_("academic_calendar.labels.end_date_format")).pack(anchor=tk.W, pady=(10, 0))
-        self.end_date_var = tk.StringVar()
-        ttk.Entry(self.date_range_frame, textvariable=self.end_date_var, width=47).pack(fill=tk.X)
+        ttk.Label(self.date_range_frame, text=_("academic_calendar.labels.end_date")).pack(anchor=tk.W, pady=(10, 0))
+        self.end_date_picker = DatePicker(self.date_range_frame,
+                                          years=recent_years(ahead=5, back=3))
+        self.end_date_picker.pack(anchor=tk.W, pady=(2, 0))
 
         # Description
-        ttk.Label(main_frame, text=_("academic_calendar.labels.description")).pack(anchor=tk.W)
+        self.description_label = ttk.Label(
+            main_frame, text=_("academic_calendar.labels.description"))
+        self.description_label.pack(anchor=tk.W)
         self.description_text = scrolledtext.ScrolledText(main_frame, height=5, width=50)
         self.description_text.pack(fill=tk.X, pady=(5, 15))
 
@@ -89,8 +102,35 @@ class AddEventDialog:
         ttk.Button(button_frame, text=_("common.cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=(10, 0))
         ttk.Button(button_frame, text=_("academic_calendar.buttons.add_event_action"), command=self._add_event).pack(side=tk.RIGHT)
 
+        # Trip details — only meaningful for a Trip, so hidden until then.
+        # A trip row needs a destination, and inventing one would put junk in
+        # Trip Management, so it is asked for rather than guessed.
+        self.trip_frame = ttk.LabelFrame(
+            main_frame, text=_("academic_calendar.labels.trip_details"), padding=10)
+
+        ttk.Label(self.trip_frame,
+                  text=_("academic_calendar.labels.destination_required")).pack(anchor=tk.W)
+        self.destination_var = tk.StringVar()
+        ttk.Entry(self.trip_frame, textvariable=self.destination_var,
+                  width=44).pack(fill=tk.X, pady=(2, 8))
+
+        row = ttk.Frame(self.trip_frame)
+        row.pack(fill=tk.X)
+        ttk.Label(row, text=_("academic_calendar.labels.max_participants")).pack(side=tk.LEFT)
+        self.max_participants_var = tk.StringVar(value="50")
+        ttk.Spinbox(row, from_=1, to=999, width=6,
+                    textvariable=self.max_participants_var).pack(side=tk.LEFT, padx=(6, 18))
+        ttk.Label(row, text=_("academic_calendar.labels.cost")).pack(side=tk.LEFT)
+        self.cost_var = tk.StringVar(value="0.00")
+        ttk.Entry(row, textvariable=self.cost_var, width=10).pack(side=tk.LEFT, padx=(6, 0))
+
+        ttk.Label(self.trip_frame,
+                  text=_("academic_calendar.labels.trip_will_be_created"),
+                  foreground="#555").pack(anchor=tk.W, pady=(8, 0))
+
         # Initialize date fields
         self._toggle_date_fields()
+        self._toggle_trip_fields()
 
     def _toggle_date_fields(self):
         """Toggle date fields based on selection"""
@@ -100,6 +140,45 @@ class AddEventDialog:
         else:
             self.single_date_frame.pack_forget()
             self.date_range_frame.pack(fill=tk.X, pady=5)
+
+    def _register_trip(self, result, name, description):
+        """Create the Trip Management record for a Trip-typed event."""
+        if self.date_type.get() == "single":
+            start = end = self.single_date_picker.get()
+        else:
+            start = self.start_date_picker.get()
+            end = self.end_date_picker.get()
+        try:
+            max_participants = int(self.max_participants_var.get() or 50)
+        except ValueError:
+            max_participants = 50
+        try:
+            cost = float(self.cost_var.get() or 0)
+        except ValueError:
+            cost = 0.0
+        try:
+            return self.calendar_manager.create_trip_from_event(
+                result.get('event_id'),
+                name=name,
+                start_date=start,
+                end_date=end,
+                destination=self.destination_var.get().strip(),
+                description=description,
+                max_participants=max_participants,
+                cost=cost,
+            )
+        except Exception as e:
+            gui_logger.error("Trip registration failed: %s", e, exc_info=True)
+            return {'success': False, 'trip_id': None,
+                    'message': f'The event was saved, but the trip was not created: {e}'}
+
+    def _toggle_trip_fields(self):
+        """Show the trip details only when the event type is Trip."""
+        if self.type_var.get() == "Trip":
+            self.trip_frame.pack(fill=tk.X, pady=(0, 15),
+                                 before=self.description_label)
+        else:
+            self.trip_frame.pack_forget()
 
     def _center_dialog(self):
         """Center dialog on parent"""
@@ -119,8 +198,15 @@ class AddEventDialog:
             event_type = self.type_var.get()
             description = self.description_text.get(1.0, tk.END).strip()
 
+            is_trip = event_type == "Trip"
+            if is_trip and not self.destination_var.get().strip():
+                messagebox.showerror(
+                    _("common.error"),
+                    _("academic_calendar.messages.destination_required"))
+                return
+
             if self.date_type.get() == "single":
-                date = self.single_date_var.get().strip()
+                date = self.single_date_picker.get()
                 if not date:
                     messagebox.showerror(_("common.error"), _("academic_calendar.messages.date_required"))
                     return
@@ -132,8 +218,8 @@ class AddEventDialog:
                     event_type=event_type
                 )
             else:
-                start_date = self.start_date_var.get().strip()
-                end_date = self.end_date_var.get().strip()
+                start_date = self.start_date_picker.get()
+                end_date = self.end_date_picker.get()
 
                 if not start_date or not end_date:
                     messagebox.showerror(_("common.error"), _("academic_calendar.messages.both_dates_required"))
@@ -148,7 +234,20 @@ class AddEventDialog:
                 )
 
             if result['success']:
-                messagebox.showinfo(_("common.success"), result['message'])
+                message = result['message']
+                # A Trip-typed event registers itself in Trip Management. The
+                # event is already saved at this point, so a trip failure is
+                # reported without discarding it.
+                if is_trip:
+                    trip = self._register_trip(result, name, description)
+                    message = f"{message}\n\n{trip['message']}"
+                    if not trip['success']:
+                        messagebox.showwarning(_("common.warning"), message)
+                        if self.callback:
+                            self.callback()
+                        self.dialog.destroy()
+                        return
+                messagebox.showinfo(_("common.success"), message)
                 if self.callback:
                     self.callback()
                 self.dialog.destroy()
@@ -237,19 +336,19 @@ class EditEventDialog:
         date_frame.pack(fill=tk.X, pady=(0, 10))
 
         # Single date
-        ttk.Label(date_frame, text=_("academic_calendar.labels.date_format")).pack(anchor=tk.W)
-        self.date_var = tk.StringVar()
-        ttk.Entry(date_frame, textvariable=self.date_var, width=47).pack(fill=tk.X, pady=(5, 8))
+        ttk.Label(date_frame, text=_("academic_calendar.labels.date")).pack(anchor=tk.W)
+        self.date_picker = DatePicker(date_frame, years=recent_years(ahead=5, back=3))
+        self.date_picker.pack(anchor=tk.W, pady=(5, 8))
 
         # Start date
-        ttk.Label(date_frame, text=_("academic_calendar.labels.start_date_format")).pack(anchor=tk.W)
-        self.start_date_var = tk.StringVar()
-        ttk.Entry(date_frame, textvariable=self.start_date_var, width=47).pack(fill=tk.X, pady=(5, 8))
+        ttk.Label(date_frame, text=_("academic_calendar.labels.start_date")).pack(anchor=tk.W)
+        self.start_date_picker = DatePicker(date_frame, years=recent_years(ahead=5, back=3))
+        self.start_date_picker.pack(anchor=tk.W, pady=(5, 8))
 
         # End date
-        ttk.Label(date_frame, text=_("academic_calendar.labels.end_date_format")).pack(anchor=tk.W)
-        self.end_date_var = tk.StringVar()
-        ttk.Entry(date_frame, textvariable=self.end_date_var, width=47).pack(fill=tk.X, pady=(5, 0))
+        ttk.Label(date_frame, text=_("academic_calendar.labels.end_date")).pack(anchor=tk.W)
+        self.end_date_picker = DatePicker(date_frame, years=recent_years(ahead=5, back=3))
+        self.end_date_picker.pack(anchor=tk.W, pady=(5, 0))
 
         # Description
         ttk.Label(main_frame, text=_("academic_calendar.labels.description")).pack(anchor=tk.W, pady=(10, 0))
@@ -261,9 +360,9 @@ class EditEventDialog:
         self.id_var.set(self.event_data.get('id', ''))
         self.name_var.set(self.event_data.get('name', ''))
         self.type_var.set(self.event_data.get('event_type', 'Academic'))
-        self.date_var.set(self.event_data.get('date', ''))
-        self.start_date_var.set(self.event_data.get('date_start', ''))
-        self.end_date_var.set(self.event_data.get('date_end', ''))
+        self.date_picker.set(self.event_data.get('date') or '')
+        self.start_date_picker.set(self.event_data.get('date_start') or '')
+        self.end_date_picker.set(self.event_data.get('date_end') or '')
 
         description = self.event_data.get('description', '')
         if description:
@@ -294,14 +393,14 @@ class EditEventDialog:
             if self.type_var.get() != self.event_data.get('event_type', ''):
                 updates['event_type'] = self.type_var.get()
 
-            if self.date_var.get() != self.event_data.get('date', ''):
-                updates['date'] = self.date_var.get().strip() or None
+            if self.date_picker.get() != (self.event_data.get('date') or ''):
+                updates['date'] = self.date_picker.get() or None
 
-            if self.start_date_var.get() != self.event_data.get('date_start', ''):
-                updates['date_start'] = self.start_date_var.get().strip() or None
+            if self.start_date_picker.get() != (self.event_data.get('date_start') or ''):
+                updates['date_start'] = self.start_date_picker.get() or None
 
-            if self.end_date_var.get() != self.event_data.get('date_end', ''):
-                updates['date_end'] = self.end_date_var.get().strip() or None
+            if self.end_date_picker.get() != (self.event_data.get('date_end') or ''):
+                updates['date_end'] = self.end_date_picker.get() or None
 
             new_description = self.description_text.get(1.0, tk.END).strip()
             if new_description != self.event_data.get('description', ''):

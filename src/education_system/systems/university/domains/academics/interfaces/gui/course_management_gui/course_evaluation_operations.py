@@ -29,6 +29,7 @@ from education_system.systems.university.domains.academics.domain.services.evalu
 from education_system.systems.university.domains.academics.domain.services.evaluation.db_schema import (
     initialize_evaluation_database,
 )
+from education_system.systems.university.domains.academics.interfaces.gui._field_pickers import academic_year_values, attach_combo, attach_date, attach_picker
 
 
 _W, _H = 1400, 900
@@ -504,7 +505,8 @@ class OperationsGUI:
         self.lms_base = ttk.Entry(bar, width=30)
         self.lms_base.insert(0, "https://canvas.example.edu"); self.lms_base.pack(side=tk.LEFT, padx=4)
         ttk.Label(bar, text=_t('gui.academics.course_management_gui.course_evaluation_operations.labels.course_id', default="Course ID:")).pack(side=tk.LEFT)
-        self.lms_course = ttk.Entry(bar, width=10); self.lms_course.pack(side=tk.LEFT, padx=4)
+        self.lms_course = attach_picker(bar, 'course', width=28)
+        self.lms_course.pack(side=tk.LEFT, padx=4)
         ttk.Label(bar, text=_t('gui.academics.course_management_gui.course_evaluation_operations.labels.eval_url', default="Eval URL:")).pack(side=tk.LEFT)
         self.lms_eval = ttk.Entry(bar, width=30); self.lms_eval.pack(side=tk.LEFT, padx=4)
         ttk.Button(bar, text=_t('gui.academics.course_management_gui.course_evaluation_operations.buttons.generate', default="Generate"), command=self._gen_lms).pack(side=tk.LEFT, padx=4)
@@ -526,21 +528,27 @@ class OperationsGUI:
         hr = ttk.LabelFrame(ops_row, text=_t('gui.academics.course_management_gui.course_evaluation_operations.labels.hr_export_36', default="HR export (36)"), padding=6)
         hr.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=4)
         ttk.Label(hr, text=_t('gui.academics.course_management_gui.course_evaluation_operations.labels.instructor_id', default="Instructor ID:")).pack(anchor=tk.W)
-        self.hr_inst = ttk.Entry(hr); self.hr_inst.pack(fill=tk.X)
+        self.hr_inst = attach_picker(hr, 'instructor', width=28)
+        self.hr_inst.pack(fill=tk.X)
         ttk.Label(hr, text=_t('gui.academics.course_management_gui.course_evaluation_operations.labels.academic_year', default="Academic year:")).pack(anchor=tk.W)
-        self.hr_year = ttk.Entry(hr); self.hr_year.pack(fill=tk.X)
+        self.hr_year = attach_combo(hr, academic_year_values(), width=12)
+        self.hr_year.set(academic_year_values()[2])
+        self.hr_year.pack(fill=tk.X)
         ttk.Button(hr, text=_t('gui.academics.course_management_gui.course_evaluation_operations.buttons.build_packet', default="Build packet"), command=self._do_hr).pack(anchor=tk.W, pady=2)
         self.hr_box = scrolledtext.ScrolledText(hr, height=6); self.hr_box.pack(fill=tk.BOTH, expand=True)
 
         cal = ttk.LabelFrame(ops_row, text=_t('gui.academics.course_management_gui.course_evaluation_operations.labels.calendar_hold_37', default="Calendar hold (37)"), padding=6)
         cal.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(4, 0))
         ttk.Label(cal, text=_t('gui.academics.course_management_gui.course_evaluation_operations.labels.instructor', default="Instructor:")).pack(anchor=tk.W)
-        self.cal_inst = ttk.Entry(cal); self.cal_inst.pack(fill=tk.X)
+        self.cal_inst = attach_picker(cal, 'instructor', width=26)
+        self.cal_inst.pack(fill=tk.X)
         bar2 = ttk.Frame(cal); bar2.pack(fill=tk.X)
         ttk.Label(bar2, text=_t('gui.academics.course_management_gui.course_evaluation_operations.labels.start', default="Start:")).pack(side=tk.LEFT)
-        self.cal_start = ttk.Entry(bar2, width=12); self.cal_start.pack(side=tk.LEFT, padx=4)
+        self.cal_start = attach_date(bar2)
+        self.cal_start.pack(side=tk.LEFT, padx=4)
         ttk.Label(bar2, text=_t('gui.academics.course_management_gui.course_evaluation_operations.labels.end', default="End:")).pack(side=tk.LEFT)
-        self.cal_end = ttk.Entry(bar2, width=12); self.cal_end.pack(side=tk.LEFT, padx=4)
+        self.cal_end = attach_date(bar2)
+        self.cal_end.pack(side=tk.LEFT, padx=4)
         ttk.Button(bar2, text=_t('gui.academics.course_management_gui.course_evaluation_operations.buttons.add_hold', default="Add hold"), command=self._do_hold).pack(side=tk.LEFT, padx=4)
 
         # 38: webhooks
@@ -862,7 +870,8 @@ class OperationsGUI:
         pul.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(4, 0))
         bar4 = ttk.Frame(pul); bar4.pack(fill=tk.X)
         ttk.Label(bar4, text=_t('gui.academics.course_management_gui.course_evaluation_operations.labels.module', default="Module:")).pack(side=tk.LEFT)
-        self.pul_mod = ttk.Entry(bar4, width=12); self.pul_mod.pack(side=tk.LEFT, padx=4)
+        self.pul_mod = attach_picker(bar4, 'module', width=24)
+        self.pul_mod.pack(side=tk.LEFT, padx=4)
         ttk.Label(bar4, text=_t('gui.academics.course_management_gui.course_evaluation_operations.labels.cadence_d', default="Cadence d:")).pack(side=tk.LEFT)
         self.pul_cad = ttk.Spinbox(bar4, from_=1, to=90, width=4); self.pul_cad.insert(0, "7")
         self.pul_cad.pack(side=tk.LEFT, padx=4)

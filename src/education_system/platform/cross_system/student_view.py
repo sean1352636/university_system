@@ -1,6 +1,6 @@
 """The single student view — one learner's whole history, every system.
 
-Given a canonical ``journey_id`` this builds a read-only, nested snapshot
+Given a canonical ``journey_id`` this returns a read-only, nested snapshot
 of everything the platform knows about that person, in ``SYSTEM_ORDER``::
 
     nursery → primary → secondary → ┬ sixth-form college ┬ → university
@@ -9,15 +9,16 @@ of everything the platform knows about that person, in ``SYSTEM_ORDER``::
 
 The post-16 row is a fork, not a queue, and a learner may appear in more
 than one branch of it at once — a degree apprentice holds a university
-and an apprenticeships record simultaneously, and an FE learner who takes
-up an apprenticeship usually keeps their college place. The view shows
-every system the learner has a record in rather than picking a winner.
+and an apprenticeships record simultaneously. The view shows every system
+the learner has a record in rather than picking a winner.
 
-For each system the learner actually reached it pulls the local record plus,
-where the system keeps them, an attendance summary and recent results. The
-cross-system links already exist (the ``student_journey`` slots and the
-``journey_id`` FK stamped on each domain row); this is the first place that
-*reads them all together*.
+Since the Learner 360 landed this module is a compatibility face over
+:func:`learner_360.build_learner_360`: :func:`build_overview` keeps its
+signature and its ``journey_id / found / person / phases / transitions``
+keys, and adds the full Learner 360 under ``learner_360``. ``phases`` now
+comes from the enrolment history rather than the per-phase slots, so a
+learner's second spell in a phase is a second entry instead of being
+overwritten — and nursery, primary and sixth-form phases carry attendance.
 
 Everything here is defensive and read-only: a missing database, table or
 column degrades to a partial view rather than an error, so the overview is
@@ -27,285 +28,57 @@ safe to call from an API handler or a dashboard.
 from __future__ import annotations
 
 import logging
-import sqlite3
-from pathlib import Path
 
-from education_system.platform.identity.auth.db import connect as _auth_connect
-from education_system.platform.cross_system import identity_service, person
-from education_system.paths import SYSTEM_DB_PATHS, SYSTEM_LABELS, SYSTEM_ORDER
+from education_system.platform.cross_system import identity_service, learner_360
 
 logger = logging.getLogger(__name__)
 
+# Kept under their old names for callers that reached into this module.
+_EXTRACTORS = learner_360.PHASE_EXTRACTORS
+_attendance_summary = learner_360._attendance_summary
+_connect = learner_360._connect
 
-# ---------------------------------------------------------------------------
-# Low-level helpers
-# ---------------------------------------------------------------------------
-
-def _connect(path) -> sqlite3.Connection | None:
-    if not path or not Path(path).exists():
-        return None
-    conn = sqlite3.connect(str(path))
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-def _columns(conn, table) -> set[str]:
-    try:
-        return {r[1] for r in conn.execute(
-            f"PRAGMA table_info({table})").fetchall()}
-    except sqlite3.Error:
-        return set()
-
-
-def _table_exists(conn, table) -> bool:
-    row = conn.execute(
-        "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
-        (table,)).fetchone()
-    return row is not None
-
-
-def _record(conn, table, pk_col, student_id, fields) -> dict:
-    """Return the subset of ``fields`` actually present on a row."""
-    present = [f for f in fields if f in _columns(conn, table)]
-    if not present:
-        return {}
-    row = conn.execute(
-        f"SELECT {', '.join(present)} FROM {table} WHERE {pk_col} = ?",
-        (student_id,)).fetchone()
-    return {k: row[k] for k in present} if row else {}
-
-
-def _attendance_summary(conn, table, student_col, student_id,
-                        mark_col) -> dict | None:
-    """Count attendance rows grouped by their mark/status code."""
-    if not _table_exists(conn, table):
-        return None
-    cols = _columns(conn, table)
-    if student_col not in cols or mark_col not in cols:
-        return None
-    rows = conn.execute(
-        f"SELECT {mark_col} AS mark, COUNT(*) AS n FROM {table} "
-        f"WHERE {student_col} = ? GROUP BY {mark_col}",
-        (student_id,)).fetchall()
-    by_mark = {(r["mark"] or "?"): r["n"] for r in rows}
-    total = sum(by_mark.values())
-    if not total:
-        return None
-    return {"total": total, "by_mark": by_mark}
-
-
-# ---------------------------------------------------------------------------
-# Per-system extractors — each returns {record, attendance, results}
-# ---------------------------------------------------------------------------
-
-def _phase_nursery(conn, sid) -> dict:
-    return {
-        "record": _record(conn, "pupils", "pupil_id", sid, [
-            "first_name", "last_name", "date_of_birth", "room",
-            "key_person", "start_date", "status"]),
-    }
-
-
-def _phase_primary(conn, sid) -> dict:
-    return {
-        "record": _record(conn, "pupils", "pupil_id", sid, [
-            "first_name", "last_name", "date_of_birth", "year_group",
-            "class_name", "send_status", "email"]),
-    }
-
-
-def _phase_secondary(conn, sid) -> dict:
-    out: dict = {
-        "record": _record(conn, "pupils", "pupil_id", sid, [
-            "first_name", "last_name", "date_of_birth", "year_group",
-            "form_group", "send_status", "email"]),
-        "attendance": _attendance_summary(
-            conn, "attendance_records", "pupil_id", sid, "mark"),
-    }
-    if _table_exists(conn, "gradebook_entries"):
-        rows = conn.execute(
-            "SELECT subject_id, assessment_name, assessment_date, "
-            "mark_pct, grade FROM gradebook_entries WHERE pupil_id = ? "
-            "ORDER BY assessment_date DESC LIMIT 10", (sid,)).fetchall()
-        out["results"] = [dict(r) for r in rows]
-    return out
-
-
-def _phase_college(conn, sid) -> dict:
-    out: dict = {
-        "record": _record(conn, "students", "student_id", sid, [
-            "first_name", "middle_name", "last_name", "date_of_birth",
-            "subject_1", "subject_2", "subject_3", "status", "email"]),
-    }
-    if _table_exists(conn, "mock_results") and _table_exists(conn, "mock_exams"):
-        rows = conn.execute(
-            "SELECT m.subject, m.title, m.date_sat, m.max_marks, "
-            "r.marks, r.grade FROM mock_results r "
-            "JOIN mock_exams m ON m.mock_id = r.mock_id "
-            "WHERE r.student_id = ? ORDER BY m.date_sat DESC LIMIT 10",
-            (sid,)).fetchall()
-        out["results"] = [dict(r) for r in rows]
-    return out
-
-
-def _phase_university(conn, sid) -> dict:
-    out: dict = {
-        "record": _record(conn, "students", "student_id", sid, [
-            "first_name", "last_name", "date_of_birth", "course",
-            "status", "email", "enrollment_date"]),
-        "attendance": _attendance_summary(
-            conn, "attendance", "student_id", sid, "status"),
-    }
-    # University grade tables vary; surface whichever common one exists.
-    for table, cols in (
-        ("grades", "module_id, grade, score, graded_at"),
-        ("enrollments", "module_id, status, grade"),
-    ):
-        if _table_exists(conn, table) and "student_id" in _columns(conn, table):
-            present = [c.strip() for c in cols.split(",")
-                       if c.strip() in _columns(conn, table)]
-            if present:
-                rows = conn.execute(
-                    f"SELECT {', '.join(present)} FROM {table} "
-                    "WHERE student_id = ? LIMIT 20", (sid,)).fetchall()
-                out["results"] = [dict(r) for r in rows]
-                break
-    return out
-
-
-def _phase_fe_college(conn, sid) -> dict:
-    out: dict = {
-        "record": _record(conn, "students", "student_id", sid, [
-            "first_name", "last_name", "date_of_birth", "learner_type",
-            "mode_of_study", "tutor_group", "status", "email"]),
-        "attendance": _attendance_summary(
-            conn, "attendance", "student_id", sid, "mark"),
-    }
-    # An FE learner's "results" are their learning aims and the grades
-    # against them, which is the vocational equivalent of a result set.
-    if _table_exists(conn, "enrolments"):
-        rows = conn.execute(
-            "SELECT c.title AS course, e.academic_year, e.status, "
-            "e.predicted_grade, e.final_grade FROM enrolments e "
-            "LEFT JOIN courses c ON c.course_id = e.course_id "
-            "WHERE e.student_id = ? "
-            "ORDER BY e.is_main_aim DESC, e.academic_year DESC LIMIT 10",
-            (sid,)).fetchall()
-        out["results"] = [dict(r) for r in rows]
-    return out
-
-
-def _phase_apprenticeships(conn, sid) -> dict:
-    """The apprentice's record, off-the-job attendance and EPA outcome.
-
-    Deliberately does not surface portfolio evidence or formative
-    judgements: this view is read by staff across the whole platform, and
-    the provider's in-progress assessment of an apprentice is not theirs
-    to see. The EPA grade is the published outcome and does cross.
-    """
-    out: dict = {
-        "record": _record(conn, "apprentices", "apprentice_id", sid, [
-            "given_name", "family_name", "date_of_birth", "uln", "status",
-            "start_date", "planned_end_date", "actual_end_date",
-            "weekly_hours", "email"]),
-        "attendance": _attendance_summary(
-            conn, "session_attendance", "apprentice_id", sid, "mark"),
-    }
-    if _table_exists(conn, "epa_results"):
-        rows = conn.execute(
-            "SELECT method, grade, assessed_date, attempt FROM epa_results "
-            "WHERE apprentice_id = ? ORDER BY assessed_date DESC LIMIT 10",
-            (sid,)).fetchall()
-        out["results"] = [dict(r) for r in rows]
-    # The employer is half of an apprenticeship; a view that omits it
-    # describes a course, not an apprenticeship.
-    if _table_exists(conn, "employers"):
-        row = conn.execute(
-            "SELECT e.name FROM apprentices a "
-            "JOIN employers e ON e.employer_id = a.employer_id "
-            "WHERE a.apprentice_id = ?", (sid,)).fetchone()
-        if row is not None:
-            out["record"]["employer"] = row["name"]
-    return out
-
-
-_EXTRACTORS = {
-    "nursery":    _phase_nursery,
-    "primary":    _phase_primary,
-    "secondary":     _phase_secondary,
-    "sixth_form":    _phase_college,
-    "fe_college": _phase_fe_college,
-    "apprenticeships": _phase_apprenticeships,
-    "university": _phase_university,
-}
-
-
-# ---------------------------------------------------------------------------
-# Transitions timeline
-# ---------------------------------------------------------------------------
-
-def _transitions(journey_id, auth_db) -> list[dict]:
-    conn = _auth_connect(auth_db)
-    try:
-        rows = conn.execute(
-            "SELECT from_system, to_system, reason, occurred_at "
-            "FROM student_journey_transitions WHERE journey_id = ? "
-            "ORDER BY occurred_at, id", (journey_id,)).fetchall()
-        return [dict(r) for r in rows]
-    except sqlite3.Error:
-        return []
-    finally:
-        conn.close()
-
-
-# ---------------------------------------------------------------------------
-# Public API
-# ---------------------------------------------------------------------------
 
 def build_overview(journey_id: str, *, db_paths: dict | None = None,
                    auth_db: str | None = None) -> dict:
     """Aggregate a learner's whole cross-system history into one dict.
 
     ``db_paths`` / ``auth_db`` override the canonical registry locations
-    (used by tests); production callers pass neither.
+    (used by tests); production callers pass neither. The caller is
+    trusted (no viewer role), exactly as before; screens that know who is
+    looking should call :func:`learner_360.build_learner_360` with
+    ``viewer_role`` instead.
     """
-    paths = db_paths if db_paths is not None else SYSTEM_DB_PATHS
-    p = person.get(journey_id, db_path=auth_db)
-    if p is None:
+    view = learner_360.build_learner_360(journey_id, db_paths=db_paths,
+                                         auth_db=auth_db)
+    if not view.get("found"):
         return {"journey_id": journey_id, "found": False}
-
+    o = view["overview"]
     phases = []
-    for system in SYSTEM_ORDER:
-        sid = p.local_id(system)
-        if not sid:
-            continue
-        phase = {
-            "system": system,
-            "label": SYSTEM_LABELS.get(system, system.title()),
-            "student_id": sid,
-            "record": {},
-        }
-        conn = _connect(paths.get(system))
-        if conn is not None:
-            try:
-                phase.update(_EXTRACTORS[system](conn, sid))
-            except Exception:
-                logger.debug("Phase extract failed for %s/%s", system,
-                             sid, exc_info=True)
-            finally:
-                conn.close()
+    for rec in view.get("records") or []:
+        phase = {"system": rec["system"], "label": rec["label"],
+                 "student_id": rec["student_id"],
+                 "record": rec.get("record") or {}}
+        for key in ("attendance", "results", "enrolment_ids", "statuses"):
+            if rec.get(key):
+                phase[key] = rec[key]
         phases.append(phase)
-
     return {
-        "journey_id": journey_id,
+        "journey_id": view["journey_id"],
         "found": True,
-        "person": p.demographics() | {
-            "full_name": p.full_name,
-            "current_system": p.current_system,
-            "status": p.status,
+        "person": {
+            "legal_first_name": o.get("legal_first_name"),
+            "legal_last_name": o.get("legal_last_name"),
+            "date_of_birth": o.get("date_of_birth"),
+            "nhs_number": o.get("nhs_number"),
+            "upn": o.get("upn"),
+            "full_name": o.get("full_name"),
+            "current_system": o.get("current_system"),
+            "status": o.get("status"),
         },
         "phases": phases,
-        "transitions": _transitions(journey_id, auth_db),
+        "transitions": view.get("legacy_transitions") or [],
+        "learner_360": view,
     }
 
 

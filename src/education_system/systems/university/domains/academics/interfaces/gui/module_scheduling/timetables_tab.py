@@ -11,6 +11,10 @@ file historically remain here because other tabs depend on them:
 ``show_grid_view`` / ``_show_drag_drop_grid`` (main toolbar) and
 ``_show_student_timetable_dialog``.
 """
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # noqa: F401
 
 # Import internationalization (i18n) for multi-language support
@@ -22,7 +26,8 @@ except ImportError:
     _t = lambda key, **kwargs: key  # noqa: E731
 
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
+from tkinter import ttk, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling._dialogs import messagebox
 from datetime import datetime
 
 from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling.main_gui import ModuleSchedulingGUI
@@ -41,15 +46,17 @@ def create_timetables_tab(self):
 
     ttk.Label(
         box,
-        text=_t('gui.academics.module_scheduling.timetables_tab.labels.generate_view_email_and_export_student_instructor_timetables_in', default="Generate, view, email and export student & instructor "
-             "timetables in the Timetable Manager."),
+        text=_t('gui.academics.module_scheduling.timetables_tab.labels.timetable_manager_intro', default="View student, instructor and module timetables, section "
+             "meetings and scheduling conflicts, and generate, email and "
+             "export timetables — all in the Timetable Manager."),
         font=("Arial", 11), wraplength=520, justify=tk.LEFT,
     ).pack(anchor="w", pady=(0, 14))
 
+    # One button. This was two ("Open Timetable Manager…" and "Open Student
+    # Timetable Viewer…"); since the merge they open the same window, the
+    # second one merely landing on its Student tab.
     ttk.Button(box, text=_t('gui.academics.module_scheduling.timetables_tab.buttons.open_timetable_manager', default="Open Timetable Manager…"),
                command=self.open_timetable_manager).pack(anchor="w", pady=4)
-    ttk.Button(box, text=_t('gui.academics.module_scheduling.timetables_tab.buttons.open_student_timetable_viewer', default="Open Student Timetable Viewer…"),
-               command=self._show_student_timetable_dialog).pack(anchor="w", pady=4)
 
 
 ModuleSchedulingGUI.create_timetables_tab = create_timetables_tab
@@ -66,7 +73,7 @@ def open_timetable_manager(self):
             app.window.transient(self.root)
             app.window.grab_set()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
     except Exception as e:
         messagebox.showerror(_t('gui.academics.module_scheduling.timetables_tab.dialogs.error', default="Error"),
                              f"Failed to open Timetable Manager: {e}",
@@ -190,10 +197,18 @@ ModuleSchedulingGUI.show_grid_view = show_grid_view
 
 
 def _show_student_timetable_dialog(self):
-    """Open the per-student week-grid viewer."""
+    """Open the per-student week grid — now the merged Timetable Manager.
+
+    This used to open ``StudentTimetableDialog``, a separate weekly-grid
+    renderer. All timetable views live in one window now, so this lands on
+    that window's Student tab instead.
+    """
     try:
-        from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling.student_timetable_dialog import StudentTimetableDialog
-        StudentTimetableDialog(self.root, self.scheduler)
+        from education_system.systems.university.domains.academics.interfaces.gui.timetable_management import (
+            TimetableManagementGUI,
+        )
+        TimetableManagementGUI(self.root, auth=getattr(self, "auth", None),
+                               initial_tab="student")
     except Exception as e:
         messagebox.showerror(_t('gui.academics.module_scheduling.timetables_tab.dialogs.error', default="Error"),
                              f"Failed to open student timetable viewer: {e}",

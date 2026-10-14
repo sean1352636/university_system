@@ -3,7 +3,7 @@
 Apprenticeships only — `fe_college` has no CLI.
 
 ```bash
-python run.py --apprenticeships --cli
+python -m education_system --apprenticeships --cli
 ```
 
 Launched by the unified launcher after the shared login. There is no

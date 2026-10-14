@@ -92,15 +92,11 @@ except ImportError:
     FINANCE_ACCOUNT_AVAILABLE = False
     print("Warning: Student finance account integration not available")
 
-# Import matplotlib for library finance charts
-try:
-    import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-    from matplotlib.figure import Figure
-    MATPLOTLIB_AVAILABLE = True
-except ImportError:
-    MATPLOTLIB_AVAILABLE = False
-    print("Warning: Matplotlib not available for library finance charts")
+# Matplotlib is imported lazily by finance_shared, the one module in this
+# package whose names are actually read (by the two chart dialogs under
+# finance_parts/). This module carried an identical eager copy of that import
+# and never used any of it — importing matplotlib.pyplot costs ~1.3s and was
+# paid by anything that touched the library package at all.
 
 # Import email service for library finance notifications
 try:
@@ -116,6 +112,16 @@ _AUDIT_LOG_COLUMNS_CACHE: Optional[List[str]] = None
 _STUDENT_COLUMNS_CACHE: Optional[List[str]] = None
 
 from education_system.systems.university.domains.academics.interfaces.gui.library.base import LibraryGUI
+from education_system.systems.university.infrastructure.database.schemas.library_events_table import (
+    DEFAULT_EVENT_STATUS,
+)
+from education_system.systems.university.infrastructure.database.schemas.unified_events_link import (
+    SOURCE_LIBRARY,
+    ensure_source_link,
+)
+
+#: Library events are rows in ``unified_events`` tagged with this source.
+_LIBRARY_FILTER = "source_type = 'library'"
 logger = logging.getLogger(__name__)
 
 def optimize_database(self):
@@ -579,7 +585,7 @@ def archive_old_records(self):
                     'system', f"Archived {archived_count} old loan records", "maintenance"
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
     except (sqlite3.Error, Exception) as e:
         self.maintenance_results.insert(tk.END, f"❌ Archive failed: {str(e)}\n")
@@ -1105,27 +1111,19 @@ def manage_library_events_gui(self):
             conn = get_db_connection()
             cursor = conn.cursor()
 
-            # Create table if not exists
-            cursor.execute('''
-            CREATE TABLE IF NOT EXISTS library_events (
-                event_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                event_name TEXT NOT NULL,
-                event_date TEXT NOT NULL,
-                event_time TEXT NOT NULL,
-                location TEXT,
-                description TEXT,
-                max_capacity INTEGER DEFAULT 50,
-                registered_count INTEGER DEFAULT 0,
-                created_by TEXT,
-                created_at TEXT
-            )
-            ''')
+            # Library events now live in unified_events, tagged 'library'.
+            ensure_source_link(cursor)
 
-            cursor.execute('''
-            SELECT event_id, event_name, event_date, event_time, location, max_capacity, registered_count
-            FROM library_events
-            WHERE event_date >= date('now')
-            ORDER BY event_date, event_time
+            cursor.execute(f'''
+            SELECT e.event_id, e.title,
+                   date(e.start_datetime), time(e.start_datetime),
+                   e.location, e.max_capacity,
+                   (SELECT COUNT(*) FROM unified_event_registrations r
+                    WHERE r.event_id = e.event_id)
+            FROM unified_events e
+            WHERE {_LIBRARY_FILTER}
+              AND (e.start_datetime IS NULL OR date(e.start_datetime) >= date('now'))
+            ORDER BY e.start_datetime
             ''')
 
             for row in cursor.fetchall():
@@ -1189,12 +1187,18 @@ def manage_library_events_gui(self):
                 conn = get_db_connection()
                 cursor = conn.cursor()
 
+                # ``status`` is set explicitly: events created here used to be
+                # stored with it NULL, while the CLI stored 'scheduled', so the
+                # same event read differently depending on which screen made it.
+                ensure_source_link(cursor)
                 cursor.execute('''
-                INSERT INTO library_events (event_name, event_date, event_time, location, description,
-                                           max_capacity, registered_count, created_by, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)
-                ''', (event_name, event_date, event_time, location, description, capacity,
-                     get_current_user_id(), datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+                INSERT INTO unified_events (title, start_datetime, location, description,
+                                            max_capacity, status, created_by, created_at,
+                                            source_type)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (event_name, f"{event_date} {event_time}".strip(), location, description,
+                     capacity, DEFAULT_EVENT_STATUS, get_current_user_id(),
+                     datetime.now().strftime('%Y-%m-%d %H:%M:%S'), SOURCE_LIBRARY))
 
                 conn.commit()
                 conn.close()
@@ -1225,9 +1229,21 @@ def manage_library_events_gui(self):
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
-            cursor.execute('DELETE FROM library_events WHERE event_id = ?', (event_id,))
+            # Remove the registrations too. Foreign keys are off by default in
+            # SQLite, so the table's ON DELETE CASCADE does not fire and the
+            # attendance rows would otherwise outlive the event.
+            ensure_source_link(cursor)
+            removed = cursor.execute(
+                "DELETE FROM unified_event_registrations WHERE event_id = ?",
+                (event_id,)).rowcount
+            cursor.execute(
+                f"DELETE FROM unified_events WHERE event_id = ? AND {_LIBRARY_FILTER}",
+                (event_id,))
             conn.commit()
             conn.close()
+            if removed:
+                logger.info("Deleted %d attendance row(s) with event %s",
+                            removed, event_id)
 
             log_audit_event(get_current_user_id(), f"Deleted event: {event_name}", "library_events")
             messagebox.showinfo(_("common.success"), _t('gui.academics.library.maintenance.dialogs.event_deleted_successfully', default="Event deleted successfully"))

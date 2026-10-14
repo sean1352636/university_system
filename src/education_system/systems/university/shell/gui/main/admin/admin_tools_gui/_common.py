@@ -1,0 +1,73 @@
+"""Shared imports, paths, logger, and JSON helpers for the admin_tools_gui package."""
+
+# Admin tools GUI - 14 admin-only features
+import tkinter as tk
+from tkinter import ttk, messagebox, filedialog
+import logging
+import os
+import json
+import csv
+from datetime import datetime, timedelta
+from education_system.platform.delivery.gui.tk_callback_filter import install_clean_close as _install_clean_close
+
+# Re-exported under their historic unprefixed names — every sibling module in
+# this package imports them from here (see __all__ below).
+from education_system.paths import (
+    UNIVERSITY_PROJECT_ROOT as PROJECT_ROOT,
+    UNIVERSITY_DATA_DIR as DATA_DIR,
+    UNIVERSITY_CONFIG_DIR as CONFIG_DIR,
+    UNIVERSITY_DB_DIR as DB_DIR,
+    UNIVERSITY_LOG_DIR as LOG_DIR,
+    UNIVERSITY_EMAIL_CONFIG_FILE as EMAIL_CONFIG_FILE,
+    UNIVERSITY_SAVED_REPORTS_FILE as SAVED_REPORTS_FILE,
+    UNIVERSITY_API_SERVER_CONFIG_FILE as API_SERVER_CONFIG_FILE,
+    UNIVERSITY_LICENSES_FILE as LICENSES_FILE,
+    UNIVERSITY_DR_CONFIG_FILE as DR_CONFIG_FILE,
+    UNIVERSITY_SCHEDULED_REPORTS_FILE as SCHEDULED_REPORTS_FILE,
+    UNIVERSITY_EMAIL_TEMPLATE_MAPPING_FILE as EMAIL_TEMPLATE_MAPPING_FILE,
+    UNIVERSITY_UPLOAD_DIR as UPLOAD_DIR,
+    UNIVERSITY_BACKUP_DIR as BACKUP_DIR,
+    UNIVERSITY_EMAIL_TEMPLATES_DIR as EMAIL_TEMPLATES_DIR,
+)
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
+logger = logging.getLogger(__name__)
+
+# `from ._common import *` skips underscore-prefixed names by default,
+# which would drop `_t` and `_install_clean_close` — the two things
+# every sibling actually relies on. Be explicit so the wildcard import
+# pulls them in.
+__all__ = [
+    # stdlib re-exports
+    "tk", "ttk", "messagebox", "filedialog",
+    "logging", "os", "json", "csv",
+    "datetime", "timedelta",
+    # local helpers
+    "_install_clean_close", "_t", "logger",
+    # path constants
+    "PROJECT_ROOT", "DATA_DIR", "CONFIG_DIR", "DB_DIR", "LOG_DIR",
+    "EMAIL_CONFIG_FILE", "SAVED_REPORTS_FILE",
+    "API_SERVER_CONFIG_FILE", "LICENSES_FILE", "DR_CONFIG_FILE",
+    "SCHEDULED_REPORTS_FILE", "EMAIL_TEMPLATE_MAPPING_FILE",
+    "UPLOAD_DIR", "BACKUP_DIR", "EMAIL_TEMPLATES_DIR",
+]
+
+
+def _ensure_dir(path):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+
+
+def _load_json(path, default=None):
+    try:
+        if os.path.exists(path):
+            with open(path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except Exception:
+        logger.debug("Suppressed exception", exc_info=True)
+    return default if default is not None else {}
+
+
+def _save_json(path, data):
+    _ensure_dir(path)
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)

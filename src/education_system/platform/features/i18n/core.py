@@ -125,17 +125,34 @@ def _load_language(lang_code: str) -> Dict[str, Any]:
     return merged
 
 
-def _load_all_translations() -> None:
-    """Load translations for every supported language from all locale dirs."""
-    global _translations, _loaded
-
-    for lang_code in SUPPORTED_LANGUAGES:
+def _ensure_language(lang_code: str) -> Dict[str, Any]:
+    """Load *lang_code*'s translations on first use, then serve from cache."""
+    if lang_code not in _translations:
         _translations[lang_code] = _load_language(lang_code)
+    return _translations[lang_code]
+
+
+def _load_all_translations() -> None:
+    """Load the languages needed to serve lookups right now.
+
+    This used to eagerly load every one of the ~26 supported languages — 786
+    JSON files, ~1.5-2.0s — on the first ``init_i18n()`` call. Because roughly
+    twenty university schema modules call ``init_i18n()`` at *import* time, that
+    cost landed squarely on GUI startup, to load 25 languages nobody had asked
+    for.
+
+    Only the active language and the English fallback are needed to answer a
+    lookup (see the fallback chain in ``t``). Any other language is loaded on
+    demand by ``_ensure_language`` — which ``set_language`` already did.
+    """
+    global _loaded
+
+    _ensure_language(_current_language)
+    _ensure_language("en")
 
     _loaded = True
-    loaded_count = sum(1 for v in _translations.values() if v)
-    logger.debug("Loaded translations for %d/%d languages from %d locale dir(s)",
-                 loaded_count, len(SUPPORTED_LANGUAGES), len(_locale_dirs))
+    logger.debug("Loaded translations for %s (+en fallback) from %d locale dir(s)",
+                 _current_language, len(_locale_dirs))
 
 
 def _ensure_loaded() -> None:
@@ -235,12 +252,15 @@ def add_locale_dir(path: str) -> None:
     If translations have already been loaded, they are reloaded automatically
     so that the new directory's files are merged in.
     """
-    global _loaded
+    global _loaded, _translations
     p = Path(path)
     if p not in _locale_dirs:
         _locale_dirs.append(p)
         if _loaded:
-            # Reload to incorporate the new directory
+            # Drop every cached language, not just the ones reloaded below:
+            # languages are now loaded on demand, so a stale cached entry would
+            # otherwise never pick up this new directory's files.
+            _translations = {}
             _loaded = False
             _load_all_translations()
 
@@ -256,9 +276,10 @@ def t(key: str, default: Optional[str] = None, **kwargs: Any) -> str:
     """
     _ensure_loaded()
 
-    # Try current language, then English fallback
+    # Try current language, then English fallback. _ensure_language rather than
+    # a plain dict lookup, since languages are now loaded on demand.
     for lang in (_current_language, "en"):
-        value: Any = _translations.get(lang, {})
+        value: Any = _ensure_language(lang)
         for part in key.split("."):
             if isinstance(value, dict):
                 value = value.get(part)

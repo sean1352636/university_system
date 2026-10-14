@@ -1,4 +1,7 @@
 """Extracted function implementation."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from .. import election_gui_shared as _shared
 globals().update({name: value for name, value in _shared.__dict__.items() if not name.startswith("__")})
@@ -40,6 +43,6 @@ def _bootstrap_auth_from_env():
             )
             _shared_set_auth(shim)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)

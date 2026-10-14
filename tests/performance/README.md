@@ -35,7 +35,7 @@ Education Management System's Flask APIs and SQLite data layer.
 ```bash
 make load-test
 # Equivalent to:
-locust -f tests/performance/locustfile.py \
+locust -f tests/performance/load/locustfile.py \
        --headless -u 50 -r 5 --run-time 60s \
        --host http://localhost:5000
 ```
@@ -50,20 +50,20 @@ make load-test-ui
 ```bash
 make perf-test
 # Equivalent to:
-python tests/performance/benchmark_db.py
+python tests/performance/benchmarks/benchmark_db.py
 ```
 
 ### Run a single scenario
 ```bash
-locust -f tests/performance/scenarios/auth_scenario.py \
+locust -f tests/performance/load/scenarios/auth_scenario.py \
        --headless -u 20 -r 2 --run-time 30s \
        --host http://localhost:5000
 
-locust -f tests/performance/scenarios/crud_scenario.py \
+locust -f tests/performance/load/scenarios/crud_scenario.py \
        --headless -u 10 -r 1 --run-time 60s \
        --host http://localhost:5000
 
-locust -f tests/performance/scenarios/dashboard_scenario.py \
+locust -f tests/performance/load/scenarios/dashboard_scenario.py \
        --headless -u 30 -r 5 --run-time 60s \
        --host http://localhost:5000
 ```

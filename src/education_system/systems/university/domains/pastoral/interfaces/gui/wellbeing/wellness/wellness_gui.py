@@ -33,7 +33,7 @@ class WellnessGUI:
         else:
             self.root = tk.Tk()
 
-        self.root.title(_t("wellness.title", default="Mental Health & Wellness Hub"))
+        self.root.title(_t("wellness.title", default="===== WELLNESS ====="))
         self.root.geometry("1200x800")
 
         self.setup_ui()
@@ -128,7 +128,7 @@ class WellnessGUI:
             level = _t("wellness.wellness_points.levels.beginner", default="Wellness Beginner 🌱")
             color = "gray"
 
-        ttk.Label(points_frame, text=_t("wellness.wellness_points.title", default="Wellness Points: {points}").format(points=total_points),
+        ttk.Label(points_frame, text=_t("wellness.wellness_points.title", default="===== WELLNESS POINTS =====").format(points=total_points),
                  font=('Arial', 14, 'bold')).pack(side=tk.LEFT, padx=10)
         ttk.Label(points_frame, text=_t("wellness.wellness_points.level", default="Level: {level}").format(level=level),
                  font=('Arial', 12)).pack(side=tk.LEFT, padx=10)
@@ -325,7 +325,7 @@ class WellnessGUI:
 
     def create_mood_log_form(self, parent):
         """Create mood logging form."""
-        form_frame = ttk.LabelFrame(parent, text=_t("wellness.mood_tracking.log_form.title", default="Log Your Mood"), padding="10")
+        form_frame = ttk.LabelFrame(parent, text=_t("wellness.mood_tracking.log_form.title", default="===== LOG FORM ====="), padding="10")
         form_frame.pack(fill=tk.BOTH, expand=True)
 
         # Mood type with emoji buttons
@@ -415,7 +415,7 @@ class WellnessGUI:
 
     def create_mood_history(self, parent):
         """Create mood history display."""
-        history_frame = ttk.LabelFrame(parent, text=_t("wellness.mood_tracking.history.title", default="Mood History (Past 30 Days)"), padding="10")
+        history_frame = ttk.LabelFrame(parent, text=_t("wellness.mood_tracking.history.title", default="===== HISTORY ====="), padding="10")
         history_frame.pack(fill=tk.BOTH, expand=True)
 
         # Create text widget
@@ -481,7 +481,7 @@ class WellnessGUI:
 
     def create_sleep_log_form(self, parent):
         """Create sleep logging form."""
-        form_frame = ttk.LabelFrame(parent, text=_t("wellness.sleep_tracking.form.title", default="Track Your Sleep"), padding="10")
+        form_frame = ttk.LabelFrame(parent, text=_t("wellness.sleep_tracking.form.title", default="===== FORM ====="), padding="10")
         form_frame.pack(fill=tk.BOTH, expand=True)
 
         # Date
@@ -581,7 +581,7 @@ class WellnessGUI:
 
     def create_sleep_analytics_display(self, parent):
         """Create sleep analytics display."""
-        analytics_frame = ttk.LabelFrame(parent, text=_t("wellness.sleep_tracking.analytics.title", default="Sleep Analytics (Past 30 Days)"), padding="10")
+        analytics_frame = ttk.LabelFrame(parent, text=_t("wellness.sleep_tracking.analytics.title", default="===== ANALYTICS ====="), padding="10")
         analytics_frame.pack(fill=tk.BOTH, expand=True)
 
         self.sleep_analytics_text = scrolledtext.ScrolledText(analytics_frame, height=20, width=50,
@@ -827,7 +827,7 @@ class WellnessGUI:
 
     def create_goal_form(self, parent):
         """Create goal creation form."""
-        form_frame = ttk.LabelFrame(parent, text=_t("wellness.goals.form.title", default="Set a New Goal"), padding="10")
+        form_frame = ttk.LabelFrame(parent, text=_t("wellness.goals.form.title", default="===== FORM ====="), padding="10")
         form_frame.pack(fill=tk.BOTH, expand=True)
 
         # Goal type
@@ -906,7 +906,7 @@ class WellnessGUI:
 
     def create_active_goals_display(self, parent):
         """Create active goals display."""
-        goals_frame = ttk.LabelFrame(parent, text=_t("wellness.goals.display.title", default="Active Goals"), padding="10")
+        goals_frame = ttk.LabelFrame(parent, text=_t("wellness.goals.display.title", default="===== DISPLAY ====="), padding="10")
         goals_frame.pack(fill=tk.BOTH, expand=True)
 
         self.goals_text = scrolledtext.ScrolledText(goals_frame, height=20, width=50, wrap=tk.WORD)
@@ -1013,7 +1013,7 @@ class WellnessGUI:
         checkin_tab = ttk.Frame(self.notebook)
         self.notebook.add(checkin_tab, text=_t("wellness.tabs.checkin", default="📝 Check-in"))
 
-        form_frame = ttk.LabelFrame(checkin_tab, text=_t("wellness.checkin.form.title", default="Complete Wellness Check-in"), padding="10")
+        form_frame = ttk.LabelFrame(checkin_tab, text=_t("wellness.checkin.form.title", default="===== FORM ====="), padding="10")
         form_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         ttk.Label(form_frame, text=_t("wellness.checkin.form.instructions", default="Rate each area from 1 (Poor) to 10 (Excellent):"),
@@ -1084,7 +1084,7 @@ class WellnessGUI:
         report_tab = ttk.Frame(self.notebook)
         self.notebook.add(report_tab, text=_t("wellness.tabs.report", default="📈 Report"))
 
-        report_frame = ttk.LabelFrame(report_tab, text=_t("wellness.report.title", default="Comprehensive Wellness Report (Past 30 Days)"), padding="10")
+        report_frame = ttk.LabelFrame(report_tab, text=_t("wellness.report.title", default="===== REPORT ====="), padding="10")
         report_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         self.report_text = scrolledtext.ScrolledText(report_frame, height=25, width=60, wrap=tk.WORD)
@@ -1182,7 +1182,7 @@ class WellnessGUI:
 
 def main():
     """Main entry point for wellness GUI."""
-    from education_system.systems.university.interfaces.gui.shell.auth.launch_guard import (
+    from education_system.systems.university.shell.gui.auth.launch_guard import (
         require_launcher_auth,
     )
     if require_launcher_auth("Wellness GUI") is None:

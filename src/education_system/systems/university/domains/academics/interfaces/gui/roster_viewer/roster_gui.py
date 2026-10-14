@@ -266,7 +266,7 @@ class ClassRosterGUI:
                     details=f"Exported roster CSV: {os.path.basename(filepath)}"
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             messagebox.showinfo(_t('gui.academics.roster_viewer.roster.dialogs.success', default="Success"), f"Roster exported to {filepath}", parent=self.window)
         except Exception as e:

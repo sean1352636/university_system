@@ -54,6 +54,12 @@ def _sync_legacy_overrides() -> None:
     """Propagate patched façade dependencies during the deprecation window."""
     context.set_auth(auth)
     for module in _WORKFLOW_MODULES:
+        # Each workflow module did `from ...context import auth`, which binds
+        # the value once at import — so updating context alone left them all
+        # holding the None they started with, and every screen told a
+        # signed-in user to log in. Push the current auth in by name.
+        if hasattr(module, "auth"):
+            module.auth = context.auth
         if hasattr(module, "get_connection"):
             module.get_connection = get_connection
         if hasattr(module, "send_confirmation_email"):
@@ -65,6 +71,7 @@ def set_auth(auth_obj) -> None:
     global auth
     auth = auth_obj
     context.set_auth(auth_obj)
+    _sync_legacy_overrides()
 
 
 def _delegate(module, name: str) -> Callable[..., Any]:

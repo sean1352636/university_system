@@ -3,7 +3,9 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import make_toplevel
 import tkinter.scrolledtext as scrolledtext
 from datetime import datetime
 
@@ -94,7 +96,7 @@ class CompetencyMixin:
 
     def add_competency_dialog(self):
         """Display dialog for creating a new competency."""
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.academics.grade_tracking.analytics_manager.competency.windows.add_competency', default="Add Competency"))
         dialog.geometry("480x360")
         safe_grab_set(dialog)
@@ -183,7 +185,7 @@ class CompetencyMixin:
 
         name_val, desc_val, category_val = competency
 
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.academics.grade_tracking.analytics_manager.competency.windows.edit_competency', default="Edit Competency"))
         dialog.geometry("480x360")
         safe_grab_set(dialog)
@@ -287,7 +289,7 @@ class CompetencyMixin:
         selected_item = tree.selection()[0]
         comp_id, comp_name = tree.item(selected_item, 'values')[:2]
 
-        level_window = tk.Toplevel(self.root)
+        level_window = make_toplevel(self.root)
         level_window.title(f"Competency Levels - {comp_name}")
         level_window.geometry("600x420")
         safe_grab_set(level_window)
@@ -334,7 +336,7 @@ class CompetencyMixin:
                 messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to load levels: {exc}")
 
         def add_level():
-            dialog = tk.Toplevel(level_window)
+            dialog = make_toplevel(level_window)
             dialog.title(_t('gui.academics.grade_tracking.analytics_manager.competency.windows.add_level', default="Add Level"))
             dialog.geometry("360x260")
             safe_grab_set(dialog)
@@ -394,7 +396,7 @@ class CompetencyMixin:
 
             level_id, level_name, level_value, description = level_tree.item(selection[0], 'values')
 
-            dialog = tk.Toplevel(level_window)
+            dialog = make_toplevel(level_window)
             dialog.title(_t('gui.academics.grade_tracking.analytics_manager.competency.windows.edit_level', default="Edit Level"))
             dialog.geometry("360x260")
             safe_grab_set(dialog)
@@ -532,7 +534,7 @@ class CompetencyMixin:
 
     def map_assessment_competency_dialog(self):
         """Map an assessment to a competency."""
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.academics.grade_tracking.analytics_manager.competency.windows.map_assessment_to_competency', default="Map Assessment to Competency"))
         dialog.geometry("520x260")
         safe_grab_set(dialog)
@@ -667,7 +669,7 @@ class CompetencyMixin:
         selected_item = tree.selection()[0]
         mapping_id, assessment_display, competency_display, weight_value, module_code = tree.item(selected_item, 'values')
 
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.academics.grade_tracking.analytics_manager.competency.windows.edit_mapping', default="Edit Mapping"))
         dialog.geometry("520x260")
         safe_grab_set(dialog)
@@ -857,7 +859,7 @@ class CompetencyMixin:
 
     def record_student_competency_dialog(self):
         """Record a competency achievement for a student."""
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.academics.grade_tracking.analytics_manager.competency.windows.record_student_competency', default="Record Student Competency"))
         dialog.geometry("560x420")
         safe_grab_set(dialog)
@@ -1064,7 +1066,7 @@ class CompetencyMixin:
 
         student_id, competency_id, level_id, assessment_date, evidence = record
 
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.academics.grade_tracking.analytics_manager.competency.windows.edit_student_competency', default="Edit Student Competency"))
         dialog.geometry("560x420")
         safe_grab_set(dialog)
@@ -1312,9 +1314,13 @@ class CompetencyMixin:
             messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.no_records', default="No Records"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.no_competency_assessments_recorded_for_this_student', default="No competency assessments recorded for this student."))
             return
 
-        profile_window = tk.Toplevel(self.root)
+        profile_window = make_toplevel(self.root)
         profile_window.title(f"Competency Profile - {full_name}")
-        profile_window.geometry("620x480")
+        try:
+            from education_system.platform.delivery.gui.window_sizing import center
+            center(profile_window, 900, 680, minsize=(700, 520))
+        except Exception:
+            profile_window.geometry("900x680")
         safe_grab_set(profile_window)
 
         text_area = scrolledtext.ScrolledText(profile_window, width=70, height=25)
@@ -1355,7 +1361,7 @@ class CompetencyMixin:
 
     def generate_competency_report_dialog(self):
         """Generate tailored competency reports into the preview pane."""
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.academics.grade_tracking.analytics_manager.competency.windows.generate_competency_report', default="Generate Competency Report"))
         dialog.geometry("500x320")
         safe_grab_set(dialog)

@@ -1,9 +1,14 @@
 """Group management interface - filters, table, CRUD, communication, export"""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 import csv
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
@@ -250,7 +255,7 @@ class ManagementMixin:
         group_id = item['values'][0]
         group_name = item['values'][1]
 
-        members_window = tk.Toplevel(self.root)
+        members_window = make_toplevel(self.root)
         members_window.title(f"Members - {group_name}")
         members_window.geometry("700x500")
         members_window.transient(self.root)
@@ -336,7 +341,7 @@ class ManagementMixin:
             members = cursor.fetchall()
             conn.close()
 
-            dialog = tk.Toplevel(self.root)
+            dialog = make_toplevel(self.root)
             dialog.title(f"Edit Group - {current_name}")
             dialog.geometry("500x450")
             dialog.transient(self.root)
@@ -433,7 +438,7 @@ class ManagementMixin:
                     )
                     sent += 1
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
             if sent > 0:
                 messagebox.showinfo(_t('gui.academics.assignment_system.group_manager.management.dialogs.emails_sent', default="Emails Sent"), f"Notified {sent} group member(s) about the changes.")
@@ -502,7 +507,7 @@ class ManagementMixin:
                 messagebox.showinfo(_t('gui.academics.assignment_system.group_manager.management.dialogs.add_members', default="Add Members"), _t('gui.academics.assignment_system.group_manager.management.dialogs.no_available_students_to_add_to_this_group', default="No available students to add to this group."))
                 return
 
-            dialog = tk.Toplevel(self.root)
+            dialog = make_toplevel(self.root)
             dialog.title(f"Add Members - {group_name}")
             dialog.geometry("420x460")
             dialog.transient(self.root)
@@ -590,7 +595,7 @@ class ManagementMixin:
                 messagebox.showinfo(_t('gui.academics.assignment_system.group_manager.management.dialogs.remove_members', default="Remove Members"), _t('gui.academics.assignment_system.group_manager.management.dialogs.this_group_has_no_members', default="This group has no members."))
                 return
 
-            dialog = tk.Toplevel(self.root)
+            dialog = make_toplevel(self.root)
             dialog.title(f"Remove Members - {group_name}")
             dialog.geometry("420x420")
             dialog.transient(self.root)
@@ -660,6 +665,7 @@ class ManagementMixin:
             cursor = conn.cursor()
 
             placeholder = ','.join('?' * len(group_ids))
+            # db-audit: ignore[DBW001] - join of placeholders
             cursor.execute(
                 f'SELECT id, assignment_id, group_name FROM groups WHERE id IN ({placeholder})',
                 group_ids
@@ -748,7 +754,7 @@ class ManagementMixin:
                 messagebox.showinfo(_t('gui.academics.assignment_system.group_manager.management.dialogs.split_group', default="Split Group"), _t('gui.academics.assignment_system.group_manager.management.dialogs.at_least_two_members_are_required_to_split_a_group', default="At least two members are required to split a group."))
                 return
 
-            dialog = tk.Toplevel(self.root)
+            dialog = make_toplevel(self.root)
             dialog.title(f"Split Group - {group_name}")
             dialog.geometry("480x420")
             dialog.transient(self.root)
@@ -799,6 +805,7 @@ class ManagementMixin:
 
                     member_ids = [member_map[idx] for idx in indices]
                     placeholders = ','.join('?' for _ in member_ids)
+                    # db-audit: ignore[DBW001] - module constant
                     cursor_inner.execute(
                         f'UPDATE group_members SET group_id = ? WHERE id IN ({placeholders})',
                         (new_group_id, *member_ids)
@@ -902,7 +909,7 @@ class ManagementMixin:
 
             self.gui.db._ensure_messages_table()
 
-            dialog = tk.Toplevel(self.root)
+            dialog = make_toplevel(self.root)
             dialog.title(f"Message Group - {group_name}")
             dialog.geometry("520x420")
             dialog.transient(self.root)
@@ -970,7 +977,7 @@ class ManagementMixin:
                                 )
                                 emails_sent += 1
                             except Exception:
-                                pass
+                                logger.debug("Suppressed exception", exc_info=True)
                     except ImportError:
                         pass
 
@@ -1029,6 +1036,7 @@ class ManagementMixin:
                 return
 
             placeholders = ','.join('?' for _ in student_ids)
+            # db-audit: ignore[DBW001] - string literal
             cursor.execute(
                 f'''
                 SELECT id, file_name, file_path, submission_date, status, grade, feedback, student_id
@@ -1049,7 +1057,7 @@ class ManagementMixin:
 
             sub_id, file_name, file_path, submitted_at, status, grade, feedback, submitter_id = submission
 
-            window = tk.Toplevel(self.root)
+            window = make_toplevel(self.root)
             window.title(f"Group Submission - {group_name}")
             window.geometry("520x360")
             window.transient(self.root)

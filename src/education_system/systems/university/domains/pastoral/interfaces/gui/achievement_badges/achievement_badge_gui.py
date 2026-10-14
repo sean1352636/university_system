@@ -26,7 +26,7 @@ class AchievementBadgeGUI:
                 from education_system.systems.university.infrastructure.shared_context import get_auth
                 self.auth = get_auth()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         # Resolve student_id from auth
         self.student_id = None

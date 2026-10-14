@@ -11,6 +11,7 @@ import atexit
 import logging
 import os
 import sqlite3 as _sqlite3
+import threading
 import time
 from contextlib import contextmanager
 from typing import Any, Generator, Iterable, Optional
@@ -280,6 +281,106 @@ def connect(database: Optional[str | os.PathLike[str]] = None, *args: Any, **kwa
     _ensure_wal_keeper(os.fspath(db))
     return conn
 
+class _ReuseState(threading.local):
+    """Thread-local registry of connections active reuse blocks are sharing.
+
+    Keyed by ``(db, row_factory)``: a connection may only be shared with a
+    caller that asked for the same database *and* the same row factory, since
+    handing back the wrong row factory would silently change the type of every
+    row the caller reads. Keying (rather than tracking a single connection)
+    means nested blocks with different shapes each get their own reusable
+    connection instead of the inner one quietly falling back to one connection
+    per call.
+    """
+
+    def __init__(self) -> None:
+        self.conns: dict[tuple[str, bool], _sqlite3.Connection] = {}
+
+
+_reuse_state = _ReuseState()
+
+
+class _SharedConnection(_ManagedConnection):
+    """A connection that survives its ``with`` blocks.
+
+    ``_ManagedConnection.__exit__`` deliberately closes, which fixed a real
+    leak where callers used the context-manager form and never released the
+    connection. That is exactly what makes sharing one connection across
+    several ``with get_connection() as conn:`` blocks impossible by default:
+    the first block would close it out from under the rest.
+
+    Here ``__exit__`` still commits on success and rolls back on error — the
+    transaction semantics callers rely on are unchanged — but the close is
+    deferred to ``reuse_connection()``, which owns the connection's lifetime.
+    """
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+        # Commit/rollback via sqlite3's own context manager, but do not close.
+        _sqlite3.Connection.__exit__(self, exc_type, exc_val, exc_tb)
+        return False  # never suppress an exception raised inside the block
+
+    def close(self) -> None:
+        # Ignore close() from borrowers; reuse_connection() calls _real_close.
+        return
+
+    def _real_close(self) -> None:
+        _ManagedConnection.close(self)
+
+
+@contextmanager
+def reuse_connection(
+    db_path: Optional[str | os.PathLike[str]] = None,
+    row_factory: bool = True,
+    timeout: float = DEFAULT_DB_TIMEOUT,
+) -> Generator[_sqlite3.Connection, None, None]:
+    """Share one connection across every ``get_connection()`` call in the block.
+
+    Opening a connection to student_records.db costs ~97ms — almost all of it
+    the first statement on the new connection, which opens the file and parses
+    the schema. Code paths that call ``get_connection()`` many times in a row
+    pay that repeatedly: Module Scheduling's ``refresh_all_data`` opened 11
+    connections across its eight refresh methods, ~1.1s of pure setup before
+    the window showed any data.
+
+    Wrapping such a path in this context manager makes the nested
+    ``get_connection()`` calls return the same connection, so the cost is paid
+    once. Call sites inside the block need no changes — they keep using
+    ``with get_connection() as conn:``.
+
+    Nests safely (inner blocks reuse the outer connection) and is thread-local,
+    so one thread's reuse never leaks into another's. Use it only for a bounded
+    burst of work, not for the lifetime of the application: a long-lived shared
+    connection holds a read transaction open and keeps the WAL growing.
+    """
+    target = _resolve_default_target() if (db_path is None or os.fspath(db_path) == DEFAULT_DB_NAME) else db_path
+    db = os.fspath(target)
+
+    key = (db, bool(row_factory))
+
+    # Already inside a block sharing this exact shape: reuse it and leave the
+    # outermost block to own the closing.
+    existing = _reuse_state.conns.get(key)
+    if existing is not None:
+        yield existing
+        return
+
+    conn = _sqlite3.connect(db, timeout=timeout, factory=_SharedConnection)
+    _apply_pragmas(conn)
+    _ensure_wal_keeper(db)
+    if row_factory:
+        conn.row_factory = _sqlite3.Row
+
+    _reuse_state.conns[key] = conn
+    try:
+        yield conn
+    finally:
+        _reuse_state.conns.pop(key, None)
+        try:
+            conn._real_close()
+        except _sqlite3.Error:
+            pass
+
+
 def get_connection(
     db_path: Optional[str | os.PathLike[str]] = None,
     row_factory: bool = True,
@@ -340,6 +441,15 @@ def get_connection(
     """
     target = _resolve_default_target() if (db_path is None or os.fspath(db_path) == DEFAULT_DB_NAME) else db_path
     db = os.fspath(target)
+
+    # Inside a reuse_connection() block for this same database and row factory,
+    # hand back that block's connection instead of opening another one. Opt-in
+    # only: outside such a block this is a no-op and every caller keeps its own
+    # connection exactly as before.
+    shared = _reuse_state.conns.get((db, bool(row_factory)))
+    if shared is not None:
+        return shared
+
     conn = _sqlite3.connect(db, timeout=timeout, factory=_ManagedConnection)
     _apply_pragmas(conn)
     _ensure_wal_keeper(db)
@@ -694,7 +804,7 @@ class ConnectionPool:
         try:
             atexit.unregister(self.close_all)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Stop cleanup thread
         self._stop_cleanup.set()
@@ -880,7 +990,7 @@ def transaction(
             try:
                 conn.close()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             if "database is locked" not in str(begin_err) or attempt == _LOCK_RETRIES - 1:
                 last_lock_error = begin_err
                 logging.error(
@@ -1198,6 +1308,7 @@ __all__ = [
     "sqlite3",
     "DatabaseManager",
     "get_connection",
+    "reuse_connection",
     "get_db_connection",
     "DEFAULT_DB_PATH",
     "DB_DIR",

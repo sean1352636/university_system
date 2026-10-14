@@ -407,22 +407,22 @@ def display_module_performance_results(module_stats):
     print("MODULE PERFORMANCE SUMMARY")
     print("="*100)
 
-    for stats in module_stats:
-        print(f"\n{stats['code']} - {stats['name']} ({stats['type']})")
+    for module_stat in module_stats:
+        print(f"\n{module_stat['code']} - {module_stat['name']} ({module_stat['type']})")
         print("-" * 60)
-        print(f"Total Students: {stats['total_students']}")
-        print(f"Average Score: {stats['avg_score']:.1f}%")
-        print(f"Median Score: {stats['median_score']:.1f}%")
-        print(f"Standard Deviation: {stats['std_dev']:.1f}")
-        print(f"Score Range: {stats['min_score']:.1f}% - {stats['max_score']:.1f}%")
-        print(f"Passing Rate: {stats['passing_rate']:.1f}%")
-        print(f"Performance Level: {stats['performance_level']}")
+        print(f"Total Students: {module_stat['total_students']}")
+        print(f"Average Score: {module_stat['avg_score']:.1f}%")
+        print(f"Median Score: {module_stat['median_score']:.1f}%")
+        print(f"Standard Deviation: {module_stat['std_dev']:.1f}")
+        print(f"Score Range: {module_stat['min_score']:.1f}% - {module_stat['max_score']:.1f}%")
+        print(f"Passing Rate: {module_stat['passing_rate']:.1f}%")
+        print(f"Performance Level: {module_stat['performance_level']}")
 
         print("\nGrade Distribution:")
-        sorted_grades = sorted(stats['grade_distribution'].items(),
+        sorted_grades = sorted(module_stat['grade_distribution'].items(),
                               key=lambda x: letter_to_gpa(x[0]), reverse=True)
         for grade, count in sorted_grades:
-            percentage = (count / stats['total_students']) * 100
+            percentage = (count / module_stat['total_students']) * 100
             print(f"  {grade}: {count} ({percentage:.1f}%)")
 
 def calculate_course_statistics(cursor, course):

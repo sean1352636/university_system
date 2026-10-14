@@ -205,6 +205,75 @@ class ResultsAnalyticsManager:
         finally:
             conn.close()
 
+    @staticmethod
+    def question_breakdown(evaluation_id: int, question_id: int) -> Dict[str, Any]:
+        """Everything recorded for one question on one evaluation.
+
+        ``calculate_results`` only ever returns an average and a count, which
+        is no use for reading a single question: an average of 3.0 could be
+        everyone answering 3, or half answering 1 and half 5. This returns the
+        distribution and the free-text answers behind that average.
+        """
+        conn = get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "SELECT question_text, question_type, question_category, "
+                "       scale_min, scale_max "
+                "  FROM evaluation_questions WHERE question_id = ?",
+                (question_id,))
+            meta = cursor.fetchone()
+
+            cursor.execute(
+                """SELECT a.answer_value, a.numeric_value
+                     FROM evaluation_answers a
+                     JOIN evaluation_responses r ON r.response_id = a.response_id
+                    WHERE r.evaluation_id = ? AND r.is_complete = 1
+                      AND a.question_id = ?""",
+                (evaluation_id, question_id))
+            rows = cursor.fetchall()
+
+            counts: Dict[str, int] = {}
+            numbers = []
+            comments = []
+            for row in rows:
+                value = row["answer_value"]
+                numeric = row["numeric_value"]
+                if numeric is not None:
+                    numbers.append(float(numeric))
+                    key = str(value if value not in (None, "") else numeric)
+                    counts[key] = counts.get(key, 0) + 1
+                elif value not in (None, ""):
+                    comments.append(str(value))
+
+            numbers.sort()
+            average = sum(numbers) / len(numbers) if numbers else None
+            if numbers:
+                middle = len(numbers) // 2
+                median = (numbers[middle] if len(numbers) % 2
+                          else (numbers[middle - 1] + numbers[middle]) / 2)
+            else:
+                median = None
+
+            return {
+                "question_id": question_id,
+                "question_text": meta["question_text"] if meta else str(question_id),
+                "question_type": (meta["question_type"] if meta else "") or "",
+                "question_category": (meta["question_category"] if meta else "") or "",
+                "scale_min": (meta["scale_min"] if meta else None),
+                "scale_max": (meta["scale_max"] if meta else None),
+                "response_count": len(rows),
+                "average": average,
+                "median": median,
+                "lowest": numbers[0] if numbers else None,
+                "highest": numbers[-1] if numbers else None,
+                "distribution": sorted(counts.items()),
+                "comments": comments,
+            }
+        finally:
+            conn.close()
+
+
 class AnonymisedEvaluationService:
     """Anonymised end-of-module student feedback service (v8.2.0).
 

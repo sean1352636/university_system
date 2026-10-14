@@ -34,7 +34,7 @@ class HESAExportGUI:
             if hasattr(self.root, "after_idle"):
                 self.root.after_idle(self._apply_eqa_context)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _apply_eqa_context(self):
         """#4 — When opened from an EQA drill-through, preselect the
@@ -51,7 +51,7 @@ class HESAExportGUI:
                     self._highlighted_return_id = ret.get("id")
                     break
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def setup_ui(self):
         notebook = ttk.Notebook(self.root)
@@ -219,7 +219,7 @@ class HESAExportGUI:
                 if r.get("academic_year") == values[0] and r.get("return_type") == values[1]:
                     return r["id"]
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return None
 
     def _generate_xml(self):

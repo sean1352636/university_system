@@ -1,9 +1,14 @@
 """Student experience management for assignments - drafts, receipts, progress, accessibility, timers"""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
+from tkinter import ttk, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 import json
 import hashlib
 from datetime import datetime
@@ -341,7 +346,7 @@ class StudentExperienceManager:
             receipt_id, sub_id, student_id, title, submitted_at, receipt_hash, email_sent, conf_code = row
 
             # Receipt dialog
-            win = tk.Toplevel(self.root)
+            win = make_toplevel(self.root)
             win.title(_t('gui.academics.assignment_system.student_experience_manager.windows.submission_receipt', default="Submission Receipt"))
             win.geometry("500x420")
             win.resizable(False, False)
@@ -412,7 +417,7 @@ class StudentExperienceManager:
                         if title_row:
                             assignment_title = title_row[0]
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 submitted_at = datetime.now().isoformat()
                 hash_input = f"{submission_id}-{student_id}-{submitted_at}"
@@ -465,7 +470,7 @@ class StudentExperienceManager:
                     if email_row:
                         email = email_row[0]
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 # Try to send via infrastructure email service
                 email_sent = False
@@ -516,7 +521,7 @@ class StudentExperienceManager:
         """Show accessibility preferences dialog"""
         student_id = self._get_student_id()
 
-        win = tk.Toplevel(self.root)
+        win = make_toplevel(self.root)
         win.title(_t('gui.academics.assignment_system.student_experience_manager.windows.accessibility_settings', default="Accessibility Settings"))
         win.geometry("480x500")
         win.resizable(False, False)
@@ -681,7 +686,7 @@ class StudentExperienceManager:
                 self.root.option_add('*Font', 'Helvetica 14')
                 self.root.configure(bg='#000000')
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Persist the toggle
             self._save_accessibility_settings(
@@ -699,7 +704,7 @@ class StudentExperienceManager:
                 self.root.option_add('*Font', 'Helvetica 10')
                 self.root.configure(bg='#f0f0f0')
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             self._save_accessibility_settings(
                 student_id, high_contrast=0, screen_reader=0, font_size=12
@@ -855,7 +860,7 @@ class StudentExperienceManager:
         self._timer_running = True
 
         # Timer window
-        self._timer_win = tk.Toplevel(self.root)
+        self._timer_win = make_toplevel(self.root)
         self._timer_win.title(_t('gui.academics.assignment_system.student_experience_manager.windows.assessment_timer', default="Assessment Timer"))
         self._timer_win.geometry("350x200")
         self._timer_win.resizable(False, False)
@@ -973,6 +978,6 @@ class StudentExperienceManager:
             try:
                 self._timer_win.after_cancel(self._timer_after_id)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             self._timer_after_id = None
         self._timer_win.destroy()

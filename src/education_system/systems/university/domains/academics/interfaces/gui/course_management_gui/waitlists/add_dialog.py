@@ -5,6 +5,7 @@ from education_system.systems.university.infrastructure.sql_safety import escape
 from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.waitlists._imports import (
     _, datetime, messagebox, tk, ttk, Toplevel, sqlite3, DEFAULT_DB_PATH,
 )
+from education_system.systems.university.domains.academics.interfaces.gui._field_pickers import attach_picker
 
 
 class AddToWaitlistDialog:
@@ -22,7 +23,8 @@ class AddToWaitlistDialog:
         self.course_combo = ttk.Combobox(frm, width=45); self.course_combo.grid(row=0, column=1, sticky=tk.W, padx=6, columnspan=2)
         ttk.Label(frm, text=_t('gui.academics.course_management_gui.waitlists.add_dialog.labels.student_id', default="Student ID:")).grid(row=1, column=0, sticky=tk.W, pady=(8,0))
         self.student_var = tk.StringVar()
-        ttk.Entry(frm, textvariable=self.student_var, width=20).grid(row=1, column=1, sticky=tk.W, padx=6, pady=(8,0))
+        attach_picker(frm, 'student', id_var=self.student_var, width=32).grid(
+            row=1, column=1, sticky=tk.W, padx=6, pady=(8,0))
         ttk.Button(frm, text=_t('gui.academics.course_management_gui.waitlists.add_dialog.buttons.lookup', default="Lookup"), command=self._lookup_student).grid(row=1, column=2, sticky=tk.W, padx=6, pady=(8,0))
 
         self._load_courses()

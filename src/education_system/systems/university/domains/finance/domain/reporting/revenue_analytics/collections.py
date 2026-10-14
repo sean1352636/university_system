@@ -1,4 +1,4 @@
-from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
+from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection, transaction
 from datetime import datetime
 import json
 
@@ -208,65 +208,69 @@ def send_collection_notice(student_id, case_id):
     except Exception as e:
         print(f"Error sending collection notice: {e}")
 
-def assign_to_collection_agency():
-    """Assign collection cases to external agencies - Menu wrapper function"""
-    from education_system.systems.university.domains.finance.domain.core.analytics import assign_case_to_agency
-    try:
-        conn = get_connection()
-        cursor = conn.cursor()
+# ---------------------------------------------------------------------------
+# Non-interactive API
+#
+# The functions below take every value as an argument and return data. The
+# menu wrappers further down prompt for those values and print the result, so
+# the CLI and the GUI share one implementation instead of drifting apart —
+# which is what left the GUI calling `assign_to_collection_agency(case_id,
+# agency_id)` against a zero-argument function.
+# ---------------------------------------------------------------------------
 
-        # Get unassigned collection cases
-        cursor.execute('''
+CASE_STATUSES = ('new', 'assigned', 'in_progress', 'resolved', 'closed')
+
+#: Statuses that close a case and therefore carry a resolution date.
+_CLOSING_STATUSES = ('resolved', 'closed')
+
+
+def _current_username(explicit=None):
+    """Best-effort actor name for audit rows; never raises."""
+    if explicit:
+        return explicit
+    try:
+        return auth.current_user['username']
+    except Exception:
+        return 'system'
+
+
+def list_active_agencies():
+    """Return the active collection agencies as a list of dicts."""
+    conn = get_connection()
+    try:
+        rows = conn.execute('''
+        SELECT agency_id, agency_name, commission_rate, minimum_amount
+        FROM collection_agencies
+        WHERE is_active = 1
+        ORDER BY agency_name
+        ''').fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def list_unassigned_cases():
+    """Return open collection cases that have no agency yet."""
+    conn = get_connection()
+    try:
+        rows = conn.execute('''
         SELECT cc.case_id, cc.student_id, s.first_name, s.last_name,
                cc.total_debt, cc.case_status, cc.created_at
         FROM collection_cases cc
         JOIN students s ON cc.student_id = s.student_id
         WHERE cc.case_status IN ('new', 'in_progress') AND cc.agency_id IS NULL
         ORDER BY cc.total_debt DESC
-        ''')
-
-        unassigned_cases = cursor.fetchall()
-
-        if not unassigned_cases:
-            print("No unassigned collection cases found.")
-            conn.close()
-            return
-
-        print("\nUnassigned Collection Cases:")
-        print("=" * 100)
-        for i, case in enumerate(unassigned_cases, 1):
-            case_id, student_id, first_name, last_name, debt, status, created = case
-            student_name = f"{first_name} {last_name}"
-            print(f"{i}. Case ID {case_id}: {student_name} ({student_id}) - £{debt:.2f} - {status}")
-
-        # Select case to assign
-        case_choice = input(f"\nSelect case to assign (1-{len(unassigned_cases)}): ").strip()
-        try:
-            case_index = int(case_choice) - 1
-            if 0 <= case_index < len(unassigned_cases):
-                selected_case = unassigned_cases[case_index]
-                case_id = selected_case[0]
-
-                # Call the existing function with the case_id
-                assign_case_to_agency(case_id)
-            else:
-                print("Invalid selection.")
-        except ValueError:
-            print("Invalid input.")
-
+        ''').fetchall()
+        return [dict(r) for r in rows]
+    finally:
         conn.close()
 
-    except Exception as e:
-        print(f"Error in assign_to_collection_agency: {e}")
 
-def track_collection_progress():
-    """Track progress of collection cases"""
+def list_active_cases():
+    """Return every collection case that is not yet resolved or closed."""
+    conn = get_connection()
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
-
-        # Get all active collection cases
-        cursor.execute('''
+        rows = conn.execute('''
         SELECT cc.case_id, cc.student_id, s.first_name, s.last_name,
                cc.total_debt, cc.amount_collected, cc.case_status,
                ca.agency_name, cc.assigned_date, cc.notes
@@ -275,49 +279,207 @@ def track_collection_progress():
         LEFT JOIN collection_agencies ca ON cc.agency_id = ca.agency_id
         WHERE cc.case_status NOT IN ('resolved', 'closed')
         ORDER BY cc.assigned_date DESC
-        ''')
+        ''').fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
 
-        active_cases = cursor.fetchall()
 
-        if not active_cases:
-            print("No active collection cases found.")
+def assign_case(case_id, agency_id, assigned_by=None):
+    """Assign one collection case to one agency.
+
+    Returns a summary dict. Raises ValueError when the case or agency is
+    missing, the agency is inactive, or the case is already closed.
+    """
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    with transaction() as conn:
+        case = conn.execute(
+            'SELECT case_id, student_id, total_debt, case_status, agency_id '
+            'FROM collection_cases WHERE case_id = ?', (case_id,)
+        ).fetchone()
+        if case is None:
+            raise ValueError(f"Collection case {case_id} not found")
+        if case['case_status'] in _CLOSING_STATUSES:
+            raise ValueError(
+                f"Case {case_id} is {case['case_status']} and cannot be reassigned")
+
+        agency = conn.execute(
+            'SELECT agency_id, agency_name, is_active FROM collection_agencies '
+            'WHERE agency_id = ?', (agency_id,)
+        ).fetchone()
+        if agency is None:
+            raise ValueError(f"Collection agency {agency_id} not found")
+        if not agency['is_active']:
+            raise ValueError(f"Collection agency {agency['agency_name']} is inactive")
+
+        conn.execute('''
+        UPDATE collection_cases
+        SET agency_id = ?, case_status = 'assigned', assigned_date = ?, updated_at = ?
+        WHERE case_id = ?
+        ''', (agency_id, now, now, case_id))
+
+        result = {
+            'case_id': case_id,
+            'agency_id': agency_id,
+            'agency_name': agency['agency_name'],
+            'student_id': case['student_id'],
+            'total_debt': case['total_debt'],
+            'previous_agency_id': case['agency_id'],
+        }
+
+    log_audit_action('assign_collection_case', 'collection_cases', str(case_id), {
+        **result, 'assigned_by': _current_username(assigned_by),
+    })
+    return result
+
+
+def set_case_status(case_id, new_status, notes='', amount_collected=None, updated_by=None):
+    """Move a collection case to ``new_status``.
+
+    ``amount_collected`` is recorded when supplied; resolving or closing a case
+    also stamps the resolution date. Raises ValueError for an unknown status or
+    a missing case.
+    """
+    if new_status not in CASE_STATUSES:
+        raise ValueError(
+            f"Invalid case status '{new_status}'. Expected one of: {', '.join(CASE_STATUSES)}")
+
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    with transaction() as conn:
+        case = conn.execute(
+            'SELECT case_status, amount_collected FROM collection_cases WHERE case_id = ?',
+            (case_id,)
+        ).fetchone()
+        if case is None:
+            raise ValueError(f"Collection case {case_id} not found")
+
+        old_status = case['case_status']
+        collected = case['amount_collected'] or 0
+        if amount_collected is not None:
+            collected = float(amount_collected)
+            if collected < 0:
+                raise ValueError("Amount collected cannot be negative")
+
+        if new_status in _CLOSING_STATUSES:
+            conn.execute('''
+            UPDATE collection_cases
+            SET case_status = ?, amount_collected = ?, resolution_date = ?,
+                notes = COALESCE(notes, '') || ' | ' || ?, updated_at = ?
+            WHERE case_id = ?
+            ''', (new_status, collected, now, notes, now, case_id))
+        else:
+            conn.execute('''
+            UPDATE collection_cases
+            SET case_status = ?, amount_collected = ?,
+                notes = COALESCE(notes, '') || ' | ' || ?, updated_at = ?
+            WHERE case_id = ?
+            ''', (new_status, collected, notes, now, case_id))
+
+    log_audit_action('update_collection_case', 'collection_cases', str(case_id), {
+        'old_status': old_status,
+        'new_status': new_status,
+        'amount_collected': collected,
+        'notes': notes,
+        'updated_by': _current_username(updated_by),
+    })
+    return {'case_id': case_id, 'old_status': old_status, 'new_status': new_status,
+            'amount_collected': collected}
+
+
+def format_collection_progress(cases=None):
+    """Render active collection cases as a fixed-width report.
+
+    Returns the text rather than printing it, so the GUI can show it without
+    capturing stdout.
+    """
+    if cases is None:
+        cases = list_active_cases()
+
+    if not cases:
+        return "No active collection cases found."
+
+    lines = [
+        "",
+        "Active Collection Cases Progress:",
+        "=" * 130,
+        f"{'Case ID':<8} {'Student':<25} {'Debt':<12} {'Collected':<12} "
+        f"{'Status':<15} {'Agency':<20} {'Assigned':<12}",
+        "-" * 130,
+    ]
+
+    total_debt = 0
+    total_collected = 0
+    for case in cases:
+        debt = case['total_debt'] or 0
+        collected = case['amount_collected'] or 0
+        student_name = f"{case['first_name']} {case['last_name']}"
+        lines.append(
+            f"{case['case_id']:<8} {student_name:<25} £{debt:<11.2f} "
+            f"£{collected:<11.2f} {case['case_status']:<15} "
+            f"{case['agency_name'] or 'Unassigned':<20} {case['assigned_date'] or 'N/A':<12}"
+        )
+        total_debt += debt
+        total_collected += collected
+
+    lines.append("-" * 130)
+    lines.append(
+        f"Totals: Debt £{total_debt:,.2f}, Collected £{total_collected:,.2f}, "
+        f"Outstanding £{total_debt - total_collected:,.2f}")
+    if total_debt > 0:
+        lines.append(f"Collection Efficiency: {(total_collected / total_debt) * 100:.1f}%")
+    lines.append("=" * 130)
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Interactive menu wrappers (CLI only — these prompt on stdin)
+# ---------------------------------------------------------------------------
+
+def assign_to_collection_agency():
+    """Assign collection cases to external agencies - Menu wrapper function"""
+    from education_system.systems.university.domains.finance.domain.core.analytics import assign_case_to_agency
+    try:
+        unassigned_cases = list_unassigned_cases()
+
+        if not unassigned_cases:
+            print("No unassigned collection cases found.")
             return
 
-        print("\nActive Collection Cases Progress:")
-        print("=" * 130)
-        print(f"{'Case ID':<8} {'Student':<25} {'Debt':<12} {'Collected':<12} {'Status':<15} {'Agency':<20} {'Assigned':<12}")
-        print("-" * 130)
+        print("\nUnassigned Collection Cases:")
+        print("=" * 100)
+        for i, case in enumerate(unassigned_cases, 1):
+            student_name = f"{case['first_name']} {case['last_name']}"
+            print(f"{i}. Case ID {case['case_id']}: {student_name} ({case['student_id']}) "
+                  f"- £{case['total_debt']:.2f} - {case['case_status']}")
 
-        total_debt = 0
-        total_collected = 0
+        # Select case to assign
+        case_choice = input(f"\nSelect case to assign (1-{len(unassigned_cases)}): ").strip()
+        try:
+            case_index = int(case_choice) - 1
+            if 0 <= case_index < len(unassigned_cases):
+                # Call the existing function with the case_id
+                assign_case_to_agency(unassigned_cases[case_index]['case_id'])
+            else:
+                print("Invalid selection.")
+        except ValueError:
+            print("Invalid input.")
 
-        for case in active_cases:
-            case_id, student_id, first_name, last_name, debt, collected, status, agency, assigned, notes = case
-            student_name = f"{first_name} {last_name}"
-            agency_name = agency if agency else "Unassigned"
-            assigned_date = assigned if assigned else "N/A"
+    except Exception as e:
+        print(f"Error in assign_to_collection_agency: {e}")
 
-            print(f"{case_id:<8} {student_name:<25} £{debt:<11.2f} £{collected or 0:<11.2f} {status:<15} {agency_name:<20} {assigned_date:<12}")
+def track_collection_progress():
+    """Track progress of collection cases"""
+    try:
+        active_cases = list_active_cases()
+        print(format_collection_progress(active_cases))
 
-            total_debt += debt
-            total_collected += collected or 0
-
-        print("-" * 130)
-        print(f"Totals: Debt £{total_debt:,.2f}, Collected £{total_collected:,.2f}, Outstanding £{total_debt - total_collected:,.2f}")
-
-        # Collection efficiency
-        if total_debt > 0:
-            efficiency = (total_collected / total_debt) * 100
-            print(f"Collection Efficiency: {efficiency:.1f}%")
-
-        print("=" * 130)
+        if not active_cases:
+            return
 
         # Option to update case status
         update_case = input("\nUpdate a case status? Enter Case ID (or press Enter to skip): ").strip()
         if update_case:
             update_collection_case_status(update_case)
-
-        conn.close()
 
     except Exception as e:
         print(f"Error tracking collection progress: {e}")
@@ -351,7 +513,7 @@ def update_collection_case_status(case_id):
         print(f"Debt: £{debt:.2f}, Collected: £{collected or 0:.2f}")
 
         # Status options
-        statuses = ['new', 'assigned', 'in_progress', 'resolved', 'closed']
+        statuses = list(CASE_STATUSES)
         print("\nAvailable statuses:")
         for i, stat in enumerate(statuses, 1):
             print(f"{i}. {stat.title()}")
@@ -372,44 +534,18 @@ def update_collection_case_status(case_id):
         if new_status in ['resolved', 'closed']:
             try:
                 amount_collected = float(input("Enter amount collected: £"))
-                resolution_notes = input("Enter resolution notes: ").strip()
             except ValueError:
                 print("Invalid amount.")
                 return
+            resolution_notes = input("Enter resolution notes: ").strip()
         else:
-            amount_collected = collected or 0
+            amount_collected = None
             resolution_notes = input("Enter update notes (optional): ").strip()
 
-        # Update case
-        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-        if new_status in ['resolved', 'closed']:
-            cursor.execute('''
-            UPDATE collection_cases
-            SET case_status = ?, amount_collected = ?, resolution_date = ?,
-                notes = COALESCE(notes, '') || ' | ' || ?, updated_at = ?
-            WHERE case_id = ?
-            ''', (new_status, amount_collected, now, resolution_notes, now, case_id))
-        else:
-            cursor.execute('''
-            UPDATE collection_cases
-            SET case_status = ?,
-                notes = COALESCE(notes, '') || ' | ' || ?, updated_at = ?
-            WHERE case_id = ?
-            ''', (new_status, resolution_notes, now, case_id))
-
-        conn.commit()
-
-        print(f"Case {case_id} updated to status: {new_status}")
-
-        # Log the action
-        log_audit_action('update_collection_case', 'collection_cases', str(case_id), {
-            'old_status': status,
-            'new_status': new_status,
-            'updated_by': auth.current_user['username']
-        })
-
         conn.close()
+
+        set_case_status(case_id, new_status, resolution_notes, amount_collected)
+        print(f"Case {case_id} updated to status: {new_status}")
 
     except Exception as e:
         print(f"Error updating collection case: {e}")
@@ -422,7 +558,7 @@ def view_student_collection_detail(student_id):
 
         # Get student basic info
         cursor.execute('''
-        SELECT first_name, last_name, email_address, phone_number
+        SELECT first_name, last_name, email_address, phone
         FROM students
         WHERE student_id = ?
         ''', (student_id,))

@@ -48,7 +48,7 @@ class RouteTabMixin:
         end_frame.columnconfigure(1, weight=1)
 
         # Options
-        options_frame = ttk.LabelFrame(parent, text=_t("navigation.route.options", default="Options"), padding=10)
+        options_frame = ttk.LabelFrame(parent, text=_t("navigation.route.options", default="Options:"), padding=10)
         options_frame.pack(fill=tk.X, padx=5, pady=5)
 
         self.accessible_var = tk.BooleanVar(value=False)

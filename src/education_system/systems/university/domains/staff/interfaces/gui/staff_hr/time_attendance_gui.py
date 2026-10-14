@@ -21,6 +21,7 @@ from education_system.systems.university.infrastructure.database.db import get_c
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.infrastructure.activity_logger import log_activity
 from education_system.systems.university.infrastructure.i18n import get_text as get_translation
+import tkinter.simpledialog  # noqa: F401 - registers tk.simpledialog
 
 # Translation helper
 _t = get_translation
@@ -504,7 +505,7 @@ class TimeAttendanceGUI:
     def _add_manual_entry(self):
         """Add a manual time entry."""
         dialog = tk.Toplevel(self.root)
-        dialog.title(_t("staff_hr.time_attendance.dialogs.add_manual_entry.title", default="Add Manual Entry"))
+        dialog.title(_t("staff_hr.time_attendance.dialogs.add_manual_entry.title", default="===== ADD MANUAL ENTRY ====="))
         dialog.geometry("400x350")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -605,7 +606,7 @@ class TimeAttendanceGUI:
         entry_id = item['values'][0]
 
         # Similar dialog to add_manual_entry but pre-filled
-        messagebox.showinfo(_t("staff_hr.time_attendance.dialogs.edit_entry.title", default="Edit Entry"),
+        messagebox.showinfo(_t("staff_hr.time_attendance.dialogs.edit_entry.title", default="===== EDIT ENTRY ====="),
                           _t("staff_hr.time_attendance.dialogs.edit_entry.message", default="Editing entry {id}\n(Full edit dialog would open here)", id=entry_id))
 
     def _load_timesheets(self):

@@ -24,7 +24,7 @@ class CompetencyMixin:
             return
 
         if not (self.auth.check_permission('manage_grades') or
-                self.auth.check_permission('manage_competencies')):
+                self.auth.check_permission('competency_assessment')):
             messagebox.showerror(_("common.error"), _("grades.competency.no_permission_manage"))
             return
 
@@ -45,7 +45,7 @@ class CompetencyMixin:
             return
 
         if not (self.auth.check_permission('manage_grades') or
-                self.auth.check_permission('manage_competencies')):
+                self.auth.check_permission('competency_assessment')):
             messagebox.showerror(_("common.error"), _("grades.competency.no_permission_add"))
             return
 
@@ -206,7 +206,7 @@ class CompetencyMixin:
             return
 
         if not (self.auth.check_permission('manage_grades') or
-                self.auth.check_permission('view_risk_analysis')):
+                self.auth.check_permission('predictive_analytics')):
             messagebox.showerror(_("common.error"), _("grades.risk.no_permission_assess"))
             return
 

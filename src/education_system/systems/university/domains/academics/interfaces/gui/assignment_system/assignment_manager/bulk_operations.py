@@ -1,13 +1,19 @@
 """Bulk operations on assignments - archive, delete, date changes, export, reminders"""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, filedialog
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 import os
 import csv
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
+from education_system.systems.university.domains.academics.interfaces.gui._field_pickers import attach_date
 
 
 class BulkOperationsMixin:
@@ -161,7 +167,7 @@ class BulkOperationsMixin:
             return
 
         # Create dialog for date change
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.academics.assignment_system.assignment_manager.bulk_operations.windows.change_due_dates', default="Change Due Dates"))
         dialog.geometry("400x300")
         dialog.transient(self.root)
@@ -191,7 +197,7 @@ class BulkOperationsMixin:
         specific_frame.pack(fill='x', pady=5)
         ttk.Label(specific_frame, text=_t('gui.academics.assignment_system.assignment_manager.bulk_operations.labels.new_date_yyyy_mm_dd', default="New date (YYYY-MM-DD):")).pack(side='left')
         date_var = tk.StringVar()
-        ttk.Entry(specific_frame, textvariable=date_var, width=15).pack(side='left', padx=(10, 0))
+        attach_date(specific_frame, id_var=date_var).pack(side='left', padx=(10, 0))
 
         # Option to email students
         notify_var = tk.BooleanVar(value=True)
@@ -325,7 +331,7 @@ class BulkOperationsMixin:
             })
 
         # Create reminder dialog
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.academics.assignment_system.assignment_manager.bulk_operations.windows.send_assignment_reminders', default="Send Assignment Reminders"))
         dialog.geometry("600x550")
         dialog.transient(self.root)
@@ -423,7 +429,7 @@ class BulkOperationsMixin:
                             send_email(recipient_email=email, subject=subj, body=msg)
                             total_sent += 1
                         except Exception:
-                            pass
+                            logger.debug("Suppressed exception", exc_info=True)
 
                 conn.close()
                 dialog.destroy()
@@ -482,7 +488,7 @@ class BulkOperationsMixin:
                         )
                         total_sent += 1
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
 
             conn.close()
 

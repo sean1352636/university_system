@@ -152,8 +152,8 @@ Components:
 \u2022 File Support: textract (if available)
 \u2022 Similarity Algorithm: N-gram Jaccard Similarity
 
-Database Location: {_paths.DEFAULT_DB_PATH}
-Log Directory: {_paths.LOG_DIR}
+Database Location: {_paths.UNIVERSITY_DEFAULT_DB_PATH}
+Log Directory: {_paths.UNIVERSITY_LOG_DIR}
 
 System Status: {"Ready" if self.checker else "Not Initialized"}
 Authentication: Mock Auth (GUI Mode)

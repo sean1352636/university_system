@@ -1,6 +1,9 @@
 """Split from course_planning_gui.py — provides mixins assembled in
 course_planning_gui/__init__.py into the final CoursePlanningGUI class."""
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -16,6 +19,8 @@ from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.domains.academics.domain.course_planning.services.planning_service import PlanningService
 from education_system.systems.university.domains.assessment.domain.grading.grade_calculation.gpa import calculate_student_gpa
 from education_system.systems.university.infrastructure.activity_logger import log_activity
+import tkinter.simpledialog  # noqa: F401 - registers tk.simpledialog
+from education_system.systems.university.domains.academics.interfaces.gui._field_pickers import attach_combo, term_values
 
 
 class _PlannerMixin:
@@ -136,7 +141,7 @@ class _PlannerMixin:
                             self.plan_name_label.config(
                                 text=plan['plan_name'], foreground='#1a73e8')
                         except Exception:
-                            pass
+                            logger.debug("Suppressed exception", exc_info=True)
                         self._display_planner_content()
                 lb.bind('<Double-Button-1>', _load_picked)
             return
@@ -268,17 +273,17 @@ class _PlannerMixin:
         try:
             self.plan_name_label.config(text=plan_name, foreground='black')
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         self._display_planner_content()
         try:
             self.notebook.select(1)  # Switch to planner tab
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         try:
             self.status_bar.config(text=f"Loaded plan: {plan_name}")
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _create_new_plan(self):
         """Create a new course plan."""
@@ -315,8 +320,8 @@ class _PlannerMixin:
 
         # Start semester
         ttk.Label(form_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.planner.labels.start_semester', default="Start Semester:")).grid(row=2, column=0, sticky=tk.W, pady=5)
-        semester_entry = ttk.Entry(form_frame, width=30)
-        semester_entry.insert(0, "Fall 2026")
+        semester_entry = attach_combo(form_frame, term_values(), width=28)
+        semester_entry.set("Fall 2026")
         semester_entry.grid(row=2, column=1, pady=5, sticky=tk.EW)
 
         # Total semesters
@@ -463,7 +468,7 @@ class _PlannerMixin:
 
                 available_modules = [f"{m['module_code']} - {m['module_name']}" for m in modules]
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Module selection dropdown
         ttk.Label(form_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.planner.labels.select_module', default="Select Module:")).grid(row=0, column=0, sticky=tk.W, pady=5)

@@ -24,7 +24,7 @@ class CurveAnalysisMixin:
             return
 
         if not (self.auth.check_permission('manage_grades') or
-                self.auth.check_permission('apply_curve')):
+                self.auth.check_permission('grade_curve_analysis')):
             messagebox.showerror(_("common.error"), _("grades.curve.no_permission_apply"))
             return
 
@@ -158,7 +158,7 @@ class CurveAnalysisMixin:
             return
 
         if not (self.auth.check_permission('manage_grades') or
-                self.auth.check_permission('view_risk_analysis')):
+                self.auth.check_permission('predictive_analytics')):
             messagebox.showerror(_("common.error"), _("grades.risk.no_permission_dropout"))
             return
 

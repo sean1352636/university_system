@@ -1,5 +1,13 @@
-"""Betting Shop CLI package."""
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.interfaces.cli.betting`` (campus commerce plugin).
 
-from education_system.systems.university.domains.operations.interfaces.cli.commerce.betting.betting_cli import BettingCLI
+A mirror, not an alias: an aliased package would resolve this package's
+submodules through the new ``__path__`` and load each one a second time.
+Submodules are aliased individually; this copies the package's names.
+"""
+# layout-shim: education_system.systems.university.plugins.campus_commerce.interfaces.cli.betting
+import importlib as _importlib
 
-__all__ = ['BettingCLI']
+_new = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.interfaces.cli.betting")
+globals().update({k: v for k, v in vars(_new).items()
+                  if not (k.startswith("__") and k.endswith("__"))})
+del _importlib, _new

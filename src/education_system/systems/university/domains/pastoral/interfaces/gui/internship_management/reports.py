@@ -27,10 +27,11 @@ class ReportsMixin:
                 bg='white', fg='#2c3e50').pack(anchor='w', pady=(0, 10))
 
         report_buttons = [
-            ("Current Placements Summary", self.show_placements_report),
-            ("Application Success Rate by Course", self.show_success_rate_report),
-            ("Top Companies by Placements", self.show_companies_report),
-            ("\U0001f3e0 Return to Main Menu", self.return_to_main_menu)
+            (_t('gui.pastoral.internship_management.reports.buttons.current_placements_summary', default="Current Placements Summary"), self.show_placements_report),
+            (_t('gui.pastoral.internship_management.reports.buttons.application_success_rate_by_course', default="Application Success Rate by Course"), self.show_success_rate_report),
+            (_t('gui.pastoral.internship_management.reports.buttons.top_companies_by_placements', default="Top Companies by Placements"), self.show_companies_report),
+            (_t('gui.pastoral.internship_management.reports.buttons.application_status_overview', default="Application Status Overview"), self.show_status_overview_report),
+            ("\U0001f3e0 " + _t("common.return_to_homescreen"), self.return_to_main_menu)
         ]
 
         for text, command in report_buttons:

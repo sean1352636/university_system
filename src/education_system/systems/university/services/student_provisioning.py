@@ -16,6 +16,7 @@ Front-end agnostic (no tkinter / no CLI I/O) so every path can share it.
 from __future__ import annotations
 
 import logging
+import secrets
 from datetime import date, datetime
 
 logger = logging.getLogger(__name__)
@@ -43,14 +44,35 @@ def compute_age(dob, on=None) -> int:
 
 
 def default_student_password(first_name, student_id) -> str:
-    """Initial login password for a newly created student.
+    """Return an unpredictable bootstrap secret.
 
-    One format across every create path, strong enough for the shared-auth
-    policy (>=12 chars, upper+lower+digit+special) yet easy to read aloud at
-    the enrolment desk: ``"<First><StudentID>!"`` e.g. ``"Adam3910390!"``.
+    The arguments remain for API compatibility only.  Callers must never show,
+    email, log, or otherwise disclose this value; users activate their account
+    through a separately issued single-use token.
     """
-    first = (first_name or "").strip().capitalize() or "Student"
-    return f"{first}{student_id}!"
+    del first_name, student_id
+    return f"Aa1!{secrets.token_urlsafe(32)}"
+
+
+def send_student_activation(email: str) -> bool:
+    """Issue and email a hashed, expiring, single-use password setup token."""
+    try:
+        from education_system.platform.identity.auth.password_reset import PasswordResetService
+        from education_system.platform.delivery.api.auth import _send_password_reset_email
+
+        result = PasswordResetService().request_reset(email)
+        token = result.get("token")
+        if not token:
+            return False
+        return bool(_send_password_reset_email(
+            email=result["email"],
+            username=result["username"],
+            token=token,
+            expires_at=result["expires_at"],
+        ))
+    except Exception as exc:
+        logger.warning("Student activation delivery failed for %s: %s", email, exc)
+        return False
 
 
 def provision_student_login(auth, *, username, password, email,
@@ -74,7 +96,7 @@ def provision_student_login(auth, *, username, password, email,
             auth.create_user(
                 username=username, password=password, email=email,
                 first_name=first_name, last_name=last_name,
-                role=role, student_id=username,
+                role=role, student_id=username, password_reset_required=True,
             )
             legacy_ok = True
         except Exception as exc:
@@ -100,4 +122,14 @@ def provision_student_login(auth, *, username, password, email,
     except Exception as exc:
         logger.warning("Shared-auth creation failed for %s: %s", username, exc)
 
-    return {"legacy_ok": legacy_ok, "shared_ok": shared_ok}
+    if shared_ok:
+        # Link the new login to the student's platform learner record, if
+        # the student is registered on the platform yet. Never raises.
+        from education_system.platform.cross_system import login_links
+        login_links.try_sync_username(username)
+    activation_sent = send_student_activation(email) if shared_ok else False
+    return {
+        "legacy_ok": legacy_ok,
+        "shared_ok": shared_ok,
+        "activation_sent": activation_sent,
+    }

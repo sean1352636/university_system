@@ -1,12 +1,18 @@
 """Assignment creation form, validation, and execution"""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
+from tkinter import ttk, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 import threading
 from datetime import datetime, timedelta
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
+from education_system.systems.university.domains.academics.interfaces.gui._field_pickers import attach_date
 
 
 class CreationMixin:
@@ -71,54 +77,28 @@ class CreationMixin:
         date_entry_frame = ttk.Frame(due_frame)
         date_entry_frame.pack(side='left')
 
-        ttk.Label(date_entry_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.date_yyyy_mm_dd', default="Date (YYYY-MM-DD):")).pack(side='left')
-        date_entry = ttk.Entry(date_entry_frame, textvariable=self.due_date_var, width=12)
-        date_entry.pack(side='left', padx=(5, 0))
+        # Day / month / year dropdowns. This was a typed YYYY-MM-DD box
+        # beside a calendar button that opened a dialog containing...
+        # another typed YYYY-MM-DD box, which then rejected anything
+        # mis-typed. The dropdowns cannot produce an invalid date, so
+        # both the box and the dialog are gone.
+        attach_date(date_entry_frame, id_var=self.due_date_var).pack(side='left', padx=(5, 0))
 
-        # Add calendar button for date picker
-        def show_date_picker():
-            """Simple date picker dialog"""
-            date_window = tk.Toplevel(self.root)
-            date_window.title(_t('gui.academics.assignment_system.assignment_manager.creation.windows.select_date', default="Select Date"))
-            date_window.geometry("300x200")
-            date_window.transient(self.root)
+        quick_frame = ttk.Frame(due_frame)
+        quick_frame.pack(side='left', padx=(10, 0))
 
-            # Simple date selection interface
-            ttk.Label(date_window, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.enter_date_yyyy_mm_dd', default="Enter date (YYYY-MM-DD):")).pack(pady=10)
+        def _set_due_in(days):
+            self.due_date_var.set(
+                (datetime.now() + timedelta(days=days)).strftime("%Y-%m-%d"))
 
-            date_var = tk.StringVar(value=datetime.now().strftime("%Y-%m-%d"))
-            date_entry_popup = ttk.Entry(date_window, textvariable=date_var, width=15)
-            date_entry_popup.pack(pady=5)
-
-            # Quick date buttons
-            quick_frame = ttk.Frame(date_window)
-            quick_frame.pack(pady=10)
-
-            def set_date(days_from_now):
-                target_date = datetime.now() + timedelta(days=days_from_now)
-                date_var.set(target_date.strftime("%Y-%m-%d"))
-
-            ttk.Button(quick_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.today', default="Today"), command=lambda: set_date(0)).pack(side='left', padx=2)
-            ttk.Button(quick_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.tomorrow', default="Tomorrow"), command=lambda: set_date(1)).pack(side='left', padx=2)
-            ttk.Button(quick_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.value_1_week', default="1 Week"), command=lambda: set_date(7)).pack(side='left', padx=2)
-            ttk.Button(quick_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.value_2_weeks', default="2 Weeks"), command=lambda: set_date(14)).pack(side='left', padx=2)
-
-            def confirm_date():
-                try:
-                    # Validate date format
-                    selected_date = datetime.strptime(date_var.get(), "%Y-%m-%d")
-                    self.due_date_var.set(date_var.get())
-                    date_window.destroy()
-                except ValueError:
-                    messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.creation.dialogs.invalid_date', default="Invalid Date"), _t('gui.academics.assignment_system.assignment_manager.creation.dialogs.please_enter_date_in_yyyy_mm_dd_format', default="Please enter date in YYYY-MM-DD format"))
-
-            button_frame = ttk.Frame(date_window)
-            button_frame.pack(pady=10)
-
-            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.ok', default="OK"), command=confirm_date).pack(side='left', padx=5)
-            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.cancel', default="Cancel"), command=date_window.destroy).pack(side='left', padx=5)
-
-        ttk.Button(due_frame, text="\U0001f4c5", command=show_date_picker, width=3).pack(side='left', padx=(10, 0))
+        for label, days in (
+            (_t('gui.academics.assignment_system.assignment_manager.creation.buttons.today', default="Today"), 0),
+            (_t('gui.academics.assignment_system.assignment_manager.creation.buttons.tomorrow', default="Tomorrow"), 1),
+            (_t('gui.academics.assignment_system.assignment_manager.creation.buttons.value_1_week', default="1 Week"), 7),
+            (_t('gui.academics.assignment_system.assignment_manager.creation.buttons.value_2_weeks', default="2 Weeks"), 14),
+        ):
+            ttk.Button(quick_frame, text=label, width=8,
+                       command=lambda d=days: _set_due_in(d)).pack(side='left', padx=2)
 
         # Time selection
         ttk.Label(due_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.time', default="Time:")).pack(side='left', padx=(10, 5))
@@ -394,7 +374,8 @@ class CreationMixin:
         Module Scheduling, Exam, and Assignment all share one algo.
         """
         import tkinter as tk
-        from tkinter import ttk, messagebox
+        from tkinter import ttk
+        from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
         try:
             due_date = (self.due_date_var.get() or "").strip()
             due_time = (self.due_time_var.get() or "10:00").strip()
@@ -426,7 +407,7 @@ class CreationMixin:
                                  f"Could not query rooms: {exc}")
             return
 
-        win = tk.Toplevel()
+        win = make_toplevel()
         win.title(f"Free venues — {due_date} {start}–{end}")
         win.geometry("520x360")
 
@@ -567,7 +548,7 @@ class CreationMixin:
                         event_type="Assignment", source_id=assignment_id,
                         action="create")
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Update GUI on main thread
             self.root.after(0, lambda: self.show_assignment_status(

@@ -1,7 +1,8 @@
 """Manifest for the Nursery System.
 
 Early years provision (0-5, EYFS). Route blueprints live under
-``interfaces/api/routes/`` and are mounted by the shared API platform.
+``education_system/api/nursery/routes/`` and are mounted by the shared API
+platform.
 """
 
 from education_system.platform.kernel.system_manifest import SystemManifest

@@ -64,7 +64,7 @@ def sync_assignment_to_calendar(
                 return False
 
             existing = cur.execute(
-                "SELECT id FROM academic_calendar_events WHERE id = ?",
+                "SELECT id FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') WHERE id = ?",
                 (event_id,),
             ).fetchone()
 
@@ -73,20 +73,16 @@ def sync_assignment_to_calendar(
             if existing:
                 cur.execute(
                     """
-                    UPDATE academic_calendar_events
-                       SET name = ?, date = ?, date_start = NULL, date_end = NULL,
-                           description = ?, event_type = ?, last_modified = ?
-                     WHERE id = ?
-                    """,
+                    UPDATE unified_events SET title = ?, event_date = ?, start_datetime = NULL, end_datetime = NULL,
+                           description = ?, event_type = ?, updated_at = ? WHERE source_type = 'academic_calendar' AND (source_event_id = ?)""",
                     (name, date_only, description, EVENT_TYPE, now, event_id),
                 )
             else:
                 cur.execute(
                     """
-                    INSERT INTO academic_calendar_events
-                        (id, name, date, date_start, date_end, description,
-                         event_type, date_added, last_modified, created_by)
-                    VALUES (?, ?, ?, NULL, NULL, ?, ?, ?, ?, ?)
+                    INSERT INTO unified_events (
+                    source_event_id, title, event_date, start_datetime, end_datetime, description, event_type, created_at, updated_at, created_by, source_type
+                ) VALUES (?, ?, ?, NULL, NULL, ?, ?, ?, ?, ?, 'academic_calendar')
                     """,
                     (event_id, name, date_only, description, EVENT_TYPE,
                      now, now, created_by),
@@ -112,7 +108,7 @@ def remove_assignment_from_calendar(assignment_id: int) -> bool:
         conn.execute("PRAGMA busy_timeout = 30000")
         try:
             conn.execute(
-                "DELETE FROM academic_calendar_events WHERE id = ?",
+                "DELETE FROM unified_events WHERE source_type = 'academic_calendar' AND (source_event_id = ?)",
                 (_event_id(assignment_id),),
             )
             conn.commit()

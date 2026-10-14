@@ -8,16 +8,23 @@ class TableModule(ModuleTab):
     """
     Reusable module with:
       * title + New/Edit/Delete/Refresh buttons
-      * search box
-      * treeview listing
+      * search box and a record count
+      * treeview listing, sortable by clicking a column heading
+      * CSV export of exactly what the filter and sort left on screen
       * detail pane showing the selected record
     Subclasses define columns, query, field specs, and detail rendering.
+
+    Sorting, the count and the export came from the standalone Research
+    Portal's TablePage; every tab in this portal inherits them.
     """
 
     title = ""
     subtitle = ""
     table_name = ""
     pk = "id"
+
+    #: Column keys that hold numbers — right-aligned and sorted numerically.
+    numeric_columns = ()
 
     def _build(self):
         wrapper = ttk.Frame(self, style="TFrame")
@@ -43,6 +50,8 @@ class TableModule(ModuleTab):
             side="left")
         ttk.Button(actions, text="Refresh", command=self.refresh).pack(
             side="left", padx=6)
+        ttk.Button(actions, text="Export CSV", command=self.on_export).pack(
+            side="left")
 
         ttk.Label(actions, text="Search:",
                   foreground=PALETTE["muted"]).pack(side="left", padx=(20, 6))
@@ -50,6 +59,10 @@ class TableModule(ModuleTab):
         self.search_var.trace_add("write", lambda *_: self.refresh())
         ttk.Entry(actions, textvariable=self.search_var, width=30).pack(
             side="left")
+
+        self.count_label = ttk.Label(actions, text="",
+                                     foreground=PALETTE["muted"])
+        self.count_label.pack(side="right")
 
         # Split area: table | detail
         split = ttk.Frame(wrapper, style="TFrame")
@@ -63,11 +76,17 @@ class TableModule(ModuleTab):
         table_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 12))
 
         cols, heads, widths = self.get_columns()
+        self._column_keys = list(cols)
+        self._column_heads = list(heads)
+        self._sort_index = None
+        self._sort_desc = False
         self.tree = ttk.Treeview(table_frame, columns=cols, show="headings",
                                  selectmode="browse")
-        for c, h, w in zip(cols, heads, widths):
-            self.tree.heading(c, text=h)
-            self.tree.column(c, width=w, anchor="w")
+        for i, (c, h, w) in enumerate(zip(cols, heads, widths)):
+            anchor = "e" if c in self.numeric_columns else "w"
+            self.tree.heading(c, text=h, anchor=anchor,
+                              command=lambda idx=i: self.sort_by(idx))
+            self.tree.column(c, width=w, anchor=anchor)
         self.tree.pack(side="left", fill="both", expand=True, padx=1, pady=1)
 
         sb = ttk.Scrollbar(table_frame, orient="vertical",
@@ -104,6 +123,32 @@ class TableModule(ModuleTab):
                                        font=("Segoe UI", 11, "bold"),
                                        foreground=PALETTE["header"])
 
+        self._check_table_name()
+
+    def _check_table_name(self):
+        """Warn at build time if ``table_name`` is not a real table.
+
+        ``fetch_rows`` writes its own SQL, but ``on_select``/``on_edit``/
+        ``on_delete`` interpolate ``table_name`` — so a stale value here is
+        invisible until someone clicks a row, and then surfaces as an
+        unhandled Tk callback. Four tabs sat wrong this way after the tables
+        were renamed to the ``research_*`` namespace.
+        """
+        if not self.table_name:
+            return
+        try:
+            found = self.db.query(
+                "SELECT 1 FROM sqlite_master WHERE type IN ('table','view') "
+                "AND name=?", (self.table_name,))
+        except Exception:
+            logger.debug("could not verify table name", exc_info=True)
+            return
+        if not found:
+            logger.error(
+                "%s.table_name=%r is not a table in this database; "
+                "row selection, editing and deletion will fail",
+                type(self).__name__, self.table_name)
+
     # ---- methods subclasses override ---------------------------------------
     def get_columns(self):
         raise NotImplementedError
@@ -134,11 +179,83 @@ class TableModule(ModuleTab):
         for iid in self.tree.get_children():
             self.tree.delete(iid)
         rows = self.fetch_rows(self.search_var.get())
-        for i, r in enumerate(rows):
+
+        # Sort on the values as displayed, which is what the user clicked on.
+        entries = [(str(r[self.pk]), tuple(self.row_to_tree_values(r)))
+                   for r in rows]
+        if self._sort_index is not None:
+            idx = self._sort_index
+            key = self._column_keys[idx]
+            numeric = key in self.numeric_columns
+            entries.sort(key=lambda e: self._sort_key(e[1], idx, numeric),
+                         reverse=self._sort_desc)
+
+        for i, (iid, values) in enumerate(entries):
             tag = ("alt",) if i % 2 else ()
-            self.tree.insert("", "end", iid=str(r[self.pk]),
-                             values=self.row_to_tree_values(r), tags=tag)
+            self.tree.insert("", "end", iid=iid, values=values, tags=tag)
+
+        self.count_label.configure(
+            text=f"{len(entries)} record{'' if len(entries) == 1 else 's'}")
+        self._apply_sort_indicators()
         self._clear_detail()
+
+    @staticmethod
+    def _sort_key(values, index, numeric):
+        raw = values[index] if index < len(values) else None
+        if raw is None or raw == "":
+            # Blanks last, whichever direction — an empty date is not "earliest".
+            return (1, 0.0 if numeric else "")
+        if numeric:
+            cleaned = "".join(
+                ch for ch in str(raw) if ch.isdigit() or ch in ".-")
+            try:
+                return (0, float(cleaned))
+            except ValueError:
+                return (0, 0.0)
+        return (0, str(raw).lower())
+
+    def sort_by(self, index):
+        self._sort_desc = (
+            not self._sort_desc if self._sort_index == index else False)
+        self._sort_index = index
+        self.refresh()
+
+    def _apply_sort_indicators(self):
+        arrow = " ▾" if self._sort_desc else " ▴"
+        for i, (key, head) in enumerate(
+                zip(self._column_keys, self._column_heads)):
+            self.tree.heading(
+                key, text=head + (arrow if i == self._sort_index else ""))
+
+    def on_export(self):
+        iids = self.tree.get_children()
+        if not iids:
+            messagebox.showinfo("Nothing to export",
+                                "No records match the current filter.",
+                                parent=self)
+            return
+        default = (self.title or self.table_name or "records").lower()
+        path = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV file", "*.csv")],
+            initialfile=f"{default.replace(' ', '_')}.csv",
+            parent=self)
+        if not path:
+            return
+        import csv
+        try:
+            with open(path, "w", newline="", encoding="utf-8") as fh:
+                writer = csv.writer(fh)
+                writer.writerow(self._column_heads)
+                for iid in iids:
+                    writer.writerow(self.tree.item(iid)["values"])
+        except OSError as e:
+            messagebox.showerror("Export failed", str(e), parent=self)
+            return
+        messagebox.showinfo(
+            "Export complete",
+            f"{len(iids)} record(s) written to {os.path.basename(path)}.",
+            parent=self)
 
     def _clear_detail(self):
         self.detail_text.configure(state="normal")
@@ -148,20 +265,47 @@ class TableModule(ModuleTab):
                                 ("muted",))
         self.detail_text.configure(state="disabled")
 
+    def _fetch_one(self, pk_val):
+        """Load a single record by primary key, or ``None`` on failure.
+
+        Selecting a row must never raise into the Tk callback — an unhandled
+        error there just prints a traceback to the console and leaves the
+        pane showing the previous record, which reads as the UI ignoring the
+        click.
+        """
+        try:
+            # db-audit: ignore[DBW001] - table_name/pk are class constants
+            rows = self.db.query(
+                f"SELECT * FROM {self.table_name} WHERE {self.pk}=?",
+                (pk_val,))
+        except Exception:
+            logger.exception("%s: could not load record %s from %r",
+                             type(self).__name__, pk_val, self.table_name)
+            return None
+        return rows[0] if rows else None
+
     def on_select(self):
         sel = self.tree.selection()
         if not sel:
             return
-        pk_val = int(sel[0])
-        row = self.db.query(
-            f"SELECT * FROM {self.table_name} WHERE {self.pk}=?",
-            (pk_val,))
-        if not row:
+        raw = self._fetch_one(int(sel[0]))
+        if raw is None:
+            self._show_detail_error()
             return
-        row = self.build_record_from_row(row[0])
+        row = self.build_record_from_row(raw)
         self.detail_text.configure(state="normal")
         self.detail_text.delete("1.0", "end")
         self.render_detail(row)
+        self.detail_text.configure(state="disabled")
+
+    def _show_detail_error(self):
+        self.detail_text.configure(state="normal")
+        self.detail_text.delete("1.0", "end")
+        self.detail_text.insert(
+            "1.0",
+            "This record could not be loaded.\n\n"
+            "The details are in the application log.",
+            ("muted",))
         self.detail_text.configure(state="disabled")
 
     def _write_detail(self, pairs):
@@ -189,12 +333,15 @@ class TableModule(ModuleTab):
                                 "Select a record to edit.", parent=self)
             return
         pk_val = int(sel[0])
-        row = self.db.query(
-            f"SELECT * FROM {self.table_name} WHERE {self.pk}=?",
-            (pk_val,))
-        if not row:
+        raw = self._fetch_one(pk_val)
+        if raw is None:
+            messagebox.showerror(
+                "Could not open record",
+                "This record could not be loaded for editing. "
+                "The details are in the application log.",
+                parent=self)
             return
-        record = self.build_record_from_row(row[0])
+        record = self.build_record_from_row(raw)
         fields = self.get_field_specs(record)
         dlg = RecordDialog(self.app.root, f"Edit — {self.title}",
                            fields, record=record)
@@ -219,7 +366,14 @@ class TableModule(ModuleTab):
                                    "Delete the selected record? This cannot be undone.",
                                    parent=self):
             return
-        self.db.execute(
-            f"DELETE FROM {self.table_name} WHERE {self.pk}=?", (pk_val,))
+        try:
+            # db-audit: ignore[DBW001] - table_name/pk are class constants
+            self.db.execute(
+                f"DELETE FROM {self.table_name} WHERE {self.pk}=?", (pk_val,))
+        except Exception as e:
+            logger.exception("%s: delete of %s from %r failed",
+                             type(self).__name__, pk_val, self.table_name)
+            messagebox.showerror("Delete failed", str(e), parent=self)
+            return
         self.refresh()
         self.app.dashboard.refresh()

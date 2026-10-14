@@ -86,6 +86,7 @@ class BulkOperationsManager:
 
             if install_ids:
                 placeholders = ','.join(['?' for _ in install_ids])
+                # db-audit: ignore[DBW001] - string literal
                 cursor.execute(f'''
                     SELECT install_id FROM installed_integrations
                     WHERE install_id IN ({placeholders}) AND is_enabled = 1

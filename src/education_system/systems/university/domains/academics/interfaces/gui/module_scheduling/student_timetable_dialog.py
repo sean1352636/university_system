@@ -14,7 +14,8 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 
 import logging
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
+from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling._dialogs import messagebox
 from datetime import datetime
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -189,7 +190,7 @@ class StudentTimetableDialog:
         by_day = {d: [] for d in _DAYS}
         conflict_ids: set[int] = set()
         for s in sessions:
-            sid, code, _name, day, start, end, _b, _r, _fn, _ln, _t = s
+            sid, code, _name, day, start, end, _b, _r, _fn, _ln, _stype = s
             if day in by_day:
                 by_day[day].append({"id": sid, "code": code, "start": start,
                                     "end": end, "row": s})

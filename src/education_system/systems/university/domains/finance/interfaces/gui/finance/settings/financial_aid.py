@@ -1,16 +1,25 @@
 """Financial aid management: applications, disbursements, aid types, and loans."""
+from education_system.systems.university.shell.gui import report_view as _rv
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import sys
 import io
+import json
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 from tkinter.scrolledtext import ScrolledText
 from datetime import datetime
 
 from education_system.systems.university.infrastructure.i18n import get_text as _
-from education_system.systems.university.infrastructure.database.db import get_connection
+from education_system.systems.university.infrastructure.database.db import (
+    get_connection,
+    reuse_connection,
+    transaction,
+)
 
 from education_system.systems.university.domains.finance.interfaces.gui.finance.common_imports import (
     create_aid_type,
@@ -85,16 +94,329 @@ class FinancialAidMixin:
         self.refresh_financial_aid()
 
 
+    # ==================== AID PERSISTENCE HELPERS ====================
+
+    def _aid_actor(self):
+        """Return ``(user_id, username)`` for the signed-in finance user."""
+        auth = getattr(self, 'auth', None)
+        user = getattr(auth, 'current_user', None) if auth else None
+        if not user:
+            return None, 'system'
+        try:
+            user_id = int(user.get('id'))
+        except (TypeError, ValueError):
+            user_id = None
+        return user_id, user.get('username') or 'system'
+
+    def _lookup_aid_student(self, student_id):
+        """Return the student's full name, or None when no such student exists."""
+        from education_system.systems.university.domains.finance.domain.core.students import (
+            get_student_name,
+            student_exists,
+        )
+
+        # One connection for both lookups - a fresh one costs ~100ms.
+        with reuse_connection():
+            if not student_exists(student_id):
+                return None
+            return get_student_name(student_id)
+
+    def _load_aid_types(self):
+        """Return the active aid types as ``(aid_type_id, aid_name, max_amount)`` rows."""
+        conn = get_connection()
+        try:
+            return conn.execute('''
+            SELECT aid_type_id, aid_name, max_amount
+            FROM financial_aid_types
+            WHERE is_active = 1
+            ORDER BY aid_category, aid_name
+            ''').fetchall()
+        finally:
+            conn.close()
+
+    def _load_disbursable_awards(self, student_id):
+        """Return the student's approved awards that still have funds remaining."""
+        conn = get_connection()
+        try:
+            return conn.execute('''
+            SELECT sfa.aid_id, fat.aid_name, fat.aid_category, sfa.academic_year,
+                   sfa.awarded_amount,
+                   COALESCE(sfa.disbursed_amount, 0) AS disbursed_amount,
+                   COALESCE(sfa.remaining_amount, sfa.awarded_amount) AS remaining_amount
+            FROM student_financial_aid sfa
+            JOIN financial_aid_types fat ON sfa.aid_type_id = fat.aid_type_id
+            WHERE sfa.student_id = ?
+              AND sfa.status IN ('approved', 'disbursed')
+              AND COALESCE(sfa.remaining_amount, sfa.awarded_amount) > 0
+            ORDER BY sfa.application_date
+            ''', (student_id,)).fetchall()
+        finally:
+            conn.close()
+
+    def _record_disbursement(self, aid_id, amount, method, reference, term, notes):
+        """Draw ``amount`` down from an award and record a processed disbursement.
+
+        The award update and the disbursement row are written in one transaction
+        so an award can never be drawn down without a matching disbursement.
+        Returns ``(disbursement_id, student_id, remaining_after)``.
+        """
+        user_id, username = self._aid_actor()
+        today = datetime.now().strftime('%Y-%m-%d')
+
+        with transaction() as conn:
+            cursor = conn.cursor()
+            # Re-read under the write lock: the tree may be stale.
+            award = cursor.execute('''
+            SELECT sfa.student_id, sfa.awarded_amount, sfa.notes, fat.aid_category,
+                   COALESCE(sfa.disbursed_amount, 0) AS disbursed_amount,
+                   COALESCE(sfa.remaining_amount, sfa.awarded_amount) AS remaining_amount
+            FROM student_financial_aid sfa
+            JOIN financial_aid_types fat ON sfa.aid_type_id = fat.aid_type_id
+            WHERE sfa.aid_id = ?
+            ''', (aid_id,)).fetchone()
+
+            if award is None:
+                raise ValueError(_("finance_gui.settings.award_not_found",
+                                   default="Aid award {aid_id} no longer exists.", aid_id=aid_id))
+
+            remaining = float(award['remaining_amount'] or 0)
+            if amount > remaining + 0.005:
+                raise ValueError(_("finance_gui.settings.amount_exceeds_remaining",
+                                   default="Amount exceeds the {remaining} remaining on this award.",
+                                   remaining=f"\u00a3{remaining:,.2f}"))
+
+            remaining_after = round(remaining - amount, 2)
+            disbursed_after = round(float(award['disbursed_amount'] or 0) + amount, 2)
+            note_line = (f"[{today}] Disbursed \u00a3{amount:,.2f} via {method} "
+                         f"(ref {reference}) by {username}")
+            if notes:
+                note_line = f"{note_line}: {notes}"
+            existing_notes = award['notes'] or ''
+            combined_notes = f"{existing_notes}\n{note_line}".strip()
+
+            cursor.execute('''
+            UPDATE student_financial_aid
+            SET disbursed_amount = ?,
+                remaining_amount = ?,
+                status = ?,
+                notes = ?,
+                updated_at = datetime('now')
+            WHERE aid_id = ?
+            ''', (disbursed_after, remaining_after,
+                  'completed' if remaining_after <= 0.005 else 'disbursed',
+                  combined_notes, aid_id))
+
+            cursor.execute('''
+            INSERT INTO disbursements
+            (student_id, amount, disbursement_type, disbursement_date, scheduled_date,
+             academic_term, status, payment_method, transaction_id, processed_by, processed_at)
+            VALUES (?, ?, ?, ?, ?, ?, 'processed', ?, ?, ?, datetime('now'))
+            ''', (award['student_id'], amount, award['aid_category'], today, today,
+                  term or None, method, reference, user_id))
+
+            return cursor.lastrowid, award['student_id'], remaining_after
+
     def new_aid_application(self):
-        """Create new aid application"""
-        student_id = simpledialog.askstring(_("finance_gui.settings.financial_aid_title"), _("finance_gui.settings.enter_student_id_prompt"))
-        if student_id:
-            aid_type = simpledialog.askstring(_("finance_gui.settings.financial_aid_title"), _("finance_gui.settings.enter_aid_type_prompt"))
-            if aid_type:
-                amount = simpledialog.askfloat(_("finance_gui.settings.financial_aid_title"), _("finance_gui.settings.enter_aid_amount_prompt"))
-                if amount:
-                    messagebox.showinfo(_("finance_gui.settings.success_title"), _("finance_gui.settings.aid_application_created", amount=f"\u00a3{amount:.2f}", student_id=student_id))
-                    self.refresh_financial_aid()
+        """Create a new financial aid application for a student."""
+        dialog = tk.Toplevel(self.root)
+        dialog.title(_("finance_gui.settings.new_aid_application_title", default="New Aid Application"))
+        dialog.geometry("560x480")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        form = ttk.LabelFrame(dialog, text=_("finance_gui.settings.aid_application_details_frame",
+                                             default="Application Details"), padding=15)
+        form.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(form, text=_("finance_gui.settings.student_id_label_form")).grid(row=0, column=0, sticky='w', pady=5)
+        student_id_var = tk.StringVar()
+        ttk.Entry(form, textvariable=student_id_var, width=36).grid(row=0, column=1, sticky='w', pady=5, padx=5)
+
+        ttk.Label(form, text=_("finance_gui.settings.aid_type_label_form")).grid(row=1, column=0, sticky='w', pady=5)
+        aid_type_var = tk.StringVar()
+        aid_type_combo = ttk.Combobox(form, textvariable=aid_type_var, width=34, state='readonly')
+        aid_type_combo.grid(row=1, column=1, sticky='w', pady=5, padx=5)
+
+        try:
+            aid_types = self._load_aid_types()
+        except Exception as e:
+            messagebox.showerror(_("finance_gui.settings.error_title"),
+                                 _("finance_gui.settings.failed_load_aid_types",
+                                   default="Failed to load aid types: {error}", error=str(e)),
+                                 parent=dialog)
+            aid_types = []
+
+        max_by_type = {row['aid_type_id']: row['max_amount'] for row in aid_types}
+        aid_type_combo['values'] = [f"{row['aid_type_id']} - {row['aid_name']}" for row in aid_types]
+
+        ttk.Label(form, text=_("finance_gui.settings.amount_label_form")).grid(row=2, column=0, sticky='w', pady=5)
+        amount_var = tk.StringVar()
+        ttk.Entry(form, textvariable=amount_var, width=36).grid(row=2, column=1, sticky='w', pady=5, padx=5)
+
+        ttk.Label(form, text=_("finance_gui.settings.academic_year_label_form",
+                               default="Academic Year:")).grid(row=3, column=0, sticky='w', pady=5)
+        year_var = tk.StringVar(value=self._default_academic_year())
+        ttk.Entry(form, textvariable=year_var, width=36).grid(row=3, column=1, sticky='w', pady=5, padx=5)
+
+        ttk.Label(form, text=_("finance_gui.settings.status_label_form",
+                               default="Status:")).grid(row=4, column=0, sticky='w', pady=5)
+        status_var = tk.StringVar(value='pending')
+        ttk.Combobox(form, textvariable=status_var, values=['pending', 'approved'],
+                     width=34, state='readonly').grid(row=4, column=1, sticky='w', pady=5, padx=5)
+
+        ttk.Label(form, text=_("finance_gui.settings.notes_label_form")).grid(row=5, column=0, sticky='nw', pady=5)
+        notes_text = tk.Text(form, height=5, width=36)
+        notes_text.grid(row=5, column=1, sticky='w', pady=5, padx=5)
+
+        def save_application():
+            student_id = student_id_var.get().strip()
+            if not student_id:
+                messagebox.showwarning(_("finance_gui.settings.student_required_warning_title"),
+                                       _("finance_gui.settings.student_required_warning_msg"), parent=dialog)
+                return
+
+            selection = aid_type_var.get().strip()
+            if not selection:
+                messagebox.showwarning(_("finance_gui.settings.error_title"),
+                                       _("finance_gui.settings.aid_type_required",
+                                         default="Please select an aid type."), parent=dialog)
+                return
+            aid_type_id = int(selection.split(' - ', 1)[0])
+
+            try:
+                amount = float(amount_var.get())
+                if amount <= 0:
+                    raise ValueError
+            except ValueError:
+                messagebox.showwarning(_("finance_gui.settings.invalid_amount_warning_title"),
+                                       _("finance_gui.settings.amount_greater_zero"), parent=dialog)
+                return
+
+            max_amount = max_by_type.get(aid_type_id)
+            if max_amount is not None and amount > float(max_amount):
+                messagebox.showwarning(_("finance_gui.settings.invalid_amount_warning_title"),
+                                       _("finance_gui.settings.amount_exceeds_max",
+                                         default="Amount exceeds the {maximum} maximum for this aid type.",
+                                         maximum=f"\u00a3{float(max_amount):,.2f}"), parent=dialog)
+                return
+
+            try:
+                student_name = self._lookup_aid_student(student_id)
+                if student_name is None:
+                    messagebox.showerror(_("finance_gui.settings.error_title"),
+                                         _("finance_gui.settings.student_not_found", student_id=student_id),
+                                         parent=dialog)
+                    return
+
+                approved = status_var.get() == 'approved'
+                user_id, username = self._aid_actor()
+
+                with transaction() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                    INSERT INTO student_financial_aid
+                    (student_id, aid_type_id, awarded_amount, disbursed_amount, remaining_amount,
+                     status, academic_year, application_date, approval_date, approved_by,
+                     notes, created_at, updated_at)
+                    VALUES (?, ?, ?, 0, ?, ?, ?, date('now'), ?, ?, ?, datetime('now'), datetime('now'))
+                    ''', (student_id, aid_type_id, amount, amount, status_var.get(),
+                          year_var.get().strip() or None,
+                          datetime.now().strftime('%Y-%m-%d') if approved else None,
+                          username if approved else None,
+                          notes_text.get('1.0', tk.END).strip() or None))
+                    aid_id = cursor.lastrowid
+
+                self._log_aid_audit('create_aid_application', 'student_financial_aid', aid_id, {
+                    'student_id': student_id,
+                    'aid_type_id': aid_type_id,
+                    'awarded_amount': amount,
+                    'status': status_var.get(),
+                    'academic_year': year_var.get().strip(),
+                    'created_by': username,
+                    'created_by_id': user_id,
+                })
+
+                messagebox.showinfo(_("finance_gui.settings.success_title"),
+                                    _("finance_gui.settings.aid_application_created",
+                                      amount=f"\u00a3{amount:,.2f}", student_id=student_id),
+                                    parent=dialog)
+                dialog.destroy()
+                self.refresh_financial_aid()
+
+            except Exception as e:
+                messagebox.showerror(_("finance_gui.settings.error_title"),
+                                     _("finance_gui.settings.failed_create_aid_application",
+                                       default="Failed to create aid application: {error}", error=str(e)),
+                                     parent=dialog)
+
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(pady=10)
+        ttk.Button(button_frame, text=_("finance_gui.settings.create_application_btn",
+                                        default="Create Application"), command=save_application).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_("finance_gui.settings.btn_cancel"), command=dialog.destroy).pack(side='left', padx=5)
+
+    @staticmethod
+    def _default_academic_year():
+        """Academic year the current date falls in, e.g. ``2026/2027``."""
+        now = datetime.now()
+        start = now.year if now.month >= 8 else now.year - 1
+        return f"{start}/{start + 1}"
+
+    def _apply_disbursement_to_fees(self, student_id, amount, aid_id):
+        """Offset the student's outstanding fees with the disbursed funds.
+
+        ``apply_aid_to_fees`` creates the payment + allocation rows and posts each
+        payment to the general ledger. It swallows its own errors and reports
+        through stdout, so capture that and translate it into ``(ok, message)``
+        rather than letting a failed allocation pass for a success.
+        """
+        from education_system.systems.university.domains.finance.domain.core.aid import apply_aid_to_fees
+        from education_system.systems.university.infrastructure.shared_context import (
+            is_auth_initialized,
+            set_auth,
+        )
+
+        # apply_aid_to_fees stamps created_by from the shared auth context, which
+        # raises when nothing has set it. Hand it the GUI's authenticated session.
+        if not is_auth_initialized() and getattr(self, 'auth', None) is not None:
+            try:
+                set_auth(self.auth)
+            except Exception:
+                logger.debug("Suppressed exception", exc_info=True)
+
+        old_stdout = sys.stdout
+        sys.stdout = captured = io.StringIO()
+        try:
+            apply_aid_to_fees(student_id, amount, aid_id)
+        except Exception as e:
+            return False, _("finance_gui.settings.fee_allocation_failed",
+                            default="Funds were not applied to fees: {error}", error=str(e))
+        finally:
+            sys.stdout = old_stdout
+
+        output = captured.getvalue().strip()
+        if 'Error applying aid to fees' in output:
+            return False, _("finance_gui.settings.fee_allocation_failed",
+                            default="Funds were not applied to fees: {error}",
+                            error=output.split('Error applying aid to fees:', 1)[-1].strip())
+
+        return True, output or _(
+            "finance_gui.settings.no_outstanding_fees",
+            default="No outstanding fees - funds paid out to the student.",
+        )
+
+    def _log_aid_audit(self, action, table_name, record_id, details):
+        """Write a finance audit row; never let auditing break the operation."""
+        _user_id, username = self._aid_actor()
+        try:
+            with transaction() as conn:
+                conn.execute('''
+                INSERT INTO audit_log
+                (user_id, action, table_name, record_id, new_values, timestamp)
+                VALUES (?, ?, ?, ?, ?, datetime('now'))
+                ''', (username, action, table_name, str(record_id), json.dumps(details, default=str)))
+        except Exception as e:
+            print(f"Error writing aid audit entry: {e}")
 
 
     def review_aid_applications(self):
@@ -139,12 +461,60 @@ class FinancialAidMixin:
         student_name_label = ttk.Label(selection_frame, text="", foreground='blue')
         student_name_label.grid(row=1, column=1, sticky='w', pady=5, padx=5)
 
+        # Awards available to draw down, keyed by the combobox label
+        awards_by_label = {}
+
         def lookup_student():
             student_id = student_id_var.get().strip()
-            if student_id:
-                # Lookup student (mock implementation)
-                student_name_label.config(text=_("finance_gui.settings.student_prefix", student_id=student_id))
-                aid_details_frame.pack(fill='both', expand=True, padx=10, pady=10)
+            if not student_id:
+                return
+
+            awards_by_label.clear()
+            aid_type_combo['values'] = []
+            aid_type_var.set('')
+            amount_var.set('')
+
+            try:
+                student_name = self._lookup_aid_student(student_id)
+            except Exception as e:
+                messagebox.showerror(_("finance_gui.settings.error_title"), str(e), parent=disburse_dialog)
+                return
+
+            if student_name is None:
+                student_name_label.config(text='')
+                aid_details_frame.pack_forget()
+                messagebox.showerror(_("finance_gui.settings.error_title"),
+                                     _("finance_gui.settings.student_not_found", student_id=student_id),
+                                     parent=disburse_dialog)
+                return
+
+            student_name_label.config(text=student_name)
+
+            try:
+                awards = self._load_disbursable_awards(student_id)
+            except Exception as e:
+                messagebox.showerror(_("finance_gui.settings.error_title"), str(e), parent=disburse_dialog)
+                return
+
+            if not awards:
+                aid_details_frame.pack_forget()
+                messagebox.showwarning(_("finance_gui.settings.no_awards_warning_title",
+                                         default="No Disbursable Awards"),
+                                       _("finance_gui.settings.no_disbursable_awards_msg",
+                                         default="{student_name} has no approved aid award with funds remaining. "
+                                                 "Create and approve an application first.",
+                                         student_name=student_name),
+                                       parent=disburse_dialog)
+                return
+
+            for award in awards:
+                label = (f"#{award['aid_id']} - {award['aid_name']} "
+                         f"({_('finance_gui.settings.remaining_label', default='remaining')}: "
+                         f"£{float(award['remaining_amount']):,.2f})")
+                awards_by_label[label] = award
+
+            aid_type_combo['values'] = list(awards_by_label)
+            aid_details_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         ttk.Button(selection_frame, text=_("finance_gui.settings.lookup_student_btn"), command=lookup_student).grid(row=0, column=2, padx=5)
 
@@ -154,17 +524,25 @@ class FinancialAidMixin:
         form_frame = ttk.Frame(aid_details_frame)
         form_frame.pack(fill='x')
 
-        ttk.Label(form_frame, text=_("finance_gui.settings.aid_type_label_form")).grid(row=0, column=0, sticky='w', pady=5)
-        aid_type_var = tk.StringVar(value=_t('gui.finance.finance.settings.financial_aid.values.grant', default="Grant"))
+        ttk.Label(form_frame, text=_("finance_gui.settings.aid_award_label_form",
+                                     default="Aid Award:")).grid(row=0, column=0, sticky='w', pady=5)
+        aid_type_var = tk.StringVar()
         aid_type_combo = ttk.Combobox(form_frame, textvariable=aid_type_var,
-                                      values=['Grant', 'Scholarship', 'Loan', 'Emergency Aid', 'Bursary'],
-                                      width=28, state='readonly')
+                                      width=44, state='readonly')
         aid_type_combo.grid(row=0, column=1, pady=5, padx=5)
 
         ttk.Label(form_frame, text=_("finance_gui.settings.amount_label_form")).grid(row=1, column=0, sticky='w', pady=5)
         amount_var = tk.StringVar()
         amount_entry = ttk.Entry(form_frame, textvariable=amount_var, width=30)
-        amount_entry.grid(row=1, column=1, pady=5, padx=5)
+        amount_entry.grid(row=1, column=1, sticky='w', pady=5, padx=5)
+
+        def on_award_selected(_event=None):
+            """Default the amount to the award's full remaining balance."""
+            award = awards_by_label.get(aid_type_var.get())
+            if award is not None:
+                amount_var.set(f"{float(award['remaining_amount']):.2f}")
+
+        aid_type_combo.bind('<<ComboboxSelected>>', on_award_selected)
 
         ttk.Label(form_frame, text=_("finance_gui.settings.payment_method_label_form")).grid(row=2, column=0, sticky='w', pady=5)
         method_var = tk.StringVar(value=_t('gui.finance.finance.settings.financial_aid.values.bank_transfer', default="Bank Transfer"))
@@ -178,9 +556,16 @@ class FinancialAidMixin:
         reference_entry = ttk.Entry(form_frame, textvariable=reference_var, width=30)
         reference_entry.grid(row=3, column=1, pady=5, padx=5)
 
-        ttk.Label(form_frame, text=_("finance_gui.settings.notes_label_form")).grid(row=4, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_("finance_gui.settings.academic_term_label_form",
+                                     default="Academic Term:")).grid(row=4, column=0, sticky='w', pady=5)
+        term_var = tk.StringVar(value='Autumn')
+        ttk.Combobox(form_frame, textvariable=term_var,
+                     values=['Autumn', 'Spring', 'Summer'],
+                     width=28, state='readonly').grid(row=4, column=1, sticky='w', pady=5, padx=5)
+
+        ttk.Label(form_frame, text=_("finance_gui.settings.notes_label_form")).grid(row=5, column=0, sticky='nw', pady=5)
         notes_text = tk.Text(form_frame, height=4, width=30)
-        notes_text.grid(row=4, column=1, pady=5, padx=5)
+        notes_text.grid(row=5, column=1, pady=5, padx=5)
 
         # Disbursement summary
         summary_frame = ttk.LabelFrame(aid_details_frame, text=_("finance_gui.settings.disbursement_summary_frame"))
@@ -214,6 +599,15 @@ class FinancialAidMixin:
                 messagebox.showwarning(_("finance_gui.settings.student_required_warning_title"), _("finance_gui.settings.student_required_warning_msg"), parent=disburse_dialog)
                 return
 
+            award = awards_by_label.get(aid_type_var.get())
+            if award is None:
+                messagebox.showwarning(_("finance_gui.settings.no_awards_warning_title",
+                                         default="No Disbursable Awards"),
+                                       _("finance_gui.settings.award_required_msg",
+                                         default="Look the student up and select the aid award to disburse."),
+                                       parent=disburse_dialog)
+                return
+
             try:
                 amount = float(amount_var.get())
                 if amount <= 0:
@@ -226,16 +620,64 @@ class FinancialAidMixin:
                 messagebox.showwarning(_("finance_gui.settings.reference_required_warning_title"), _("finance_gui.settings.reference_required_warning_msg"), parent=disburse_dialog)
                 return
 
-            if messagebox.askyesno(_("finance_gui.settings.confirm_disbursement_title"),
-                                  _("finance_gui.settings.confirm_disbursement_msg", amount=f"\u00a3{amount:,.2f}", aid_type=aid_type_var.get(), student_id=student_id),
-                                  parent=disburse_dialog):
-                # Process disbursement (mock implementation)
-                messagebox.showinfo(_("finance_gui.settings.success_title"),
-                                  _("finance_gui.settings.disbursement_success_msg", amount=f"\u00a3{amount:,.2f}", reference=reference_var.get()),
-                                  parent=disburse_dialog)
-                disburse_dialog.destroy()
-                if hasattr(self, 'refresh_financial_aid'):
-                    self.refresh_financial_aid()
+            if not messagebox.askyesno(_("finance_gui.settings.confirm_disbursement_title"),
+                                       _("finance_gui.settings.confirm_disbursement_msg",
+                                         amount=f"\u00a3{amount:,.2f}", aid_type=award['aid_name'], student_id=student_id),
+                                       parent=disburse_dialog):
+                return
+
+            reference = reference_var.get().strip()
+            notes = notes_text.get('1.0', tk.END).strip()
+
+            try:
+                disbursement_id, award_student_id, remaining_after = self._record_disbursement(
+                    award['aid_id'], amount, method_var.get(), reference, term_var.get(), notes,
+                )
+            except Exception as e:
+                messagebox.showerror(_("finance_gui.settings.error_title"),
+                                     _("finance_gui.settings.failed_disburse_aid",
+                                       default="Failed to disburse aid: {error}", error=str(e)),
+                                     parent=disburse_dialog)
+                return
+
+            # Apply the funds to the student's outstanding fees. This runs on its own
+            # connection (and posts each payment to the GL), so it happens after the
+            # award/disbursement transaction has committed rather than inside it.
+            fees_ok, applied_output = self._apply_disbursement_to_fees(
+                award_student_id, amount, award['aid_id'])
+
+            _user_id, username = self._aid_actor()
+            self._log_aid_audit('disburse_financial_aid', 'disbursements', disbursement_id, {
+                'aid_id': award['aid_id'],
+                'student_id': award_student_id,
+                'amount': amount,
+                'payment_method': method_var.get(),
+                'reference': reference,
+                'academic_term': term_var.get(),
+                'remaining_after': remaining_after,
+                'processed_by': username,
+                'fees_applied': fees_ok,
+                'notes': notes,
+            })
+
+            show = messagebox.showinfo if fees_ok else messagebox.showwarning
+            title = (_("finance_gui.settings.success_title") if fees_ok
+                     else _("finance_gui.settings.partial_disbursement_title",
+                            default="Disbursement Recorded - Fees Not Applied"))
+            show(title,
+                 _("finance_gui.settings.disbursement_recorded_msg",
+                   default=("Disbursement #{disbursement_id} recorded.\n\n"
+                            "Amount: {amount}\nReference: {reference}\n"
+                            "Remaining on award: {remaining}\n\n{applied}"),
+                   disbursement_id=disbursement_id,
+                   amount=f"\u00a3{amount:,.2f}",
+                   reference=reference,
+                   remaining=f"\u00a3{remaining_after:,.2f}",
+                   applied=applied_output),
+                 parent=disburse_dialog)
+            disburse_dialog.destroy()
+            if hasattr(self, 'refresh_financial_aid'):
+                self.refresh_financial_aid()
 
         # Buttons
         button_frame = ttk.Frame(disburse_dialog)
@@ -347,7 +789,7 @@ class FinancialAidMixin:
             output = mystdout.getvalue()
             sys.stdout = old_stdout
 
-            text_widget = ScrolledText(dialog, height=25, width=90, font=('Courier', 10))
+            text_widget = _rv.TextReportView(dialog, height=25, width=90, font=('Courier', 10))
             text_widget.pack(fill='both', expand=True, padx=10, pady=10)
             text_widget.insert('1.0', output)
 
@@ -455,7 +897,7 @@ class FinancialAidMixin:
             output = mystdout.getvalue()
             sys.stdout = old_stdout
 
-            text_widget = ScrolledText(dialog, height=25, width=90, font=('Courier', 10))
+            text_widget = _rv.TextReportView(dialog, height=25, width=90, font=('Courier', 10))
             text_widget.pack(fill='both', expand=True, padx=10, pady=10)
             text_widget.insert('1.0', output)
 
@@ -558,7 +1000,7 @@ class FinancialAidMixin:
         ttk.Button(input_frame, text=_("finance_gui.settings.view_details_btn"), command=show_details).pack(side='left', padx=10)
 
         # Details display
-        details_text = ScrolledText(dialog, height=20, width=80, font=('Courier', 10))
+        details_text = _rv.TextReportView(dialog, height=20, width=80, font=('Courier', 10))
         details_text.pack(fill='both', expand=True, padx=10, pady=10)
 
 
@@ -579,7 +1021,7 @@ class FinancialAidMixin:
             output = mystdout.getvalue()
             sys.stdout = old_stdout
 
-            text_widget = ScrolledText(dialog, height=25, width=90, font=('Courier', 10))
+            text_widget = _rv.TextReportView(dialog, height=25, width=90, font=('Courier', 10))
             text_widget.pack(fill='both', expand=True, padx=10, pady=10)
             text_widget.insert('1.0', output)
 
@@ -606,7 +1048,7 @@ class FinancialAidMixin:
             output = mystdout.getvalue()
             sys.stdout = old_stdout
 
-            text_widget = ScrolledText(dialog, height=25, width=80, font=('Courier', 10))
+            text_widget = _rv.TextReportView(dialog, height=25, width=80, font=('Courier', 10))
             text_widget.pack(fill='both', expand=True, padx=10, pady=10)
             text_widget.insert('1.0', output)
 

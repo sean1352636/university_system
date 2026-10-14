@@ -3,7 +3,9 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 import os
 import shutil
 import threading
@@ -1000,7 +1002,7 @@ class SubmissionManager:
         submission_id = item['values'][0]
 
         # Create feedback window
-        feedback_window = tk.Toplevel(self.root)
+        feedback_window = make_toplevel(self.root)
         feedback_window.title(_t('gui.academics.assignment_system.submission_manager.windows.detailed_feedback', default="Detailed Feedback"))
         feedback_window.geometry("600x500")
         feedback_window.transient(self.root)
@@ -1011,8 +1013,14 @@ class SubmissionManager:
                 cursor = conn.cursor()
 
                 # Get submission details with feedback
+                # By name, not position: assignment_submissions has 24
+                # columns, so `submission[11]` was `late_submission`, not the
+                # assignment title. Same bug as grading_manager had.
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
                 cursor.execute('''
-                SELECT s.*, a.title, a.max_marks, st.first_name, st.last_name
+                SELECT s.*, a.title AS assignment_title, a.max_marks AS assignment_max_marks,
+                       st.first_name AS student_first_name, st.last_name AS student_last_name
                 FROM assignment_submissions s
                 JOIN assignments a ON s.assignment_id = a.id
                 JOIN students st ON s.student_id = st.student_id
@@ -1031,7 +1039,7 @@ class SubmissionManager:
                 main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
                 # Header info
-                header_label = ttk.Label(main_frame, text=f"Assignment: {submission[11]}")
+                header_label = ttk.Label(main_frame, text=f"Assignment: {submission['assignment_title']}")
                 header_label.pack(pady=5)
             finally:
                 conn.close()
@@ -1187,7 +1195,7 @@ class SubmissionManager:
             return
 
         # Create statistics window
-        stats_window = tk.Toplevel(self.root)
+        stats_window = make_toplevel(self.root)
         stats_window.title(_t('gui.academics.assignment_system.submission_manager.windows.my_grade_statistics', default="My Grade Statistics"))
         stats_window.geometry("500x400")
         stats_window.transient(self.root)

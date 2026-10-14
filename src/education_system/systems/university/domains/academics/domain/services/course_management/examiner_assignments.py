@@ -87,7 +87,7 @@ def attach_examiner_to_course(course_code: str, examiner_id: int,
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
 
 def detach_examiner_from_course(assignment_id: int) -> bool:
@@ -160,7 +160,7 @@ def list_examiners_for_course(course_code: str,
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
 
 def list_courses_for_examiner(examiner_id: int) -> List[Dict]:
@@ -190,7 +190,7 @@ def list_courses_for_examiner(examiner_id: int) -> List[Dict]:
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
 
 def find_examiners_for_module(module_code: str,
@@ -222,7 +222,7 @@ def find_examiners_for_module(module_code: str,
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     seen: set = set()
     out: List[Dict] = []

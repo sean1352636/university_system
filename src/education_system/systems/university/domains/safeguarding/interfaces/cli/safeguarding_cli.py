@@ -22,6 +22,9 @@ auth), falling back to the ``auth`` object passed by the launcher.
 """
 
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 import os
 from typing import Optional
@@ -129,7 +132,7 @@ def _current_user(auth) -> dict:
         if user:
             return user
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     raw = getattr(auth, "current_user", None)
     if isinstance(raw, dict) and raw:
         u = dict(raw)
@@ -762,7 +765,7 @@ def run_safeguarding_menu(auth) -> None:
     try:
         init_db()
     except Exception:
-        pass  # tables may already exist / be created lazily
+        logger.debug("Suppressed exception", exc_info=True)
     while True:
         print("\n" + "=" * 50)
         print("            SAFEGUARDING")

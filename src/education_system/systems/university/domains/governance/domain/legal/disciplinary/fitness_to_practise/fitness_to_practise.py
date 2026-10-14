@@ -10,6 +10,9 @@ Conventions match disciplinary_portal.py: env-var auth bootstrap when
 launched as a subprocess by the main GUI.
 """
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 import os
 import sys
@@ -69,7 +72,7 @@ def _bootstrap_auth_from_env():
         )
         set_global_auth(shim)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
 
 _bootstrap_auth_from_env()

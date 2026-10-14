@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 # gui_course_management.py
 import tkinter as tk
@@ -36,7 +40,7 @@ def _patched_sqlite_connect(database, *args, **kwargs):
         if not database or db_name in (str(DEFAULT_DB_PATH), "courses.db"):
             return _original_sqlite_connect(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return _original_sqlite_connect(database, *args, **kwargs)
 
 sqlite3.connect = _patched_sqlite_connect
@@ -48,23 +52,12 @@ from typing import List, Dict, Optional, Tuple
 import threading
 import logging
 
-# Import chart generation utility
-try:
-    import matplotlib
-    matplotlib.use('TkAgg')
-    import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-    from matplotlib.figure import Figure
-    import seaborn as sns
-    import numpy as np
-    CHARTS_AVAILABLE = True
-except ImportError:
-    CHARTS_AVAILABLE = False
-    plt = None
-    Figure = None
-    FigureCanvasTkAgg = None
-    sns = None
-    np = None
+# Chart generation utilities — deferred, see _lazy_charts. Importing seaborn
+# here pulled matplotlib, pandas and scipy (~4.7s) into every Course Management
+# open, for charts only the analytics dialogs draw.
+from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui._lazy_charts import (
+    CHARTS_AVAILABLE, plt, Figure, FigureCanvasTkAgg, sns, np,
+)
 
 # Import email service
 try:
@@ -333,12 +326,15 @@ def init_gui_mode():
         root = tk.Tk()
         _gui_app_instance = CourseManagementGUI(root)
 
-        # Start GUI in a separate thread to avoid blocking
-        import threading
-        gui_thread = threading.Thread(target=root.mainloop, daemon=True)
-        gui_thread.start()
-
     return _gui_app_instance
+
+
+def _run_gui_action(action):
+    """Run a course-management action and Tk's event loop on this thread."""
+    app = init_gui_mode()
+    action(app)
+    app.root.mainloop()
+    return app
 
 
 def show_gui():
@@ -348,26 +344,22 @@ def show_gui():
 
 def create_course_gui(auth=None):
     """Create course using GUI"""
-    app = init_gui_mode()
-    app.show_create_course()
+    return _run_gui_action(lambda app: app.show_create_course())
 
 
 def view_courses_gui(auth=None):
     """View courses using GUI"""
-    app = init_gui_mode()
-    app.refresh_course_list()
+    return _run_gui_action(lambda app: app.refresh_course_list())
 
 
 def search_courses_gui(auth=None):
     """Search courses using GUI"""
-    app = init_gui_mode()
-    app.show_search_dialog()
+    return _run_gui_action(lambda app: app.show_search_dialog())
 
 
 def analytics_gui(auth=None):
     """Show analytics using GUI"""
-    app = init_gui_mode()
-    app.generate_analytics()
+    return _run_gui_action(lambda app: app.generate_analytics())
 
 
 def print_usage():

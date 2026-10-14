@@ -89,8 +89,12 @@ class AddHolidayDialog:
             self.scheduler.add_holiday(name, start_date, end_date, description, recurring)
 
             self.result = True
-            self.dialog.destroy()
+            # Confirm first, then close. Destroying the dialog and *then*
+            # parenting the confirmation to it raised "bad window path name",
+            # which the except clause below reported as "Failed to save
+            # holiday" — even though the holiday had already been written.
             messagebox.showinfo(_t('gui.academics.module_scheduling.dialogs_parts.addholidaydialog.dialogs.success', default="Success"), _t('gui.academics.module_scheduling.dialogs_parts.addholidaydialog.dialogs.holiday_added_successfully', default="Holiday added successfully."), parent=self.dialog)
+            self.dialog.destroy()
 
         except Exception as e:
             messagebox.showerror(_t('gui.academics.module_scheduling.dialogs_parts.addholidaydialog.dialogs.error', default="Error"), f"Failed to save holiday: {str(e)}", parent=self.dialog)

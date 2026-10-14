@@ -1,42 +1,11 @@
-"""Barber Shop GUI - Reports tab creation."""
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.interfaces.gui.barber.tabs.reports_tab`` (campus commerce plugin).
 
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.barber.common import (
-    tk, ttk, datetime, timedelta, _t,
-)
+The old name *is* the new module object, so ``mock.patch`` and
+``monkeypatch`` targets still act on the real code. Delete once nothing
+imports the old path.
+"""
+# layout-shim: education_system.systems.university.plugins.campus_commerce.interfaces.gui.barber.tabs.reports_tab
+import importlib as _importlib
+import sys as _sys
 
-
-class ReportsTabMixin:
-    """Mixin that creates the reports tab."""
-
-    def create_reports_tab(self):
-        """Create the reports tab."""
-        reports_frame = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(reports_frame, text=_t("barber.tabs.reports"))
-
-        # Report options
-        options_frame = ttk.LabelFrame(reports_frame, text=_t("barber.labels.report_options"), padding="10")
-        options_frame.pack(fill=tk.X, pady=(0, 10))
-
-        ttk.Label(options_frame, text=_t("barber.labels.date_from") + ":").pack(side=tk.LEFT)
-        self.report_from_var = tk.StringVar(value=(datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d'))
-        ttk.Entry(options_frame, textvariable=self.report_from_var, width=12).pack(side=tk.LEFT, padx=5)
-
-        ttk.Label(options_frame, text=_t("barber.labels.date_to") + ":").pack(side=tk.LEFT)
-        self.report_to_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
-        ttk.Entry(options_frame, textvariable=self.report_to_var, width=12).pack(side=tk.LEFT, padx=5)
-
-        ttk.Button(options_frame, text=_t("barber.btn.generate_report"),
-                  command=self.generate_admin_report).pack(side=tk.LEFT, padx=20)
-        ttk.Button(options_frame, text=_t("barber.btn.email_report"),
-                  command=self.email_admin_report).pack(side=tk.LEFT, padx=5)
-
-        # Report display
-        report_display = ttk.LabelFrame(reports_frame, text=_t("barber.labels.report_output"), padding="5")
-        report_display.pack(fill=tk.BOTH, expand=True)
-
-        self.report_text = tk.Text(report_display, wrap=tk.WORD, height=25)
-        scrollbar = ttk.Scrollbar(report_display, orient=tk.VERTICAL, command=self.report_text.yview)
-        self.report_text.configure(yscrollcommand=scrollbar.set)
-
-        self.report_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+_sys.modules[__name__] = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.interfaces.gui.barber.tabs.reports_tab")

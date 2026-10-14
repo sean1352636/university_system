@@ -1,4 +1,7 @@
 """Collections management mixin for LayoutManager."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -172,7 +175,7 @@ class CollectionsMixin:
             if student:
                 return f"{student[0]} {student[1]}", student[2]
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return None, None
 
     def _send_email_to_student(self, student_email, subject, body):

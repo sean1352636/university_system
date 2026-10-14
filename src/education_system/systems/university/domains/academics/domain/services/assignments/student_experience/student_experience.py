@@ -10,7 +10,7 @@ class StudentExperienceMixin:
 
     def manage_drafts(self):
         """View and manage saved drafts with version history"""
-        if not self._check_permission('submit_assignments'):
+        if not self._check_permission('submit_assignment'):
             return
 
         try:
@@ -80,7 +80,7 @@ class StudentExperienceMixin:
 
     def save_draft(self):
         """Save a draft for an assignment with auto-incrementing version"""
-        if not self._check_permission('submit_assignments'):
+        if not self._check_permission('submit_assignment'):
             return
 
         try:
@@ -170,7 +170,7 @@ class StudentExperienceMixin:
 
     def restore_draft(self):
         """Restore a specific draft version"""
-        if not self._check_permission('submit_assignments'):
+        if not self._check_permission('submit_assignment'):
             return
 
         try:
@@ -266,7 +266,7 @@ class StudentExperienceMixin:
 
     def view_submission_receipt(self, submission_id):
         """Display timestamped receipt with confirmation code for a submission"""
-        if not self._check_permission('submit_assignments'):
+        if not self._check_permission('submit_assignment'):
             return
 
         try:
@@ -314,7 +314,7 @@ class StudentExperienceMixin:
 
     def generate_submission_receipt(self, submission_id):
         """Generate SHA-256 receipt hash and confirmation code for a submission"""
-        if not self._check_permission('submit_assignments'):
+        if not self._check_permission('submit_assignment'):
             return
 
         try:
@@ -386,7 +386,7 @@ class StudentExperienceMixin:
 
     def manage_accessibility_settings(self):
         """Configure accessibility settings: extended time, high contrast, screen reader, font size"""
-        if not self._check_permission('submit_assignments'):
+        if not self._check_permission('submit_assignment'):
             return
 
         try:
@@ -481,7 +481,7 @@ class StudentExperienceMixin:
 
     def view_countdown_info(self, assessment_id):
         """Show time remaining for an assessment, respecting extended time settings"""
-        if not self._check_permission('submit_assignments'):
+        if not self._check_permission('submit_assignment'):
             return
 
         try:

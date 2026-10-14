@@ -8,6 +8,7 @@ from .grades import manage_student_grades
 from .attendance import view_student_attendance
 from .timetable import view_student_timetable
 from .modules_reassign import reassign_modules
+from .lifecycle import manage_student_lifecycle
 
 from .importers import _open_sixth_form_import_dialog, _open_bulk_csv_import_dialog
 from .widgets import _DOBPicker, _safe_set_combobox, _safe_entry_insert
@@ -29,4 +30,5 @@ __all__ = [
     "view_student_attendance",
     "view_student_timetable",
     "reassign_modules",
+    "manage_student_lifecycle",
 ]

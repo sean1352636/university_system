@@ -1,4 +1,7 @@
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.domains.pastoral.infrastructure.health.storage import sqlite3
 import time
@@ -48,19 +51,19 @@ def log_audit_event(user_id, action, resource_type, resource_id, details=None, c
         )
     except Exception as e:
         # Don't crash the business flow
-        print(get_text("health.audit.warning_logging_failed", error=e))
+        print(get_text("health.audit.warning_logging_failed", error=e, default="Warning Logging Failed: {error}"))
     finally:
         if conn and not reuse_conn:
             try:
                 conn.close()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
 def analyze_data_access_patterns(auth):
     conn = get_connection()
     cursor = conn.cursor()
 
-    print("\n" + get_text("health.audit.data_access_pattern_title"))
+    print("\n" + get_text("health.audit.data_access_pattern_title", default="===== DATA ACCESS PATTERN ====="))
 
     # Access patterns for the last 30 days
     thirty_days_ago = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
@@ -78,13 +81,13 @@ def analyze_data_access_patterns(auth):
     active_users = cursor.fetchall()
 
     if active_users:
-        print(get_text("health.audit.most_active_users"))
+        print(get_text("health.audit.most_active_users", default="Most Active Users"))
         for user, count in active_users:
-            print(get_text("health.audit.user_access_count", user=user, count=count))
+            print(get_text("health.audit.user_access_count", user=user, count=count, default="User Access Count: {count} {user}"))
 
             # Flag unusual activity
             if count > 1000:  # Threshold for investigation
-                print(get_text("health.audit.high_activity_warning"))
+                print(get_text("health.audit.high_activity_warning", default="High Activity Warning"))
 
     # Access by time of day
     cursor.execute('''
@@ -98,18 +101,18 @@ def analyze_data_access_patterns(auth):
     hourly_access = cursor.fetchall()
 
     if hourly_access:
-        print("\n" + get_text("health.audit.access_by_hour"))
+        print("\n" + get_text("health.audit.access_by_hour", default="Access By Hour"))
         for hour, count in hourly_access:
             hour_int = int(hour)
 
             # Flag unusual hours (late night/early morning)
             if 0 <= hour_int <= 5 or hour_int >= 22:
                 if count > 10:  # Threshold for after-hours activity
-                    print(get_text("health.audit.hour_access_after_hours", hour=hour, count=count))
+                    print(get_text("health.audit.hour_access_after_hours", hour=hour, count=count, default="Hour Access After Hours: {count} {hour}"))
                 else:
-                    print(get_text("health.audit.hour_access", hour=hour, count=count))
+                    print(get_text("health.audit.hour_access", hour=hour, count=count, default="Hour Access: {count} {hour}"))
             else:
-                print(get_text("health.audit.hour_access", hour=hour, count=count))
+                print(get_text("health.audit.hour_access", hour=hour, count=count, default="Hour Access: {count} {hour}"))
 
     # Resource access patterns
     cursor.execute('''
@@ -123,12 +126,12 @@ def analyze_data_access_patterns(auth):
     resource_access = cursor.fetchall()
 
     if resource_access:
-        print("\n" + get_text("health.audit.most_accessed_resources"))
+        print("\n" + get_text("health.audit.most_accessed_resources", default="Most Accessed Resources"))
         for resource, count in resource_access:
-            print(get_text("health.audit.resource_access_count", resource=resource, count=count))
+            print(get_text("health.audit.resource_access_count", resource=resource, count=count, default="Resource Access Count: {count} {resource}"))
 
     # Suspicious patterns detection
-    print("\n" + get_text("health.audit.suspicious_activity_title"))
+    print("\n" + get_text("health.audit.suspicious_activity_title", default="===== SUSPICIOUS ACTIVITY ====="))
 
     # Bulk data access (many records in short time)
     cursor.execute('''
@@ -144,12 +147,12 @@ def analyze_data_access_patterns(auth):
     rapid_access = cursor.fetchall()
 
     if rapid_access:
-        print(get_text("health.audit.rapid_access_title"))
+        print(get_text("health.audit.rapid_access_title", default="===== RAPID ACCESS ====="))
         for user, count, start, end in rapid_access:
-            print(get_text("health.audit.rapid_access_detail", user=user, count=count, start=start, end=end))
-            print(get_text("health.audit.investigate_data_extraction"))
+            print(get_text("health.audit.rapid_access_detail", user=user, count=count, start=start, end=end, default="Rapid Access Detail: {count} {end} {start} {user}"))
+            print(get_text("health.audit.investigate_data_extraction", default="Investigate Data Extraction"))
     else:
-        print(get_text("health.audit.no_suspicious_patterns"))
+        print(get_text("health.audit.no_suspicious_patterns", default="No Suspicious Patterns."))
 
     # Access outside normal hours
     cursor.execute('''
@@ -166,10 +169,10 @@ def analyze_data_access_patterns(auth):
     after_hours = cursor.fetchall()
 
     if after_hours:
-        print("\n" + get_text("health.audit.after_hours_access_title"))
+        print("\n" + get_text("health.audit.after_hours_access_title", default="===== AFTER HOURS ACCESS ====="))
         for user, count in after_hours:
-            print(get_text("health.audit.after_hours_access_detail", user=user, count=count))
-            print(get_text("health.audit.review_unusual_times"))
+            print(get_text("health.audit.after_hours_access_detail", user=user, count=count, default="After Hours Access Detail: {count} {user}"))
+            print(get_text("health.audit.review_unusual_times", default="Review Unusual Times"))
 
     conn.close()
 
@@ -177,7 +180,7 @@ def view_failed_logins(auth):
     conn = get_connection()
     cursor = conn.cursor()
 
-    print("\n" + get_text("health.audit.failed_logins_title"))
+    print("\n" + get_text("health.audit.failed_logins_title", default="===== FAILED LOGINS ====="))
 
     # Get failed login attempts from last 7 days
     seven_days_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S')
@@ -192,11 +195,11 @@ def view_failed_logins(auth):
     failed_logins = cursor.fetchall()
 
     if not failed_logins:
-        print(get_text("health.audit.no_failed_logins"))
+        print(get_text("health.audit.no_failed_logins", default="No Failed Logins."))
         conn.close()
         return
 
-    print(get_text("health.audit.failed_login_count", count=len(failed_logins)))
+    print(get_text("health.audit.failed_login_count", count=len(failed_logins), default="Failed Login Count: {count}"))
     print("-" * 50)
 
     # Group by user for analysis
@@ -204,7 +207,7 @@ def view_failed_logins(auth):
     ip_attempts = {}
 
     for user_id, ip_address, timestamp, resource_id in failed_logins:
-        print(get_text("health.audit.failed_login_entry", timestamp=timestamp, user_id=user_id, ip_address=ip_address))
+        print(get_text("health.audit.failed_login_entry", timestamp=timestamp, user_id=user_id, ip_address=ip_address, default="Failed Login Entry: {ip_address} {timestamp} {user_id}"))
 
         # Count attempts per user
         if user_id in user_attempts:
@@ -219,16 +222,16 @@ def view_failed_logins(auth):
             ip_attempts[ip_address] = 1
 
     # Analysis
-    print("\n" + get_text("health.audit.analysis_title"))
+    print("\n" + get_text("health.audit.analysis_title", default="===== ANALYSIS ====="))
 
     # Users with multiple failed attempts
     repeat_users = {user: count for user, count in user_attempts.items() if count >= 3}
     if repeat_users:
-        print(get_text("health.audit.users_multiple_attempts"))
+        print(get_text("health.audit.users_multiple_attempts", default="Users Multiple Attempts"))
         for user, count in sorted(repeat_users.items(), key=lambda x: x[1], reverse=True):
-            print(get_text("health.audit.user_attempt_count", user=user, count=count))
+            print(get_text("health.audit.user_attempt_count", user=user, count=count, default="User Attempt Count: {count} {user}"))
             if count >= 5:
-                print(get_text("health.audit.high_risk_lockout"))
+                print(get_text("health.audit.high_risk_lockout", default="High Risk Lockout"))
 
     # IPs with multiple failed attempts
     repeat_ips = {ip: count for ip, count in ip_attempts.items() if count >= 5}

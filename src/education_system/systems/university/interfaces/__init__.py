@@ -1,1 +1,0 @@
-"""University delivery interfaces."""

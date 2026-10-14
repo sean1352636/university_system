@@ -1,4 +1,9 @@
+import logging
+import sqlite3
+
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection, transaction  # injected
+
+logger = logging.getLogger(__name__)
 from education_system.systems.university.infrastructure.exceptions import (
     CourseNotFoundError,
     ValidationError,
@@ -32,7 +37,8 @@ except ImportError:
     show_gui_language_selector = lambda parent=None: "en"
 
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling._dialogs import messagebox
 from tkinter.font import Font
 import os
 import sys
@@ -135,14 +141,79 @@ def create_dashboard_tab(self):
     activity_frame = ttk.LabelFrame(dashboard_frame, text=_t("scheduling.recent_activity"), padding=15)
     activity_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
-    # Activity list
-    self.activity_text = scrolledtext.ScrolledText(
-        activity_frame, height=10, state=tk.DISABLED,
-        bg='white', fg='black', borderwidth=1, relief='solid',
-        wrap='word')
-    self.activity_text.pack(fill=tk.BOTH, expand=True)
+    # Activity list.
+    #
+    # This was a disabled ScrolledText that only ever held messages generated
+    # by the current window, so it opened empty (and, with nothing in it and a
+    # solid border, read as a black bar) while activity_log held real history.
+    # It is now a table over that table, with the in-session messages appended
+    # on top so both are visible.
+    columns = ("When", "User", "Action", "Detail")
+    self.activity_tree = ttk.Treeview(activity_frame, columns=columns,
+                                      show="headings", height=8)
+    for column, width in (("When", 150), ("User", 110), ("Action", 200),
+                          ("Detail", 420)):
+        self.activity_tree.heading(column, text=column)
+        self.activity_tree.column(column, width=width, anchor=tk.W)
+    self.activity_tree.tag_configure("_session", foreground="#1a5fb4")
+    self.activity_tree.tag_configure("_odd", background="#f7f9fb")
+
+    activity_scroll = ttk.Scrollbar(activity_frame, orient=tk.VERTICAL,
+                                    command=self.activity_tree.yview)
+    self.activity_tree.configure(yscrollcommand=activity_scroll.set)
+    self.activity_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+    activity_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+    # Messages raised by this window, newest first, shown above the stored
+    # history. Kept in memory because update_activity_log is called for
+    # things that are not worth a database row ("Dashboard refreshed").
+    self._session_activity = []
+    self.load_recent_activity()
 
 ModuleSchedulingGUI.create_dashboard_tab = create_dashboard_tab
+
+
+def load_recent_activity(self, limit=100):
+    """Fill the dashboard's activity table from ``activity_log``."""
+    tree = getattr(self, "activity_tree", None)
+    if tree is None:
+        return
+    try:
+        if not tree.winfo_exists():
+            return
+    except tk.TclError:
+        return
+
+    rows = []
+    try:
+        with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+            rows = conn.execute(
+                """SELECT timestamp, COALESCE(username, user_id, '—'),
+                          COALESCE(action, '—'),
+                          TRIM(COALESCE(entity_type, '') || ' ' ||
+                               COALESCE(entity_id, '') || ' ' ||
+                               COALESCE(details, ''))
+                     FROM activity_log
+                    ORDER BY timestamp DESC
+                    LIMIT ?""", (limit,)).fetchall()
+    except Exception:
+        logger.warning("could not read the activity log", exc_info=True)
+
+    tree.delete(*tree.get_children())
+    index = 0
+    for when, message in getattr(self, "_session_activity", []):
+        tree.insert("", tk.END, values=(when, "this session", message, ""),
+                    tags=("_session",))
+        index += 1
+    for when, user, action, detail in rows:
+        tags = ["_odd"] if index % 2 else []
+        tree.insert("", tk.END, values=(when, user, action, detail or "—"),
+                    tags=tags)
+        index += 1
+    if index == 0:
+        tree.insert("", tk.END, values=("—", "—", "No recorded activity yet", ""))
+
+ModuleSchedulingGUI.load_recent_activity = load_recent_activity
 
 def refresh_dashboard(self):
     """Update dashboard statistics"""

@@ -1,10 +1,15 @@
 import logging
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, filedialog
 from datetime import datetime, timedelta
 from typing import Any, Optional, List, Dict
 from education_system.systems.university.infrastructure.i18n import get_text as _
-from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar.utils import safe_grab_set
+from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar.utils import safe_grab_set, ScrollableFrame
+# Dates are picked, not typed — same reason as the event dialogs.
+from education_system.platform.delivery.gui.date_picker import DatePicker, recent_years
+# Message boxes parented to the window that raised them, not the main
+# GUI — see _dialogs.
+from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar._dialogs import messagebox
 
 gui_logger = logging.getLogger(__name__)
 
@@ -27,7 +32,11 @@ class AdvancedSearchDialog:
 
     def _create_widgets(self):
         """Create dialog widgets"""
-        main_frame = ttk.Frame(self.dialog, padding=20)
+        # Criteria plus results outgrow the dialog, so the whole form
+        # scrolls rather than clipping the fields at the bottom.
+        scroller = ScrollableFrame(self.dialog)
+        scroller.pack(fill=tk.BOTH, expand=True)
+        main_frame = ttk.Frame(scroller.body, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         ttk.Label(main_frame, text=_("academics.calendar.advanced_search"),
@@ -47,12 +56,14 @@ class AdvancedSearchDialog:
         date_frame.pack(fill=tk.X, pady=(0, 15))
 
         ttk.Label(date_frame, text=_("academics.calendar.start_date_label")).pack(side=tk.LEFT)
-        self.start_date_var = tk.StringVar()
-        ttk.Entry(date_frame, textvariable=self.start_date_var, width=15).pack(side=tk.LEFT, padx=(5, 20))
+        self.start_date_picker = DatePicker(date_frame,
+                                            years=recent_years(ahead=5, back=10))
+        self.start_date_picker.pack(side=tk.LEFT, padx=(5, 20))
 
         ttk.Label(date_frame, text=_("academics.calendar.end_date_label")).pack(side=tk.LEFT)
-        self.end_date_var = tk.StringVar()
-        ttk.Entry(date_frame, textvariable=self.end_date_var, width=15).pack(side=tk.LEFT, padx=(5, 0))
+        self.end_date_picker = DatePicker(date_frame,
+                                          years=recent_years(ahead=5, back=10))
+        self.end_date_picker.pack(side=tk.LEFT, padx=(5, 0))
 
         # Event type and semester row
         type_frame = ttk.Frame(criteria_frame)
@@ -142,11 +153,11 @@ class AdvancedSearchDialog:
             if text:
                 criteria['text'] = text
 
-            start_date = self.start_date_var.get().strip()
+            start_date = self.start_date_picker.get()
             if start_date:
                 criteria['start_date'] = start_date
 
-            end_date = self.end_date_var.get().strip()
+            end_date = self.end_date_picker.get()
             if end_date:
                 criteria['end_date'] = end_date
 
@@ -186,8 +197,8 @@ class AdvancedSearchDialog:
     def _clear_search(self):
         """Clear search criteria and results"""
         self.text_var.set("")
-        self.start_date_var.set("")
-        self.end_date_var.set("")
+        self.start_date_picker.clear()
+        self.end_date_picker.clear()
         self.type_var.set("")
         self.semester_var.set("")
         self.tags_var.set("")

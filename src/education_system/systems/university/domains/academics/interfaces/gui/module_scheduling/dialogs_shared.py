@@ -35,7 +35,8 @@ except ImportError:
 
 import tkinter as tk
 
-from tkinter import ttk, messagebox, filedialog, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling._dialogs import messagebox
 
 from tkinter.font import Font
 

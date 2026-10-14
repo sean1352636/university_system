@@ -213,7 +213,7 @@ class AttendanceGradeConfigGUI:
                     details=f"Saved config for {module_code}: weight={self.weight_var.get()}%"
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             self.status_var.set(f"Configuration saved for {module_code}.")
             messagebox.showinfo(_t('gui.academics.attendance_grade.attendance_grade.dialogs.saved', default="Saved"), _t('gui.academics.attendance_grade.attendance_grade.dialogs.configuration_saved_successfully', default="Configuration saved successfully."), parent=self.window)
@@ -258,10 +258,15 @@ class AttendanceGradeConfigGUI:
                     avg_grade = grade_row['avg_grade'] if grade_row and grade_row['avg_grade'] is not None else None
                     graded_count = grade_row['graded_count'] if grade_row else 0
 
-                    # Get attendance percentage (table is per-student, not per-module)
+                    # Attendance percentage, computed per student from
+                    # attendance_records. This read attendance_analytics — a
+                    # summary table nothing writes to — so the column was
+                    # always empty and every student showed 'N/A'.
                     att_row = conn.execute(
-                        "SELECT attendance_percentage FROM attendance_analytics "
-                        "WHERE student_id = ?",
+                        "SELECT ROUND(SUM(CASE WHEN LOWER(status) IN "
+                        "  ('present','late','excused') THEN 1 ELSE 0 END) "
+                        "  * 100.0 / COUNT(*), 1) AS attendance_percentage "
+                        "FROM attendance_records WHERE student_id = ?",
                         (sid,)
                     ).fetchone()
                     att_pct = att_row['attendance_percentage'] if att_row and att_row['attendance_percentage'] is not None else None

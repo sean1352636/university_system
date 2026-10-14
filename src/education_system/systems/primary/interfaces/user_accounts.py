@@ -109,6 +109,18 @@ def _load_systems(auth: Any, user_id: int) -> list[dict]:
     return auth.role_manager.get_user_systems(user_id)
 
 
+def _sync_learner_link(auth: Any, user_id: int) -> None:
+    """Re-check the account's link to its platform learner record.
+
+    A new account, a changed email or a new learner role can each change
+    which learner the login belongs to. Runs against the same auth DB this
+    screen writes to. Best-effort, never raises.
+    """
+    from education_system.platform.cross_system import login_links
+
+    login_links.try_sync_user(user_id, db_path=_db_path(auth))
+
+
 # ── Listing / fetching ─────────────────────────────────────────────
 
 def list_users(
@@ -237,6 +249,7 @@ def create_user(
     out = get_user(auth, uid)
     assert out is not None
     logger.info("Created user '%s' (id=%d)", username, uid)
+    _sync_learner_link(auth, uid)
     return out
 
 
@@ -263,6 +276,7 @@ def update_profile(
     out = get_user(auth, user_id)
     assert out is not None
     logger.info("Updated profile for user_id=%d", user_id)
+    _sync_learner_link(auth, user_id)
     return out
 
 
@@ -441,6 +455,7 @@ def grant_role(auth: Any, user_id: int, system_key: str,
     auth.role_manager.grant_system_access(user_id, system_key, role)
     out = get_user(auth, user_id)
     assert out is not None
+    _sync_learner_link(auth, user_id)
     return out
 
 

@@ -236,7 +236,7 @@ ModuleNotFoundError: No module named 'university_system'
 2. **Or use the run script:**
    ```bash
    cd .
-   python3 run.py
+   python -m education_system
    ```
 
 3. **Check PYTHONPATH:**
@@ -340,7 +340,7 @@ chmod 644 data/db_files/*.db
 
 3. **Use CLI instead:**
    ```bash
-   python3 run.py --cli
+   python -m education_system --cli
    ```
 
 ### Cannot Start Web Interface
@@ -406,7 +406,7 @@ If you're still experiencing issues:
 2. **Enable debug mode:**
    ```bash
    export DEBUG=True
-   python3 run.py
+   python -m education_system
    ```
 
 3. **Run tests:**
@@ -445,9 +445,9 @@ make lint
 make format
 
 # Start Application
-python3 run.py            # Interactive menu
-python3 run.py --cli      # CLI mode
-python3 run.py --gui      # GUI mode
+python -m education_system            # Interactive menu
+python -m education_system --cli      # CLI mode
+python -m education_system --gui      # GUI mode
 ```
 
 ---

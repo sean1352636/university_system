@@ -83,7 +83,10 @@ def _identity(handover: HandoverRequest) -> dict[str, str]:
            or {})
     if not isinstance(raw, dict):
         raw = {}
-    merged = {**handover.payload, **raw}
+    contact = handover.get("contact_details") or {}
+    if not isinstance(contact, dict):
+        contact = {}
+    merged = {**handover.payload, **contact, **raw}
 
     def pick(*names: str) -> Any:
         for n in names:
@@ -161,6 +164,39 @@ class FeCollegeAdapter(PhaseAdapter):
     """FE College's side of the four-method transition contract."""
 
     system = SYSTEM_KEY
+
+    # ── Learner logins ──────────────────────────────────────────────
+
+    learner_login_roles = ("student", "alumni")
+
+    def learner_ids_for_login(self, account: dict) -> list[str]:
+        """The learner this login signs in as, by FE's own rule — exactly.
+
+        ``CollegeSession._find_student`` tries the username as a student id
+        first, then a search on the email and then the username. The id
+        step is used as is. The search is fuzzy (``LIKE`` over names, ids
+        and emails) and settles for any single hit, which is fine for
+        opening a screen but not for a record link, so here it is narrowed
+        to an exact email match. Every exact match is returned:
+        ``students.email`` is not unique, and two learners on one address
+        must be seen, not guessed between.
+        """
+        from education_system.systems.fe_college.services import student_service
+
+        username = str(account.get("username") or "").strip()
+        if username:
+            found = student_service.get(username.upper())
+            if found is not None:
+                return [found.student_id]
+        for term in (account.get("email"), username):
+            address = str(term or "").strip().lower()
+            if not address or "@" not in address:
+                continue
+            exact = sorted({s.student_id for s in student_service.search(address)
+                            if (s.email or "").strip().lower() == address})
+            if exact:
+                return exact
+        return []
 
     # ── Destination side ────────────────────────────────────────────
 

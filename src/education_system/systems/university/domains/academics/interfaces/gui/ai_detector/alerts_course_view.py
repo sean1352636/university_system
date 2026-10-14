@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import json
 import os
@@ -489,7 +493,7 @@ def _load_assignment_profiles(self):
 
         conn.close()
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
 
 def _load_courses_for_dashboard(self):
@@ -502,7 +506,7 @@ def _load_courses_for_dashboard(self):
         self.dash_course_combo['values'] = courses
         conn.close()
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
 
 def create_assignment_profile(self):

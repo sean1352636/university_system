@@ -106,7 +106,7 @@ class TrainingGUI:
         filter_frame = ttk.LabelFrame(tab, text=_t("staff_hr.training.catalog.header", default="Filters"), padding=10)
         filter_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Label(filter_frame, text=_t("staff_hr.training.catalog.filter_category", default="Category:")).pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t("staff_hr.training.catalog.filter_category", default="Category")).pack(side=tk.LEFT, padx=5)
         self.category_filter = ttk.Combobox(filter_frame,
                                             values=[
                                                 _t("staff_hr.training.catalog.categories.all", default="All"),
@@ -189,7 +189,7 @@ class TrainingGUI:
         filter_frame = ttk.Frame(tab)
         filter_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Label(filter_frame, text=_t("staff_hr.training.my_training.filter_status", default="Status:")).pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t("staff_hr.training.my_training.filter_status", default="Status")).pack(side=tk.LEFT, padx=5)
         self.training_status_filter = ttk.Combobox(filter_frame,
                                                     values=[
                                                         _t("staff_hr.training.my_training.statuses.all", default="All"),
@@ -239,7 +239,7 @@ class TrainingGUI:
         self.training_tree.tag_configure('overdue', background='#f8d7da')
 
         # Summary
-        summary_frame = ttk.LabelFrame(tab, text=_t("staff_hr.training.my_training.summary.title", default="Training Summary"), padding=10)
+        summary_frame = ttk.LabelFrame(tab, text=_t("staff_hr.training.my_training.summary.title", default="===== SUMMARY ====="), padding=10)
         summary_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.total_courses_label = ttk.Label(summary_frame, text=_t("staff_hr.training.my_training.summary.total_enrolled", default="Total Enrolled: {count}").format(count=0))
@@ -318,7 +318,7 @@ class TrainingGUI:
         self.certs_tree.bind('<Double-1>', self._view_certification)
 
         # Expiry alerts
-        alert_frame = ttk.LabelFrame(tab, text=_t("staff_hr.training.certifications.alerts.title", default="Expiry Alerts"), padding=10)
+        alert_frame = ttk.LabelFrame(tab, text=_t("staff_hr.training.certifications.alerts.title", default="===== ALERTS ====="), padding=10)
         alert_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.expiry_alert_label = ttk.Label(alert_frame, text=_t("staff_hr.training.certifications.alerts.no_expiring", default="No certifications expiring soon"), foreground='green')
@@ -645,7 +645,7 @@ class TrainingGUI:
 
         # Ask for score
         dialog = tk.Toplevel(self.root)
-        dialog.title(_t("staff_hr.training.dialogs.mark_complete.title", default="Complete Training"))
+        dialog.title(_t("staff_hr.training.dialogs.mark_complete.title", default="===== MARK COMPLETE ====="))
         dialog.geometry("300x150")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -697,7 +697,7 @@ class TrainingGUI:
     def _add_certification(self):
         """Add a new certification."""
         dialog = tk.Toplevel(self.root)
-        dialog.title(_t("staff_hr.training.dialogs.add_certification.title", default="Add Certification"))
+        dialog.title(_t("staff_hr.training.dialogs.add_certification.title", default="===== ADD CERTIFICATION ====="))
         dialog.geometry("450x450")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -819,7 +819,7 @@ class TrainingGUI:
 {_t("staff_hr.training.dialogs.course_details.recertification", default="Recertification: {months} months").format(months=row[8] or _t("staff_hr.training.catalog.values.na", default="N/A"))}
                 """
                 messagebox.showinfo(
-                    _t("staff_hr.training.dialogs.course_details.title", default="Course Details"),
+                    _t("staff_hr.training.dialogs.course_details.title", default="===== COURSE DETAILS ====="),
                     details.strip()
                 )
 
@@ -848,14 +848,14 @@ class TrainingGUI:
 {_t("staff_hr.training.dialogs.certification_details.status", default="Status: {status}").format(status=values[6])}
         """
         messagebox.showinfo(
-            _t("staff_hr.training.dialogs.certification_details.title", default="Certification Details"),
+            _t("staff_hr.training.dialogs.certification_details.title", default="===== CERTIFICATION DETAILS ====="),
             details.strip()
         )
 
     def _add_course(self):
         """Add a new training course (admin only)."""
         dialog = tk.Toplevel(self.root)
-        dialog.title(_t("staff_hr.training.dialogs.add_course.title", default="Add Training Course"))
+        dialog.title(_t("staff_hr.training.dialogs.add_course.title", default="===== ADD COURSE ====="))
         dialog.geometry("450x500")
         dialog.transient(self.root)
         dialog.grab_set()

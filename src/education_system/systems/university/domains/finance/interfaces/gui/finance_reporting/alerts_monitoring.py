@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
@@ -596,7 +600,7 @@ def run_system_performance_monitoring(self):
             try:
                 monitoring_window.after_cancel(self._monitoring_after_id)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
         monitoring_window.destroy()
 
     ttk.Button(control_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.buttons.close', default="Close"), command=on_monitoring_close).pack(side=tk.RIGHT)
@@ -658,7 +662,7 @@ def start_performance_monitoring(self):
                     if hasattr(self, 'monitoring_window') and self.monitoring_window.winfo_exists() and self.monitoring_active.get():
                         self._monitoring_after_id = self.monitoring_window.after(10000, update_metrics)  # Retry in 10 seconds
                 except Exception:
-                    pass  # Window destroyed
+                    logger.debug("Suppressed exception", exc_info=True)
 
     update_metrics()
 
@@ -684,7 +688,7 @@ def stop_performance_monitoring(self):
             self.monitoring_log.insert(tk.END, f"[{timestamp}] Monitoring stopped\n")
             self.monitoring_log.see(tk.END)
         except Exception:
-            pass  # Ignore errors during shutdown
+            logger.debug("Suppressed exception", exc_info=True)
 
 def export_monitoring_log(self):
     """Export monitoring log to file"""

@@ -2,11 +2,14 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import logging
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
+from tkinter import ttk, scrolledtext
 from datetime import datetime, timedelta
 from typing import Any, Optional, List, Dict
 from education_system.systems.university.infrastructure.i18n import get_text as _
-from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar.utils import safe_grab_set
+from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar.utils import safe_grab_set, ScrollableFrame
+# Message boxes parented to the window that raised them, not the main
+# GUI — see _dialogs.
+from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar._dialogs import messagebox
 
 gui_logger = logging.getLogger(__name__)
 
@@ -29,7 +32,11 @@ class RecurringEventDialog:
 
     def _create_widgets(self):
         """Create dialog widgets"""
-        main_frame = ttk.Frame(self.dialog, padding=20)
+        # The form is taller than the dialog, so it scrolls — previously the
+        # lower fields and the Create button were simply unreachable.
+        scroller = ScrollableFrame(self.dialog)
+        scroller.pack(fill=tk.BOTH, expand=True)
+        main_frame = ttk.Frame(scroller.body, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         ttk.Label(main_frame, text=_("academic_calendar.dialogs.recurring_events.header"),
@@ -335,21 +342,23 @@ class RecurringEventsDialog:
             self.events_tree.delete(item)
 
         try:
-            # Try to get recurring events from database
-            events = self.calendar_manager.db_manager.execute_query(
-                "SELECT * FROM academic_calendar_events WHERE is_recurring = 1 OR recurrence_pattern IS NOT NULL ORDER BY date DESC"
-            )
-
-            for event in events:
-                pattern = event.get('recurrence_pattern', 'N/A')
-                start = event.get('date') or event.get('date_start', '')
-                end = event.get('recurrence_end_date', '')
-                count = event.get('occurrence_count', '')
+            # A series is a recurring_events row keyed to a base event in
+            # unified_events. This used to read academic_calendar_events — now
+            # retired and empty — so the list was always blank.
+            for series in self.calendar_manager.recurring_events.list_recurring_events():
+                interval = str(series.get('interval_count') or 1)
+                pattern = (series.get('frequency') or 'N/A').capitalize()
+                if interval not in ('1', ''):
+                    pattern += f" (every {interval})"
+                start = series.get('date') or series.get('date_start') or ''
+                planned = series.get('occurrence_count')
+                made = series.get('generated_count') or 0
+                count = f"{made} of {planned}" if planned else str(made)
 
                 self.events_tree.insert('', 'end',
-                                       text=event.get('name', 'Unknown'),
-                                       values=(pattern, start, end, count),
-                                       tags=(event.get('id', ''),))
+                                       text=series.get('name') or 'Unknown',
+                                       values=(pattern, start, series.get('end_date') or '', count),
+                                       tags=(series.get('id', ''),))
         except Exception as e:
             gui_logger.warning(f"Failed to load recurring events: {e}")
 
@@ -384,13 +393,19 @@ class RecurringEventsDialog:
                 item = selection[0]
                 event_id = self.events_tree.item(item, 'tags')[0] if self.events_tree.item(item, 'tags') else None
 
-                if event_id:
-                    self.calendar_manager.db_manager.execute_query(
-                        "DELETE FROM academic_calendar_events WHERE id = ? OR parent_event_id = ?", (event_id, event_id)
-                    )
-
+                if not event_id:
+                    return
+                # The row's tag is the series id. The manager removes the
+                # pattern, its base event and its occurrences from
+                # unified_events with the source filter applied. This used to
+                # DELETE from the retired academic_calendar_events table, which
+                # removed nothing while reporting success.
+                ok, message = self.calendar_manager.recurring_events.delete_recurring_event(event_id)
                 self._load_recurring_events()
-                messagebox.showinfo(_("common.success"), _("academic_calendar.messages.recurring_deleted"), parent=self.dialog)
+                if not ok:
+                    messagebox.showerror(_("common.error"), message, parent=self.dialog)
+                    return
+                messagebox.showinfo(_("common.success"), message, parent=self.dialog)
 
                 if self.callback:
                     self.callback()

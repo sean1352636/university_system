@@ -178,10 +178,10 @@ The shared auth module provisions default accounts for each system. For Primary 
 
 ## Universal Login Flow
 
-The Education System platform provides a unified login experience via `run.py`:
+The Education System platform provides a unified login experience via `python -m education_system`:
 
 ```
-run.py
+python -m education_system
   |
   v
 UniversalLoginWindow (shared/gui/login_gui.py)
@@ -201,7 +201,7 @@ Primary School GUI launches with user_info=, role=, shared_auth=
 
 ### Step-by-step:
 
-1. **`run.py`** is the single entry point for the entire Education System.
+1. **`python -m education_system`** is the single entry point for the entire Education System.
 2. The **UniversalLoginWindow** is displayed, prompting for username and password.
 3. Credentials are verified against `auth.db` using the shared auth module.
 4. If the user has MFA enabled, a TOTP code (or recovery code) is requested.

@@ -1,0 +1,14 @@
+{
+    "subject": "$outcome_emoji Accommodation Application $outcome_headline - Reference #$application_id",
+    "body": "Dear $student_name,\n\nYour accommodation application has been reviewed. The outcome is: $status.\n\n=== DECISION ===\nReference Number: $application_id\nStudent ID: $student_id\nApplied On: $application_date\nDecision: $status\nDecision Date: $review_date\nReviewed By: $reviewed_by\n\n$outcome_message\n\n=== REVIEWER NOTES ===\n$notes\n\n=== WHAT YOU APPLIED FOR ===\nPreferred Building: $preferred_building\nPreferred Room Type: $preferred_room_type\nRequested Move-In Date: $move_in_date\nRequested Duration: $duration_months months\nSpecial Requirements: $special_requirements\n\n=== YOUR ROOM ===\n$assignment_details\n\n=== WHAT HAPPENS NEXT ===\n$next_steps\n\n=== CONTACT INFORMATION ===\nHousing Office: housing@university.edu\nPhone: (555) 123-4567\nOffice Hours: Monday-Friday, 9:00 AM - 5:00 PM\n\nBest regards,\n$reviewed_by\nUniversity Housing Administration\n\n$signature",
+    "variables": {
+        "outcome_emoji": {"default": "📋"},
+        "outcome_headline": {"default": "Decision"},
+        "outcome_message": {"default": ""},
+        "assignment_details": {"default": "No room has been assigned to you at this stage."},
+        "next_steps": {"default": "If you have any questions about this decision, contact the Housing Office."},
+        "notes": {"default": "No additional notes were recorded."},
+        "preferred_building": {"default": "No preference"},
+        "special_requirements": {"default": "None"}
+    }
+}

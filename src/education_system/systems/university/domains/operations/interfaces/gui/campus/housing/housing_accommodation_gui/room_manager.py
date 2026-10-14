@@ -12,6 +12,11 @@ from education_system.systems.university.infrastructure.utils.activity_logger im
 )
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import generate_id
+# Shared with the CLI so a resident is moved — and emailed — the same way
+# whichever interface removed their room.
+from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.assignments import (
+    apply_relocations, describe_move, notify_relocated_residents, plan_relocations,
+)
 
 
 def show_room_management(gui_instance, building_id=None, building_name=None):
@@ -243,34 +248,76 @@ def show_building_rooms_management(gui_instance, building_id, building_name):
 
         room_data = rooms_tree.item(selected[0])['values']
         room_number = room_data[0]
-        current_occ = room_data[4]
 
-        if current_occ > 0:
-            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.error', default="Error"), f"Cannot delete room {room_number} - currently occupied")
-            return
+        try:
+            room_id = rooms_tree.item(selected[0])['tags'][0]
+            conn = get_connection()
+            cursor = conn.cursor()
 
-        result = messagebox.askyesno(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.confirm_delete', default="Confirm Delete"), f"Delete room {room_number}?")
-        if result:
-            try:
-                room_id = rooms_tree.item(selected[0])['tags'][0]
-                conn = get_connection()
-                cursor = conn.cursor()
+            # Occupancy no longer blocks the delete: whoever lives here is
+            # offered a room in one of the other buildings first.
+            moves, unplaced = plan_relocations(cursor, [room_id],
+                                               exclude_building_ids=[building_id])
 
-                cursor.execute('DELETE FROM housing_rooms WHERE room_id = ?', (room_id,))
-                cursor.execute('''
-                UPDATE housing_buildings
-                SET total_rooms = total_rooms - 1, available_rooms = available_rooms - 1
-                WHERE building_id = ?
-                ''', (building_id,))
-
-                conn.commit()
+            if unplaced:
+                stuck = "\n".join(f"  • {row['student_name']} ({row['student_id']})"
+                                  for row in unplaced)
+                messagebox.showerror(
+                    _t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.error', default="Error"),
+                    f"Cannot delete room {room_number}: {len(unplaced)} resident(s) "
+                    f"have nowhere to go — every other building is full.\n\n{stuck}\n\n"
+                    "Add rooms to another building, or free some up, then try again.")
                 conn.close()
+                return
 
-                rooms_tree.delete(selected[0])
-                messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.success', default="Success"), f"Room {room_number} deleted successfully")
+            message = f"Delete room {room_number}?"
+            if moves:
+                plan = "\n".join("  • " + describe_move(move) for move in moves)
+                message += (f"\n\n{len(moves)} resident(s) will be moved automatically:"
+                            f"\n\n{plan}\n\nTheir rent and contract dates stay the same, "
+                            "and each will be emailed their new building, room number "
+                            "and floor.")
 
-            except Exception as e:
-                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.error', default="Error"), f"Failed to delete room: {str(e)}")
+            if not messagebox.askyesno(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.confirm_delete', default="Confirm Delete"), message):
+                conn.close()
+                return
+
+            if moves:
+                actor = 'housing'
+                if getattr(gui_instance, 'auth', None) and gui_instance.auth.current_user:
+                    actor = gui_instance.auth.current_user.get('username', 'housing')
+                apply_relocations(
+                    cursor, moves,
+                    reason=(f"The room you were living in, room {room_number} in "
+                            f"{building_name}, has been taken out of service."),
+                    actor=actor,
+                )
+
+            cursor.execute('DELETE FROM housing_rooms WHERE room_id = ?', (room_id,))
+            # Recount rather than decrement: apply_relocations may already have
+            # adjusted this building's available_rooms.
+            cursor.execute('''
+            UPDATE housing_buildings
+            SET total_rooms = (SELECT COUNT(*) FROM housing_rooms WHERE building_id = ?),
+                available_rooms = (SELECT COUNT(*) FROM housing_rooms
+                                   WHERE building_id = ? AND status = 'Available')
+            WHERE building_id = ?
+            ''', (building_id, building_id, building_id))
+
+            conn.commit()
+            conn.close()
+
+            summary = ""
+            if moves:
+                sent, failed = notify_relocated_residents(moves)
+                summary = (f"\n\n{len(moves)} resident(s) relocated. "
+                           f"Emails: {sent} sent, {failed} failed.")
+
+            rooms_tree.delete(selected[0])
+            messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.success', default="Success"), f"Room {room_number} deleted successfully{summary}")
+
+        except Exception as e:
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.error', default="Error"), f"Failed to delete room: {str(e)}")
 
     def add_new_room():
         """Add a new room to the building"""

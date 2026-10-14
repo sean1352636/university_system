@@ -12,7 +12,7 @@ from education_system.systems.university.infrastructure.i18n import get_text
 
 def student_progress_tracking():
     """Track individual student progress over time"""
-    print("\n" + get_text("academics.progress.title"))
+    print("\n" + get_text("academics.progress.title", default="===== PROGRESS ====="))
 
     try:
         conn = get_connection()
@@ -32,12 +32,12 @@ def student_progress_tracking():
 
         student = cursor.fetchone()
         if not student:
-            print(get_text("academics.progress.student_not_found"))
+            print(get_text("academics.progress.student_not_found", default="Student Not Found"))
             conn.close()
             return
 
         first_name, last_name, course = student
-        print("\n" + get_text("academics.progress.tracking_for", first_name=first_name, last_name=last_name, course=course))
+        print("\n" + get_text("academics.progress.tracking_for", first_name=first_name, last_name=last_name, course=course, default="Tracking For {course} {first_name} {last_name}"))
 
         # Get grades over time
         cursor.execute('''
@@ -53,7 +53,7 @@ def student_progress_tracking():
         grades = cursor.fetchall()
 
         if not grades:
-            print(get_text("academics.progress.no_grades_found"))
+            print(get_text("academics.progress.no_grades_found", default="No Grades Found."))
             conn.close()
             return
 
@@ -61,14 +61,14 @@ def student_progress_tracking():
         analyze_student_progress(grades, first_name, last_name)
 
         # Visualize if requested
-        visualize = input("\n" + get_text("academics.progress.generate_visualization_prompt") + " ").strip().lower()
+        visualize = input("\n" + get_text("academics.progress.generate_visualization_prompt", default="Generate Visualization: ") + " ").strip().lower()
         if visualize == 'y':
             create_progress_visualization(grades, student_id, first_name, last_name)
 
         conn.close()
 
     except sqlite3.Error as e:
-        print(get_text("academics.progress.database_error", error=e))
+        print(get_text("academics.progress.database_error", error=e, default="Database Error {error}"))
 
 def analyze_student_progress(grades, first_name, last_name):
     """Analyze a student's academic progress"""
@@ -82,13 +82,13 @@ def analyze_student_progress(grades, first_name, last_name):
         slope = np.polyfit(x, percentages, 1)[0]
 
         if slope > 1:
-            trend = get_text("academics.progress.trend_improving")
+            trend = get_text("academics.progress.trend_improving", default="Trend Improving")
         elif slope < -1:
-            trend = get_text("academics.progress.trend_declining")
+            trend = get_text("academics.progress.trend_declining", default="Trend Declining")
         else:
-            trend = get_text("academics.progress.trend_stable")
+            trend = get_text("academics.progress.trend_stable", default="Trend Stable")
     else:
-        trend = get_text("academics.progress.trend_insufficient_data")
+        trend = get_text("academics.progress.trend_insufficient_data", default="Trend Insufficient Data")
 
     # Calculate statistics
     avg_performance = np.mean(percentages)

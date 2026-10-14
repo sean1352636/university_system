@@ -16,7 +16,8 @@ from education_system.systems.university.domains.operations.domain.campus.housin
 # Import email notification functions
 from education_system.systems.university.domains.operations.interfaces.gui.campus.housing.housing_accommodation_gui.email_notifications import (
     send_housing_email,
-    send_maintenance_email
+    send_maintenance_email,
+    send_maintenance_admin_emails,
 )
 
 
@@ -585,7 +586,50 @@ def submit_maintenance_request(gui_instance):
         except Exception as email_error:
             print(f"Warning: Failed to send confirmation email: {email_error}")
 
-        messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.success', default="Success"), f"Maintenance request submitted successfully!\nRequest ID: {request_id}")
+        # Alert the housing admins as well, so a request cannot sit unseen
+        # just because nobody happened to open the maintenance screen. Uses
+        # the same domain helper as the CLI, which resolves the admin address
+        # from the users table rather than hardcoding one.
+        admin_sent = 0
+        try:
+            student_name = ''
+            student_email = None
+            conn = get_connection()
+            try:
+                row = conn.execute(
+                    'SELECT first_name, last_name, email_address FROM students '
+                    'WHERE student_id = ?', (student_id,)).fetchone()
+            finally:
+                conn.close()
+            if row:
+                student_name = f"{row[0] or ''} {row[1] or ''}".strip()
+                student_email = row[2]
+
+            admin_sent, admin_failed = send_maintenance_admin_emails({
+                'request_id': request_id,
+                'issue_type': issue_type,
+                'description': description,
+                'priority': priority,
+                'status': 'Open',
+                'request_date': timestamp,
+                'submitted_by': (gui_instance.auth.current_user.get('username', 'housing')
+                                 if gui_instance.auth and gui_instance.auth.current_user
+                                 else 'housing'),
+                'student_id': student_id,
+                'student_name': student_name,
+                'student_email': student_email,
+                'building_name': building_name,
+                'room_number': room_number,
+            })
+        except Exception as admin_error:
+            print(f"Warning: Failed to alert admin: {admin_error}")
+
+        admin_line = (f"\nHousing admin alerted ({admin_sent} email(s))."
+                      if admin_sent else
+                      "\nNote: no admin email address is configured, so no "
+                      "admin alert was sent.")
+
+        messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.success', default="Success"), f"Maintenance request submitted successfully!\nRequest ID: {request_id}\n{admin_line}")
 
         # Clear form
         gui_instance.maint_building_combo.set("")

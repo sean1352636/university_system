@@ -1,18 +1,20 @@
 """
-Lesson / Timetable Planner — interactive CLI.
+Lesson Planner — interactive CLI, over the merged scheduling model.
 
-Wired to the plain CRUD helpers in
-``course_planning.services.lesson_service``, which read/write the shared
-``student_records.db`` tables ``lesson_plans`` and ``lesson_courses`` — the
-same tables the Lesson Planner GUI (``lesson_planner.py``) persists to.
-Anything created here is visible in the GUI and vice-versa.
+The planner used to keep its own timetable (``lesson_plans``) and its own
+course list (``lesson_courses``), neither visible to Module Scheduling, the
+conflict detector or Timetable Management. Both are retired. The timetable is
+``module_schedule``; a lesson is now *content* — title, delivery type, notes —
+attached to one of its slots. The GUI equivalent is Module Scheduling →
+Lesson Plans.
 
-This is the pedagogical LESSON/timetable side. The separate DEGREE planner
-(semester plans / prerequisites) lives in ``planning_cli.PlanningCLI`` and is
-unrelated.
+So the flow here is slot-first: list the scheduled slots, pick one, and write
+the lesson for it. Day, time, room and instructor are not editable here —
+they belong to the slot, and are changed in Module Scheduling (CLI: the
+scheduling menu; GUI: the Schedules tab).
 
-Covers: Lessons (list/add/update/delete), Courses (list/add/update/delete),
-and a read-only planned contact-hours summary.
+The separate DEGREE planner (semester plans / prerequisites) lives in
+``planning_cli.PlanningCLI`` and is unrelated.
 """
 
 from __future__ import annotations
@@ -23,8 +25,7 @@ from education_system.systems.university.domains.academics.domain.course_plannin
     lesson_service,
 )
 
-_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-_LESSON_TYPES = ["Lecture", "Seminar", "Lab", "Tutorial", "Workshop", "Exam"]
+_LESSON_TYPES = list(lesson_service.LESSON_TYPES)
 
 
 # --------------------------------------------------------------------------- #
@@ -32,304 +33,188 @@ _LESSON_TYPES = ["Lecture", "Seminar", "Lab", "Tutorial", "Workshop", "Exam"]
 # --------------------------------------------------------------------------- #
 def _prompt(text: str, default: str = "") -> str:
     suffix = f" [{default}]" if default else ""
-    value = input(f"{text}{suffix}: ").strip()
+    try:
+        value = input(f"{text}{suffix}: ").strip()
+    except (KeyboardInterrupt, EOFError):
+        print()
+        return ""
     return value or default
 
 
 def _prompt_int(text: str, *, allow_blank: bool = True) -> Optional[int]:
     while True:
-        raw = input(f"{text}: ").strip()
+        raw = _prompt(text)
         if not raw:
             if allow_blank:
                 return None
-            print("A value is required.")
+            print("A number is required.")
             continue
         try:
             return int(raw)
         except ValueError:
-            print("Please enter a whole number.")
+            print("Enter a whole number.")
 
 
 def _pause() -> None:
-    input("\nPress Enter to continue...")
+    try:
+        input("\nPress Enter to continue...")
+    except (KeyboardInterrupt, EOFError):
+        print()
 
 
 def _header(title: str) -> None:
-    print("\n" + "=" * 60)
-    print(f"  {title}")
-    print("=" * 60)
+    print("\n" + "=" * 50)
+    print(f"    {title.upper()}")
+    print("=" * 50)
 
 
 def _current_username(auth) -> str:
-    try:
-        user = getattr(auth, "current_user", None)
-        if isinstance(user, dict):
-            return user.get("username") or user.get("name") or "cli-user"
-    except Exception:
-        pass
-    return "cli-user"
+    user = getattr(auth, "current_user", None) or {}
+    if isinstance(user, dict):
+        return user.get("username") or ""
+    return getattr(user, "username", "") or ""
 
 
 # --------------------------------------------------------------------------- #
-# 1. Lessons
+# 1. Slots and their lessons
 # --------------------------------------------------------------------------- #
-def _list_lessons() -> None:
+def _list_slots() -> None:
     search = _prompt("Search text (optional)")
-    lessons = lesson_service.list_lessons(search=search or None)
-    if not lessons:
-        print("\nNo lessons found.")
+    slots = lesson_service.list_slots(search or None)
+    if not slots:
+        print("\nNo scheduled slots found. Create one in Module Scheduling first.")
         return
-    print(f"\n{'ID':<5}{'Course':<18}{'Title':<22}{'Type':<10}"
-          f"{'Day':<11}{'Time':<14}Room")
-    print("-" * 92)
-    for row in lessons:
-        time = f"{row.get('start') or '?'}-{row.get('end') or '?'}"
-        print(f"{row['id']:<5}{(row.get('course') or '')[:17]:<18}"
-              f"{(row.get('title') or '')[:21]:<22}"
-              f"{(row.get('type') or '')[:9]:<10}"
-              f"{(row.get('day') or '')[:10]:<11}"
-              f"{time[:13]:<14}{row.get('room') or '-'}")
+    print(f"\n{'Slot':<6}{'Module':<12}{'Day':<11}{'Time':<14}{'Room':<14}"
+          f"{'Status':<11}Lesson")
+    print("-" * 96)
+    for slot in slots:
+        time = f"{slot.get('start_time') or '?'}-{slot.get('end_time') or '?'}"
+        print(f"{slot['schedule_id']:<6}"
+              f"{(slot.get('module_code') or '')[:11]:<12}"
+              f"{(slot.get('day_of_week') or '')[:10]:<11}"
+              f"{time[:13]:<14}"
+              f"{(slot.get('room') or '-')[:13]:<14}"
+              f"{(slot.get('status') or '')[:10]:<11}"
+              f"{slot.get('title') or '(no lesson)'}")
+
+    orphans = lesson_service.unscheduled()
+    if orphans:
+        print(f"\n{len(orphans)} lesson(s) with no slot:")
+        for lesson in orphans:
+            print(f"   lesson {lesson['lesson_id']}: {lesson.get('title') or ''} "
+                  f"({lesson.get('module_code') or '?'}, "
+                  f"was {lesson.get('legacy_slot') or 'unknown'})")
 
 
-def _add_lesson(auth) -> None:
-    course = _prompt("Course (e.g. 'CS101 - Intro')")
-    title = _prompt("Lesson title")
-    if not course or not title:
-        print("Course and title are required.")
+def _set_lesson(auth) -> None:
+    slot_id = _prompt_int("Slot id to write the lesson for", allow_blank=False)
+    slot = lesson_service.get_slot(slot_id)
+    if slot is None:
+        print(f"\nNo scheduled slot with id {slot_id}.")
         return
-    instructor = _prompt("Instructor (optional)")
-    ltype = _prompt(f"Type ({'/'.join(_LESSON_TYPES)})", default="Lecture")
-    day = _prompt(f"Day ({'/'.join(_DAYS)})", default="Monday")
-    start = _prompt("Start time (HH:MM)")
-    end = _prompt("End time (HH:MM)")
-    if start and end and start >= end:
-        print("End time must be after start time.")
+    print(f"\n{slot.get('module_code')} — {slot.get('day_of_week')} "
+          f"{slot.get('start_time')}-{slot.get('end_time')} "
+          f"in {slot.get('room') or 'no room'}")
+    if slot.get("title"):
+        print(f"Current lesson: {slot['title']}")
+
+    title = _prompt("Lesson title", default=slot.get("title") or "")
+    if not title:
+        print("A title is required.")
         return
-    room = _prompt("Room (optional)")
-    notes = _prompt("Notes (optional)")
+    ltype = _prompt(f"Type ({'/'.join(_LESSON_TYPES)})",
+                    default=slot.get("lesson_type") or slot.get("session_type") or "")
+    notes = _prompt("Notes (optional)", default=slot.get("notes") or "")
     try:
-        lid = lesson_service.add_lesson(
-            course, title, instructor=instructor, type=ltype, day=day,
-            start=start, end=end, room=room, notes=notes,
+        lesson_id = lesson_service.set_lesson(
+            slot_id, title, lesson_type=ltype, notes=notes,
             updated_by=_current_username(auth))
-        print(f"\n✓ Added lesson '{title}' (id={lid}).")
+        print(f"\n✓ Lesson saved for slot {slot_id} (id={lesson_id}).")
     except Exception as e:
         print(f"\n✗ {e}")
 
 
-def _update_lesson(auth) -> None:
-    lid = _prompt_int("Lesson id", allow_blank=False)
-    current = lesson_service.get_lesson(lid)
-    if not current:
-        print(f"\nNo lesson with id {lid}.")
+def _clear_lesson() -> None:
+    lesson_id = _prompt_int("Lesson id to delete", allow_blank=False)
+    print("This removes the lesson plan only — the scheduled slot stays.")
+    if _prompt("Type 'yes' to confirm").lower() != "yes":
+        print("Cancelled.")
         return
-    print("Leave a field blank to keep its current value.")
-    fields = {}
-    for key, label in (("course", "Course"), ("title", "Title"),
-                       ("instructor", "Instructor"), ("type", "Type"),
-                       ("day", "Day"), ("start", "Start (HH:MM)"),
-                       ("end", "End (HH:MM)"), ("room", "Room"),
-                       ("notes", "Notes")):
-        val = _prompt(f"{label} [{current.get(key) or '-'}]")
-        if val:
-            fields[key] = val
-    if not fields:
-        print("Nothing to update.")
+    if lesson_service.clear_lesson(lesson_id):
+        print(f"\n✓ Deleted lesson {lesson_id}.")
+    else:
+        print(f"\nNo lesson with id {lesson_id}.")
+
+
+def _attach_lesson() -> None:
+    orphans = lesson_service.unscheduled()
+    if not orphans:
+        print("\nEvery lesson already has a slot.")
         return
-    try:
-        if lesson_service.update_lesson(
-                lid, updated_by=_current_username(auth), **fields):
-            print(f"\n✓ Updated lesson {lid}.")
-        else:
-            print(f"\nNo change made to lesson {lid}.")
-    except Exception as e:
-        print(f"\n✗ {e}")
-
-
-def _delete_lesson() -> None:
-    lid = _prompt_int("Lesson id to delete", allow_blank=False)
-    try:
-        if lesson_service.delete_lesson(lid):
-            print(f"\n✓ Deleted lesson {lid}.")
-        else:
-            print(f"\nNo lesson with id {lid}.")
-    except Exception as e:
-        print(f"\n✗ {e}")
-
-
-def _lessons_menu(auth) -> None:
-    while True:
-        _header("Lessons")
-        print("[1] List lessons")
-        print("[2] Add lesson")
-        print("[3] Update lesson")
-        print("[4] Delete lesson")
-        print("[0] Back")
-        choice = input("\nChoice: ").strip()
-        if choice == "1":
-            _list_lessons()
-        elif choice == "2":
-            _add_lesson(auth)
-        elif choice == "3":
-            _update_lesson(auth)
-        elif choice == "4":
-            _delete_lesson()
-        elif choice == "0":
-            return
-        else:
-            print("Invalid choice.")
-            continue
-        _pause()
-
-
-# --------------------------------------------------------------------------- #
-# 2. Courses
-# --------------------------------------------------------------------------- #
-def _list_courses() -> None:
-    courses = lesson_service.list_courses()
-    if not courses:
-        print("\nNo planner-local courses found.")
+    for lesson in orphans:
+        print(f"   lesson {lesson['lesson_id']}: {lesson.get('title') or ''} "
+              f"({lesson.get('module_code') or '?'})")
+    lesson_id = _prompt_int("Lesson id to place", allow_blank=False)
+    slot_id = _prompt_int("Slot id to attach it to", allow_blank=False)
+    if lesson_service.get_slot(slot_id) is None:
+        print(f"\nNo scheduled slot with id {slot_id}.")
         return
-    print(f"\n{'Code':<12}{'Name':<26}{'Department':<18}{'Credits':<9}Semester")
-    print("-" * 78)
-    for c in courses:
-        print(f"{(c.get('code') or '')[:11]:<12}"
-              f"{(c.get('name') or '')[:25]:<26}"
-              f"{(c.get('dept') or '')[:17]:<18}"
-              f"{(str(c.get('credits') or ''))[:8]:<9}"
-              f"{c.get('semester') or '-'}")
+    if lesson_service.attach_lesson(lesson_id, slot_id):
+        print(f"\n✓ Lesson {lesson_id} now belongs to slot {slot_id}.")
+    else:
+        print("\n✗ Could not attach that lesson.")
 
 
-def _add_course(auth) -> None:
-    code = _prompt("Course code")
-    name = _prompt("Course name")
-    if not code or not name:
-        print("Course code and name are required.")
-        return
-    dept = _prompt("Department (optional)")
-    credits = _prompt("Credits (optional)")
-    semester = _prompt("Semester (optional)")
-    description = _prompt("Description (optional)")
-    try:
-        lesson_service.add_course(
-            code, name, dept=dept, credits=credits, semester=semester,
-            description=description, updated_by=_current_username(auth))
-        print(f"\n✓ Added course '{code}'.")
-    except Exception as e:
-        print(f"\n✗ {e}")
-
-
-def _update_course(auth) -> None:
-    code = _prompt("Course code to update")
-    current = lesson_service.get_course(code)
-    if not current:
-        print(f"\nNo planner-local course with code '{code}'.")
-        return
-    print("Leave a field blank to keep its current value.")
-    fields = {}
-    for key, label in (("name", "Name"), ("dept", "Department"),
-                       ("credits", "Credits"), ("semester", "Semester"),
-                       ("description", "Description")):
-        val = _prompt(f"{label} [{current.get(key) or '-'}]")
-        if val:
-            fields[key] = val
-    if not fields:
-        print("Nothing to update.")
-        return
-    try:
-        if lesson_service.update_course(
-                code, updated_by=_current_username(auth), **fields):
-            print(f"\n✓ Updated course '{code}'.")
-        else:
-            print(f"\nNo change made to course '{code}'.")
-    except Exception as e:
-        print(f"\n✗ {e}")
-
-
-def _delete_course() -> None:
-    code = _prompt("Course code to delete")
-    if not code:
-        print("Course code is required.")
-        return
-    try:
-        if lesson_service.delete_course(code):
-            print(f"\n✓ Deleted course '{code}'.")
-        else:
-            print(f"\nNo planner-local course with code '{code}'.")
-    except Exception as e:
-        print(f"\n✗ {e}")
-
-
-def _courses_menu(auth) -> None:
-    while True:
-        _header("Courses (planner-local)")
-        print("[1] List courses")
-        print("[2] Add course")
-        print("[3] Update course")
-        print("[4] Delete course")
-        print("[0] Back")
-        choice = input("\nChoice: ").strip()
-        if choice == "1":
-            _list_courses()
-        elif choice == "2":
-            _add_course(auth)
-        elif choice == "3":
-            _update_course(auth)
-        elif choice == "4":
-            _delete_course()
-        elif choice == "0":
-            return
-        else:
-            print("Invalid choice.")
-            continue
-        _pause()
-
-
-# --------------------------------------------------------------------------- #
-# 3. Contact-hours summary
-# --------------------------------------------------------------------------- #
 def _hours_summary() -> None:
-    rows = lesson_service.contact_hours_by_course()
+    rows = lesson_service.weekly_hours()
     if not rows:
-        print("\nNo lessons to summarise.")
+        print("\nNothing scheduled to summarise.")
         return
-    print(f"\n{'Course':<24}{'Lessons':<10}Weekly hours")
-    print("-" * 46)
-    for r in rows:
-        print(f"{(r.get('course') or '')[:23]:<24}"
-              f"{r.get('lessons'):<10}{r.get('hours')}")
+    print(f"\n{'Module':<24}Weekly hours")
+    print("-" * 40)
+    for row in rows:
+        print(f"{(row.get('module_code') or '')[:23]:<24}{row.get('hours')}")
 
 
 # --------------------------------------------------------------------------- #
 # Entry point
 # --------------------------------------------------------------------------- #
 def run_lesson_planner_menu(auth) -> None:
-    """Run the Lesson / Timetable Planner CLI loop."""
+    """Run the Lesson Planner CLI loop."""
     while True:
-        print("\n" + "=" * 50)
-        print("    LESSON / TIMETABLE PLANNER")
+        _header("Lesson Planner")
+        print("1. List scheduled slots and lessons")
+        print("2. Write / update the lesson for a slot")
+        print("3. Delete a lesson plan")
+        print("4. Place an unscheduled lesson on a slot")
+        print("5. Planned contact-hours summary")
+        print("6. Return to Main Menu")
         print("=" * 50)
-        print("1. Lessons")
-        print("2. Courses")
-        print("3. Planned contact-hours summary")
-        print("4. Return to Main Menu")
-        print("=" * 50)
+        print("Times, rooms and instructors are set in Module Scheduling.")
 
         try:
-            choice = input("\nEnter your choice (1-4): ").strip()
+            choice = input("\nEnter your choice (1-6): ").strip()
         except (KeyboardInterrupt, EOFError):
             print()
             return
 
         try:
             if choice == "1":
-                _lessons_menu(auth)
+                _list_slots()
+                _pause()
             elif choice == "2":
-                _courses_menu(auth)
+                _set_lesson(auth)
+                _pause()
             elif choice == "3":
-                _hours_summary()
+                _clear_lesson()
                 _pause()
             elif choice == "4":
+                _attach_lesson()
+                _pause()
+            elif choice == "5":
+                _hours_summary()
+                _pause()
+            elif choice == "6":
                 print("Returning to main menu...")
                 return
             else:

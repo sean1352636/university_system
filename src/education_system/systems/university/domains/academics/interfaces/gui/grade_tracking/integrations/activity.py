@@ -86,7 +86,7 @@ def recent_assessment_calendar_events(limit: int = 25) -> list[dict]:
     return _query(
         """
         SELECT id, name, date, description, last_modified
-        FROM academic_calendar_events
+        FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar')
         WHERE event_type = 'Assessment'
         ORDER BY last_modified DESC LIMIT ?
         """,

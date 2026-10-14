@@ -1,4 +1,7 @@
 """Methods __init__ through update_conflict_text."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -33,62 +36,71 @@ class AddScheduleDialog:
         main_frame = ttk.Frame(self.dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
+        # Course selection. Scoping the module list by course turns a flat
+        # list of ~380 module codes into the handful that belong to the course
+        # being scheduled.
+        ttk.Label(main_frame, text=_t('gui.academics.module_scheduling.dialogs_parts.addscheduledialog_init.labels.course', default="Course:")).grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.course_var = tk.StringVar()
+        self.course_combo = ttk.Combobox(main_frame, textvariable=self.course_var,
+                                         width=30, state="readonly")
+        self.course_combo.grid(row=0, column=1, pady=5, sticky=tk.W)
+        self.course_combo.bind('<<ComboboxSelected>>', self.on_course_selected)
+
         # Module selection
-        ttk.Label(main_frame, text=_t('gui.academics.module_scheduling.dialogs_parts.addscheduledialog_init.labels.module_code', default="Module Code:")).grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=_t('gui.academics.module_scheduling.dialogs_parts.addscheduledialog_init.labels.module_code', default="Module Code:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.module_var = tk.StringVar()
-        module_combo = ttk.Combobox(main_frame, textvariable=self.module_var, width=30)
+        self.module_combo = ttk.Combobox(main_frame, textvariable=self.module_var, width=30)
+        self.module_combo.grid(row=1, column=1, pady=5, sticky=tk.W)
 
-        # Load modules
-        try:
-            modules = self.scheduler._get_known_modules()
-            module_combo['values'] = list(modules.keys())
-        except (AttributeError, Exception):
-            pass
-
-        module_combo.grid(row=0, column=1, pady=5, sticky=tk.W)
+        self.load_courses()
+        self.on_course_selected()
 
         # Day of week
-        ttk.Label(main_frame, text=_t('gui.academics.module_scheduling.dialogs_parts.addscheduledialog_init.labels.day_of_week', default="Day of Week:")).grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=_t('gui.academics.module_scheduling.dialogs_parts.addscheduledialog_init.labels.day_of_week', default="Day of Week:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         self.day_var = tk.StringVar()
         day_combo = ttk.Combobox(main_frame, textvariable=self.day_var, values=DAYS_OF_WEEK, width=30)
-        day_combo.grid(row=1, column=1, pady=5, sticky=tk.W)
+        day_combo.grid(row=2, column=1, pady=5, sticky=tk.W)
 
         # Time
-        ttk.Label(main_frame, text=_t('gui.academics.module_scheduling.dialogs_parts.addscheduledialog_init.labels.start_time', default="Start Time:")).grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=_t('gui.academics.module_scheduling.dialogs_parts.addscheduledialog_init.labels.start_time', default="Start Time:")).grid(row=3, column=0, sticky=tk.W, pady=5)
         self.start_time_var = tk.StringVar()
         start_combo = ttk.Combobox(main_frame, textvariable=self.start_time_var, values=TIME_SLOTS, width=30)
-        start_combo.grid(row=2, column=1, pady=5, sticky=tk.W)
+        start_combo.grid(row=3, column=1, pady=5, sticky=tk.W)
 
-        ttk.Label(main_frame, text=_t('gui.academics.module_scheduling.dialogs_parts.addscheduledialog_init.labels.end_time', default="End Time:")).grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=_t('gui.academics.module_scheduling.dialogs_parts.addscheduledialog_init.labels.end_time', default="End Time:")).grid(row=4, column=0, sticky=tk.W, pady=5)
         self.end_time_var = tk.StringVar()
         end_combo = ttk.Combobox(main_frame, textvariable=self.end_time_var, values=TIME_SLOTS, width=30)
-        end_combo.grid(row=3, column=1, pady=5, sticky=tk.W)
+        end_combo.grid(row=4, column=1, pady=5, sticky=tk.W)
 
         # Building selection
-        ttk.Label(main_frame, text=_t('gui.academics.module_scheduling.dialogs_parts.addscheduledialog_init.labels.building', default="Building:")).grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=_t('gui.academics.module_scheduling.dialogs_parts.addscheduledialog_init.labels.building', default="Building:")).grid(row=5, column=0, sticky=tk.W, pady=5)
         self.building_var = tk.StringVar()
         self.building_combo = ttk.Combobox(main_frame, textvariable=self.building_var, width=30)
 
         # Load buildings from database
         buildings = self.get_buildings_from_db()
         self.building_combo['values'] = buildings
-        self.building_combo.grid(row=4, column=1, pady=5, sticky=tk.W)
+        self.building_combo.grid(row=5, column=1, pady=5, sticky=tk.W)
 
         # Bind building selection to update rooms
         self.building_combo.bind('<<ComboboxSelected>>', self.on_building_selected)
 
         # Room
-        ttk.Label(main_frame, text=_t('gui.academics.module_scheduling.dialogs_parts.addscheduledialog_init.labels.room', default="Room:")).grid(row=5, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=_t('gui.academics.module_scheduling.dialogs_parts.addscheduledialog_init.labels.room', default="Room:")).grid(row=6, column=0, sticky=tk.W, pady=5)
         self.room_var = tk.StringVar()
         self.room_combo = ttk.Combobox(main_frame, textvariable=self.room_var, width=30)
-        self.room_combo.grid(row=5, column=1, pady=5, sticky=tk.W)
+        self.room_combo.grid(row=6, column=1, pady=5, sticky=tk.W)
 
-        # Store all rooms for filtering
+        # Store all rooms for filtering. on_building_selected is what fills
+        # the combo, and it only ran on a building change — so the Room box
+        # opened empty even with rooms in the database. Call it once here so
+        # every room is offered until a building narrows the list.
         self.all_rooms = []
         self.load_all_rooms()
+        self.on_building_selected()
 
         # Instructor
-        ttk.Label(main_frame, text=_t('gui.academics.module_scheduling.dialogs_parts.addscheduledialog_init.labels.instructor', default="Instructor:")).grid(row=6, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=_t('gui.academics.module_scheduling.dialogs_parts.addscheduledialog_init.labels.instructor', default="Instructor:")).grid(row=7, column=0, sticky=tk.W, pady=5)
         self.instructor_var = tk.StringVar()
         instructor_combo = ttk.Combobox(main_frame, textvariable=self.instructor_var, width=30)
 
@@ -103,7 +115,7 @@ class AddScheduleDialog:
             instructor_values = [f"{inst[0]} - {inst[1]} {inst[2]}" for inst in instructors]
             instructor_combo['values'] = instructor_values
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         instructor_combo.grid(row=6, column=1, pady=5, sticky=tk.W)
 
@@ -231,7 +243,7 @@ class AddScheduleDialog:
                     try:
                         self.room_var.set(vals[0])
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
                 win.destroy()
 
             ttk.Button(win, text=_t('gui.academics.module_scheduling.dialogs_parts.addscheduledialog_init.buttons.use_selected_room', default="Use selected room"),
@@ -277,6 +289,60 @@ class AddScheduleDialog:
         except Exception as e:
             print(f"Error fetching buildings: {e}")
             return ["Main Building", "Science Building", "Library"]
+
+    def load_courses(self):
+        """Fill the course dropdown from the courses table."""
+        self._course_codes = []
+        values = []
+        try:
+            with get_connection(str(DEFAULT_DB_PATH), row_factory=False) as conn:
+                rows = conn.execute(
+                    "SELECT COALESCE(NULLIF(TRIM(course_code), ''), code), "
+                    "       COALESCE(NULLIF(TRIM(course_name), ''), name) "
+                    "  FROM courses "
+                    " WHERE COALESCE(NULLIF(TRIM(course_code), ''), code) IS NOT NULL "
+                    " ORDER BY 1").fetchall()
+            for code, name in rows:
+                self._course_codes.append(code)
+                values.append(f"{code} - {name}" if name else code)
+        except Exception as exc:
+            print(f"Error loading courses: {exc}")
+        # "All courses" keeps every module reachable for anything unmapped.
+        self.course_combo['values'] = ["(all courses)"] + values
+        self.course_combo.current(0)
+
+    def on_course_selected(self, event=None):
+        """Scope the module dropdown to the selected course."""
+        selection = self.course_var.get()
+        course_code = None
+        if selection and selection != "(all courses)":
+            course_code = selection.split(" - ", 1)[0].strip()
+
+        modules = []
+        try:
+            with get_connection(str(DEFAULT_DB_PATH), row_factory=False) as conn:
+                if course_code:
+                    rows = conn.execute(
+                        "SELECT module_code, module_name FROM modules "
+                        " WHERE COALESCE(TRIM(module_code), '') <> '' "
+                        "   AND TRIM(COALESCE(course, '')) = ? "
+                        " ORDER BY module_code", (course_code,)).fetchall()
+                else:
+                    rows = conn.execute(
+                        "SELECT module_code, module_name FROM modules "
+                        " WHERE COALESCE(TRIM(module_code), '') <> '' "
+                        " ORDER BY module_code").fetchall()
+            modules = [f"{code} - {name}" if name else code for code, name in rows]
+        except Exception as exc:
+            print(f"Error loading modules: {exc}")
+
+        if not modules and course_code:
+            # A course with no modules mapped would otherwise leave the box
+            # empty with no reason given.
+            modules = []
+        self.module_combo['values'] = modules
+        if self.module_var.get() not in modules:
+            self.module_var.set("")
 
     def load_all_rooms(self):
         """Load all rooms from database"""

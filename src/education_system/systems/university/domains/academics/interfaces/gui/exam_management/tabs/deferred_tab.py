@@ -21,6 +21,9 @@ try:
 except ImportError:
     HAS_DB = False
 
+from education_system.systems.university.domains.academics.interfaces.gui.exam_management.tabs import (
+    _intel_tools as _tools,
+)
 from education_system.systems.university.domains.academics.interfaces.gui.exam_management import conflicts as conflict_utils
 from education_system.systems.university.domains.academics.interfaces.gui.exam_management import accommodations as accommodations_service
 
@@ -48,6 +51,40 @@ class DeferredExamTabMixin:
                    command=lambda: self._decide_deferred("rejected")).pack(
                        side=tk.RIGHT, padx=4)
 
+        # Search / status / history row. The list mixes pending requests with
+        # everything already decided, and only the pending ones need action —
+        # so the default view is now Pending, with the rest a filter away.
+        tools = ttk.Frame(tab)
+        tools.pack(fill=tk.X, pady=(0, 6))
+        ttk.Label(tools, text=_t(
+            'gui.academics.exam_management.tabs.deferred_tab.labels.search',
+            default="Search:")).pack(side=tk.LEFT)
+        self.deferred_filter_var = tk.StringVar()
+        self.deferred_filter_var.trace(
+            "w", lambda *_a: self._apply_deferred_filter())
+        ttk.Entry(tools, textvariable=self.deferred_filter_var,
+                  width=28).pack(side=tk.LEFT, padx=(4, 12))
+
+        ttk.Label(tools, text=_t(
+            'gui.academics.exam_management.tabs.deferred_tab.labels.status',
+            default="Status:")).pack(side=tk.LEFT)
+        self.deferred_status_var = tk.StringVar(value=self.STATUS_PENDING)
+        status_combo = ttk.Combobox(
+            tools, textvariable=self.deferred_status_var, width=14,
+            state="readonly", values=list(self.STATUS_CHOICES))
+        status_combo.pack(side=tk.LEFT, padx=(4, 12))
+        status_combo.bind("<<ComboboxSelected>>",
+                          lambda _e: self._apply_deferred_filter())
+
+        ttk.Button(tools, text=_t(
+            'gui.academics.exam_management.tabs.deferred_tab.buttons.export_csv',
+            default="Export CSV"), command=self._export_deferred).pack(
+            side=tk.RIGHT)
+        ttk.Button(tools, text=_t(
+            'gui.academics.exam_management.tabs.deferred_tab.buttons.student_history',
+            default="Student history…"),
+            command=self._show_student_history).pack(side=tk.RIGHT, padx=6)
+
         cols = ("rid", "student", "module", "date", "exam_id", "status", "reason")
         self.deferred_tree = ttk.Treeview(
             tab, columns=cols, show="headings", height=18)
@@ -59,15 +96,124 @@ class DeferredExamTabMixin:
         for c in cols:
             self.deferred_tree.heading(c, text=labels[c])
             self.deferred_tree.column(c, width=widths[c], minwidth=40)
+        self.deferred_tree.tag_configure("pending", background="#fff6e0")
         self.deferred_tree.pack(fill=tk.BOTH, expand=True)
 
+        self._deferred_labels = labels
+        _tools.enable_column_sort(self.deferred_tree, numeric=("rid", "exam_id"))
+        # Double-click shows the full reason, which the column truncates and
+        # which is the thing an approver actually has to read.
+        _tools.bind_row_details(self.deferred_tree, self.root,
+                                "Deferred exam request", labels)
+
+        self.deferred_summary_var = tk.StringVar(value="")
+        ttk.Label(tab, textvariable=self.deferred_summary_var,
+                  foreground="#7f8c8d").pack(anchor=tk.W, pady=(6, 0))
+
+        self._deferred_rows = []
         self.refresh_deferred_list()
+
+    #: Status filter options; "Pending" is the default because it is the only
+    #: state that needs a decision.
+    STATUS_PENDING = "Pending"
+    STATUS_ALL = "All"
+    STATUS_CHOICES = ("Pending", "Approved", "Rejected", "All")
+
+    def _apply_deferred_filter(self):
+        """Re-populate the tree from the cached rows."""
+        if not hasattr(self, "deferred_tree"):
+            return
+        for item in self.deferred_tree.get_children():
+            self.deferred_tree.delete(item)
+
+        needle = self.deferred_filter_var.get()
+        wanted = self.deferred_status_var.get()
+        shown = 0
+        for values in self._deferred_rows:
+            status = str(values[5] or "").strip().lower()
+            if wanted != self.STATUS_ALL and status != wanted.lower():
+                continue
+            if not _tools.row_matches(values, needle):
+                continue
+            self.deferred_tree.insert(
+                "", tk.END, values=values,
+                tags=("pending",) if status == "pending" else ())
+            shown += 1
+
+        total = len(self._deferred_rows)
+        pending = sum(1 for v in self._deferred_rows
+                      if str(v[5] or "").strip().lower() == "pending")
+        summary = (f"{shown} of {total} request(s) · {pending} awaiting a "
+                   f"decision")
+        if total and not shown:
+            summary += "  — nothing matches the current filter"
+        self.deferred_summary_var.set(summary)
+
+    def _export_deferred(self):
+        _tools.export_tree_to_csv(self.deferred_tree, self.root,
+                                  "deferred_exam_requests",
+                                  getattr(self, "_deferred_labels", {}))
+
+    def _show_student_history(self):
+        """Every deferral request by the selected row's student.
+
+        A first deferral and a fifth deferral warrant different decisions, and
+        that history was not visible anywhere in this tab.
+        """
+        selection = self.deferred_tree.selection()
+        if not selection:
+            messagebox.showinfo(
+                _t('gui.academics.exam_management.tabs.deferred_tab.dialogs.deferred_exams',
+                   default="Deferred Exams"),
+                "Select a request first.", parent=self.root)
+            return
+        values = self.deferred_tree.item(selection[0], "values")
+        student = values[1]
+
+        try:
+            with closing(get_connection()) as conn:
+                rows = conn.execute(
+                    """SELECT r.date, r.module_code, r.status,
+                              COALESCE(r.is_missed_exam, 0),
+                              COALESCE(r.reason, '')
+                       FROM absence_requests r
+                       LEFT JOIN students s ON s.student_id = r.student_id
+                       WHERE TRIM(COALESCE(s.first_name,'')||' '
+                                  ||COALESCE(s.last_name,'')) = ?
+                          OR r.student_id = ?
+                       ORDER BY r.date DESC""", (student, student)).fetchall()
+        except Exception as exc:
+            messagebox.showerror(
+                _t('gui.academics.exam_management.tabs.deferred_tab.dialogs.deferred_exams',
+                   default="Deferred Exams"),
+                f"Could not load the student's history: {exc}",
+                parent=self.root)
+            return
+
+        if not rows:
+            messagebox.showinfo(
+                _t('gui.academics.exam_management.tabs.deferred_tab.dialogs.deferred_exams',
+                   default="Deferred Exams"),
+                f"No absence requests on file for {student}.",
+                parent=self.root)
+            return
+
+        exam_misses = sum(1 for r in rows if r[3])
+        lines = [f"{len(rows)} absence request(s), {exam_misses} on exam dates.",
+                 ""]
+        for dt, module, status, missed_exam, reason in rows:
+            marker = "EXAM" if missed_exam else "    "
+            lines.append(f"{dt}  {marker}  {module or '—':<10} {status or '—':<10} "
+                         f"{reason.strip()[:60]}")
+        _tools.show_text_dialog(self.root, f"Absence history — {student}",
+                                "\n".join(lines))
 
     def refresh_deferred_list(self):
         if not hasattr(self, "deferred_tree"):
             return
         for item in self.deferred_tree.get_children():
             self.deferred_tree.delete(item)
+        self._deferred_rows = []
         if not HAS_DB:
             return
         try:
@@ -93,9 +239,9 @@ class DeferredExamTabMixin:
             return
         for (rid, name, sid, mod, dt, exam_id, status, reason) in rows:
             display_student = (name or "").strip() or sid
-            self.deferred_tree.insert(
-                "", tk.END,
-                values=(rid, display_student, mod, dt, exam_id, status, reason))
+            self._deferred_rows.append(
+                (rid, display_student, mod, dt, exam_id, status, reason))
+        self._apply_deferred_filter()
 
     def _decide_deferred(self, decision: str):
         sel = self.deferred_tree.selection()

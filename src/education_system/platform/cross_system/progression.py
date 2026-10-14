@@ -62,7 +62,24 @@ NON_PHASE_DESTINATIONS: tuple[str, ...] = (
     "external",         # another provider, outside the platform
     "employment",
     "home_education",
+    # The post-16/18 leaving destinations the sixth form already records
+    # locally. They were opened as transitions but could not be named here,
+    # so they were missing from the picker, and nothing recognised them as
+    # destinations a completed transition should record.
+    "training",
+    "gap_year",
+    "neet",             # not in education, employment or training
 )
+
+
+def is_non_phase_destination(system: str | None) -> bool:
+    """Whether ``system`` is a destination outside the platform's systems.
+
+    A transition to one of these has no destination enrolment. Completing
+    it records a leaving destination (see ``destinations``) rather than
+    admitting the learner anywhere.
+    """
+    return normalise_system(system) in NON_PHASE_DESTINATIONS
 
 # ``apprenticeship`` (singular) was the destination string used before the
 # apprenticeships system joined the registry — a label on a transition with
@@ -415,6 +432,7 @@ __all__ = [
     "PHASE_ORDER",
     "PARALLEL_SYSTEMS",
     "NON_PHASE_DESTINATIONS",
+    "is_non_phase_destination",
     "normalise_system",
     "next_phase",
     "recommended_destination",

@@ -216,7 +216,7 @@ def tool_summarise_module(module_code: str,
                         instructor_id=int(row[0]),
                     )
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
     except Exception as exc:
         return {"ok": False, "error": str(exc)}
     return out
@@ -436,7 +436,7 @@ def tool_my_parking(user_id: str | int) -> dict[str, Any]:
 def tool_todays_menu() -> dict[str, Any]:
     """Today's menu rows from the academic calendar."""
     try:
-        from education_system.systems.university.services.bus.restaurant_bus import (
+        from education_system.systems.university.plugins.campus_commerce.services.restaurant_bus import (
             menu_for,
         )
         return {"ok": True, "menus": menu_for()}
@@ -446,7 +446,7 @@ def tool_todays_menu() -> dict[str, Any]:
 
 def tool_meal_plan_balance(user_id: str | int) -> dict[str, Any]:
     try:
-        from education_system.systems.university.services.bus.restaurant_bus import (
+        from education_system.systems.university.plugins.campus_commerce.services.restaurant_bus import (
             meal_plan_balance,
         )
         return {"ok": True, "balance": meal_plan_balance(user_id)}

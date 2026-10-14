@@ -581,6 +581,7 @@ class WellnessService:
             return False
         values.append(appointment_id)
         with transaction() as conn:
+            # db-audit: ignore[DBW001] - join over a code-controlled list
             conn.execute(
                 f"UPDATE counseling_appointments SET {', '.join(fields)} "
                 "WHERE appointment_id = ?",

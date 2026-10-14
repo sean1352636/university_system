@@ -4,6 +4,11 @@ from education_system.systems.university.domains.academics.interfaces.gui.course
     send_email, EMAIL_AVAILABLE,
 )
 
+import logging
+import tkinter.simpledialog  # noqa: F401 - registers tk.simpledialog
+
+logger = logging.getLogger(__name__)
+
 try:
     from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.analytics.analytics import EnrollmentReportDialog
 except ImportError:
@@ -48,6 +53,7 @@ class AnalyticsMixin:
             cursor = conn.cursor()
 
             total_enrolled = _enrollment_count(cursor)
+            # db-audit: ignore[DBW001] - module constant
             cursor.execute(f"""
             SELECT COUNT(*) as total_courses,
                    SUM(COALESCE(c.max_enrollment, 0)) as total_capacity
@@ -58,6 +64,7 @@ class AnalyticsMixin:
             total_courses = stats[0] or 0
             total_capacity = stats[1] or 0
 
+            # db-audit: ignore[DBW001] - module constant
             cursor.execute(f"""
             SELECT COALESCE(c.department, 'Unknown') as dept,
                    COUNT(DISTINCT c.id) as course_count,
@@ -70,6 +77,7 @@ class AnalyticsMixin:
             """)
             departments = cursor.fetchall()
 
+            # db-audit: ignore[DBW001] - module constant
             cursor.execute(f"""
             SELECT {_COURSE_CODE} as ccode, {_COURSE_NAME} as cname,
                    COUNT(s.student_id) as enrolled
@@ -82,6 +90,7 @@ class AnalyticsMixin:
             """)
             popular = cursor.fetchall()
 
+            # db-audit: ignore[DBW001] - module constant
             cursor.execute(f"""
             SELECT COUNT(*) FROM courses c
             {_ACTIVE_COURSE}
@@ -89,6 +98,7 @@ class AnalyticsMixin:
             """)
             available_count = cursor.fetchone()[0]
 
+            # db-audit: ignore[DBW001] - module constant
             cursor.execute(f"""
             SELECT c.status, COUNT(*) FROM courses c
             {_VALID_COURSE}
@@ -175,52 +185,106 @@ class AnalyticsMixin:
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), _("course_management.messages.failed_generate_analytics", error=str(e)))
 
-    def open_analytics_window(self):
-        """Open analytics/statistics in a new window with export and email options"""
-        analytics_text = self._generate_analytics_text()
+    def _analytics_report_sections(self, d):
+        """The dashboard as ``(heading, columns, rows)`` blocks, for export.
 
-        if not analytics_text:
+        The same figures the cards show, in a shape a CSV or a PDF table can
+        use directly — so a saved report carries real columns rather than a
+        transcript of the on-screen text.
+        """
+        sections = [(
+            "Summary", ["Metric", "Value"],
+            [
+                ("Active Courses", d["total_courses"]),
+                ("Students Enrolled", d["total_enrolled"]),
+                ("Total Capacity", d["total_capacity"]),
+                ("Available Spots", d["available"]),
+                ("Average Enrolment / Course", f"{d['avg']:.1f}"),
+                ("Courses with Available Spots", d["available_count"]),
+                ("System Fill Rate",
+                 "N/A" if d["fill_rate"] is None else f"{d['fill_rate']:.1f}%"),
+            ],
+        )]
+        if d["departments"]:
+            sections.append((
+                "Courses by Department", ["Department", "Courses", "Students"],
+                [(dept or "Unknown", courses, students)
+                 for dept, courses, students in d["departments"]],
+            ))
+        if d["popular"]:
+            sections.append((
+                "Most Popular Courses", ["Code", "Name", "Enrolled"],
+                [(code or "N/A", name or "N/A", enrolled or 0)
+                 for code, name, enrolled in d["popular"]],
+            ))
+        if d["status"]:
+            sections.append((
+                "Course Status Breakdown", ["Status", "Courses"],
+                [(str(status or "Unknown").title(), count)
+                 for status, count in d["status"]],
+            ))
+        return sections
+
+    def open_analytics_window(self):
+        """Open analytics in a new window, laid out like the other reports."""
+        analytics_text = self._generate_analytics_text()
+        try:
+            data = self._analytics_dashboard_data()
+        except sqlite3.Error as e:
+            messagebox.showerror(_("common.database_error"),
+                                 _("course_management.messages.failed_generate_analytics", error=str(e)))
+            return
+
+        if not analytics_text or data is None:
             return
 
         window = tk.Toplevel(self.root)
         window.title(_("course_management.dialogs.course_analytics_report"))
-        window.geometry("800x600")
+        window.geometry("960x680")
         window.transient(self.root)
+        window.configure(bg=self.DETAIL_BG)
 
         main_frame = ttk.Frame(window, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        title_label = ttk.Label(main_frame, text=_("course_management.dialogs.course_analytics_report"),
-                               font=("Arial", 14, "bold"))
-        title_label.pack(pady=(0, 10))
-
-        text_widget = ScrolledText(main_frame, wrap=tk.WORD, height=30)
-        text_widget.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
-        text_widget.insert(1.0, analytics_text)
-        text_widget.config(state='disabled')
-
         window.analytics_content = analytics_text
 
+        # The action bar is packed BEFORE the expanding body. Packed after, the
+        # body claims the remaining height first and pushes the buttons off the
+        # bottom of the window — which is exactly what hid Save and Email here.
         button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill=tk.X, pady=(0, 5))
+        button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(8, 0))
 
-        def export_txt():
-            filename = filedialog.asksaveasfilename(
-                defaultextension=".txt",
-                filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
-                initialfile=f"course_analytics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+        # Card/table body matching the enrolment and department reports, with
+        # the old text view kept as a fallback if rendering ever fails.
+        body = ttk.Frame(main_frame)
+        body.pack(fill=tk.BOTH, expand=True)
+        inner = self._scrollable_area(body)
+        try:
+            saved_container = getattr(self, "analytics_container", None)
+            self.analytics_container = inner
+            self._render_analytics_dashboard(data)
+        except Exception:
+            logger.exception("analytics dashboard render failed; showing text")
+            text_widget = ScrolledText(inner, wrap=tk.WORD, height=30)
+            text_widget.pack(fill=tk.BOTH, expand=True)
+            text_widget.insert(1.0, analytics_text)
+            text_widget.config(state='disabled')
+        finally:
+            # _render_analytics_dashboard draws into self.analytics_container;
+            # put the tab's own surface back so the in-tab dashboard still works.
+            self.analytics_container = saved_container
+
+        def save_report():
+            from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core.report_export import (
+                save_report as _save,
             )
-            if filename:
-                try:
-                    with open(filename, 'w', encoding='utf-8') as f:
-                        f.write(analytics_text)
-                        f.write(f"\n\nGenerated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-                    messagebox.showinfo(_("course_management.success.success"), _("course_management.messages.report_saved", filename=filename))
-                except Exception as e:
-                    messagebox.showerror(_("course_management.success.error"), _("course_management.messages.failed_save_report", error=str(e)))
+            _save(window, "course_analytics",
+                  _("course_management.dialogs.course_analytics_report"),
+                  analytics_text, self._analytics_report_sections(data))
 
-        ttk.Button(button_frame, text=_("course_management.buttons.export_as_txt"),
-                  command=export_txt).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_("course_management.buttons.save_report", default="Save Report"),
+                  command=save_report).pack(side=tk.LEFT, padx=5)
 
         def email_to_admin():
             try:
@@ -279,6 +343,7 @@ class AnalyticsMixin:
 
                 # Overall statistics
                 total_enrolled = _enrollment_count(cursor)
+                # db-audit: ignore[DBW001] - module constant
                 cursor.execute(f"""
                 SELECT
                     COUNT(*) as total_courses,
@@ -304,6 +369,7 @@ class AnalyticsMixin:
                     analytics_text += f"Available Spots: {available}\n\n"
 
                 # Department breakdown
+                # db-audit: ignore[DBW001] - module constant
                 cursor.execute(f"""
                 SELECT
                     COALESCE(c.department, 'Unknown') as dept,
@@ -326,6 +392,7 @@ class AnalyticsMixin:
                     analytics_text += "\n"
 
                 # Most popular courses
+                # db-audit: ignore[DBW001] - module constant
                 cursor.execute(f"""
                 SELECT {_COURSE_CODE} as ccode, {_COURSE_NAME} as cname,
                        COUNT(s.student_id) as enrolled
@@ -351,6 +418,7 @@ class AnalyticsMixin:
                     analytics_text += "\n"
 
                 # Courses with availability
+                # db-audit: ignore[DBW001] - module constant
                 cursor.execute(f"""
                 SELECT COUNT(*)
                 FROM courses c
@@ -362,6 +430,7 @@ class AnalyticsMixin:
                 analytics_text += f"Courses with Available Spots: {available_count}\n\n"
 
                 # Status breakdown
+                # db-audit: ignore[DBW001] - module constant
                 cursor.execute(f"""
                 SELECT c.status, COUNT(*) FROM courses c
                 {_VALID_COURSE}
@@ -398,6 +467,7 @@ class AnalyticsMixin:
 
                 if report_type == "Summary":
                     total_enrolled = _enrollment_count(cursor)
+                    # db-audit: ignore[DBW001] - module constant
                     cursor.execute(f"""
                     SELECT COUNT(*) as total_courses,
                            SUM(COALESCE(c.max_enrollment, 0)) as total_capacity
@@ -417,6 +487,7 @@ class AnalyticsMixin:
                     report_text += f"Available Spots: {total_capacity - total_enrolled}\n"
 
                 elif report_type == "Department":
+                    # db-audit: ignore[DBW001] - module constant
                     cursor.execute(f"""
                     SELECT
                         COALESCE(c.department, 'Unknown') as dept,
@@ -439,6 +510,7 @@ class AnalyticsMixin:
                         report_text += f"{dept:<20} {courses:<10} {students:<10} {capacity:<10} {fill_rate:<10}\n"
 
                 elif report_type == "Detailed":
+                    # db-audit: ignore[DBW001] - module constant
                     cursor.execute(f"""
                     SELECT {_COURSE_CODE}, {_COURSE_NAME}, c.department, c.level,
                            COUNT(s.student_id) as enrolled, COALESCE(c.max_enrollment, 0) as capacity
@@ -465,6 +537,7 @@ class AnalyticsMixin:
                         report_text += f"{code:<8} {name_short:<25} {dept_short:<12} {level_short:<12} {enrollment_str:<10} {fill_rate:<10}\n"
 
                 elif report_type == "Capacity":
+                    # db-audit: ignore[DBW001] - module constant
                     cursor.execute(f"""
                     SELECT {_COURSE_CODE}, {_COURSE_NAME}, c.department,
                            COUNT(s.student_id) as enrolled,
@@ -520,6 +593,7 @@ class AnalyticsMixin:
 
                 if report_type == "Summary":
                     total_enrolled = _enrollment_count(cursor)
+                    # db-audit: ignore[DBW001] - module constant
                     cursor.execute(f"""
                     SELECT COUNT(*) as total_courses,
                            SUM(COALESCE(c.max_enrollment, 0)) as total_capacity
@@ -539,6 +613,7 @@ class AnalyticsMixin:
                     }
 
                 if report_type == "Department":
+                    # db-audit: ignore[DBW001] - module constant
                     cursor.execute(f"""
                     SELECT
                         COALESCE(c.department, 'Unknown') as dept,
@@ -554,6 +629,7 @@ class AnalyticsMixin:
                     return cursor.fetchall()
 
                 if report_type == "Detailed":
+                    # db-audit: ignore[DBW001] - module constant
                     cursor.execute(f"""
                     SELECT {_COURSE_CODE}, {_COURSE_NAME}, c.department, c.level,
                            COUNT(s.student_id) as enrolled, COALESCE(c.max_enrollment, 0) as capacity
@@ -566,6 +642,7 @@ class AnalyticsMixin:
                     return cursor.fetchall()
 
                 if report_type == "Capacity":
+                    # db-audit: ignore[DBW001] - module constant
                     cursor.execute(f"""
                     SELECT {_COURSE_CODE}, {_COURSE_NAME}, c.department,
                            COUNT(s.student_id) as enrolled,
@@ -694,34 +771,33 @@ class AnalyticsMixin:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Scrollable card/table body (falls back to text if rendering fails).
-        inner = self._scrollable_area(main_frame)
+        # Built into its own frame so the bottom-anchored action bar below
+        # always keeps its height.
+        body = ttk.Frame(main_frame)
+        body.pack(fill=tk.BOTH, expand=True)
+        inner = self._scrollable_area(body)
         try:
             self._render_enrollment_report(inner, report_type, data)
         except Exception:
+            logger.exception("enrollment report render failed; showing text")
             text_widget = ScrolledText(inner, wrap=tk.WORD, height=30)
             text_widget.pack(fill=tk.BOTH, expand=True)
             text_widget.insert(1.0, report_text)
             text_widget.config(state='disabled')
 
         button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill=tk.X, pady=(8, 0))
+        button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(8, 0))
 
-        def export_txt():
-            filename = filedialog.asksaveasfilename(
-                defaultextension=".txt",
-                filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
-                initialfile=f"enrollment_report_{report_type.lower()}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+        def save_report():
+            from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core.report_export import (
+                save_report as _save,
             )
-            if filename:
-                try:
-                    with open(filename, 'w', encoding='utf-8') as f:
-                        f.write(report_text)
-                    messagebox.showinfo(_("course_management.success.success"), _("course_management.messages.report_saved", filename=filename))
-                except Exception as e:
-                    messagebox.showerror(_("course_management.success.error"), _("course_management.messages.failed_save_report", error=str(e)))
+            _save(window, f"enrollment_report_{report_type.lower()}",
+                  f"Enrollment Report — {report_type}",
+                  report_text, self._enrollment_report_sections(report_type, data))
 
-        ttk.Button(button_frame, text=_("course_management.buttons.export_as_txt"),
-                  command=export_txt).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_("course_management.buttons.save_report", default="Save Report"),
+                  command=save_report).pack(side=tk.LEFT, padx=5)
 
         def email_to_admin():
             try:
@@ -769,6 +845,52 @@ class AnalyticsMixin:
         ttk.Button(button_frame, text=_("common.close"),
                   command=window.destroy).pack(side=tk.RIGHT, padx=5)
 
+    def _enrollment_report_sections(self, report_type, data):
+        """The enrolment report as ``(heading, columns, rows)`` blocks for export."""
+        if report_type == "Summary":
+            return [(
+                "Enrollment Summary", ["Metric", "Value"],
+                [
+                    ("Active Courses", data["total_courses"]),
+                    ("Students Enrolled", data["total_enrolled"]),
+                    ("Total Capacity", data["total_capacity"]),
+                    ("Available Spots", data["available"]),
+                    ("Average Enrolment / Course", f"{data['avg']:.1f}"),
+                    ("Fill Rate",
+                     "N/A" if data["fill_rate"] is None else f"{data['fill_rate']:.1f}%"),
+                ],
+            )]
+
+        def _fill(numerator, denominator):
+            return f"{numerator / denominator * 100:.1f}%" if denominator else "N/A"
+
+        if report_type == "Department":
+            return [(
+                "Department Report",
+                ["Department", "Courses", "Students", "Capacity", "Fill Rate"],
+                [(dept or "Unknown", courses, students, capacity or 0,
+                  _fill(students, capacity))
+                 for dept, courses, students, capacity in data],
+            )]
+
+        if report_type == "Detailed":
+            return [(
+                "Detailed Course Report",
+                ["Code", "Name", "Department", "Level", "Enrolled", "Capacity", "Fill Rate"],
+                [(code or "N/A", name or "N/A", dept or "N/A", level or "N/A",
+                  enrolled or 0, capacity or 0, _fill(enrolled, capacity))
+                 for code, name, dept, level, enrolled, capacity in data],
+            )]
+
+        if report_type == "Capacity":
+            # Column order follows the Capacity query; kept generic so a change
+            # there degrades to a still-valid export rather than an exception.
+            return [("Capacity Report",
+                     [f"Column {i + 1}" for i in range(len(data[0]))] if data else [],
+                     [tuple(r) for r in data])]
+
+        return []
+
     def _generate_enrollment_report_text(self, report_type):
         """Generate enrollment report text (extracted for reuse)"""
         try:
@@ -781,6 +903,7 @@ class AnalyticsMixin:
 
                 if report_type == "Summary":
                     total_enrolled = _enrollment_count(cursor)
+                    # db-audit: ignore[DBW001] - module constant
                     cursor.execute(f"""
                     SELECT COUNT(*) as total_courses,
                            SUM(COALESCE(c.max_enrollment, 0)) as total_capacity
@@ -800,6 +923,7 @@ class AnalyticsMixin:
                     report_text += f"Available Spots: {total_capacity - total_enrolled}\n"
 
                 elif report_type == "Department":
+                    # db-audit: ignore[DBW001] - module constant
                     cursor.execute(f"""
                     SELECT
                         COALESCE(c.department, 'Unknown') as dept,
@@ -822,6 +946,7 @@ class AnalyticsMixin:
                         report_text += f"{dept:<20} {courses:<10} {students:<10} {capacity:<10} {fill_rate:<10}\n"
 
                 elif report_type == "Detailed":
+                    # db-audit: ignore[DBW001] - module constant
                     cursor.execute(f"""
                     SELECT {_COURSE_CODE}, {_COURSE_NAME}, c.department, c.level,
                            COUNT(s.student_id) as enrolled, COALESCE(c.max_enrollment, 0) as capacity
@@ -848,6 +973,7 @@ class AnalyticsMixin:
                         report_text += f"{code:<8} {name_short:<25} {dept_short:<12} {level_short:<12} {enrollment_str:<10} {fill_rate:<10}\n"
 
                 elif report_type == "Capacity":
+                    # db-audit: ignore[DBW001] - module constant
                     cursor.execute(f"""
                     SELECT {_COURSE_CODE}, {_COURSE_NAME}, c.department,
                            COUNT(s.student_id) as enrolled,
@@ -896,6 +1022,7 @@ class AnalyticsMixin:
 
             with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
                 cursor = conn.cursor()
+                # db-audit: ignore[DBW001] - module constant
                 cursor.execute(f"""
                 SELECT DISTINCT COALESCE(c.department, 'Unknown') as dept
                 FROM courses c {_VALID_COURSE} ORDER BY dept
@@ -906,8 +1033,11 @@ class AnalyticsMixin:
             dept_combo.pack(side=tk.LEFT, padx=5)
             dept_combo.set("All Departments")
 
-            stats_inner = self._scrollable_area(main_frame)
+            stats_body = ttk.Frame(main_frame)
+            stats_body.pack(fill=tk.BOTH, expand=True)
+            stats_inner = self._scrollable_area(stats_body)
             self._dept_stats_text = ""
+            self._dept_stats_sections = None
 
             def update_stats():
                 selected_dept = dept_var.get()
@@ -920,6 +1050,7 @@ class AnalyticsMixin:
                     cursor = conn.cursor()
 
                     if selected_dept == "All Departments":
+                        # db-audit: ignore[DBW001] - module constant
                         cursor.execute(f"""
                         SELECT
                             COALESCE(c.department, 'Unknown') as dept,
@@ -960,6 +1091,7 @@ class AnalyticsMixin:
                             tag_colours={"_good": "#16a34a", "_warn": "#d97706", "_full": "#dc2626"},
                         )
                     else:
+                        # db-audit: ignore[DBW001] - module constant
                         cursor.execute(f"""
                         SELECT
                             COUNT(DISTINCT c.id) as total_courses,
@@ -1007,28 +1139,29 @@ class AnalyticsMixin:
                             lines.append(f"Department Fill Rate: {fill_rate:.1f}%")
 
                 self._dept_stats_text = "\n".join(lines) + "\n"
+                self._dept_stats_sections = [(
+                    f"Department Statistics — {dept_var.get()}",
+                    ["Metric", "Value"],
+                    # The text lines are "Label: value" pairs; split them back
+                    # into columns so a spreadsheet gets two usable fields.
+                    [tuple(line.split(": ", 1)) for line in lines if ": " in line],
+                )]
 
             ttk.Button(selection_frame, text=_("course_management.buttons.update"), command=update_stats).pack(side=tk.LEFT, padx=5)
 
             button_frame = ttk.Frame(main_frame)
-            button_frame.pack(fill=tk.X, pady=10)
+            button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=10)
 
             def export_stats_txt():
-                selected_dept = dept_var.get()
-                filename = filedialog.asksaveasfilename(
-                    defaultextension=".txt",
-                    filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
-                    initialfile=f"dept_stats_{selected_dept.lower().replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+                from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core.report_export import (
+                    save_report as _save,
                 )
-                if filename:
-                    try:
-                        stats_content = getattr(self, "_dept_stats_text", "")
-                        with open(filename, 'w', encoding='utf-8') as f:
-                            f.write(stats_content)
-                            f.write(f"\n\nGenerated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-                        messagebox.showinfo(_("course_management.success.success"), _("course_management.messages.statistics_saved_to", filename=filename))
-                    except Exception as e:
-                        messagebox.showerror(_("course_management.success.error"), _("course_management.messages.failed_save_statistics", error=str(e)))
+                selected_dept = dept_var.get()
+                _save(stats_window,
+                      f"dept_stats_{selected_dept.lower().replace(' ', '_')}",
+                      f"Department Statistics — {selected_dept}",
+                      getattr(self, "_dept_stats_text", ""),
+                      getattr(self, "_dept_stats_sections", None))
 
             def email_stats_to_admin():
                 try:
@@ -1074,7 +1207,7 @@ class AnalyticsMixin:
                 except Exception as e:
                     messagebox.showerror(_("course_management.success.error"), _("course_management.messages.failed_send_email", error=str(e)))
 
-            ttk.Button(button_frame, text=_("course_management.buttons.export_as_txt"),
+            ttk.Button(button_frame, text=_("course_management.buttons.save_report", default="Save Report"),
                       command=export_stats_txt).pack(side=tk.LEFT, padx=5)
             ttk.Button(button_frame, text=_("course_management.buttons.email_to_admin"),
                       command=email_stats_to_admin).pack(side=tk.LEFT, padx=5)

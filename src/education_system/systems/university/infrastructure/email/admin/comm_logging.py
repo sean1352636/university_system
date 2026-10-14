@@ -14,6 +14,8 @@ from education_system.systems.university.infrastructure.email.admin._imports imp
     log_event,
     log_manager,
     logger,
+    _out,
+    _err,
     queue_email,
     LOG_MANAGEMENT_AVAILABLE,
 )
@@ -46,12 +48,12 @@ def _audit_worker_loop():
             try:
                 logger.debug(f"Async audit-trail mirror failed: {e}")
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
         finally:
             try:
                 _audit_queue.task_done()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
 
 def _ensure_audit_worker():
@@ -262,19 +264,19 @@ class _LoggingMixin:
         """Display comprehensive system health information"""
         health = self.get_integrated_system_health_info()
 
-        logger.info("\nIntegrated System Health Report:")
-        logger.info("=" * 40)
-        logger.info(f"Email System: {health['email_system'].upper()}")
-        logger.info(f"Message System: {health['message_system'].upper()}")
-        logger.info(f"Chat System: {health['chat_system'].upper()}")
-        logger.info(f"Database: {health['database_status'].upper()}")
-        logger.info(f"Enhanced Logging: {health['enhanced_logging'].upper()}")
+        _out("\nIntegrated System Health Report:")
+        _out("=" * 40)
+        _out(f"Email System: {health['email_system'].upper()}")
+        _out(f"Message System: {health['message_system'].upper()}")
+        _out(f"Chat System: {health['chat_system'].upper()}")
+        _out(f"Database: {health['database_status'].upper()}")
+        _out(f"Enhanced Logging: {health['enhanced_logging'].upper()}")
 
-        logger.info("\nSystem Metrics:")
-        logger.info(f"Email Queue Size: {health['queue_size']}")
-        logger.info(f"Log Entries Today: {health['log_entries_today']}")
-        logger.info(f"Active Users Today: {health['active_users']}")
-        logger.info(f"Last Check: {health['last_check']}")
+        _out("\nSystem Metrics:")
+        _out(f"Email Queue Size: {health['queue_size']}")
+        _out(f"Log Entries Today: {health['log_entries_today']}")
+        _out(f"Active Users Today: {health['active_users']}")
+        _out(f"Last Check: {health['last_check']}")
 
         # Show any issues
         issues = []
@@ -286,11 +288,11 @@ class _LoggingMixin:
             issues.append("Enhanced logging experiencing issues")
 
         if issues:
-            logger.info("\nIssues Detected:")
+            _out("\nIssues Detected:")
             for issue in issues:
-                logger.info(f"  - {issue}")
+                _out(f"  - {issue}")
         else:
-            logger.info("\nAll systems operational.")
+            _out("\nAll systems operational.")
 
         input("\nPress Enter to continue...")
 

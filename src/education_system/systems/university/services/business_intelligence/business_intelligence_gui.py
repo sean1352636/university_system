@@ -4,6 +4,9 @@ Business Intelligence Reports GUI
 Full-featured Tkinter interface for creating, managing, and exporting BI reports
 with visualizations, scheduled reports, and custom metrics.
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
@@ -51,12 +54,12 @@ class BusinessIntelligenceGUI:
 
         # Log activity
         log_activity('Accessed Business Intelligence Reports Dashboard', user=self.auth.current_user.get('username'))
-        print(_t("business_intelligence.messages.gui_opened_success"))
+        print(_t("business_intelligence.messages.gui_opened_success", default="Gui Opened Success"))
 
         try:
             self.window.after_idle(self._apply_eqa_context)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _apply_eqa_context(self):
         """#5 — Honour an EQA drill-through. When ``kpi_category`` is
@@ -78,7 +81,7 @@ class BusinessIntelligenceGUI:
                     font=("Helvetica", 9, "italic"), pady=3,
                 ).pack(fill="x", side="top", before=None)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _init_database(self):
         """Initialize database tables if they don't exist"""
@@ -86,10 +89,10 @@ class BusinessIntelligenceGUI:
             from education_system.systems.university.infrastructure.database.schemas.analytics_bi_schemas import init_business_intelligence_system_db
             init_business_intelligence_system_db()
         except ImportError as e:
-            print(_t("business_intelligence.messages.schema_import_warning", error=e))
+            print(_t("business_intelligence.messages.schema_import_warning", error=e, default="Schema Import Warning {error}"))
         except Exception as e:
-            print(_t("business_intelligence.messages.database_init_error", error=e))
-            messagebox.showwarning(_t("common.warning"), _t("business_intelligence.messages.database_init_warning", error=e))
+            print(_t("business_intelligence.messages.database_init_error", error=e, default="Database Init Error {error}"))
+            messagebox.showwarning(_t("common.warning"), _t("business_intelligence.messages.database_init_warning", error=e, default="Database Init Warning {error}"))
 
     def _create_widgets(self):
         """Create all GUI widgets"""
@@ -359,7 +362,7 @@ class BusinessIntelligenceGUI:
                     self.reports_tree.insert('', tk.END, values=tuple(row))
 
         except Exception as e:
-            messagebox.showerror(_t("common.error"), _t("business_intelligence.reports.load_failed", error=e))
+            messagebox.showerror(_t("common.error"), _t("business_intelligence.reports.load_failed", error=e, default="Load Failed {error}"))
 
     def _load_exports(self):
         """Load export history"""
@@ -379,7 +382,7 @@ class BusinessIntelligenceGUI:
                     self.exports_tree.insert('', tk.END, values=tuple(row))
 
         except Exception as e:
-            messagebox.showerror(_t("common.error"), _t("business_intelligence.exports.load_failed", error=e))
+            messagebox.showerror(_t("common.error"), _t("business_intelligence.exports.load_failed", error=e, default="Load Failed {error}"))
 
     def _load_schedules(self):
         """Load report schedules"""
@@ -400,7 +403,7 @@ class BusinessIntelligenceGUI:
                     self.schedules_tree.insert('', tk.END, values=values)
 
         except Exception as e:
-            messagebox.showerror(_t("common.error"), _t("business_intelligence.schedules.load_failed", error=e))
+            messagebox.showerror(_t("common.error"), _t("business_intelligence.schedules.load_failed", error=e, default="Load Failed {error}"))
 
     def _load_visualizations(self):
         """Load visualizations"""
@@ -419,7 +422,7 @@ class BusinessIntelligenceGUI:
                     self.viz_tree.insert('', tk.END, values=tuple(row))
 
         except Exception as e:
-            messagebox.showerror(_t("common.error"), _t("business_intelligence.visualizations.load_failed", error=e))
+            messagebox.showerror(_t("common.error"), _t("business_intelligence.visualizations.load_failed", error=e, default="Load Failed {error}"))
 
     def _load_metrics(self):
         """Load custom metrics"""
@@ -439,7 +442,7 @@ class BusinessIntelligenceGUI:
                     self.metrics_tree.insert('', tk.END, values=tuple(row))
 
         except Exception as e:
-            messagebox.showerror(_t("common.error"), _t("business_intelligence.metrics.load_failed", error=e))
+            messagebox.showerror(_t("common.error"), _t("business_intelligence.metrics.load_failed", error=e, default="Load Failed {error}"))
 
     # Action Methods
     def _create_report(self):
@@ -450,7 +453,7 @@ class BusinessIntelligenceGUI:
         """Run the selected report"""
         selection = self.reports_tree.selection()
         if not selection:
-            messagebox.showwarning(_t("common.warning"), _t("business_intelligence.reports.select_to_run"))
+            messagebox.showwarning(_t("common.warning"), _t("business_intelligence.reports.select_to_run", default="Select To Run"))
             return
 
         item = self.reports_tree.item(selection[0])
@@ -463,14 +466,14 @@ class BusinessIntelligenceGUI:
         """Delete the selected report"""
         selection = self.reports_tree.selection()
         if not selection:
-            messagebox.showwarning(_t("common.warning"), _t("business_intelligence.reports.select_to_delete"))
+            messagebox.showwarning(_t("common.warning"), _t("business_intelligence.reports.select_to_delete", default="Select To Delete"))
             return
 
         item = self.reports_tree.item(selection[0])
         report_id = item['values'][0]
         report_name = item['values'][1]
 
-        if not messagebox.askyesno(_t("business_intelligence.dialogs.confirm_delete_title"), _t("business_intelligence.reports.confirm_delete", name=report_name)):
+        if not messagebox.askyesno(_t("business_intelligence.dialogs.confirm_delete_title", default="===== CONFIRM DELETE ====="), _t("business_intelligence.reports.confirm_delete", name=report_name, default="Confirm Delete {name}")):
             return
 
         try:
@@ -478,11 +481,11 @@ class BusinessIntelligenceGUI:
                 conn.execute('UPDATE bi_report_definitions SET is_active = 0 WHERE report_id = ?', (report_id,))
 
             log_activity(f'Deleted BI report: {report_id}', user=self.auth.current_user.get('username'))
-            messagebox.showinfo(_t("common.success"), _t("business_intelligence.reports.deleted_success"))
+            messagebox.showinfo(_t("common.success"), _t("business_intelligence.reports.deleted_success", default="Deleted Success"))
             self._load_reports()
 
         except Exception as e:
-            messagebox.showerror(_t("common.error"), _t("business_intelligence.reports.delete_failed", error=e))
+            messagebox.showerror(_t("common.error"), _t("business_intelligence.reports.delete_failed", error=e, default="Delete Failed {error}"))
 
     def _export_report_dialog(self):
         """Open export report dialog"""
@@ -492,7 +495,7 @@ class BusinessIntelligenceGUI:
         """Open the selected export file"""
         selection = self.exports_tree.selection()
         if not selection:
-            messagebox.showwarning(_t("common.warning"), _t("business_intelligence.exports.select_to_open"))
+            messagebox.showwarning(_t("common.warning"), _t("business_intelligence.exports.select_to_open", default="Select To Open"))
             return
 
         try:
@@ -520,7 +523,7 @@ class BusinessIntelligenceGUI:
                         subprocess.run(['open', file_path])
                     else:  # Linux
                         subprocess.run(['xdg-open', file_path])
-                    messagebox.showinfo(_t("common.success"), _t("business_intelligence.exports.opened", filename=os.path.basename(file_path)))
+                    messagebox.showinfo(_t("common.success"), _t("business_intelligence.exports.opened", filename=os.path.basename(file_path), default="Opened {filename}"))
                 else:
                     # File doesn't exist, show the directory
                     directory = os.path.dirname(file_path)
@@ -532,14 +535,14 @@ class BusinessIntelligenceGUI:
                         else:
                             subprocess.run(['xdg-open', directory])
                         messagebox.showwarning(_t("common.warning"),
-                            _t("business_intelligence.exports.file_not_found", path=file_path))
+                            _t("business_intelligence.exports.file_not_found", path=file_path, default="File Not Found {path}"))
                     else:
-                        messagebox.showerror(_t("common.error"), _t("business_intelligence.exports.path_not_found", path=file_path))
+                        messagebox.showerror(_t("common.error"), _t("business_intelligence.exports.path_not_found", path=file_path, default="Path Not Found {path}"))
             else:
-                messagebox.showerror(_t("common.error"), _t("business_intelligence.exports.path_missing_db"))
+                messagebox.showerror(_t("common.error"), _t("business_intelligence.exports.path_missing_db", default="Path Missing DB"))
 
         except Exception as e:
-            messagebox.showerror(_t("common.error"), _t("business_intelligence.exports.open_failed", error=e))
+            messagebox.showerror(_t("common.error"), _t("business_intelligence.exports.open_failed", error=e, default="Open Failed {error}"))
 
     def _create_schedule(self):
         """Create a new report schedule"""
@@ -549,7 +552,7 @@ class BusinessIntelligenceGUI:
         """Toggle schedule active status"""
         selection = self.schedules_tree.selection()
         if not selection:
-            messagebox.showwarning(_t("common.warning"), _t("business_intelligence.schedules.select_to_toggle"))
+            messagebox.showwarning(_t("common.warning"), _t("business_intelligence.schedules.select_to_toggle", default="Select To Toggle"))
             return
 
         item = self.schedules_tree.item(selection[0])
@@ -561,34 +564,34 @@ class BusinessIntelligenceGUI:
                 conn.execute('UPDATE bi_report_schedules SET is_active = ? WHERE schedule_id = ?',
                            (not is_active, schedule_id))
 
-            messagebox.showinfo(_t("common.success"), _t("business_intelligence.schedules.status_updated"))
+            messagebox.showinfo(_t("common.success"), _t("business_intelligence.schedules.status_updated", default="Status Updated"))
             self._load_schedules()
 
         except Exception as e:
-            messagebox.showerror(_t("common.error"), _t("business_intelligence.schedules.update_failed", error=e))
+            messagebox.showerror(_t("common.error"), _t("business_intelligence.schedules.update_failed", error=e, default="Update Failed {error}"))
 
     def _delete_schedule(self):
         """Delete the selected schedule"""
         selection = self.schedules_tree.selection()
         if not selection:
-            messagebox.showwarning(_t("common.warning"), _t("business_intelligence.schedules.select_to_delete"))
+            messagebox.showwarning(_t("common.warning"), _t("business_intelligence.schedules.select_to_delete", default="Select To Delete"))
             return
 
         item = self.schedules_tree.item(selection[0])
         schedule_id = item['values'][0]
 
-        if not messagebox.askyesno(_t("business_intelligence.dialogs.confirm_delete_title"), _t("business_intelligence.schedules.confirm_delete")):
+        if not messagebox.askyesno(_t("business_intelligence.dialogs.confirm_delete_title", default="===== CONFIRM DELETE ====="), _t("business_intelligence.schedules.confirm_delete", default="Confirm Delete")):
             return
 
         try:
             with transaction() as conn:
                 conn.execute('DELETE FROM bi_report_schedules WHERE schedule_id = ?', (schedule_id,))
 
-            messagebox.showinfo(_t("common.success"), _t("business_intelligence.schedules.deleted_success"))
+            messagebox.showinfo(_t("common.success"), _t("business_intelligence.schedules.deleted_success", default="Deleted Success"))
             self._load_schedules()
 
         except Exception as e:
-            messagebox.showerror(_t("common.error"), _t("business_intelligence.schedules.delete_failed", error=e))
+            messagebox.showerror(_t("common.error"), _t("business_intelligence.schedules.delete_failed", error=e, default="Delete Failed {error}"))
 
     def _create_visualization(self):
         """Create a new visualization"""
@@ -598,24 +601,24 @@ class BusinessIntelligenceGUI:
         """Delete the selected visualization"""
         selection = self.viz_tree.selection()
         if not selection:
-            messagebox.showwarning(_t("common.warning"), _t("business_intelligence.visualizations.select_to_delete"))
+            messagebox.showwarning(_t("common.warning"), _t("business_intelligence.visualizations.select_to_delete", default="Select To Delete"))
             return
 
         item = self.viz_tree.item(selection[0])
         viz_id = item['values'][0]
 
-        if not messagebox.askyesno(_t("business_intelligence.dialogs.confirm_delete_title"), _t("business_intelligence.visualizations.confirm_delete")):
+        if not messagebox.askyesno(_t("business_intelligence.dialogs.confirm_delete_title", default="===== CONFIRM DELETE ====="), _t("business_intelligence.visualizations.confirm_delete", default="Confirm Delete")):
             return
 
         try:
             with transaction() as conn:
                 conn.execute('DELETE FROM bi_visualizations WHERE visualization_id = ?', (viz_id,))
 
-            messagebox.showinfo(_t("common.success"), _t("business_intelligence.visualizations.deleted_success"))
+            messagebox.showinfo(_t("common.success"), _t("business_intelligence.visualizations.deleted_success", default="Deleted Success"))
             self._load_visualizations()
 
         except Exception as e:
-            messagebox.showerror(_t("common.error"), _t("business_intelligence.visualizations.delete_failed", error=e))
+            messagebox.showerror(_t("common.error"), _t("business_intelligence.visualizations.delete_failed", error=e, default="Delete Failed {error}"))
 
     def _define_metric(self):
         """Define a new custom metric"""
@@ -625,24 +628,24 @@ class BusinessIntelligenceGUI:
         """Delete the selected metric"""
         selection = self.metrics_tree.selection()
         if not selection:
-            messagebox.showwarning(_t("common.warning"), _t("business_intelligence.metrics.select_to_delete"))
+            messagebox.showwarning(_t("common.warning"), _t("business_intelligence.metrics.select_to_delete", default="Select To Delete"))
             return
 
         item = self.metrics_tree.item(selection[0])
         metric_id = item['values'][0]
 
-        if not messagebox.askyesno(_t("business_intelligence.dialogs.confirm_delete_title"), _t("business_intelligence.metrics.confirm_delete")):
+        if not messagebox.askyesno(_t("business_intelligence.dialogs.confirm_delete_title", default="===== CONFIRM DELETE ====="), _t("business_intelligence.metrics.confirm_delete", default="Confirm Delete")):
             return
 
         try:
             with transaction() as conn:
                 conn.execute('UPDATE bi_custom_metrics SET is_active = 0 WHERE metric_id = ?', (metric_id,))
 
-            messagebox.showinfo(_t("common.success"), _t("business_intelligence.metrics.deleted_success"))
+            messagebox.showinfo(_t("common.success"), _t("business_intelligence.metrics.deleted_success", default="Deleted Success"))
             self._load_metrics()
 
         except Exception as e:
-            messagebox.showerror(_t("common.error"), _t("business_intelligence.metrics.delete_failed", error=e))
+            messagebox.showerror(_t("common.error"), _t("business_intelligence.metrics.delete_failed", error=e, default="Delete Failed {error}"))
 
 
 # Dialog Classes
@@ -655,7 +658,7 @@ class CreateReportDialog:
         self.callback = callback
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title(_t("business_intelligence.dialogs.create_report_title"))
+        self.dialog.title(_t("business_intelligence.dialogs.create_report_title", default="===== CREATE REPORT ====="))
         self.dialog.geometry("600x500")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -666,36 +669,36 @@ class CreateReportDialog:
         main_frame = ttk.Frame(self.dialog, padding="20")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text=_t("business_intelligence.dialogs.create_report_title"), font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+        ttk.Label(main_frame, text=_t("business_intelligence.dialogs.create_report_title", default="===== CREATE REPORT ====="), font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
         # Form fields
         form_frame = ttk.Frame(main_frame)
         form_frame.pack(fill=tk.BOTH, expand=True)
 
         # Report Name
-        ttk.Label(form_frame, text=_t("business_intelligence.labels.report_name")).grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t("business_intelligence.labels.report_name", default="Report Name")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.name_entry = ttk.Entry(form_frame, width=40)
         self.name_entry.grid(row=0, column=1, pady=5, padx=(10, 0))
 
         # Category
-        ttk.Label(form_frame, text=_t("business_intelligence.labels.category")).grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t("business_intelligence.labels.category", default="Category")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.category_combo = ttk.Combobox(form_frame, width=37, values=[
-            _t("business_intelligence.categories.academic"),
-            _t("business_intelligence.categories.financial"),
-            _t("business_intelligence.categories.student_affairs"),
-            _t("business_intelligence.categories.administrative"),
-            _t("business_intelligence.categories.custom")
+            _t("business_intelligence.categories.academic", default="Academic"),
+            _t("business_intelligence.categories.financial", default="Financial"),
+            _t("business_intelligence.categories.student_affairs", default="Student Affairs"),
+            _t("business_intelligence.categories.administrative", default="Administrative"),
+            _t("business_intelligence.categories.custom", default="Custom")
         ])
         self.category_combo.grid(row=1, column=1, pady=5, padx=(10, 0))
-        self.category_combo.set(_t("business_intelligence.categories.academic"))
+        self.category_combo.set(_t("business_intelligence.categories.academic", default="Academic"))
 
         # Description
-        ttk.Label(form_frame, text=_t("business_intelligence.labels.description")).grid(row=2, column=0, sticky=tk.NW, pady=5)
+        ttk.Label(form_frame, text=_t("business_intelligence.labels.description", default="Description")).grid(row=2, column=0, sticky=tk.NW, pady=5)
         self.desc_text = scrolledtext.ScrolledText(form_frame, width=30, height=4)
         self.desc_text.grid(row=2, column=1, pady=5, padx=(10, 0))
 
         # SQL Query
-        ttk.Label(form_frame, text=_t("business_intelligence.labels.sql_query")).grid(row=3, column=0, sticky=tk.NW, pady=5)
+        ttk.Label(form_frame, text=_t("business_intelligence.labels.sql_query", default="Sql Query")).grid(row=3, column=0, sticky=tk.NW, pady=5)
         self.query_text = scrolledtext.ScrolledText(form_frame, width=30, height=8)
         self.query_text.grid(row=3, column=1, pady=5, padx=(10, 0))
 
@@ -703,7 +706,7 @@ class CreateReportDialog:
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=(20, 0))
 
-        ttk.Button(btn_frame, text=_t("business_intelligence.btn.create"), command=self._create).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t("business_intelligence.btn.create", default="Create"), command=self._create).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text=_t("common.cancel"), command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def _create(self):
@@ -714,7 +717,7 @@ class CreateReportDialog:
             sql_query = self.query_text.get('1.0', tk.END).strip()
 
             if not name:
-                messagebox.showerror(_t("common.error"), _t("business_intelligence.reports.name_required"))
+                messagebox.showerror(_t("common.error"), _t("business_intelligence.reports.name_required", default="Name Required"))
                 return
 
             report_id = ReportDefinitionManager.create_report(
@@ -728,12 +731,12 @@ class CreateReportDialog:
             log_activity(f'Created BI report: {report_id}',
                         user=self.auth.current_user.get('username'))
 
-            messagebox.showinfo(_t("common.success"), _t("business_intelligence.reports.created_success", id=report_id))
+            messagebox.showinfo(_t("common.success"), _t("business_intelligence.reports.created_success", id=report_id, default="Created Success {id}"))
             self.callback()
             self.dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror(_t("common.error"), _t("business_intelligence.reports.create_failed", error=e))
+            messagebox.showerror(_t("common.error"), _t("business_intelligence.reports.create_failed", error=e, default="Create Failed {error}"))
 
 
 class RunReportDialog:
@@ -745,7 +748,7 @@ class RunReportDialog:
         self.report_name = report_name
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title(_t("business_intelligence.dialogs.run_report_title", name=report_name))
+        self.dialog.title(_t("business_intelligence.dialogs.run_report_title", name=report_name, default="===== RUN REPORT ===== {name}"))
         self.dialog.geometry("900x600")
         self.dialog.transient(parent)
 
@@ -756,11 +759,11 @@ class RunReportDialog:
         main_frame = ttk.Frame(self.dialog, padding="20")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text=_t("business_intelligence.dialogs.report_label", name=self.report_name),
+        ttk.Label(main_frame, text=_t("business_intelligence.dialogs.report_label", name=self.report_name, default="Report: {name}"),
                  font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         # Results display
-        result_frame = ttk.LabelFrame(main_frame, text=_t("business_intelligence.labels.results"), padding="10")
+        result_frame = ttk.LabelFrame(main_frame, text=_t("business_intelligence.labels.results", default="Results"), padding="10")
         result_frame.pack(fill=tk.BOTH, expand=True)
 
         self.result_text = scrolledtext.ScrolledText(result_frame, width=80, height=25)
@@ -770,7 +773,7 @@ class RunReportDialog:
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=(10, 0))
 
-        ttk.Button(btn_frame, text=_t("business_intelligence.btn.export_csv"), command=self._export_csv).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t("business_intelligence.btn.export_csv", default="Export CSV"), command=self._export_csv).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text=_t("common.close"), command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def _run_report(self):
@@ -782,7 +785,7 @@ class RunReportDialog:
                 row = cursor.fetchone()
 
                 if not row or not row['sql_query']:
-                    self.result_text.insert('1.0', _t("business_intelligence.reports.no_query"))
+                    self.result_text.insert('1.0', _t("business_intelligence.reports.no_query", default="No Query."))
                     return
 
                 sql_query = row['sql_query']
@@ -792,11 +795,11 @@ class RunReportDialog:
                 results = cursor.fetchall()
 
                 if not results:
-                    self.result_text.insert('1.0', _t("business_intelligence.reports.no_results"))
+                    self.result_text.insert('1.0', _t("business_intelligence.reports.no_results", default="No Results."))
                     return
 
                 # Format results
-                output = _t("business_intelligence.reports.query_success", count=len(results))
+                output = _t("business_intelligence.reports.query_success", count=len(results), default="Query Success {count}")
 
                 # Column headers
                 headers = [desc[0] for desc in cursor.description]
@@ -808,18 +811,18 @@ class RunReportDialog:
                     output += " | ".join(str(val) for val in row) + "\n"
 
                 if len(results) > 100:
-                    output += _t("business_intelligence.reports.more_rows", count=len(results) - 100)
+                    output += _t("business_intelligence.reports.more_rows", count=len(results) - 100, default="More Rows {count}")
 
                 self.result_text.insert('1.0', output)
                 self.results = results
                 self.headers = headers
 
         except Exception as e:
-            self.result_text.insert('1.0', _t("business_intelligence.reports.run_error", error=e))
+            self.result_text.insert('1.0', _t("business_intelligence.reports.run_error", error=e, default="Run Error {error}"))
 
     def _export_csv(self):
         if not hasattr(self, 'results'):
-            messagebox.showwarning(_t("common.warning"), _t("business_intelligence.reports.no_results_export"))
+            messagebox.showwarning(_t("common.warning"), _t("business_intelligence.reports.no_results_export", default="No Results Export."))
             return
 
         filepath = filedialog.asksaveasfilename(
@@ -836,10 +839,10 @@ class RunReportDialog:
                 writer.writerow(self.headers)
                 writer.writerows(self.results)
 
-            messagebox.showinfo(_t("common.success"), _t("business_intelligence.reports.exported_to", path=filepath))
+            messagebox.showinfo(_t("common.success"), _t("business_intelligence.reports.exported_to", path=filepath, default="Exported To {path}"))
 
         except Exception as e:
-            messagebox.showerror(_t("common.error"), _t("business_intelligence.reports.export_failed", error=e))
+            messagebox.showerror(_t("common.error"), _t("business_intelligence.reports.export_failed", error=e, default="Export Failed {error}"))
 
 
 class ExportReportDialog:
@@ -850,7 +853,7 @@ class ExportReportDialog:
         self.callback = callback
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title(_t("business_intelligence.dialogs.export_report_title"))
+        self.dialog.title(_t("business_intelligence.dialogs.export_report_title", default="===== EXPORT REPORT ====="))
         self.dialog.geometry("400x300")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -862,31 +865,31 @@ class ExportReportDialog:
         main_frame = ttk.Frame(self.dialog, padding="20")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text=_t("business_intelligence.dialogs.export_report_title"), font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+        ttk.Label(main_frame, text=_t("business_intelligence.dialogs.export_report_title", default="===== EXPORT REPORT ====="), font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
         # Form
         form_frame = ttk.Frame(main_frame)
         form_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(form_frame, text=_t("business_intelligence.labels.select_report")).grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t("business_intelligence.labels.select_report", default="Select Report")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.report_combo = ttk.Combobox(form_frame, width=30, state='readonly')
         self.report_combo.grid(row=0, column=1, pady=5, padx=(10, 0))
 
-        ttk.Label(form_frame, text=_t("business_intelligence.labels.export_format")).grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t("business_intelligence.labels.export_format", default="Export Format")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.format_combo = ttk.Combobox(form_frame, width=30, values=[
-            _t("business_intelligence.export_formats.csv"),
-            _t("business_intelligence.export_formats.json"),
-            _t("business_intelligence.export_formats.excel"),
-            _t("business_intelligence.export_formats.pdf")
+            _t("business_intelligence.export_formats.csv", default="CSV"),
+            _t("business_intelligence.export_formats.json", default="Json"),
+            _t("business_intelligence.export_formats.excel", default="Excel"),
+            _t("business_intelligence.export_formats.pdf", default="PDF")
         ])
         self.format_combo.grid(row=1, column=1, pady=5, padx=(10, 0))
-        self.format_combo.set(_t("business_intelligence.export_formats.csv"))
+        self.format_combo.set(_t("business_intelligence.export_formats.csv", default="CSV"))
 
         # Buttons
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=(20, 0))
 
-        ttk.Button(btn_frame, text=_t("business_intelligence.btn.export"), command=self._export).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t("business_intelligence.btn.export", default="Export"), command=self._export).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text=_t("common.cancel"), command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def _load_reports(self):
@@ -897,14 +900,14 @@ class ExportReportDialog:
                 self.report_combo['values'] = list(self.reports.keys())
 
         except Exception as e:
-            messagebox.showerror(_t("common.error"), _t("business_intelligence.reports.load_failed", error=e))
+            messagebox.showerror(_t("common.error"), _t("business_intelligence.reports.load_failed", error=e, default="Load Failed {error}"))
 
     def _export(self):
         report_name = self.report_combo.get()
         export_format = self.format_combo.get()
 
         if not report_name:
-            messagebox.showerror(_t("common.error"), _t("business_intelligence.exports.select_report"))
+            messagebox.showerror(_t("common.error"), _t("business_intelligence.exports.select_report", default="Select Report"))
             return
 
         report_id = self.reports[report_name]
@@ -918,12 +921,12 @@ class ExportReportDialog:
                 row_count=0
             )
 
-            messagebox.showinfo(_t("common.success"), _t("business_intelligence.exports.created_success", id=export_id))
+            messagebox.showinfo(_t("common.success"), _t("business_intelligence.exports.created_success", id=export_id, default="Created Success {id}"))
             self.callback()
             self.dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror(_t("common.error"), _t("business_intelligence.reports.export_failed", error=e))
+            messagebox.showerror(_t("common.error"), _t("business_intelligence.reports.export_failed", error=e, default="Export Failed {error}"))
 
 
 class CreateScheduleDialog:
@@ -934,7 +937,7 @@ class CreateScheduleDialog:
         self.callback = callback
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title(_t("business_intelligence.dialogs.create_schedule_title"))
+        self.dialog.title(_t("business_intelligence.dialogs.create_schedule_title", default="===== CREATE SCHEDULE ====="))
         self.dialog.geometry("500x400")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -946,57 +949,57 @@ class CreateScheduleDialog:
         main_frame = ttk.Frame(self.dialog, padding="20")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text=_t("business_intelligence.dialogs.create_schedule_title"), font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+        ttk.Label(main_frame, text=_t("business_intelligence.dialogs.create_schedule_title", default="===== CREATE SCHEDULE ====="), font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
         # Form
         form_frame = ttk.Frame(main_frame)
         form_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(form_frame, text=_t("business_intelligence.labels.schedule_name")).grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t("business_intelligence.labels.schedule_name", default="Schedule Name")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.name_entry = ttk.Entry(form_frame, width=30)
         self.name_entry.grid(row=0, column=1, pady=5, padx=(10, 0))
 
-        ttk.Label(form_frame, text=_t("business_intelligence.labels.report")).grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t("business_intelligence.labels.report", default="Report")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.report_combo = ttk.Combobox(form_frame, width=27, state='readonly')
         self.report_combo.grid(row=1, column=1, pady=5, padx=(10, 0))
 
-        ttk.Label(form_frame, text=_t("business_intelligence.labels.frequency")).grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t("business_intelligence.labels.frequency", default="Frequency")).grid(row=2, column=0, sticky=tk.W, pady=5)
         self.freq_combo = ttk.Combobox(form_frame, width=27, values=[
-            _t("business_intelligence.frequencies.daily"),
-            _t("business_intelligence.frequencies.weekly"),
-            _t("business_intelligence.frequencies.monthly"),
-            _t("business_intelligence.frequencies.quarterly")
+            _t("business_intelligence.frequencies.daily", default="Daily"),
+            _t("business_intelligence.frequencies.weekly", default="Weekly"),
+            _t("business_intelligence.frequencies.monthly", default="Monthly"),
+            _t("business_intelligence.frequencies.quarterly", default="Quarterly")
         ])
         self.freq_combo.grid(row=2, column=1, pady=5, padx=(10, 0))
-        self.freq_combo.set(_t("business_intelligence.frequencies.weekly"))
+        self.freq_combo.set(_t("business_intelligence.frequencies.weekly", default="Weekly"))
 
-        ttk.Label(form_frame, text=_t("business_intelligence.labels.delivery_method")).grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t("business_intelligence.labels.delivery_method", default="Delivery Method")).grid(row=3, column=0, sticky=tk.W, pady=5)
         self.delivery_combo = ttk.Combobox(form_frame, width=27, values=[
-            _t("business_intelligence.delivery_methods.email"),
-            _t("business_intelligence.delivery_methods.download"),
-            _t("business_intelligence.delivery_methods.ftp")
+            _t("business_intelligence.delivery_methods.email", default="Email"),
+            _t("business_intelligence.delivery_methods.download", default="Download"),
+            _t("business_intelligence.delivery_methods.ftp", default="Ftp")
         ])
         self.delivery_combo.grid(row=3, column=1, pady=5, padx=(10, 0))
-        self.delivery_combo.set(_t("business_intelligence.delivery_methods.email"))
+        self.delivery_combo.set(_t("business_intelligence.delivery_methods.email", default="Email"))
 
-        ttk.Label(form_frame, text=_t("business_intelligence.labels.recipients")).grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t("business_intelligence.labels.recipients", default="Recipients")).grid(row=4, column=0, sticky=tk.W, pady=5)
         self.recipients_entry = ttk.Entry(form_frame, width=30)
         self.recipients_entry.grid(row=4, column=1, pady=5, padx=(10, 0))
 
-        ttk.Label(form_frame, text=_t("business_intelligence.labels.export_format")).grid(row=5, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t("business_intelligence.labels.export_format", default="Export Format")).grid(row=5, column=0, sticky=tk.W, pady=5)
         self.format_combo = ttk.Combobox(form_frame, width=27, values=[
-            _t("business_intelligence.export_formats.csv"),
-            _t("business_intelligence.export_formats.pdf"),
-            _t("business_intelligence.export_formats.excel")
+            _t("business_intelligence.export_formats.csv", default="CSV"),
+            _t("business_intelligence.export_formats.pdf", default="PDF"),
+            _t("business_intelligence.export_formats.excel", default="Excel")
         ])
         self.format_combo.grid(row=5, column=1, pady=5, padx=(10, 0))
-        self.format_combo.set(_t("business_intelligence.export_formats.csv"))
+        self.format_combo.set(_t("business_intelligence.export_formats.csv", default="CSV"))
 
         # Buttons
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=(20, 0))
 
-        ttk.Button(btn_frame, text=_t("business_intelligence.btn.create"), command=self._create).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t("business_intelligence.btn.create", default="Create"), command=self._create).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text=_t("common.cancel"), command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def _load_reports(self):
@@ -1007,7 +1010,7 @@ class CreateScheduleDialog:
                 self.report_combo['values'] = list(self.reports.keys())
 
         except Exception as e:
-            messagebox.showerror(_t("common.error"), _t("business_intelligence.reports.load_failed", error=e))
+            messagebox.showerror(_t("common.error"), _t("business_intelligence.reports.load_failed", error=e, default="Load Failed {error}"))
 
     def _create(self):
         try:
@@ -1015,7 +1018,7 @@ class CreateScheduleDialog:
             report_name = self.report_combo.get()
 
             if not name or not report_name:
-                messagebox.showerror(_t("common.error"), _t("business_intelligence.schedules.name_report_required"))
+                messagebox.showerror(_t("common.error"), _t("business_intelligence.schedules.name_report_required", default="Name Report Required"))
                 return
 
             report_id = self.reports[report_name]
@@ -1029,12 +1032,12 @@ class CreateScheduleDialog:
                 export_format=self.format_combo.get()
             )
 
-            messagebox.showinfo(_t("common.success"), _t("business_intelligence.schedules.created_success", id=schedule_id))
+            messagebox.showinfo(_t("common.success"), _t("business_intelligence.schedules.created_success", id=schedule_id, default="Created Success {id}"))
             self.callback()
             self.dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror(_t("common.error"), _t("business_intelligence.schedules.create_failed", error=e))
+            messagebox.showerror(_t("common.error"), _t("business_intelligence.schedules.create_failed", error=e, default="Create Failed {error}"))
 
 
 class CreateVisualizationDialog:
@@ -1045,7 +1048,7 @@ class CreateVisualizationDialog:
         self.callback = callback
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title(_t("business_intelligence.dialogs.create_visualization_title"))
+        self.dialog.title(_t("business_intelligence.dialogs.create_visualization_title", default="===== CREATE VISUALIZATION ====="))
         self.dialog.geometry("500x400")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -1056,37 +1059,37 @@ class CreateVisualizationDialog:
         main_frame = ttk.Frame(self.dialog, padding="20")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text=_t("business_intelligence.dialogs.create_visualization_title"), font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+        ttk.Label(main_frame, text=_t("business_intelligence.dialogs.create_visualization_title", default="===== CREATE VISUALIZATION ====="), font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
         # Form
         form_frame = ttk.Frame(main_frame)
         form_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(form_frame, text=_t("business_intelligence.labels.visualization_name")).grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t("business_intelligence.labels.visualization_name", default="Visualization Name")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.name_entry = ttk.Entry(form_frame, width=30)
         self.name_entry.grid(row=0, column=1, pady=5, padx=(10, 0))
 
-        ttk.Label(form_frame, text=_t("business_intelligence.labels.chart_type")).grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t("business_intelligence.labels.chart_type", default="Chart Type")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.chart_combo = ttk.Combobox(form_frame, width=27, values=[
-            _t("business_intelligence.chart_types.bar_chart"),
-            _t("business_intelligence.chart_types.line_chart"),
-            _t("business_intelligence.chart_types.pie_chart"),
-            _t("business_intelligence.chart_types.scatter_plot"),
-            _t("business_intelligence.chart_types.heatmap"),
-            _t("business_intelligence.chart_types.table")
+            _t("business_intelligence.chart_types.bar_chart", default="Bar Chart"),
+            _t("business_intelligence.chart_types.line_chart", default="Line Chart"),
+            _t("business_intelligence.chart_types.pie_chart", default="Pie Chart"),
+            _t("business_intelligence.chart_types.scatter_plot", default="Scatter Plot"),
+            _t("business_intelligence.chart_types.heatmap", default="Heatmap"),
+            _t("business_intelligence.chart_types.table", default="Table")
         ])
         self.chart_combo.grid(row=1, column=1, pady=5, padx=(10, 0))
-        self.chart_combo.set(_t("business_intelligence.chart_types.bar_chart"))
+        self.chart_combo.set(_t("business_intelligence.chart_types.bar_chart", default="Bar Chart"))
 
-        ttk.Label(form_frame, text=_t("business_intelligence.labels.data_source")).grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t("business_intelligence.labels.data_source", default="Data Source")).grid(row=2, column=0, sticky=tk.W, pady=5)
         self.source_entry = ttk.Entry(form_frame, width=30)
         self.source_entry.grid(row=2, column=1, pady=5, padx=(10, 0))
 
-        ttk.Label(form_frame, text=_t("business_intelligence.labels.x_axis")).grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t("business_intelligence.labels.x_axis", default="X Axis")).grid(row=3, column=0, sticky=tk.W, pady=5)
         self.x_entry = ttk.Entry(form_frame, width=30)
         self.x_entry.grid(row=3, column=1, pady=5, padx=(10, 0))
 
-        ttk.Label(form_frame, text=_t("business_intelligence.labels.y_axis")).grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t("business_intelligence.labels.y_axis", default="Y Axis")).grid(row=4, column=0, sticky=tk.W, pady=5)
         self.y_entry = ttk.Entry(form_frame, width=30)
         self.y_entry.grid(row=4, column=1, pady=5, padx=(10, 0))
 
@@ -1094,7 +1097,7 @@ class CreateVisualizationDialog:
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=(20, 0))
 
-        ttk.Button(btn_frame, text=_t("business_intelligence.btn.create"), command=self._create).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t("business_intelligence.btn.create", default="Create"), command=self._create).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text=_t("common.cancel"), command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def _create(self):
@@ -1104,7 +1107,7 @@ class CreateVisualizationDialog:
             data_source = self.source_entry.get().strip()
 
             if not name or not data_source:
-                messagebox.showerror(_t("common.error"), _t("business_intelligence.visualizations.name_source_required"))
+                messagebox.showerror(_t("common.error"), _t("business_intelligence.visualizations.name_source_required", default="Name Source Required"))
                 return
 
             viz_id = VisualizationManager.create_visualization(
@@ -1116,12 +1119,12 @@ class CreateVisualizationDialog:
                 created_by=self.auth.current_user.get('username', '')
             )
 
-            messagebox.showinfo(_t("common.success"), _t("business_intelligence.visualizations.created_success", id=viz_id))
+            messagebox.showinfo(_t("common.success"), _t("business_intelligence.visualizations.created_success", id=viz_id, default="Created Success {id}"))
             self.callback()
             self.dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror(_t("common.error"), _t("business_intelligence.visualizations.create_failed", error=e))
+            messagebox.showerror(_t("common.error"), _t("business_intelligence.visualizations.create_failed", error=e, default="Create Failed {error}"))
 
 
 class DefineMetricDialog:
@@ -1132,7 +1135,7 @@ class DefineMetricDialog:
         self.callback = callback
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title(_t("business_intelligence.dialogs.define_metric_title"))
+        self.dialog.title(_t("business_intelligence.dialogs.define_metric_title", default="===== DEFINE METRIC ====="))
         self.dialog.geometry("500x450")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -1143,36 +1146,36 @@ class DefineMetricDialog:
         main_frame = ttk.Frame(self.dialog, padding="20")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text=_t("business_intelligence.dialogs.define_metric_title"), font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+        ttk.Label(main_frame, text=_t("business_intelligence.dialogs.define_metric_title", default="===== DEFINE METRIC ====="), font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
         # Form
         form_frame = ttk.Frame(main_frame)
         form_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(form_frame, text=_t("business_intelligence.labels.metric_name")).grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t("business_intelligence.labels.metric_name", default="Metric Name")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.name_entry = ttk.Entry(form_frame, width=30)
         self.name_entry.grid(row=0, column=1, pady=5, padx=(10, 0))
 
-        ttk.Label(form_frame, text=_t("business_intelligence.labels.category")).grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t("business_intelligence.labels.category", default="Category")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.category_combo = ttk.Combobox(form_frame, width=27, values=[
-            _t("business_intelligence.categories.academic"),
-            _t("business_intelligence.categories.financial"),
-            _t("business_intelligence.categories.enrollment"),
-            _t("business_intelligence.categories.retention"),
-            _t("business_intelligence.categories.custom")
+            _t("business_intelligence.categories.academic", default="Academic"),
+            _t("business_intelligence.categories.financial", default="Financial"),
+            _t("business_intelligence.categories.enrollment", default="Enrollment"),
+            _t("business_intelligence.categories.retention", default="Retention"),
+            _t("business_intelligence.categories.custom", default="Custom")
         ])
         self.category_combo.grid(row=1, column=1, pady=5, padx=(10, 0))
-        self.category_combo.set(_t("business_intelligence.categories.custom"))
+        self.category_combo.set(_t("business_intelligence.categories.custom", default="Custom"))
 
-        ttk.Label(form_frame, text=_t("business_intelligence.labels.calculation_formula")).grid(row=2, column=0, sticky=tk.NW, pady=5)
+        ttk.Label(form_frame, text=_t("business_intelligence.labels.calculation_formula", default="Calculation Formula")).grid(row=2, column=0, sticky=tk.NW, pady=5)
         self.formula_text = scrolledtext.ScrolledText(form_frame, width=30, height=6)
         self.formula_text.grid(row=2, column=1, pady=5, padx=(10, 0))
 
-        ttk.Label(form_frame, text=_t("business_intelligence.labels.description")).grid(row=3, column=0, sticky=tk.NW, pady=5)
+        ttk.Label(form_frame, text=_t("business_intelligence.labels.description", default="Description")).grid(row=3, column=0, sticky=tk.NW, pady=5)
         self.desc_text = scrolledtext.ScrolledText(form_frame, width=30, height=4)
         self.desc_text.grid(row=3, column=1, pady=5, padx=(10, 0))
 
-        ttk.Label(form_frame, text=_t("business_intelligence.labels.target_value")).grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t("business_intelligence.labels.target_value", default="Target Value")).grid(row=4, column=0, sticky=tk.W, pady=5)
         self.target_entry = ttk.Entry(form_frame, width=30)
         self.target_entry.grid(row=4, column=1, pady=5, padx=(10, 0))
         self.target_entry.insert(0, '0')
@@ -1181,7 +1184,7 @@ class DefineMetricDialog:
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=(20, 0))
 
-        ttk.Button(btn_frame, text=_t("business_intelligence.btn.create"), command=self._create).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t("business_intelligence.btn.create", default="Create"), command=self._create).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text=_t("common.cancel"), command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def _create(self):
@@ -1193,7 +1196,7 @@ class DefineMetricDialog:
             target = float(self.target_entry.get())
 
             if not name or not formula:
-                messagebox.showerror(_t("common.error"), _t("business_intelligence.metrics.name_formula_required"))
+                messagebox.showerror(_t("common.error"), _t("business_intelligence.metrics.name_formula_required", default="Name Formula Required"))
                 return
 
             metric_id = CustomMetricManager.define_metric(
@@ -1205,14 +1208,14 @@ class DefineMetricDialog:
                 created_by=self.auth.current_user.get('username', '')
             )
 
-            messagebox.showinfo(_t("common.success"), _t("business_intelligence.metrics.created_success", id=metric_id))
+            messagebox.showinfo(_t("common.success"), _t("business_intelligence.metrics.created_success", id=metric_id, default="Created Success {id}"))
             self.callback()
             self.dialog.destroy()
 
         except ValueError:
-            messagebox.showerror(_t("common.error"), _t("business_intelligence.metrics.target_must_be_number"))
+            messagebox.showerror(_t("common.error"), _t("business_intelligence.metrics.target_must_be_number", default="Target Must Be Number"))
         except Exception as e:
-            messagebox.showerror(_t("common.error"), _t("business_intelligence.metrics.create_failed", error=e))
+            messagebox.showerror(_t("common.error"), _t("business_intelligence.metrics.create_failed", error=e, default="Create Failed {error}"))
 
 
 # Launcher function
@@ -1223,7 +1226,7 @@ def launch_business_intelligence_gui(root, auth):
     except Exception as e:
         from tkinter import messagebox
         messagebox.showerror(_t("common.error"), str(e))
-        print(_t("business_intelligence.messages.gui_launch_error", error=e))
+        print(_t("business_intelligence.messages.gui_launch_error", error=e, default="Gui Launch Error {error}"))
 
 
 __all__ = ['BusinessIntelligenceGUI', 'launch_business_intelligence_gui']

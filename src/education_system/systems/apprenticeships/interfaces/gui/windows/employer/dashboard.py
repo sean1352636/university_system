@@ -45,6 +45,7 @@ def render(gui) -> None:
     names = {s.apprentice.apprentice_id: s.full_name for s in data.get("apprentices") or []}
 
     _behind_on_otj(gui, body, data)
+    _attendance_concerns(body, data)
     _hours_awaiting_approval(gui, body, data, names)
     _reviews_to_sign(gui, body, data)
     _reviews_upcoming(body, data)
@@ -77,6 +78,25 @@ def _behind_on_otj(gui, parent, data: dict[str, Any]) -> None:
     widgets.button_bar(box, [
         ("Open →", lambda: gui.show("employer.apprentices", "My Apprentices")),
     ])
+
+
+def _attendance_concerns(parent, data: dict[str, Any]) -> None:
+    box = widgets.section(parent, "Attendance at training")
+    _table(
+        box,
+        [("name", "Apprentice", 220), ("rate", "Attendance", 100, "e"),
+         ("unauthorised", "Unauthorised absences", 150, "e"),
+         ("why", "Why flagged", 300)],
+        data.get("attendance_concerns") or [],
+        lambda pair: (
+            pair[0].full_name, widgets.percent(pair[1].attendance_rate),
+            pair[1].unauthorised, pair[1].concern_reason,
+        ),
+        lambda pair: pair[0].apprentice.apprentice_id,
+        "Nobody's attendance at scheduled training needs following up.",
+        tag=lambda pair: "Red" if pair[1].rag == "Red" else "Amber",
+        noun="apprentice",
+    )
 
 
 def _hours_awaiting_approval(gui, parent, data: dict[str, Any], names: dict[int, str]) -> None:

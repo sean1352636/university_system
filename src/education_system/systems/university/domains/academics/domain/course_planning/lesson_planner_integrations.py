@@ -320,33 +320,7 @@ class PlannerIntegrations:
             logger.debug("generate_attendance_sessions failed", exc_info=True)
             return []
 
-    # ------------------------------------------------------------------
-    # 6. Tutor groups + advising (academics.tutor_groups / advising)
-    # ------------------------------------------------------------------
-    def list_tutor_groups(self, *, academic_year=None, programme=None):
-        try:
-            from education_system.systems.university.domains.pastoral.domain.tutor_groups import (
-                TutorGroupService,
-            )
-            return TutorGroupService(db_path=self._db_path).list_groups(
-                academic_year=academic_year, programme=programme)
-        except Exception:
-            logger.debug("list_tutor_groups failed", exc_info=True)
-            return []
 
-    def schedule_tutor_meeting(self, group_id, scheduled_at, *,
-                               duration_minutes=60, location="", agenda=""):
-        try:
-            from education_system.systems.university.domains.pastoral.domain.tutor_groups import (
-                TutorGroupService,
-            )
-            return TutorGroupService(db_path=self._db_path).schedule_meeting(
-                group_id=int(group_id), scheduled_at=scheduled_at,
-                duration_minutes=duration_minutes, location=location,
-                agenda=agenda)
-        except Exception:
-            logger.debug("schedule_tutor_meeting failed", exc_info=True)
-            return None
 
     def list_advisors(self):
         try:
@@ -595,7 +569,6 @@ class PlannerIntegrations:
             "equipment": "education_system.systems.university.domains.operations.domain.campus.equipment.services.equipment_core",
             "curriculum": "education_system.systems.university.domains.academics.domain.curriculum_specification.services.curriculum_specification_service",
             "attendance": "education_system.systems.university.domains.academics.domain.services.course_management.attendance_sessions_sync",
-            "tutor_groups": "education_system.systems.university.domains.pastoral.domain.tutor_groups",
             "staff_hr": "education_system.systems.university.domains.staff.domain.staff_hr.services.managers.leave_manager",
             "email": "education_system.systems.university.infrastructure.email",
             "audit": "education_system.platform.governance.audit.logger",

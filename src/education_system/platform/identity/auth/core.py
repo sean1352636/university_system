@@ -304,33 +304,41 @@ class UserAuth:
                     )
                     uconn = get_connection()
                     try:
-                        # The MFA wizard saves mfa_methods / mfa_user_settings
-                        # keyed by the SHARED users.id (passed through as
-                        # `current_user["id"]`). The previous code re-mapped
-                        # to ``user_accounts.id`` — an unrelated PK — so
-                        # admin/staff who had MFA enabled were silently
-                        # bypassed at login because the IDs didn't match.
-                        # Also accept the legacy mapping (via
-                        # ``user_accounts.user_id`` FK) so older setups
-                        # written under that scheme still challenge.
-                        candidate_ids = {user["id"]}
+                        # Every candidate id here must be resolved from the
+                        # **username**, never taken from ``user["id"]``.
+                        # That is a shared auth.db id, and the university's
+                        # id space is a different one that collides with it:
+                        # ``admin`` is 19 in auth.db while university id 19
+                        # is a student, so consulting the shared id decided
+                        # the admin's login off that student's MFA rows.
+                        #
+                        # ``mfa_methods.user_id`` is FK→``users(id)``, so
+                        # university ``users.id`` is the canonical key;
+                        # ``user_accounts.id`` / ``.user_id`` are accepted
+                        # too because older setups were written under those
+                        # mappings, and all three are username-derived.
+                        candidate_ids = set()
                         try:
                             urow = uconn.execute(
-                                "SELECT id, user_id FROM user_accounts WHERE username = ?",
+                                "SELECT id FROM users WHERE username = ?",
                                 (user["username"],),
                             ).fetchone()
                             if urow:
+                                candidate_ids.add(urow["id"])
+
+                            arow = uconn.execute(
+                                "SELECT id, user_id FROM user_accounts WHERE username = ?",
+                                (user["username"],),
+                            ).fetchone()
+                            if arow:
                                 # Some schemas key MFA tables off user_accounts.user_id (FK),
                                 # others off user_accounts.id (PK) — try both as a fallback
                                 # before declaring "no MFA configured".
-                                try:
-                                    candidate_ids.add(urow["user_id"])
-                                except (IndexError, KeyError, TypeError):
-                                    pass
-                                try:
-                                    candidate_ids.add(urow["id"])
-                                except (IndexError, KeyError, TypeError):
-                                    pass
+                                for key in ("user_id", "id"):
+                                    try:
+                                        candidate_ids.add(arow[key])
+                                    except (IndexError, KeyError, TypeError):
+                                        pass
                         except Exception as exc:
                             logger.debug(
                                 "MFA candidate lookup for '%s' failed: %s",

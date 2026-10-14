@@ -1,9 +1,14 @@
 """Multi-stage assignment and external tool submission management"""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
+from tkinter import ttk, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 import json
 import re
 from datetime import datetime, timedelta
@@ -516,6 +521,7 @@ class MultiStageManager:
                 # Fetch submission data
                 stage_ids = [s[0] for s in stages]
                 placeholders = ",".join("?" * len(stage_ids))
+                # db-audit: ignore[DBW001] - join of placeholders
                 cursor.execute(f'''
                     SELECT ss.stage_id, ss.student_id, ss.status
                     FROM stage_submissions ss
@@ -546,6 +552,7 @@ class MultiStageManager:
                 if student_ids:
                     id_placeholders = ",".join("?" * len(student_ids))
                     sid_list = list(student_ids)
+                    # db-audit: ignore[DBW001] - join of placeholders
                     cursor.execute(f'''
                         SELECT student_id, first_name || ' ' || last_name
                         FROM students WHERE student_id IN ({id_placeholders})
@@ -1054,7 +1061,7 @@ class MultiStageManager:
                 return
 
             # Quick selection dialog
-            win = tk.Toplevel(self.root)
+            win = make_toplevel(self.root)
             win.title(_t('gui.academics.assignment_system.multi_stage_manager.windows.select_assignment', default="Select Assignment"))
             win.geometry("400x300")
             win.transient(self.root)
@@ -1105,7 +1112,7 @@ class MultiStageManager:
                 finally:
                     conn.close()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             self.show_external_submissions()
 
         ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.buttons.validate_selected', default="Validate Selected"), command=validate_selected).pack(

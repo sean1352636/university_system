@@ -17,9 +17,11 @@ from typing import Any
 
 from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.interfaces.gui import widgets
+from education_system.systems.apprenticeships.interfaces.gui.windows.admin import audit_log
 from education_system.systems.apprenticeships.services import (
     apprentice_service,
     compliance_service,
+    document_service,
 )
 
 logger = logging.getLogger(__name__)
@@ -188,6 +190,24 @@ def _record(gui, parent: Any, apprentice_id: int, reload: Any) -> None:
         noun="check",
     )
 
+    # The checklist is unchanged; alongside each item, any uploaded file
+    # tagged as its evidence (Documents screen), so a "Signed" row can be
+    # told apart from one with the paperwork actually on file.
+    uploads: dict[str, list] = {}
+    if gui.actor.can("document.view"):
+        found_ok, found = widgets.guard(
+            lambda: document_service.checklist_files(gui.actor, apprentice_id)
+        )
+        uploads = found if found_ok and found else {}
+
+    def uploaded(doc_key: str, fallback: str | None) -> str | None:
+        files = uploads.get(doc_key) or []
+        if not files:
+            return fallback
+        latest = files[0]
+        more = f" +{len(files) - 1} more" if len(files) > 1 else ""
+        return f"{latest.title} (v{latest.version}, {latest.approval_status}){more}"
+
     box = widgets.section(scroll, "Documents")
     documents = widgets.DataTable(box, (
         ("document", "Document", 260),
@@ -195,13 +215,14 @@ def _record(gui, parent: Any, apprentice_id: int, reload: Any) -> None:
         ("issued", "Issued", 110),
         ("signed", "Signed", 110),
         ("expires", "Expires", 110),
-        ("file", "File", 170),
-        ("notes", "Notes", 220),
+        ("file", "Uploaded file", 220),
+        ("notes", "Notes", 200),
     ), height=max(3, len(status.documents)))
     documents.populate(
         status.documents,
         lambda d: (d.label, f"{d.status}{' (expired)' if d.is_expired else ''}",
-                   d.issued_date, d.signed_date, d.expiry_date, d.file_name, d.notes),
+                   d.issued_date, d.signed_date, d.expiry_date,
+                   uploaded(d.doc_key, d.file_name), d.notes),
         identity=lambda d: d.doc_key,
         tag=lambda d: "Green" if d.is_satisfactory else (
             "Red" if d.status == "Missing" or d.is_expired else "Amber"
@@ -325,39 +346,18 @@ def _set_skill(gui, apprentice_id: int, table: widgets.DataTable, reload: Any) -
 # ═════════════════════════════════════════════════════════════════════
 
 def _audit_tab(gui, parent: Any) -> None:
+    """The Audit Log screen's own panel, so the two can never disagree.
+
+    Adds what this tab lacked: the before → after values of each edit,
+    a date range, and a drill-down into one entry.
+    """
     ttk.Label(
         parent,
         text="Administrators only: the log records what every user did, so a scoped "
              "view would still show a tutor who else touched those records.",
         foreground=config.MUTED_FG, wraplength=900, justify="left",
     ).pack(anchor="w", pady=(0, 8))
-
-    filters = widgets.FilterBar(
-        parent,
-        (
-            ("entity", "Entity", "entry"),
-            ("action", "Action", "combo", config.AUDIT_ACTIONS),
-            ("actor_username", "Who", "entry"),
-            ("since", "Since", "entry"),
-        ),
-        lambda: reload(),
-    )
-    table = widgets.DataTable(parent, _AUDIT_COLUMNS)
-
-    def reload() -> None:
-        _, rows = widgets.guard(
-            lambda: compliance_service.audit_trail(gui.actor, **filters.values())
-        )
-        rows = rows or []
-        table.populate(
-            rows,
-            lambda e: (e.ts, e.actor, e.actor_role, e.action, e.entity, e.entity_id,
-                       e.detail),
-            identity=lambda e: e.audit_id,
-            noun="entry",
-        )
-
-    reload()
+    audit_log.audit_panel(gui, parent)
 
 
 def _retention_tab(gui, parent: Any) -> None:

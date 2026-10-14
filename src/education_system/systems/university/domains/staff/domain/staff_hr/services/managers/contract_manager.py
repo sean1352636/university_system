@@ -209,7 +209,7 @@ class ContractManager:
                     reason=reason,
                     terminated_by=terminated_by)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Cross-domain: flag forward-dated module_schedule rows as
         # needing reassignment. Adds a nullable 'reassignment_needed'
@@ -232,7 +232,7 @@ class ContractManager:
                                 "reassignment_needed TEXT"
                             )
                         except Exception:
-                            pass
+                            logger.debug("Suppressed exception", exc_info=True)
                     conn2.execute(
                         "UPDATE module_schedule "
                         "SET reassignment_needed = ? "

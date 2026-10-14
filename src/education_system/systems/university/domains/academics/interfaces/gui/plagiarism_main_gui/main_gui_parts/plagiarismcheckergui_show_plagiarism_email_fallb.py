@@ -65,7 +65,7 @@ class PlagiarismCheckerGUI:
             else:
                 # Running standalone, need to create main GUI
                 root_widget.destroy()
-                from education_system.systems.university.interfaces.gui.shell.main import UnifiedManagementGUI
+                from education_system.systems.university.shell.gui.main import UnifiedManagementGUI
                 app = UnifiedManagementGUI(self.auth)
                 app.run()
         except Exception as e:

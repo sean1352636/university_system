@@ -8,10 +8,11 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
+import json
 import logging
 from datetime import datetime
 
-from education_system.systems.university.infrastructure.database.db import get_connection
+from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
@@ -720,32 +721,127 @@ def category_performance_report(*args, **kwargs):
     except Exception as e:
         print(f"\nError generating category performance: {e}\n")
 
-# Budget category management stubs - generated via factory
-manage_budget_categories = _create_stub("Budget Categories Management")
-view_budget_categories = _create_stub("View Budget Categories", message="Viewing budget categories...")
-create_budget_category = _create_stub("Create Budget Category")
-edit_budget_category = _create_stub("Edit Budget Category")
-deactivate_budget_category = _create_stub("Deactivate Budget Category")
-update_actual_amounts = _create_stub("Update Actual Amounts")
+# Budget category compatibility functions used by the Tk forms.  These accept
+# form values and perform the write; they must not report success without a
+# committed database change.
+def view_budget_categories():
+    with get_connection() as conn:
+        rows = conn.execute(
+            """SELECT category_id, category_name, category_type,
+                      parent_category_id, is_active
+               FROM budget_categories ORDER BY category_type, category_name"""
+        ).fetchall()
+    for row in rows:
+        print(f"{row[0]}: {row[1]} ({row[2]}) - {'active' if row[4] else 'inactive'}")
+    return rows
+
+
+def manage_budget_categories():
+    return view_budget_categories()
+
+
+def create_budget_category(name, category_type, description="", parent_category_id=None):
+    name = str(name).strip()
+    category_type = str(category_type).strip().lower()
+    if not name or category_type not in {"revenue", "expense"}:
+        raise ValueError("A name and a valid category type are required")
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with transaction() as conn:
+        cursor = conn.execute(
+            """INSERT INTO budget_categories
+               (category_name, category_type, description, parent_category_id,
+                is_active, created_at, updated_at)
+               VALUES (?, ?, ?, ?, 1, ?, ?)""",
+            (name, category_type, description, parent_category_id, now, now),
+        )
+        return cursor.lastrowid
+
+
+def edit_budget_category(category_id, name, description=""):
+    if not str(name).strip():
+        raise ValueError("Category name is required")
+    with transaction() as conn:
+        cursor = conn.execute(
+            """UPDATE budget_categories
+               SET category_name = ?, description = ?, updated_at = ?
+               WHERE category_id = ?""",
+            (str(name).strip(), description, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), category_id),
+        )
+        if cursor.rowcount != 1:
+            raise ValueError(f"Budget category {category_id} was not found")
+    return True
+
+
+def deactivate_budget_category(category_id):
+    with transaction() as conn:
+        cursor = conn.execute(
+            """UPDATE budget_categories SET is_active = 0, updated_at = ?
+               WHERE category_id = ? AND is_active = 1""",
+            (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), category_id),
+        )
+        if cursor.rowcount != 1:
+            raise ValueError(f"Active budget category {category_id} was not found")
+    return True
+
+
+from education_system.systems.university.domains.finance.domain.core.analytics import (  # noqa: E402
+    update_actual_amounts,
+)
 
 
 # ==================== AID TYPE MANAGEMENT ====================
-# Aid type management stubs - generated via factory
+# Aid type management remains in the legacy aid module, but these operational
+# functions have complete database-backed implementations there.
 view_aid_types = _create_stub("View Aid Types", message="Viewing financial aid types...")
 create_aid_type = _create_stub("Create Aid Type")
 edit_aid_type = _create_stub("Edit Aid Type")
 deactivate_aid_type = _create_stub("Deactivate Aid Type")
 manage_aid_types = _create_stub("Manage Aid Types")
-review_pending_aid_applications = _create_stub("Review Pending Aid Applications")
-process_loan_payment = _create_stub("Process Loan Payment")
-view_aid_application_detail = _create_stub("View Aid Application Detail")
-track_loan_repayments = _create_stub("Track Loan Repayments")
-aid_effectiveness_analysis = _create_stub("Aid Effectiveness Analysis")
+from education_system.systems.university.domains.finance.domain.core.aid import (  # noqa: E402
+    aid_effectiveness_analysis,
+    review_pending_aid_applications,
+    track_loan_repayments,
+    view_aid_application_detail,
+)
+
+
+def process_loan_payment(loan_id, amount, method):
+    """Record a repayment and update the selected loan atomically."""
+    amount = float(amount)
+    if amount <= 0 or not str(method).strip():
+        raise ValueError("A positive amount and payment method are required")
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with transaction() as conn:
+        loan = conn.execute(
+            """SELECT student_id, disbursed_amount, COALESCE(total_repaid, 0)
+               FROM student_financial_aid WHERE aid_id = ?""",
+            (loan_id,),
+        ).fetchone()
+        if not loan:
+            raise ValueError(f"Loan {loan_id} was not found")
+        outstanding = float(loan[1] or 0) - float(loan[2] or 0)
+        if amount > outstanding:
+            raise ValueError("Payment exceeds the outstanding loan balance")
+        conn.execute(
+            """INSERT INTO payments
+               (student_id, amount, payment_method, payment_date, notes, created_by, created_at)
+               VALUES (?, ?, ?, date('now'), ?, 'finance-gui', ?)""",
+            (loan[0], amount, method, f"Loan repayment for Aid ID {loan_id}", now),
+        )
+        conn.execute(
+            """UPDATE student_financial_aid
+               SET total_repaid = COALESCE(total_repaid, 0) + ?, updated_at = ?
+               WHERE aid_id = ?""",
+            (amount, now, loan_id),
+        )
+    return True
 
 
 # ==================== RECOVERY AND PERFORMANCE ====================
 # Recovery and performance stubs - generated via factory
-recovery_rate_analysis = _create_report_stub("Recovery Rate Analysis")
+from education_system.systems.university.domains.finance.domain.core.analytics import (  # noqa: E402
+    recovery_rate_analysis,
+)
 
 
 # ==================== COLLECTION NOTICES ====================
@@ -809,24 +905,65 @@ def initialize_finance(*args, **kwargs):
 
 
 # ==================== PAYMENT AND FRAUD DETECTION ====================
-# Payment and fraud detection stubs - generated via factory
-detect_payment_fraud = _create_stub("Detect Payment Fraud", message="Running fraud detection analysis...\nNo suspicious transactions detected")
-process_stripe_payment = _create_stub("Stripe Payment", use_messagebox=True, message="Stripe payment processing")
-generate_qr_payment_code = _create_stub("QR Code", use_messagebox=True, message="QR code generation")
+# Payment and fraud operations delegate to their real implementations.
+from education_system.systems.university.domains.finance.domain.core.security_automation import (  # noqa: E402
+    detect_payment_fraud,
+)
+from education_system.systems.university.domains.finance.domain.core.payments import (  # noqa: E402
+    generate_qr_payment_code as _generate_qr_payment_code,
+    process_stripe_payment as _process_stripe_payment,
+)
 
 
-# ==================== COMMUNICATION SETUP ====================
-# Communication setup stubs - generated via factory
-setup_email_config = _create_stub("Email Config", use_messagebox=True, message="Email configuration setup")
-setup_sms_config = _create_stub("SMS Config", use_messagebox=True, message="SMS configuration setup")
-test_email_service = _create_stub("Email Test", use_messagebox=True, message="Email service test")
-test_sms_service = _create_stub("SMS Test", use_messagebox=True, message="SMS service test")
+def process_stripe_payment(student_id, amount, payment_method_id, currency="GBP"):
+    result = _process_stripe_payment(float(amount), currency, payment_method_id, student_id)
+    if not result or not result.get("success"):
+        raise RuntimeError((result or {}).get("error", "Stripe payment failed"))
+    return {**result, "id": result["transaction_id"]}
+
+
+def generate_qr_payment_code(student_id, amount, description=""):
+    # The legacy form supplies a description as its third argument; the core
+    # generator's third argument is currency, so do not accidentally treat
+    # arbitrary description text as an ISO currency code.
+    result = _generate_qr_payment_code(student_id, float(amount), "GBP")
+    if not result:
+        raise RuntimeError("QR payment code generation failed")
+    return result
+
+
 enhanced_notification_system = _create_stub("Notifications", use_messagebox=True, message="Enhanced notification system")
 
 
 # ==================== WORKFLOW MANAGEMENT ====================
-# Workflow management stubs - generated via factory
-create_approval_workflow = _create_stub("Create Approval Workflow", message="Creating approval workflow...")
+def create_approval_workflow(workflow_type, entity_id, notes=""):
+    """Persist a finance approval definition and its initial instance."""
+    if workflow_type not in {"payment", "refund", "budget", "aid_application"}:
+        raise ValueError("Unsupported workflow type")
+    if not str(entity_id).strip():
+        raise ValueError("Entity ID is required")
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    steps = [{"step": 1, "name": "Finance review", "status": "pending"}]
+    with transaction() as conn:
+        cursor = conn.execute(
+            """INSERT INTO workflows
+               (workflow_name, workflow_type, trigger_conditions, workflow_steps,
+                is_active, created_by, created_at, updated_at)
+               VALUES (?, 'approval', ?, ?, 1, 'finance-gui', ?, ?)""",
+            (
+                f"{workflow_type.replace('_', ' ').title()} approval",
+                json.dumps({"entity_type": workflow_type, "entity_id": str(entity_id)}),
+                json.dumps(steps), now, now,
+            ),
+        )
+        workflow_id = cursor.lastrowid
+        conn.execute(
+            """INSERT INTO workflow_instances
+               (workflow_id, entity_type, entity_id, current_step, status, started_at, metadata)
+               VALUES (?, ?, ?, 1, 'pending', ?, ?)""",
+            (workflow_id, workflow_type, entity_id, now, json.dumps({"notes": notes})),
+        )
+    return workflow_id
 
 
 # Export all functions that GUI modules might need
@@ -869,8 +1006,7 @@ __all__ = [
     # Payment and fraud
     'detect_payment_fraud', 'process_stripe_payment', 'generate_qr_payment_code',
 
-    # Communication
-    'setup_email_config', 'setup_sms_config', 'test_email_service', 'test_sms_service',
+    # Notifications (email/SMS configuration lives in the shared settings UI)
     'enhanced_notification_system',
 
     # Workflow

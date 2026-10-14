@@ -143,7 +143,7 @@ class StatisticsMixin:
             return
 
         if not (self.auth.check_permission('manage_grades') or
-                self.auth.check_permission('view_risk_analysis')):
+                self.auth.check_permission('predictive_analytics')):
             messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.statistics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.statistics.dialogs.you_don_t_have_permission_to_assess_student_risk', default="You don't have permission to assess student risk."))
             return
 

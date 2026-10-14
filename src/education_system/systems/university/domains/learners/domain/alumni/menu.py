@@ -54,7 +54,7 @@ def display_alumni_menu():
             option_map[str(option_num)] = "view_alumni"
             option_num += 1
 
-        if auth.check_permission('manage_alumni') or auth.check_permission('update_own_alumni_profile'):
+        if auth.check_permission('manage_alumni') or auth.check_permission('view_own_alumni_profile'):
             print(f"{option_num}. Update Alumni Record")
             option_map[str(option_num)] = "update_alumni"
             option_num += 1
@@ -135,12 +135,12 @@ def display_alumni_menu():
 
         # Donations & Fundraising
         print("\n💰 DONATIONS & FUNDRAISING")
-        if auth.check_permission('manage_donations') or auth.check_permission('make_donation'):
+        if auth.check_permission('manage_campaigns') or auth.check_permission('make_donation'):
             print(f"{option_num}. Record Donation")
             option_map[str(option_num)] = "record_donation"
             option_num += 1
 
-        if auth.check_permission('manage_donations') or auth.check_permission('view_own_donations'):
+        if auth.check_permission('manage_campaigns') or auth.check_permission('view_own_donations'):
             print(f"{option_num}. View Donations")
             option_map[str(option_num)] = "view_donations"
             option_num += 1
@@ -161,7 +161,7 @@ def display_alumni_menu():
             option_map[str(option_num)] = "setup_mentorship"
             option_num += 1
 
-        if auth.check_permission('manage_mentorships') or auth.check_permission('view_own_mentorships'):
+        if auth.check_permission('manage_mentorships') or auth.check_permission('access_mentorship'):
             print(f"{option_num}. View Mentorships")
             option_map[str(option_num)] = "view_mentorships"
             option_num += 1

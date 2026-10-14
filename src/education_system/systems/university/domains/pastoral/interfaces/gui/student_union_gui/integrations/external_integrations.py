@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
@@ -248,7 +252,7 @@ def open_calendar_with_club_events(self, club_name=None):
                 cursor.execute(
                     "SELECT event_name, event_date, start_time, end_time, "
                     "location, organizer_id, status, current_attendees "
-                    "FROM union_events ORDER BY event_date DESC"
+                    "FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') ORDER BY event_date DESC"
                 )
                 rows = cursor.fetchall()
                 # Try to resolve organizer names from student_clubs
@@ -258,7 +262,7 @@ def open_calendar_with_club_events(self, club_name=None):
                     for cid, cname in cursor.fetchall():
                         organizer_map[cid] = cname
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
                 for row in rows:
                     organizer_name = organizer_map.get(row[5], str(row[5]) if row[5] else "")
                     tree.insert("", tk.END, values=(
@@ -294,7 +298,7 @@ def _add_club_events_to_calendar(self, calendar_gui, club_name=None):
         if club_name:
             # Get events for specific club
             cursor.execute('''
-                SELECT title AS event_name, start_datetime AS event_date, description AS event_description, location AS event_location
+                SELECT ue.title AS event_name, ue.start_datetime AS event_date, ue.description AS event_description, ue.location AS event_location
                 FROM unified_events ue
                 JOIN student_clubs sc ON ue.club_id = sc.club_id
                 WHERE ue.source_type = 'student'
@@ -328,7 +332,7 @@ def _add_club_events_to_calendar(self, calendar_gui, club_name=None):
 def open_shop_gui_direct(self):
     """Open shop GUI directly without club selection dialog"""
     try:
-        from education_system.systems.university.domains.operations.interfaces.gui.commerce.shop_management_gui.main_gui import UniversityShopGUI
+        from education_system.systems.university.plugins.campus_commerce.interfaces.gui.shop_management_gui.main_gui import UniversityShopGUI
         shop_window = tk.Toplevel(self.root)
         shop_window.title(_t('gui.pastoral.student_union_gui.integrations.external_integrations.windows.university_shop_management', default="University Shop Management"))
         shop_window.geometry("1200x800")
@@ -342,7 +346,7 @@ def open_shop_gui_direct(self):
 def open_shop_for_club_merchandise(self):
     """Open shop GUI with club merchandise selection page"""
     try:
-        from education_system.systems.university.domains.operations.interfaces.gui.commerce.shop_management_gui.main_gui import UniversityShopGUI
+        from education_system.systems.university.plugins.campus_commerce.interfaces.gui.shop_management_gui.main_gui import UniversityShopGUI
         shop_window = tk.Toplevel(self.root)
         shop_window.title(_t('gui.pastoral.student_union_gui.integrations.external_integrations.windows.university_shop_club_merchandise', default="University Shop - Club Merchandise"))
         shop_window.geometry("1200x800")
@@ -364,7 +368,7 @@ def open_shop_for_club_merchandise(self):
 def open_restaurant_for_club_booking(self, club_name, event_type="Club Event"):
     """Open full restaurant GUI"""
     try:
-        from education_system.systems.university.domains.operations.interfaces.gui.commerce.restaurant_management_gui import RestaurantManagementGUI
+        from education_system.systems.university.plugins.campus_commerce.interfaces.gui.restaurant_management_gui import RestaurantManagementGUI
         # Pass parent root — show_restaurant_management() creates its own Toplevel
         restaurant_gui = RestaurantManagementGUI(self.root, auth=self.auth_manager)
         restaurant_gui.show_restaurant_management()

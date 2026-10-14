@@ -1,4 +1,7 @@
 """Degree Audit and Course Evaluation mixins — embed as tabs in CourseManagementGUI."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core._imports import (
     _, tk, ttk, messagebox,
@@ -51,7 +54,7 @@ class DegreeAuditTabMixin:
             )
             initialize_degree_audit_database()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Build the sub-notebook inside our frame
         gui.notebook = ttk.Notebook(outer)
@@ -61,12 +64,15 @@ class DegreeAuditTabMixin:
         gui.create_prerequisites_tab()
         gui.create_whatif_tab()
         gui.create_advising_tab()
-        gui.create_graduation_tab()
+        # create_graduation_tab() is deliberately not built here — the
+        # graduation audit moved to the Graduation GUI, which owns the whole
+        # pipeline (eligibility, award, ceremony, certificate). The method
+        # remains on DegreeAuditGUI because that GUI is what hosts it there.
 
         try:
             gui.load_courses()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         self._degree_audit_gui = gui
 
@@ -96,7 +102,7 @@ class CourseEvalTabMixin:
             )
             initialize_evaluation_database()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Build the sub-notebook inside our frame
         gui.notebook = ttk.Notebook(outer)
@@ -110,6 +116,6 @@ class CourseEvalTabMixin:
         try:
             gui.load_evaluations()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         self._course_eval_gui = gui

@@ -44,15 +44,17 @@ class AssignStaffDialog(Dialog):
         """Load available staff members"""
         def get_available_staff_operation(conn):
             cursor = conn.cursor()
+            # users.role is a TEXT column; there is no role_id and no join
+            # to `roles` — the old query raised "no such column: u.role_id"
+            # every time this dialog opened.
             cursor.execute('''
-            SELECT u.id, u.first_name, u.last_name, u.username, r.role_name
+            SELECT u.id, u.first_name, u.last_name, u.username, u.role
             FROM users u
-            JOIN roles r ON u.role_id = r.id
-            WHERE r.role_name IN ('admin', 'staff', 'instructor')
+            WHERE LOWER(u.role) IN ('admin', 'staff', 'instructor')
             AND u.id NOT IN (
                 SELECT staff_user_id FROM trip_staff WHERE trip_id = ?
             )
-            ORDER BY r.role_name, u.last_name
+            ORDER BY u.role, u.last_name
             ''', (self.trip_id,))
 
             return cursor.fetchall()
@@ -62,7 +64,7 @@ class AssignStaffDialog(Dialog):
         if staff:
             for staff_member in staff:
                 user_id, first_name, last_name, username, role = staff_member
-                display_text = f"{user_id}: {first_name} {last_name} ({username}) - {role.title()}"
+                display_text = f"{user_id}: {first_name} {last_name} ({username}) - {(role or 'staff').title()}"
                 self.staff_listbox.insert(tk.END, display_text)
 
     def validate(self):

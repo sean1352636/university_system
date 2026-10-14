@@ -157,7 +157,7 @@ def display_vehicle_menu():
             view_vehicle()
         elif choice == '3' and (auth.check_permission('update_any_vehicle') or auth.check_permission('update_own_vehicle')):
             update_vehicle()
-        elif choice == '4' and (auth.check_permission('delete_any_vehicle') or auth.check_permission('delete_own_vehicle')):
+        elif choice == '4' and (auth.check_permission('delete_any_vehicle') or auth.check_permission('update_own_vehicle')):
             delete_vehicle()
         elif choice == '5':
             return

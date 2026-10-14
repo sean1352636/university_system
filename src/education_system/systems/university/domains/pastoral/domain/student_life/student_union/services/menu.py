@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from education_system.systems.university.domains.academics.domain.services.academic_calendar.calendar_core import AcademicCalendarManager
 from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import union_context as ctx
 from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.union_context import (
     display_club_menu, display_event_menu, display_facility_menu, display_election_menu,
@@ -13,7 +12,12 @@ from education_system.systems.university.domains.pastoral.domain.student_life.st
 from education_system.systems.university.infrastructure.i18n import get_text
 
 def display_student_union_menu():
-    """Enhanced Student Union Portal with academic calendar sync"""
+    """Enhanced Student Union Portal.
+
+    Items created in the Union are mirrored onto the university
+    academic calendar as they are created (``calendar_bridge``), so
+    there is no manual calendar sync option.
+    """
 
     if not ctx.auth or not ctx.auth.current_user:
         print(get_text("student_union.menu.login_required"))
@@ -55,7 +59,6 @@ def display_student_union_menu():
 
         # Navigation options
         print("\n" + get_text("student_union.menu.option_18"))
-        print(get_text("student_union.menu.option_19"))
 
         choice = input("\n" + get_text("student_union.menu.choose_option")).strip()
 
@@ -101,14 +104,8 @@ def display_student_union_menu():
         elif choice == '17' and (ctx.auth.check_permission('manage_all_clubs') or ctx.auth.check_permission('view_election_results')):
             display_admin_menu()
 
-        # Navigation and calendar sync
+        # Navigation
         elif choice == '18':
             return
-        elif choice == '19':
-            # Sync Academic Calendar
-            manager = AcademicCalendarManager(auth_manager=ctx.auth)
-            ical_url = input(get_text("student_union.menu.calendar_url_prompt")).strip()
-            manager.calendar_sync(ical_url)
-            print(get_text("student_union.menu.sync_done"))
         else:
             print(get_text("student_union.menu.invalid_choice"))

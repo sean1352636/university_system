@@ -803,7 +803,7 @@ class EnhancedDetectionMixin:
                                 'evidence': 'Text shows characteristics of multiple languages'
                             })
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
             # Calculate overall translation score
             overall_score = sum(scores.values()) / max(len(scores), 1) if scores else 0

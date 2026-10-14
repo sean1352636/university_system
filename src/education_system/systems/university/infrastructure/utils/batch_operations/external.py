@@ -110,9 +110,9 @@ class ExternalMixin:
         print(_t("shared.utils.batch_operations.option_database_connection"))
         print(_t("shared.utils.batch_operations.option_rest_api"))
         print(_t("shared.utils.batch_operations.option_file_share"))
-        print(_t("shared.utils.batch_operations.option_export_external"))
+        print(_t("shared.utils.batch_operations.option_export_external", default="4. Export External"))
 
-        choice = input(_t("shared.utils.batch_operations.prompt_choose_integration"))
+        choice = input(_t("shared.utils.batch_operations.prompt_choose_integration", default="Prompt Choose Integration"))
 
         if choice == '1':
             self.setup_database_integration()

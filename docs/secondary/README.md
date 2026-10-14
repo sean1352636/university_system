@@ -111,10 +111,10 @@ Having issues? Check:
 source venv/bin/activate
 
 # Run the GUI application
-python run.py --school --gui
+python -m education_system --school --gui
 
 # Run the CLI application
-python run.py --school --cli
+python -m education_system --school --cli
 
 # Run tests
 python -m pytest education_system/secondary_school/tests/

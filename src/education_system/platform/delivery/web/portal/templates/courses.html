@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Courses · Education System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/portal/static/css/portal.css">
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("edu.theme");
+        if (t === "dark" || t === "light") {
+          document.documentElement.setAttribute("data-theme", t);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
+</head>
+<body>
+  <div id="topbar"></div>
+
+  <main class="container">
+    <section class="page-header">
+      <div>
+        <h1 id="title">Courses</h1>
+        <p id="subtitle" class="muted">Loading…</p>
+      </div>
+      <div class="row">
+        <input id="search" class="field" placeholder="Filter courses…"
+               style="padding:.5rem .7rem; min-width:220px;">
+        <label class="muted" style="font-size:.85rem;">
+          <input type="checkbox" id="show-archived"> Show archived
+        </label>
+      </div>
+    </section>
+
+    <section id="actions-bar" class="row hidden" style="margin-bottom:.75rem; gap:.5rem;">
+      <button type="button" class="btn" id="btn-new">+ New course</button>
+      <span class="muted" style="font-size:.85rem; align-self:center;">
+        Archiving retires a course without destroying it. Deleting is
+        permanent and refuses to run blind while students are enrolled.
+      </span>
+    </section>
+
+    <section>
+      <div id="table-host">
+        <div class="card empty-state">
+          <div class="spinner" style="margin: 0 auto .5rem;"></div>
+          Loading courses…
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="modal" class="modal-backdrop hidden">
+    <div class="card modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <h2 id="modal-title">Course</h2>
+      <div id="modal-alert" class="alert alert-error hidden"></div>
+      <div id="modal-body"></div>
+      <div class="row" style="justify-content:flex-end; gap:.5rem; margin-top:1rem;">
+        <button type="button" class="btn btn-ghost" id="modal-cancel">Cancel</button>
+        <button type="button" class="btn" id="modal-confirm">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">Education System · Courses</footer>
+
+  <script src="/portal/static/js/portal.js"></script>
+  <script>
+    (function () {
+      if (!EduPortal.requireAuth()) return;
+
+      const user = EduPortal.getUser();
+      const STAFF_ROLES = ["admin", "staff", "teacher", "instructor", "superadmin"];
+      const myRole = ((user.systems || [])
+        .find(s => s.system_key === "university") || {}).role || "student";
+      // The course catalogue API is university-only, like the GUI screen.
+      const canManage = STAFF_ROLES.includes(myRole);
+      const API = "/university/courses";
+
+      EduPortal.renderTopbar("courses");
+      document.getElementById("title").textContent = "🎓 University · Courses";
+      if (canManage) document.getElementById("actions-bar").classList.remove("hidden");
+
+      const host = document.getElementById("table-host");
+      const COLUMNS = ["course_code", "course_name", "level", "department",
+                       "credit_hours", "current_enrollment", "max_enrollment", "status"];
+      let allRows = [];
+
+      function say(msg) { document.getElementById("subtitle").textContent = msg; }
+
+      function load() {
+        const archived = document.getElementById("show-archived").checked;
+        EduPortal.apiFetch(API + (archived ? "?include_archived=true" : ""))
+          .then(d => {
+            allRows = d.courses || [];
+            say(allRows.length + " course" + (allRows.length === 1 ? "" : "s") +
+                (archived ? " (including archived)" : " in the active catalogue"));
+            paint(allRows);
+          })
+          .catch(err => {
+            host.innerHTML = `
+              <div class="card empty-state">
+                <div class="emoji">⚠️</div>
+                <h2>Unable to load courses</h2>
+                <p class="muted">${EduPortal.escapeHtml(err.message || "Request failed")}</p>
+              </div>`;
+          });
+      }
+
+      function actions(c) {
+        if (!canManage) return "";
+        const id = EduPortal.escapeHtml(String(c.course_code || c.code || c.id));
+        const retire = (c.status === "archived")
+          ? `<button type="button" class="btn-link" data-act="restore" data-id="${id}">Restore</button>`
+          : `<button type="button" class="btn-link" data-act="archive" data-id="${id}">Archive</button>`;
+        return `<td class="row-actions">
+            <button type="button" class="btn-link" data-act="view" data-id="${id}">View</button>
+            <button type="button" class="btn-link" data-act="edit" data-id="${id}">Edit</button>
+            ${retire}
+            <button type="button" class="btn-link" data-act="delete" data-id="${id}">Delete</button>
+          </td>`;
+      }
+
+      function paint(rows) {
+        if (!rows.length) {
+          host.innerHTML = `<div class="card empty-state"><div class="emoji">📚</div>
+            <p>No courses to show.</p></div>`;
+          return;
+        }
+        host.innerHTML = `
+          <div class="table-wrap">
+            <table>
+              <thead><tr>${COLUMNS.map(k => `<th>${EduPortal.escapeHtml(k)}</th>`).join("")}
+                ${canManage ? "<th>Actions</th>" : ""}</tr></thead>
+              <tbody>
+                ${rows.map(c => `<tr>${COLUMNS.map(k =>
+                    `<td>${EduPortal.escapeHtml(String(c[k] ?? ""))}</td>`).join("")}${actions(c)}</tr>`).join("")}
+              </tbody>
+            </table>
+          </div>`;
+      }
+
+      // ── Dialog ───────────────────────────────────────────────────
+      const modal = document.getElementById("modal");
+      const modalBody = document.getElementById("modal-body");
+      const modalAlert = document.getElementById("modal-alert");
+      const modalOk = document.getElementById("modal-confirm");
+      let onConfirm = null;
+
+      function closeModal() { modal.classList.add("hidden"); onConfirm = null; }
+      function openModal(title, body, label, handler) {
+        document.getElementById("modal-title").textContent = title;
+        modalBody.innerHTML = body;
+        modalAlert.classList.add("hidden");
+        modalOk.textContent = label || "Save";
+        modalOk.classList.toggle("hidden", !handler);
+        onConfirm = handler;
+        modal.classList.remove("hidden");
+      }
+      document.getElementById("modal-cancel").addEventListener("click", closeModal);
+      modal.addEventListener("click", e => { if (e.target === modal) closeModal(); });
+      document.addEventListener("keydown", e => {
+        if (e.key === "Escape" && !modal.classList.contains("hidden")) closeModal();
+      });
+      modalOk.addEventListener("click", async () => {
+        if (!onConfirm) return;
+        modalOk.disabled = true;
+        try {
+          await onConfirm();
+          closeModal();
+          load();
+        } catch (err) {
+          const b = err.body || {};
+          // A 409 carries the delete-impact counts; show them rather than
+          // a bare conflict, so the next click is an informed one.
+          let msg = b.errors
+            ? Object.entries(b.errors).map(([k, v]) => k + " " + v).join("; ")
+            : (b.message || err.message || "Request failed");
+          if (b.impact) {
+            msg += " — " + Object.entries(b.impact)
+              .filter(([, n]) => n).map(([k, n]) => n + " " + k).join(", ");
+          }
+          modalAlert.textContent = msg;
+          modalAlert.classList.remove("hidden");
+        } finally { modalOk.disabled = false; }
+      });
+
+      const val = id => (document.getElementById(id) || {}).value || "";
+      const checked = id => !!(document.getElementById(id) || {}).checked;
+      function field(name, label, value, type) {
+        return `<div class="field"><label for="f-${name}">${EduPortal.escapeHtml(label)}</label>
+          <input id="f-${name}" type="${type || "text"}"
+                 value="${EduPortal.escapeHtml(String(value ?? ""))}"></div>`;
+      }
+      function check(name, label, on) {
+        return `<label class="field" style="display:block;">
+          <input type="checkbox" id="f-${name}"${on ? " checked" : ""}> ${EduPortal.escapeHtml(label)}</label>`;
+      }
+      const find = id => allRows.find(c =>
+        String(c.course_code || c.code || c.id) === String(id)) || {};
+
+      function doView(id) {
+        const c = find(id);
+        const rows = Object.entries(c).map(([k, v]) =>
+          `<tr><th style="text-align:left;padding-right:1rem;">${EduPortal.escapeHtml(k)}</th>
+               <td>${EduPortal.escapeHtml(String(v ?? ""))}</td></tr>`).join("");
+        openModal("Course " + id, `<div class="table-wrap"><table>${rows}</table></div>`, null, null);
+      }
+
+      function doCreate() {
+        openModal("New course",
+          field("course_code", "Course code", "") +
+          field("course_name", "Course name", "") +
+          field("level", "Level", "") +
+          field("department", "Department", "") +
+          field("credit_hours", "Credit hours", 20, "number") +
+          field("max_enrollment", "Max enrolment", 30, "number") +
+          field("course_fee", "Course fee", 0, "number") +
+          field("min_ucas_tariff", "Minimum UCAS tariff", 0, "number") +
+          check("lab_required", "Lab required", false) +
+          check("online_available", "Available online", false),
+          "Create course",
+          async () => {
+            const res = await EduPortal.apiFetch(API, { method: "POST", body: {
+              course_code: val("f-course_code"), course_name: val("f-course_name"),
+              level: val("f-level"), department: val("f-department"),
+              credit_hours: Number(val("f-credit_hours") || 0),
+              max_enrollment: Number(val("f-max_enrollment") || 0),
+              course_fee: Number(val("f-course_fee") || 0),
+              min_ucas_tariff: Number(val("f-min_ucas_tariff") || 0),
+              lab_required: checked("f-lab_required"),
+              online_available: checked("f-online_available"),
+            }});
+            say(res.message || "Course created");
+          });
+      }
+
+      function doEdit(id) {
+        const c = find(id);
+        openModal("Edit " + id,
+          field("course_name", "Course name", c.course_name || c.name) +
+          field("level", "Level", c.level) +
+          field("department", "Department", c.department) +
+          field("credit_hours", "Credit hours", c.credit_hours, "number") +
+          field("max_enrollment", "Max enrolment", c.max_enrollment, "number") +
+          field("course_fee", "Course fee", c.course_fee, "number") +
+          field("reason", "Reason for change (required)", ""),
+          "Save changes",
+          async () => {
+            // Send only what changed — each edit is versioned against the reason.
+            const body = { reason: val("f-reason") };
+            const cand = {
+              course_name: val("f-course_name"), level: val("f-level"),
+              department: val("f-department"),
+              credit_hours: Number(val("f-credit_hours") || 0),
+              max_enrollment: Number(val("f-max_enrollment") || 0),
+              course_fee: Number(val("f-course_fee") || 0),
+            };
+            Object.entries(cand).forEach(([k, v]) => {
+              if (String(c[k] ?? "") !== String(v)) body[k] = v;
+            });
+            await EduPortal.apiFetch(API + "/" + encodeURIComponent(id),
+                                     { method: "PUT", body });
+            say("Course " + id + " updated");
+          });
+      }
+
+      function doArchive(id) {
+        openModal("Archive " + id,
+          `<p>The course leaves the active catalogue so it is no longer offered
+              for enrolment. Existing records keep working, and it can be
+              restored.</p>` + field("reason", "Reason (required)", ""),
+          "Archive",
+          async () => {
+            const r = await EduPortal.apiFetch(API + "/" + encodeURIComponent(id) + "/archive",
+              { method: "POST", body: { reason: val("f-reason") } });
+            say(r.message || "Archived");
+          });
+      }
+
+      function doRestore(id) {
+        openModal("Restore " + id, `<p>Return this course to the active catalogue.</p>` +
+          field("reason", "Reason (required)", ""), "Restore",
+          async () => {
+            await EduPortal.apiFetch(API + "/" + encodeURIComponent(id) + "/restore",
+              { method: "POST", body: { reason: val("f-reason") } });
+            say("Course " + id + " restored");
+          });
+      }
+
+      function doDelete(id) {
+        // Show the blast radius before offering the button, the way the GUI
+        // dialog and the CLI warning both do.
+        EduPortal.apiFetch(API + "/" + encodeURIComponent(id) + "/impact")
+          .then(d => {
+            const rows = Object.entries(d.impact)
+              .map(([k, n]) => `<tr><th style="text-align:left;padding-right:1rem;">${EduPortal.escapeHtml(k)}</th><td>${n}</td></tr>`)
+              .join("");
+            const blocking = (d.impact.students_enrolled || 0) + (d.impact.dependent_courses || 0);
+            openModal("Delete " + id,
+              `<div class="alert alert-error">This permanently deletes the course
+                 and its related records. Archive instead if it is still in use.</div>
+               <div class="table-wrap"><table>${rows}</table></div>` +
+              field("reason", "Reason (required)", "") +
+              (blocking ? check("ack", "I understand " + blocking +
+                                " enrolled student(s)/dependent course(s) are affected", false) : ""),
+              "Delete permanently",
+              async () => {
+                await EduPortal.apiFetch(API + "/" + encodeURIComponent(id), {
+                  method: "DELETE",
+                  body: { reason: val("f-reason"), acknowledged_impact: checked("f-ack") },
+                });
+                say("Course " + id + " deleted");
+              });
+          })
+          .catch(e => say(e.message || "Could not read delete impact"));
+      }
+
+      document.getElementById("btn-new").addEventListener("click", doCreate);
+      document.getElementById("show-archived").addEventListener("change", load);
+      document.getElementById("search").addEventListener("input", e => {
+        const q = e.target.value.trim().toLowerCase();
+        paint(!q ? allRows : allRows.filter(c =>
+          COLUMNS.some(k => String(c[k] ?? "").toLowerCase().includes(q))));
+      });
+
+      // Delegated: the table is rebuilt on every filter keystroke.
+      host.addEventListener("click", e => {
+        const t = e.target;
+        if (!t || typeof t.closest !== "function") return;
+        const btn = t.closest("[data-act]");
+        if (!btn) return;
+        ({ view: doView, edit: doEdit, archive: doArchive,
+           restore: doRestore, delete: doDelete })[btn.dataset.act](btn.dataset.id);
+      });
+
+      load();
+    })();
+  </script>
+</body>
+</html>

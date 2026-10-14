@@ -72,14 +72,14 @@ class AdminPortal(
                 ):
                     return self.parent_frame
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Parent frame doesn't exist, create standalone window
         try:
             if self.standalone_window is not None and self.standalone_window.winfo_exists():
                 return self.standalone_window
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         self.standalone_window = tk.Toplevel()
         self.standalone_window.title(get_text("financial_aid.admin_portal.window_title", "Financial Aid Administration"))

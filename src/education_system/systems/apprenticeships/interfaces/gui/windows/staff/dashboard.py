@@ -70,6 +70,28 @@ def render(gui) -> None:
     )
 
     _section(
+        gui, body, "Attendance concerns", data.get("attendance_concerns") or [],
+        columns=(
+            ("name", "Apprentice", 200),
+            ("employer", "Employer", 160),
+            ("rate", "Attendance", 90, "e"),
+            ("unauthorised", "Unauthorised", 100, "e"),
+            ("sickness", "Sickness", 80, "e"),
+            ("why", "Why flagged", 260),
+        ),
+        to_values=lambda pair: (
+            pair[0].full_name, pair[0].employer_name,
+            widgets.percent(pair[1].attendance_rate), pair[1].unauthorised,
+            pair[1].sickness, pair[1].concern_reason,
+        ),
+        identity=lambda pair: pair[0].apprentice.apprentice_id,
+        tag=lambda pair: "Red" if pair[1].rag == "Red" else "Amber",
+        noun="apprentice",
+        empty="Nobody on your caseload has an attendance problem.",
+        opens=("staff.training", "Training Sessions"),
+    )
+
+    _section(
         gui, body, "Reviews overdue", data["reviews_overdue"],
         columns=(
             ("name", "Apprentice", 200),

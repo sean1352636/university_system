@@ -1,4 +1,8 @@
 """Extracted backwards-compatible UserAuth methods."""
+import logging
+
+logger = logging.getLogger(__name__)
+
 from ...facade_support import *
 
 class AuthAuthenticationPasswordLoginMixin:
@@ -42,7 +46,7 @@ class AuthAuthenticationPasswordLoginMixin:
                         user_info["user_id"]
                     )
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 # Look up university-specific profile data
                 student_id = None
@@ -61,7 +65,7 @@ class AuthAuthenticationPasswordLoginMixin:
                             student_id = row[1]
                             email = row[2] or email
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 # Use legacy user ID if available so that existing
                 # database references (messages, etc.) still match.

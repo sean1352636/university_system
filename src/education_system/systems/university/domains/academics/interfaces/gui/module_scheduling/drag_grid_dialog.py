@@ -15,7 +15,8 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 
 import logging
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
+from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling._dialogs import messagebox
 from datetime import datetime, timedelta
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -382,7 +383,7 @@ class DragDropTimetableDialog:
             if self.gui and hasattr(self.gui, "_resolve_changed_by"):
                 changed_by = self.gui._resolve_changed_by()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         try:
             ok = self.scheduler.update_module_schedule(
@@ -410,11 +411,48 @@ class DragDropTimetableDialog:
                 f"Move of {info['module_code']} rejected — see warning.")
             return
 
+        # Tell the people affected. A drag that reschedules a class is the
+        # same event as an edit through Update Schedule, so it goes out the
+        # same way — every student on the module, plus the instructor.
+        note = self._notify_move(info, new_day, new_start, new_end)
+
         # Re-render so the canvas reflects the persisted state and any
         # follow-on row positions resolve cleanly.
         self.status_text.set(
-            f"Moved {info['module_code']} → {new_day} {new_start}-{new_end}.")
+            f"Moved {info['module_code']} → {new_day} {new_start}-{new_end}.{note}")
         self._render()
+
+    def _notify_move(self, info, new_day, new_start, new_end):
+        """Email the module's students and instructor about the new time.
+
+        Returns a short status suffix. Delivery never blocks the move: the
+        schedule is already saved by the time this runs.
+        """
+        emailer = getattr(self.gui, "email_all_students_on_module", None)
+        if not callable(emailer):
+            return ""
+        module_code = info.get("module_code")
+        subject = f"Timetable change — {module_code}"
+        message = (
+            f"The session for {module_code} has moved.\n\n"
+            f"  Was: {info['day']} {info['start']}–{info['end']}\n"
+            f"  Now: {new_day} {new_start}–{new_end}\n\n"
+            f"Please update your timetable. This message was sent "
+            f"automatically when the session was rescheduled."
+        )
+        try:
+            summary = emailer(module_code, subject, message,
+                              include_instructor=True)
+        except Exception:
+            logger.exception("Could not send timetable-change emails")
+            return "  (students not emailed — see the log)"
+        if not isinstance(summary, dict):
+            return ""
+        sent = summary.get("students_emailed", 0)
+        staff = " and the instructor" if summary.get("instructor_emailed") else ""
+        if summary.get("errors"):
+            return f"  ({sent} student(s){staff} emailed, {len(summary['errors'])} failed)"
+        return f"  ({sent} student(s){staff} emailed)"
 
     def _snap_back(self, ds):
         rect = ds["rect"]

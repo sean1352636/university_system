@@ -5,6 +5,7 @@ Loads settings from api_server_config.json with sensible defaults.
 
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import os
@@ -12,6 +13,7 @@ import secrets
 from typing import Any, Optional
 
 from education_system import paths
+from education_system.platform.delivery.api.security_headers import is_development
 
 logger = logging.getLogger(__name__)
 
@@ -34,21 +36,64 @@ _DEFAULTS = {
 
 
 def _deep_merge(base: dict, override: dict) -> dict:
-    """Recursively merge *override* into *base*, returning a new dict."""
-    merged = base.copy()
+    """Recursively merge *override* into *base*, returning a new dict.
+
+    ``copy.deepcopy`` rather than ``dict.copy()``: a shallow copy leaves the
+    nested dicts aliased to ``_DEFAULTS``, so anything writing to
+    ``config["jwt"]`` mutated the module-level defaults for the rest of the
+    process. That made a per-process value look stable and hid it in testing.
+    """
+    merged = copy.deepcopy(base)
     for key, value in override.items():
         if key in merged and isinstance(merged[key], dict) and isinstance(value, dict):
             merged[key] = _deep_merge(merged[key], value)
         else:
-            merged[key] = value
+            merged[key] = copy.deepcopy(value)
     return merged
+
+
+def _resolve_jwt_secret(configured: str | None) -> str:
+    """Return the JWT signing secret, or refuse to start without one.
+
+    Order of precedence: an explicit value in the config file, then
+    ``JWT_SECRET_KEY``, then ``API_SECRET_KEY``. ``JWT_SECRET_KEY`` is
+    preferred because it is the variable the shared auth layer reads
+    (``platform.delivery.api.auth._load_or_create_jwt_secret``); resolving the
+    same variable here keeps this server's Flask ``SECRET_KEY`` and its JWT
+    signing key in agreement instead of drifting apart.
+
+    Previously this fell back to an unconditional ``secrets.token_hex(32)``,
+    which meant every worker signed tokens with a different key and every
+    restart invalidated every session — and, because the value was always
+    truthy, ``init_auth`` never reached the platform's fail-closed guard. The
+    guard is enforced here instead, before a Flask app is built at all.
+    """
+    if configured:
+        return configured
+    for var in ("JWT_SECRET_KEY", "API_SECRET_KEY"):
+        value = os.getenv(var)
+        if value:
+            return value
+    if is_development():
+        logger.warning(
+            "No JWT_SECRET_KEY set; generated an ephemeral development secret. "
+            "Sessions will not survive a restart and will not be shared across "
+            "workers. Set JWT_SECRET_KEY before deploying."
+        )
+        return secrets.token_hex(32)
+    raise RuntimeError(
+        "JWT_SECRET_KEY (or API_SECRET_KEY) must be set in production. A "
+        "randomly generated per-process key signs tokens that every other "
+        "worker rejects and invalidates every session on restart."
+    )
 
 
 def load_config(path: Optional[str] = None) -> dict[str, Any]:
     """Load API configuration from JSON file, merged with defaults.
 
-    If no config file exists a default configuration is returned.
-    A random JWT secret is generated when none is configured.
+    If no config file exists a default configuration is returned. The JWT
+    secret comes from the config file or the environment; in production a
+    missing secret raises rather than being invented.
     """
     config_path = path or _DEFAULT_CONFIG_PATH
     file_config: dict[str, Any] = {}
@@ -68,10 +113,10 @@ def load_config(path: Optional[str] = None) -> dict[str, Any]:
     if not result.is_valid:
         logger.warning("API config validation warnings: %s", result.error_message)
 
-    # Guarantee a JWT secret exists
+    # Resolve the JWT secret. Fail-closed in production — see
+    # _resolve_jwt_secret. `config` is a deep copy, so this no longer writes
+    # through to the module-level defaults.
     jwt_cfg = config.setdefault("jwt", {})
-    if not jwt_cfg.get("secret_key"):
-        jwt_cfg["secret_key"] = secrets.token_hex(32)
-        logger.info("Generated random JWT secret (not persisted)")
+    jwt_cfg["secret_key"] = _resolve_jwt_secret(jwt_cfg.get("secret_key"))
 
     return config

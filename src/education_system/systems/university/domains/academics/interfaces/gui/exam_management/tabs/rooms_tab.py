@@ -16,6 +16,66 @@ except ImportError:
 class RoomsTabMixin:
     """Mixin providing the room management tab and its operations."""
 
+    # ── Building / room pickers ─────────────────────────────────────
+
+    def refresh_room_choices(self):
+        """Reload the building list from the rooms already in the database.
+
+        Sourced from ``data_manager.rooms`` rather than a fresh query so the
+        dropdowns always agree with the list on the right of this tab.
+        """
+        rooms = getattr(self.data_manager, "rooms", []) or []
+        buildings = sorted({(r.building or "").strip()
+                            for r in rooms if (r.building or "").strip()})
+        try:
+            self.building_combo["values"] = buildings
+        except (tk.TclError, AttributeError):
+            return
+        self._refresh_room_names(self.room_form_vars["building"].get())
+
+    def _rooms_in_building(self, building):
+        building = (building or "").strip().lower()
+        return [r for r in (getattr(self.data_manager, "rooms", []) or [])
+                if (r.building or "").strip().lower() == building]
+
+    def _refresh_room_names(self, building):
+        """Narrow the room dropdown to one building."""
+        names = sorted({(r.name or "").strip()
+                        for r in self._rooms_in_building(building)
+                        if (r.name or "").strip()})
+        try:
+            self.room_name_combo["values"] = names
+        except (tk.TclError, AttributeError):
+            pass
+
+    def _on_building_selected(self, _event=None):
+        """Building changed: re-list its rooms and drop a now-invalid room."""
+        building = self.room_form_vars["building"].get()
+        self._refresh_room_names(building)
+        current = self.room_form_vars["room_name"].get().strip()
+        if current and current not in (self.room_name_combo["values"] or ()):
+            # The selected room is not in this building — clear it rather than
+            # leave a pairing that does not exist.
+            self.room_form_vars["room_name"].set("")
+            self.room_form_vars["capacity"].set("")
+
+    def _on_room_name_selected(self, _event=None):
+        """Room chosen: fill in its capacity and facilities."""
+        building = self.room_form_vars["building"].get()
+        name = self.room_form_vars["room_name"].get().strip().lower()
+        for room in self._rooms_in_building(building):
+            if (room.name or "").strip().lower() == name:
+                self.room_form_vars["capacity"].set(str(room.capacity or 0))
+                # The checkboxes describe the same room, so match them too;
+                # leaving them stale would silently edit the room's facilities.
+                try:
+                    self.has_computers_var.set(bool(room.has_computers))
+                    self.has_projector_var.set(bool(room.has_projector))
+                except (tk.TclError, AttributeError):
+                    pass
+                self.selected_room_id = room.id
+                return
+
     def create_rooms_tab(self):
         """Create the room management tab."""
         tab = ttk.Frame(self.notebook, padding="10")
@@ -29,19 +89,40 @@ class RoomsTabMixin:
         form_frame = ttk.LabelFrame(paned, text=_("exam_scheduler.frames.room_details"), padding="15")
         paned.add(form_frame, weight=1)
 
-        # Room form fields
+        # Room form fields.
+        #
+        # Building and room are dropdowns over what is already in the database,
+        # and picking an existing room fills in its capacity — typing a
+        # building name and a room number from memory was the old interface and
+        # a typo silently created a duplicate room in a building that did not
+        # exist.
+        #
+        # They stay *editable* comboboxes rather than readonly: this same form
+        # adds new rooms, and a readonly list could only ever describe rooms
+        # that already exist.
         fields = [
-            (_("exam_scheduler.labels.room_name"), "room_name"),
             (_("exam_scheduler.labels.building"), "building"),
+            (_("exam_scheduler.labels.room_name"), "room_name"),
             (_("exam_scheduler.labels.capacity"), "capacity"),
         ]
-
-        self.room_form_vars = {}
+        self.room_form_vars = {name: tk.StringVar() for _label, name in fields}
         for i, (label, var_name) in enumerate(fields):
             ttk.Label(form_frame, text=label).grid(row=i, column=0, sticky=tk.W, pady=5)
-            var = tk.StringVar()
-            self.room_form_vars[var_name] = var
-            ttk.Entry(form_frame, textvariable=var, width=25).grid(row=i, column=1, sticky=tk.EW, pady=5, padx=(10, 0))
+
+        self.building_combo = ttk.Combobox(
+            form_frame, textvariable=self.room_form_vars["building"], width=23)
+        self.building_combo.grid(row=0, column=1, sticky=tk.EW, pady=5, padx=(10, 0))
+        self.building_combo.bind("<<ComboboxSelected>>", self._on_building_selected)
+
+        self.room_name_combo = ttk.Combobox(
+            form_frame, textvariable=self.room_form_vars["room_name"], width=23)
+        self.room_name_combo.grid(row=1, column=1, sticky=tk.EW, pady=5, padx=(10, 0))
+        self.room_name_combo.bind("<<ComboboxSelected>>", self._on_room_name_selected)
+
+        ttk.Entry(form_frame, textvariable=self.room_form_vars["capacity"],
+                  width=25).grid(row=2, column=1, sticky=tk.EW, pady=5, padx=(10, 0))
+
+        self.refresh_room_choices()
 
         # Checkboxes
         self.has_computers_var = tk.BooleanVar()
@@ -110,6 +191,11 @@ class RoomsTabMixin:
                 self.room_tree.insert('', tk.END, values=(
                     room.id, room.name, room.building, room.capacity, facilities_str
                 ))
+
+        # Keep the building/room dropdowns in step with the list — otherwise a
+        # room added here would not appear in its own picker until reopen.
+        if getattr(self, "building_combo", None) is not None:
+            self.refresh_room_choices()
 
         if getattr(self, "room_combo", None) is not None:
             self.update_room_combo()
@@ -205,6 +291,10 @@ class RoomsTabMixin:
         self.has_computers_var.set(False)
         self.has_projector_var.set(False)
         self.selected_room_id = None
+        # With no building selected the room list has nothing to narrow to;
+        # leaving the previous building's rooms listed would be misleading.
+        if getattr(self, "room_name_combo", None) is not None:
+            self._refresh_room_names("")
 
     def on_room_select(self, event):
         """Handle room selection in the tree."""

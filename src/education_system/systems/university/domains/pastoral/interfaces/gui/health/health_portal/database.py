@@ -4,6 +4,7 @@ from tkinter import messagebox
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from education_system import paths
+from education_system.systems.university.infrastructure.database.schemas.students_table import ensure_students_table
 
 
 class DatabaseMixin:
@@ -15,17 +16,7 @@ class DatabaseMixin:
             conn = self.get_connection()
             cursor = conn.cursor()
 
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS students (
-                    student_id TEXT PRIMARY KEY,
-                    first_name TEXT,
-                    last_name TEXT,
-                    age INTEGER,
-                    gender TEXT,
-                    email TEXT,
-                    phone TEXT
-                )
-            ''')
+            ensure_students_table(cursor)
 
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS health_records (

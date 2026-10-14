@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 import os
 import logging
 import base64
@@ -61,7 +65,7 @@ class AuthEncryptionMixin:
                 RealFernet(key)
                 return key
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         try:
             key = RealFernet.generate_key()
@@ -124,7 +128,7 @@ class AuthEncryptionMixin:
             try:
                 return cipher.encrypt(str(data).encode()).decode()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
         return _FallbackCipher().encrypt(str(data).encode()).decode()
 
     def decrypt_sensitive_data(self, encrypted_data):
@@ -172,10 +176,26 @@ class AuthEncryptionMixin:
         return role == 'student'
 
     def get_connection(self):
-        """Get database connection using the centralized student_records.db path"""
+        """Connect to the health repository, same as the health CLI does.
+
+        This used to open student_records.db. Health tables exist in *both*
+        databases, so the GUI was reading and writing its own copies while
+        the CLI used the ones in health_records.db — the same portal showed
+        different data depending on which interface you opened it from.
+
+        Going through the pastoral health storage adapter puts both
+        interfaces on one store, and that adapter attaches the student
+        directory, so the queries here that join ``students`` still resolve.
+        """
         try:
-            from education_system.systems.university.infrastructure.database.db import get_connection as central_get_connection
-            return central_get_connection()
+            from education_system.systems.university.domains.pastoral.infrastructure.health.storage import (
+                get_connection as health_get_connection,
+            )
+            return health_get_connection()
         except Exception:
+            # Never fall back to health_records.db: it is the abandoned store,
+            # and its foreign keys reference a `students` table it does not
+            # have, so writes there fail outright. The university database is
+            # where health data lives.
             from education_system import paths
             return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))

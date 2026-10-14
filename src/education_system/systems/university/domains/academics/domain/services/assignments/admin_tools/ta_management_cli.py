@@ -5,6 +5,102 @@ from education_system.systems.university.domains.academics.domain.services.assig
 
 logger = logging.getLogger(__name__)
 
+# Above this many options, listing them all buries the prompt — there are
+# ~390 modules — so the value is typed and validated instead, with close
+# matches offered when it doesn't land.
+_MAX_LISTED = 30
+
+
+def _query(sql, params=()):
+    """Run a read-only query. Returns [] if the database is unreachable."""
+    try:
+        from education_system.systems.university.infrastructure.database.db import (
+            get_connection,
+        )
+        conn = get_connection()
+        try:
+            return conn.execute(sql, params).fetchall()
+        finally:
+            conn.close()
+    except Exception as e:
+        logger.warning("TA lookup failed: %s", e)
+        return []
+
+
+def _prompt_existing(label, sql, *, params=(), suggest_sql=None):
+    """Prompt for a value that must already exist in the database.
+
+    ``sql`` selects ``(value, description)`` pairs for everything valid.
+    Small sets are listed outright; larger ones are typed and checked, with
+    ``suggest_sql`` (one ``LIKE`` parameter) offering near misses.
+
+    Returns the chosen value, or ``None`` when the user enters nothing —
+    which means "go back to the menu". ``teaching_assistants`` has no
+    foreign keys, so without this an unknown student or module was written
+    straight into the table.
+    """
+    rows = _query(sql, params)
+    if not rows:
+        print(f"\nNo {label.lower()}s are available to choose from.")
+        return None
+
+    valid = {str(row[0]): (row[1] if len(row) > 1 else '') for row in rows}
+
+    if len(valid) <= _MAX_LISTED:
+        print(f"\nAvailable {label.lower()}s:")
+        for value, description in valid.items():
+            print(f"  {value}" + (f" — {description}" if description else ""))
+    else:
+        print(f"\n{len(valid)} {label.lower()}s on file "
+              f"(e.g. {', '.join(list(valid)[:3])}…)")
+
+    while True:
+        entered = input(f"Enter {label} (blank to return to the menu): ").strip()
+        if not entered:
+            return None
+        if entered in valid:
+            description = valid[entered]
+            if description:
+                print(f"  ✓ {entered} — {description}")
+            return entered
+
+        print(f"\nError: {label} '{entered}' does not exist.")
+        if suggest_sql:
+            # The pattern is repeated for however many placeholders the
+            # suggestion query uses (code LIKE ? OR name LIKE ?).
+            pattern = f"%{entered}%"
+            near = _query(suggest_sql, (pattern,) * suggest_sql.count('?'))
+            if near:
+                print("Did you mean:")
+                for row in near:
+                    print(f"  {row[0]}" + (f" — {row[1]}" if len(row) > 1 and row[1] else ""))
+
+
+def _prompt_student_id():
+    """A student id that exists in the students table."""
+    return _prompt_existing(
+        "student ID",
+        "SELECT student_id, TRIM(COALESCE(first_name,'')||' '||COALESCE(last_name,'')) "
+        "FROM students WHERE student_id IS NOT NULL AND TRIM(student_id) <> '' "
+        "ORDER BY student_id",
+    )
+
+
+def _prompt_module_code():
+    """A module code that exists in the modules table."""
+    return _prompt_existing(
+        "module code",
+        "SELECT module_code, COALESCE(module_name,'') FROM modules "
+        "WHERE module_code IS NOT NULL AND TRIM(module_code) <> '' "
+        "ORDER BY module_code",
+        suggest_sql=(
+            "SELECT module_code, COALESCE(module_name,'') FROM modules "
+            "WHERE (module_code LIKE ? OR module_name LIKE ?) "
+            "AND TRIM(COALESCE(module_code,'')) <> '' "
+            "ORDER BY module_code LIMIT 8"
+        ),
+    )
+
 
 def display_ta_management_menu(auth):
     """Display the TA management CLI menu."""
@@ -124,14 +220,12 @@ def _view_module_tas(service):
 def _assign_ta(service, instructor_id):
     """Assign a student as a TA for a module."""
     print("\n--- Assign TA to Module ---")
-    student_id = input("Enter student ID: ").strip()
+    student_id = _prompt_student_id()
     if not student_id:
-        print("Student ID cannot be empty.")
         return
 
-    module_code = input("Enter module code: ").strip()
+    module_code = _prompt_module_code()
     if not module_code:
-        print("Module code cannot be empty.")
         return
 
     print("\nRole types: ta, lead_ta, grader")

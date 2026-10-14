@@ -260,6 +260,7 @@ def purge_due(now: datetime | None = None) -> dict[str, int]:
             if not table:
                 continue
             cutoff = (now - timedelta(days=p["keep_days"])).isoformat()
+            # db-audit: ignore[DBW001] - looked up in a literal mapping (last assignment before use)
             cols = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()}
             ts_col = next(
                 (c for c in ("created_at", "updated_at", "submitted_at", "synced_at") if c in cols),

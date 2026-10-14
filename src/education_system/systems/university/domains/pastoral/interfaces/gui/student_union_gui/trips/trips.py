@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -209,7 +213,7 @@ class StudentUnionTripsDialog:
                         f"Thank you,\nStudent Union"
                     )
                 except Exception:
-                    pass  # Email failure should not block registration
+                    logger.debug("Suppressed exception", exc_info=True)
 
             messagebox.showinfo(_t('gui.pastoral.student_union_gui.trips.trips.dialogs.success', default="Success"), f"You have been registered for '{trip_name}'.", parent=self.dialog)
             self._load_upcoming_trips()

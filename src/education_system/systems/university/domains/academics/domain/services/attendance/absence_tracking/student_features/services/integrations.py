@@ -155,7 +155,7 @@ class IntegrationsService:
         try:
             rows = self.ctx.db.cur.execute(
                 """SELECT m.module_code, e.date, e.name
-                   FROM academic_calendar_events e
+                   FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') e
                    JOIN student_modules sm ON 1=1
                    JOIN modules m ON m.module_code = sm.module_code
                    WHERE sm.student_id=? AND e.event_type LIKE '%exam%'

@@ -27,11 +27,32 @@ from typing import Dict
 
 logger = logging.getLogger(__name__)
 
+
+#: ``APP_ENV`` values in which the mock provider may run at all. An unset
+#: ``APP_ENV`` reads as production, so the refusal is the default and a
+#: deployment that forgot to configure SMS fails closed.
+_MOCK_PROVIDER_ENVIRONMENTS = frozenset({"development", "dev", "local", "test", "testing"})
+
+
+def _mock_delivery_allowed() -> bool:
+    """True when logging an OTP locally instead of sending it is safe.
+
+    Read at call time so a process that sets ``APP_ENV`` after import still
+    gets the right answer.
+    """
+    return os.getenv("APP_ENV", "production").strip().lower() in _MOCK_PROVIDER_ENVIRONMENTS
+
+
 # Runtime state lives under var/, not inside the package (ADR 0018).
 from education_system.paths import (
     PLATFORM_DATA_DIR as _SHARED_DATA_DIR,
     PLATFORM_SMS_CONFIG_PATH as _SMS_CONFIG_PATH,
 )
+
+
+def _redact_phone(phone_number: str) -> str:
+    """Last two digits only — enough to correlate, not to contact."""
+    return f"****{phone_number[-2:]}" if len(phone_number) > 2 else "****"
 
 
 # ── Providers ────────────────────────────────────────────────────────
@@ -44,14 +65,28 @@ class SMSProvider(ABC):
 
 
 class MockSMSProvider(SMSProvider):
-    """Logs the code instead of sending. Default in dev."""
+    """Logs the code instead of sending. Development and test only."""
 
     def send_otp(self, phone_number, code, system_name="Education System"):
+        if not _mock_delivery_allowed():
+            # Reporting success for an SMS nobody received is worse than
+            # failing: the account holder is locked out while the code sits
+            # in a log. Fail so the MFA service fails closed.
+            logger.error(
+                "SMS OTP fell back to the mock provider outside development; "
+                "refusing to emit a verification code. Configure an SMS provider."
+            )
+            return {"success": False, "provider": "mock",
+                    "error": "SMS OTP delivery is not configured"}
+
         ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        msg = f"[{ts}] MOCK SMS to {phone_number}: code={code} ({system_name})"
-        # Stdout so devs see it; logger so it's also captured.
-        print(f"📱 {msg}")
-        logger.info(msg)
+        # The code goes to stdout only — that is the point of the dev mock.
+        # It must not reach ``logger``: application logs are shipped, kept and
+        # read by people who are not the account holder, so a full OTP (and
+        # the number it was for) does not belong in them.
+        print(f"📱 [{ts}] MOCK SMS to {phone_number}: code={code} ({system_name})")
+        logger.info("Mock SMS OTP emitted for %s (code withheld from logs)",
+                    _redact_phone(phone_number))
         return {"success": True, "provider": "mock", "code": code}
 
 

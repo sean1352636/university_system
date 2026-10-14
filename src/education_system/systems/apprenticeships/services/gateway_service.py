@@ -167,6 +167,8 @@ def request_gateway(actor: Actor, apprentice_id: int, *, note: str | None = None
     require(actor, "gateway.request")
     apprentice = _load(actor, apprentice_id)
     record = _build_record(apprentice)
+    from education_system.systems.apprenticeships.services import degree_apprenticeship_service
+    degree_apprenticeship_service.require_university_gateway_confirmation(apprentice_id)
     gateway.require_ready(record)
     gateway.require_status(record.status, "Requested")
 
@@ -184,6 +186,27 @@ def request_gateway(actor: Actor, apprentice_id: int, *, note: str | None = None
         detail="Gateway requested" + (f": {note}" if note else ""),
     )
     logger.info("Gateway requested for apprentice %s by %s", apprentice_id, actor.username)
+
+    # The local decision is authoritative and already committed. Bus delivery
+    # is a durable notification for university coordination, not part of the
+    # gateway transaction.
+    try:
+        from education_system.platform.integrations.external import cross_system_bus
+        from education_system.systems.apprenticeships.infrastructure.integrations import degree_events
+        from education_system.systems.apprenticeships.infrastructure.persistence.repositories import (
+            degree_apprenticeship_repository,
+        )
+        link = degree_apprenticeship_repository.get_link(apprentice_id)
+        if link:
+            degree_events.publish(
+                cross_system_bus.EVENT_APPRENTICESHIP_GATEWAY_REQUESTED,
+                journey_id=link.journey_id, target_system="university",
+                idempotency_key=f"apprenticeship-gateway:{link.link_id}:{date.today().isoformat()}",
+                apprentice_id=apprentice_id,
+                university_student_id=link.university_student_id,
+            )
+    except Exception:
+        logger.warning("Could not publish degree apprenticeship gateway event", exc_info=True)
 
     if apprentice.status == "On Programme":
         _move_status(actor, apprentice_id, "Gateway", reason="Gateway requested")

@@ -1,12 +1,18 @@
 """Late submission policy management"""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
+from tkinter import ttk, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 import json
 from datetime import datetime, timedelta
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
+from education_system.systems.university.domains.academics.interfaces.gui._field_pickers import attach_picker
 
 
 POLICY_TEMPLATES = {
@@ -369,7 +375,7 @@ class LatePolicyManager:
                     created_by = (self.auth.current_user.get('username', '')
                                   or self.auth.current_user.get('id', ''))
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             try:
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
@@ -423,7 +429,7 @@ class LatePolicyManager:
 
     def _create_from_template(self):
         """Show dialog to pick and create a policy from a template"""
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.academics.assignment_system.late_policy_manager.windows.create_policy_from_template', default="Create Policy from Template"))
         dialog.geometry("400x320")
         dialog.transient(self.root)
@@ -466,7 +472,7 @@ class LatePolicyManager:
                     created_by = (self.auth.current_user.get('username', '')
                                   or self.auth.current_user.get('id', ''))
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             try:
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
@@ -631,7 +637,7 @@ class LatePolicyManager:
             return
         policy_id = int(self.policy_tree.item(sel[0], 'values')[0])
 
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.academics.assignment_system.late_policy_manager.windows.apply_policy_to_assignment', default="Apply Policy to Assignment"))
         dialog.geometry("450x200")
         dialog.transient(self.root)
@@ -691,7 +697,7 @@ class LatePolicyManager:
             return
         policy_id = int(self.policy_tree.item(sel[0], 'values')[0])
 
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.academics.assignment_system.late_policy_manager.windows.apply_policy_to_module', default="Apply Policy to Module"))
         dialog.geometry("400x200")
         dialog.transient(self.root)
@@ -1208,7 +1214,7 @@ class LatePolicyManager:
 
     def _grant_late_pass_dialog(self):
         """Dialog to grant a late pass to a student"""
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.academics.assignment_system.late_policy_manager.windows.grant_late_pass', default="Grant Late Pass"))
         dialog.geometry("420x320")
         dialog.transient(self.root)
@@ -1218,7 +1224,7 @@ class LatePolicyManager:
         ttk.Label(dialog, text=_t('gui.academics.assignment_system.late_policy_manager.labels.student_id', default="Student ID:")).grid(
             row=row, column=0, sticky='w', padx=10, pady=5)
         student_var = tk.StringVar()
-        ttk.Entry(dialog, textvariable=student_var, width=30).grid(
+        attach_picker(dialog, 'student', id_var=student_var, width=34).grid(
             row=row, column=1, sticky='w', padx=10, pady=5)
 
         row += 1
@@ -1271,7 +1277,7 @@ class LatePolicyManager:
                     granted_by = (self.auth.current_user.get('username', '')
                                   or self.auth.current_user.get('id', ''))
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             try:
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))

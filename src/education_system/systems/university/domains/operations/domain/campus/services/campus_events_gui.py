@@ -104,14 +104,6 @@ class CampusEventsGUI:
         )
         user_label.pack(side=tk.RIGHT)
 
-        # Language button
-        self.lang_btn = ttk.Button(
-            header_frame,
-            text=f"{_t('menu.language')}: {get_current_language_name()}",
-            command=self.change_language
-        )
-        self.lang_btn.pack(side=tk.RIGHT, padx=10)
-
         # Notebook for tabs
         self.notebook = ttk.Notebook(main_frame)
         self.notebook.pack(fill=tk.BOTH, expand=True)
@@ -827,7 +819,7 @@ class CreateEventDialog:
         self.end_entry.grid(row=5, column=1, pady=5, padx=(10, 0))
 
         # Building/Location dropdown - integrated with Facilities
-        ttk.Label(form_frame, text=_t("campus_events.labels.building")).grid(row=6, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t("campus_events.labels.building", default="Building")).grid(row=6, column=0, sticky=tk.W, pady=5)
         self.buildings_dict = self._load_buildings()
         building_names = list(self.buildings_dict.keys())
         self.building_combo = ttk.Combobox(form_frame, width=32, values=building_names, state='readonly')
@@ -1094,7 +1086,7 @@ class RegisterForEventDialog:
         form_frame.pack(fill=tk.BOTH, expand=True)
 
         # Event dropdown - load upcoming events
-        ttk.Label(form_frame, text=_t("campus_events.labels.select_event")).grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t("campus_events.labels.select_event", default="Select Event")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.events_dict = self._load_upcoming_events()
         event_names = list(self.events_dict.keys())
         self.event_combo = ttk.Combobox(form_frame, width=40, values=event_names, state='readonly')
@@ -1155,12 +1147,12 @@ class RegisterForEventDialog:
             # Get event_id from selected event
             selected_event = self.event_combo.get()
             if not selected_event or selected_event not in self.events_dict:
-                messagebox.showerror(_t("common.error"), _t("campus_events.errors.select_event"))
+                messagebox.showerror(_t("common.error"), _t("campus_events.errors.select_event", default="Select Event"))
                 return
 
             event_id = self.events_dict[selected_event]
             if event_id is None:
-                messagebox.showerror(_t("common.error"), _t("campus_events.errors.no_events_available"))
+                messagebox.showerror(_t("common.error"), _t("campus_events.errors.no_events_available", default="No Events Available."))
                 return
 
             user_id = self.user_entry.get().strip()
@@ -1304,7 +1296,7 @@ class SendAnnouncementDialog:
         form_frame.pack(fill=tk.BOTH, expand=True)
 
         # Event dropdown - load all events with registrations
-        ttk.Label(form_frame, text=_t("campus_events.labels.select_event")).grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t("campus_events.labels.select_event", default="Select Event")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.events_dict = self._load_events_with_registrations()
         event_names = list(self.events_dict.keys())
         self.event_combo = ttk.Combobox(form_frame, width=40, values=event_names, state='readonly')
@@ -1396,14 +1388,14 @@ class SendAnnouncementDialog:
             # Get event_id from selected event
             selected_event = self.event_combo.get()
             if not selected_event or selected_event not in self.events_dict:
-                messagebox.showerror(_t("common.error"), _t("campus_events.errors.select_event"))
+                messagebox.showerror(_t("common.error"), _t("campus_events.errors.select_event", default="Select Event"))
                 return
 
             event_info = self.events_dict[selected_event]
             event_id = event_info['id']
 
             if event_id is None:
-                messagebox.showerror(_t("common.error"), _t("campus_events.errors.no_events_available"))
+                messagebox.showerror(_t("common.error"), _t("campus_events.errors.no_events_available", default="No Events Available."))
                 return
 
             sent_to = self.sent_to_combo.get()
@@ -1422,7 +1414,7 @@ class SendAnnouncementDialog:
                 )
 
             confirm_msg = f"Send announcement to {reg_count} registered user(s)?\n\nEmails will be sent via the email queue system."
-            if not messagebox.askyesno(_t("campus_events.dialogs.confirm_send"), confirm_msg):
+            if not messagebox.askyesno(_t("campus_events.dialogs.confirm_send", default="Confirm Send"), confirm_msg):
                 return
 
             # Send announcement (this will also trigger email sending)

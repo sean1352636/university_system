@@ -1,0 +1,9 @@
+{
+    "subject": "📅 Health appointment booked - $appointment_date at $appointment_time (Ref #$appointment_id)",
+    "body": "Dear $student_name,\n\nYour appointment with the University Health Centre has been booked. This email confirms what has been recorded — please check the details below.\n\n=== YOUR APPOINTMENT ===\nReference Number: $appointment_id\nType: $appointment_type\nDate: $appointment_date\nTime: $appointment_time\nProvider: $provider\nStatus: $status\nBooked On: $scheduled_at\n\n=== REASON FOR THE APPOINTMENT ===\n$reason\n\n=== NOTES ===\n$notes\n\n=== BEFORE YOU COME ===\n1. Arrive 15 minutes early so we can check you in.\n2. Bring your student ID and a list of any medication you are taking.\n3. Tell us on arrival if your symptoms have changed since you booked.\n\n=== IF YOU CANNOT ATTEND ===\nPlease cancel or rearrange at least 24 hours in advance so the slot can be offered to someone else. You can do this through the Health Portal or by contacting the Health Centre.\n\n=== IF SOMETHING IS WRONG ===\nIf any detail above is incorrect, or you did not book this appointment, contact the Health Centre quoting reference $appointment_id.\n\n=== CONTACT INFORMATION ===\nHealth Centre: health@university.edu\nPhone: (555) 123-4567\nOffice Hours: Monday-Friday, 9:00 AM - 5:00 PM\nOut of hours emergencies: call 999\n\nBest regards,\nUniversity Health Centre\n\n$signature",
+    "variables": {
+        "reason": {"default": "Not recorded."},
+        "notes": {"default": "None recorded."},
+        "status": {"default": "scheduled"}
+    }
+}

@@ -1210,7 +1210,7 @@ class StaffDashboard(BaseDashboard):
             try:
                 self.notebook._select(1)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
         except Exception:
             logger.exception("StaffDashboard.apply_prefill failed")
 
@@ -1733,7 +1733,7 @@ def launch_in_frame(frame, user, prefill=None):
             try:
                 _db.close()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
     frame.bind("<Destroy>", _on_destroy, add="+")
     return db, dash
 
@@ -1765,7 +1765,7 @@ def launch_in_window(parent, user, prefill=None, on_back=None):
             try:
                 win.lift()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
     dash = launch_dashboard(win, db, user, prefill=prefill, on_back=cb_back)
 
@@ -1774,7 +1774,7 @@ def launch_in_window(parent, user, prefill=None, on_back=None):
             try:
                 _db.close()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
     win.bind("<Destroy>", _on_destroy, add="+")
     return win, dash
 

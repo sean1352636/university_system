@@ -20,6 +20,7 @@ from typing import Optional
 
 from education_system.systems.university.infrastructure.shared_context import get_auth
 from education_system.systems.university.domains.academics.domain.study_matching.services.study_matching_service import StudyMatchingService
+import tkinter.simpledialog  # noqa: F401 - registers tk.simpledialog
 
 
 # Constants

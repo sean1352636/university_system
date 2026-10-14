@@ -26,6 +26,9 @@ raising, so a partially-provisioned database never breaks a caller.
 """
 
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from typing import Dict, List, Optional, Set
 
@@ -145,19 +148,21 @@ def linked_course_codes_for_modules(conn, module_codes) -> Set[str]:
         return codes
     placeholders = ",".join("?" * len(module_codes))
     try:
+        # db-audit: ignore[DBW001] - join of placeholders
         for r in conn.execute(
                 f"SELECT DISTINCT course_code FROM course_module_map "
                 f"WHERE module_code IN ({placeholders})", list(module_codes)).fetchall():
             codes.add(r[0])
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     try:
+        # db-audit: ignore[DBW001] - join of placeholders
         for r in conn.execute(
                 f"SELECT DISTINCT course_code FROM courses "
                 f"WHERE course_code IN ({placeholders})", list(module_codes)).fetchall():
             codes.add(r[0])
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return codes
 
 
@@ -186,6 +191,7 @@ def get_student_section_meetings(student_id: str, conn=None) -> List[Dict[str, s
 
         placeholders = ",".join("?" * len(course_codes))
         status_ph = ",".join("?" * len(_INACTIVE_TERM_STATUSES))
+        # db-audit: ignore[DBW001] - join of placeholders
         rows = conn.execute(
             f"""SELECT sm.day_of_week, sm.start_time, sm.end_time,
                        cs.course_code, COALESCE(c.course_name, cs.course_code),
@@ -214,7 +220,7 @@ def get_student_section_meetings(student_id: str, conn=None) -> List[Dict[str, s
                 "location": r[6] or "TBA",
             })
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     finally:
         if close:
             conn.close()
@@ -267,7 +273,7 @@ def find_timetable_conflicts(day_of_week: str, start_time: str, end_time: str,
                         (day_of_week, loc)).fetchall():
                     sec_rows[r[0]] = r
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         for sid, r in sec_rows.items():
             if exclude_section_meeting_id and sid == exclude_section_meeting_id:
                 continue
@@ -296,7 +302,7 @@ def find_timetable_conflicts(day_of_week: str, start_time: str, end_time: str,
                         (day_of_week, loc)).fetchall():
                     mod_rows[r[0]] = r
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         for r in mod_rows.values():
             bs, be = _to_minutes(r[1]), _to_minutes(r[2])
             if bs is None or be is None or not _overlaps(start_m, end_m, bs, be):

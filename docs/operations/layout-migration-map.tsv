@@ -110,7 +110,7 @@ education_system/nursery_system/modules/shared/gui	education_system/systems/nurs
 education_system/nursery_system/tests	@tests/systems/nursery
 education_system/post_16	@drop
 education_system/post_16/sixthform_system	education_system/systems/sixth_form
-education_system/post_16/sixthform_system/api	education_system/systems/sixth_form/interfaces/api
+education_system/post_16/sixthform_system/api	education_system/api/sixth_form
 education_system/post_16/sixthform_system/core	education_system/systems/sixth_form/infrastructure
 education_system/post_16/sixthform_system/data	@var/data/sixth_form
 education_system/post_16/sixthform_system/data/templates/email	education_system/systems/sixth_form/assets/templates/email
@@ -264,7 +264,7 @@ education_system/post_16/sixthform_system/tests	@tests/systems/sixth_form/domain
 education_system/post_16/sixthform_system/tests	@tests/systems/sixth_form/domain/operations/communications/parent_portal
 education_system/post_16/sixthform_system/tests	@tests/systems/sixth_form/domain/progression/ucas_workflow
 education_system/post_16/sixthform_system/tests	@tests/systems/sixth_form/infrastructure
-education_system/post_16/sixthform_system/tests	@tests/systems/sixth_form/interfaces/api
+education_system/post_16/sixthform_system/tests	@tests/api/sixth_form
 education_system/post_16/sixthform_system/tests	@tests/systems/sixth_form/interfaces/cli
 education_system/post_16/sixthform_system/tests	@tests/systems/sixth_form/interfaces/gui
 education_system/post_16/sixthform_system/tests	@tests/systems/sixth_form/smoke

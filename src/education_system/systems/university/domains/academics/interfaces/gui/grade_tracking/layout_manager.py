@@ -1,52 +1,33 @@
 """UI layout and navigation"""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, filedialog
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import make_toplevel
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import active_window
 import tkinter.scrolledtext as scrolledtext
 from education_system.systems.university.infrastructure.database.db import sqlite3
 import os
 from pathlib import Path
 import csv
-import numpy as np
 import math
-from scipy import stats
 from datetime import datetime, timedelta
 import json
 from education_system import paths
 from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.utils import ensure_column_exists
+from education_system.systems.university.infrastructure.database.schemas.modules_table import ensure_modules_table
+from education_system.systems.university.infrastructure.database.schemas.modules_table import ensure_student_modules_table
+from education_system.systems.university.infrastructure.database.schemas.students_table import ensure_students_table
 
 # Use centralized path configuration
 DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 _CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
-# Optional imports with fallbacks
-try:
-    import pandas as pd
-except ImportError:
-    pd = None
-
-try:
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    import matplotlib
-    matplotlib.use('TkAgg')
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-except ImportError:
-    plt = None
-    sns = None
-    FigureCanvasTkAgg = None
-
-try:
-    from reportlab.lib.pagesizes import letter
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-    from reportlab.lib import colors
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib.units import inch
-except ImportError:
-    # ReportLab not available - PDF features will be disabled
-    SimpleDocTemplate = None
 
 # Database connection setup
 
@@ -58,7 +39,7 @@ def _patched_sqlite3_connect_grade(database, *args, **kwargs):
         if not database or db_name in (str(DEFAULT_DB_PATH), "student_grading_system.db"):
             return _original_sqlite3_connect_grade(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return _original_sqlite3_connect_grade(database, *args, **kwargs)
 
 sqlite3.connect = _patched_sqlite3_connect_grade
@@ -123,48 +104,13 @@ def init_basic_database():
         cursor = conn.cursor()
 
         # Create students table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS students (
-            student_id TEXT PRIMARY KEY,
-            first_name TEXT NOT NULL,
-            middle_name TEXT,
-            last_name TEXT NOT NULL,
-            course TEXT NOT NULL,
-            email_address TEXT,
-            gender TEXT,
-            dob TEXT,
-            enrollment_date TEXT DEFAULT (date('now')),
-            status TEXT DEFAULT 'Active'
-        )
-        ''')
+        ensure_students_table(cursor)
 
         # Create modules table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS modules (
-            module_code TEXT PRIMARY KEY,
-            module_name TEXT NOT NULL,
-            module_type TEXT,
-            credits INTEGER DEFAULT 1,
-            description TEXT,
-            course TEXT,
-            semester TEXT,
-            year INTEGER
-        )
-        ''')
+        ensure_modules_table(cursor)
 
         # Create student_modules table (enrollment)
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS student_modules (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id TEXT,
-            module_code TEXT,
-            enrollment_date TEXT DEFAULT (date('now')),
-            status TEXT DEFAULT 'Enrolled',
-            FOREIGN KEY (student_id) REFERENCES students (student_id),
-            FOREIGN KEY (module_code) REFERENCES modules (module_code),
-            UNIQUE(student_id, module_code)
-        )
-        ''')
+        ensure_student_modules_table(cursor)
 
         # Create assessments table
         cursor.execute('''
@@ -420,11 +366,8 @@ class LayoutManager:
             self.view_buttons = [
                 ("Students", self.show_student_view),
                 ("Modules", self.show_module_view),
-                ("Assessments", self.show_assessment_view),
+                ("Assessments/Exams", self.show_assessment_view),
                 ("Grades", self.show_grades_view),
-                ("Grade Management", self.show_grade_management_view),
-                ("View Grades", self.show_view_grades_view),
-                ("Statistics & Analysis", self.show_statistics_view),
                 ("Transcripts", self.show_transcript_view),
                 ("Grade Curve Analysis", self.show_curve_analysis_view),
                 ("Learning Outcomes", self.show_learning_outcomes_view),
@@ -435,7 +378,7 @@ class LayoutManager:
                 ("Reports", self.show_reports_view),
                 ("Academic Progress", self.show_academic_progress),
                 ("Assignment System", self.open_assignment_system),
-                ("Exam Scheduler", self.open_exam_scheduler),
+                ("Exam Management", self.open_exam_scheduler),
                 ("Module Scheduling", self.open_module_scheduling),
                 ("Course Management", self.open_course_management),
                 ("Cross-Domain Activity", self.open_integrations_activity),
@@ -449,11 +392,8 @@ class LayoutManager:
             self.view_buttons = [
                 ("Students", self.show_student_view),
                 ("Modules", self.show_module_view),
-                ("Assessments", self.show_assessment_view),
+                ("Assessments/Exams", self.show_assessment_view),
                 ("Grades", self.show_grades_view),
-                ("Grade Management", self.show_grade_management_view),
-                ("View Grades", self.show_view_grades_view),
-                ("Statistics & Analysis", self.show_statistics_view),
                 ("Transcripts", self.show_transcript_view),
                 ("Analytics", self.show_analytics_view),
                 ("Reports", self.show_reports_view),
@@ -474,12 +414,22 @@ class LayoutManager:
                 ("🏠 Return to Main Menu", self.return_to_main_menu)
             ]
 
-        # Create buttons
+        # Return to Main Menu goes first. It was last, which on the admin
+        # sidebar meant scrolling past 20-odd entries to leave the screen.
+        home = [b for b in self.view_buttons if b[0].endswith("Return to Main Menu")]
+        rest = [b for b in self.view_buttons if not b[0].endswith("Return to Main Menu")]
+        self.view_buttons = home + rest
+
         self.buttons = {}
-        for text, command in self.view_buttons:
+        for index, (text, command) in enumerate(self.view_buttons):
             btn = ttk.Button(scrollable_frame, text=text, command=command, width=20)
             btn.pack(fill=tk.X, pady=2, padx=5)
             self.buttons[text] = btn
+            if home and index == 0:
+                # A rule under it, so it reads as leaving rather than as
+                # the first item in the list of views.
+                ttk.Separator(scrollable_frame, orient="horizontal").pack(
+                    fill=tk.X, padx=5, pady=(4, 6))
 
         # Initialize with appropriate default view based on role
         if is_student:
@@ -503,7 +453,7 @@ class LayoutManager:
 
 
     def open_exam_scheduler(self):
-        """Launch the Exam Scheduler in a sibling Toplevel."""
+        """Launch Exam Management in a sibling Toplevel."""
         from education_system.systems.university.domains.academics.interfaces.gui._cross_launchers import (
             open_exam_gui,
         )
@@ -552,7 +502,7 @@ class LayoutManager:
         try:
             self.app.integrations.show_integrations_activity()
         except Exception as e:
-            from tkinter import messagebox
+            from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import messagebox
             messagebox.showerror(
                 _t('gui.academics.grade_tracking.layout_manager.dialogs.error', default="Error"),
                 f"Failed to open integrations activity: {e}",
@@ -567,17 +517,21 @@ class LayoutManager:
             from education_system.systems.university.domains.academics.domain.services.assignments.assignment_submission import (
                 AssignmentSubmission,
             )
-            assignment_window = tk.Toplevel(self.root)
+            assignment_window = make_toplevel(self.root)
             assignment_window.title(_t('gui.academics.grade_tracking.layout_manager.windows.assignment_system', default="Assignment System"))
-            assignment_window.geometry("1200x800")
+            try:
+                from education_system.platform.delivery.gui.window_sizing import center
+                center(assignment_window, 1400, 900, minsize=(1000, 650))
+            except Exception:
+                assignment_window.geometry("1400x900")
             assignment_window.minsize(1000, 600)
             try:
                 assignment_window.transient(self.root)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             AssignmentGUI(AssignmentSubmission(), self.auth, parent=assignment_window)
         except Exception as e:
-            from tkinter import messagebox
+            from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import messagebox
             messagebox.showerror(
                 _t('gui.academics.grade_tracking.layout_manager.dialogs.error', default="Error"),
                 f"Failed to open Assignment System: {e}",
@@ -593,7 +547,7 @@ class LayoutManager:
             else:
                 # Running standalone, need to create main GUI
                 self.root.destroy()
-                from education_system.systems.university.interfaces.gui.shell.main import UnifiedManagementGUI
+                from education_system.systems.university.shell.gui.main import UnifiedManagementGUI
                 app = UnifiedManagementGUI(self.auth)
                 app.run()
         except Exception as e:
@@ -626,53 +580,123 @@ class LayoutManager:
     def show_assessment_view(self):
         """Show assessment management view"""
         self._clear_content()
-        self.current_view = "Assessments"
+        self.current_view = "Assessments/Exams"
         if hasattr(self.app, 'assessments'):
             if hasattr(self.app.assessments, 'create_assessment_content'):
                 self.app.assessments.create_assessment_content()
 
+    # ---- Grades: one section, tabbed ------------------------------
+    #
+    # This was five sidebar entries. Three of them opened screens that
+    # already existed elsewhere in the same sidebar:
+    #
+    #   "Grade Management"  -> analytics.create_analytics_content()
+    #   "Statistics & Analysis" -> the same method
+    #   "Analytics"         -> the same method again
+    #   "View Grades"       -> grades.show_grade_statistics(), which is
+    #                          already a button inside the Grades screen
+    #
+    # so only Grade Entry, Submissions and Rubric Grading were distinct —
+    # and those are one task at three granularities. They are now tabs.
+    # "Statistics & Analysis" and "Analytics" are left alone; collapsing
+    # those is a separate decision.
+
+    #: (tab label, builder attribute path). Resolved late so a manager
+    #: that failed to load costs its own tab, not the whole section.
+    _GRADE_TABS = (
+        ("Grade Entry", "grades", "create_grades_content"),
+        ("Submissions", None, "create_grade_submissions_content"),
+        ("Rubric Grading", None, "create_rubric_grading_content"),
+        # No Statistics tab: show_grade_statistics opens its own Toplevel
+        # rather than filling the content area, so a tab for it would show
+        # an empty page beside a popup. It stays the "Grade Statistics"
+        # button in the Grade Entry toolbar, where it already was.
+    )
+
     def show_grades_view(self):
-        """Show grades view - Main grade entry and editing interface"""
+        """Everything to do with marking, in one tabbed section."""
         self._clear_content()
         self.current_view = "Grades"
-        if hasattr(self.app, 'grades'):
-            if hasattr(self.app.grades, 'create_grades_content'):
-                self.app.grades.create_grades_content()
+
+        notebook = ttk.Notebook(self.content_frame)
+        notebook.pack(fill=tk.BOTH, expand=True)
+
+        for label, owner_attr, method_name in self._GRADE_TABS:
+            owner = self.app if owner_attr is None else getattr(self.app, owner_attr, None)
+            builder = getattr(owner, method_name, None) if owner is not None else None
+            if not callable(builder):
+                continue
+            frame = ttk.Frame(notebook)
+            notebook.add(frame, text=label)
+            self._build_in(frame, builder, label)
+
+        if not notebook.tabs():
+            ttk.Label(self.content_frame,
+                      text=_t('gui.academics.grade_tracking.layout_manager.dialogs.grade_viewing_features_are_not_available',
+                              default="Grade viewing features are not available")).pack(pady=20)
+
+    def _build_in(self, frame, builder, label):
+        """Run a content builder with *frame* as the content area.
+
+        The builders all resolve their parent through
+        ``layout.content_frame`` rather than taking one, so the only way
+        to host them in a tab is to point that at the tab while they
+        run. Restored in a finally so a failing builder cannot strand
+        the whole layout pointing at a dead frame.
+        """
+        original = self.content_frame
+        self.content_frame = frame
+        try:
+            builder()
+        except Exception:
+            logger.exception("Grades tab %r failed to build", label)
+            ttk.Label(frame, text=f"{label} could not be loaded.").pack(pady=20)
+        finally:
+            self.content_frame = original
+
+    def show_grade_submissions_view(self):
+        """Kept for callers outside the sidebar; opens the Grades section."""
+        self.show_grades_view()
+
+    def show_rubric_grading_view(self):
+        """Kept for callers outside the sidebar; opens the Grades section."""
+        self.show_grades_view()
 
     def show_grade_management_view(self):
-        """Show grade management view - Analytics, bulk operations, and management tools"""
-        self._clear_content()
-        self.current_view = "Grade Management"
-        if hasattr(self.app, 'analytics'):
-            if hasattr(self.app.analytics, 'create_analytics_content'):
-                self.app.analytics.create_analytics_content()
-            else:
-                messagebox.showinfo(_t('gui.academics.grade_tracking.layout_manager.dialogs.info', default="Info"), _t('gui.academics.grade_tracking.layout_manager.dialogs.analytics_features_are_not_available', default="Analytics features are not available"))
-        else:
-            messagebox.showinfo(_t('gui.academics.grade_tracking.layout_manager.dialogs.info', default="Info"), _t('gui.academics.grade_tracking.layout_manager.dialogs.grade_management_features_are_not_available', default="Grade management features are not available"))
+        """Kept for callers outside the sidebar; this was the Analytics screen."""
+        self.show_analytics_view()
 
     def show_view_grades_view(self):
-        """Show view grades view - Read-only grade statistics and reports"""
+        """Read-only grade statistics.
+
+        Still its own view: it is the *only* grades entry a student has,
+        and they must not get the entry, submissions or rubric tabs.
+        """
         self._clear_content()
         self.current_view = "View Grades"
-        if hasattr(self.app, 'grades'):
-            if hasattr(self.app.grades, 'show_grade_statistics'):
-                self.app.grades.show_grade_statistics()
-            elif hasattr(self.app.analytics, 'create_reports_content'):
-                # Fallback to reports if statistics not available
-                self.app.analytics.create_reports_content()
-            else:
-                messagebox.showinfo(_t('gui.academics.grade_tracking.layout_manager.dialogs.info', default="Info"), _t('gui.academics.grade_tracking.layout_manager.dialogs.grade_viewing_features_are_not_available', default="Grade viewing features are not available"))
-        else:
-            messagebox.showinfo(_t('gui.academics.grade_tracking.layout_manager.dialogs.info', default="Info"), _t('gui.academics.grade_tracking.layout_manager.dialogs.grade_viewing_features_are_not_available', default="Grade viewing features are not available"))
+        grades = getattr(self.app, 'grades', None)
+        builder = getattr(grades, 'show_grade_statistics', None) if grades else None
+        if callable(builder):
+            builder()
+            return
+        analytics = getattr(self.app, 'analytics', None)
+        fallback = getattr(analytics, 'create_reports_content', None) if analytics else None
+        if callable(fallback):
+            fallback()
+            return
+        messagebox.showinfo(
+            _t('gui.academics.grade_tracking.layout_manager.dialogs.info', default="Info"),
+            _t('gui.academics.grade_tracking.layout_manager.dialogs.grade_viewing_features_are_not_available',
+               default="Grade viewing features are not available"))
+
 
     def show_statistics_view(self):
-        """Show statistics view"""
-        self._clear_content()
-        self.current_view = "Statistics"
-        if hasattr(self.app, 'analytics'):
-            if hasattr(self.app.analytics, 'create_analytics_content'):
-                self.app.analytics.create_analytics_content()
+        """Kept for callers outside the sidebar; opens Analytics.
+
+        "Statistics & Analysis" and "Analytics" were two sidebar entries
+        running the identical method, so the sidebar now carries one.
+        """
+        self.show_analytics_view()
 
     def show_transcript_view(self):
         """Show transcript view"""
@@ -684,12 +708,86 @@ class LayoutManager:
                 self.app.students.generate_individual_transcript()
 
     def show_curve_analysis_view(self):
-        """Show grade curve analysis view"""
-        self.show_analytics_view()
+        """Grade distribution and curve preview.
+
+        Was a fall-through to the generic Analytics screen; the figures
+        only existed in the CLI. See grading/curve_analysis_data.py.
+        """
+        self._clear_content()
+        self.current_view = "Grade Curve Analysis"
+        self._build_analytics("create_curve_analysis_content",
+                              "Grade curve analysis")
+
+    def show_performance_analysis_view(self):
+        """Comparative performance and trends over time."""
+        self._clear_content()
+        self.current_view = "Performance Analysis"
+        self._build_analytics("create_performance_analysis_content",
+                              "Performance analysis")
+
+    def _build_analytics(self, method_name, label):
+        """Render an analytics screen, saying so when it is unavailable."""
+        analytics = getattr(self.app, 'analytics', None)
+        builder = getattr(analytics, method_name, None) if analytics else None
+        if callable(builder):
+            try:
+                builder()
+                return
+            except Exception:
+                logger.exception("%s failed to build", label)
+        ttk.Label(self.content_frame,
+                  text=f"{label} is not available.").pack(pady=20)
+
+    def _select_tab(self, gui, label):
+        """Bring *label* to the front of a launched GUI's notebook.
+
+        Deferred to after_idle: the target builds its tabs while its
+        constructor runs, so selecting immediately picked whichever tabs
+        existed at that instant and the rest then arrived behind it,
+        leaving the window on tab one.
+
+        Best-effort — opening on the wrong tab is a poor landing, not a
+        failure worth interrupting the user for.
+        """
+        notebook = getattr(gui, "notebook", None) if gui is not None else None
+        if notebook is None:
+            return
+
+        def _apply():
+            try:
+                for index in range(notebook.index("end")):
+                    if notebook.tab(index, "text").strip().lower() == label.lower():
+                        notebook.select(index)
+                        return
+                logger.debug("No %r tab to select", label)
+            except Exception:
+                logger.debug("Could not select the %r tab", label, exc_info=True)
+
+        try:
+            notebook.after_idle(_apply)
+        except Exception:
+            _apply()
 
     def show_learning_outcomes_view(self):
-        """Show learning outcomes view"""
-        self.show_analytics_view()
+        """Open Course Management, where learning outcomes actually live.
+
+        This button used to show the generic Analytics screen. The real
+        feature is the Course Management GUI's Learning Outcomes tab
+        (course_management_gui/core/outcomes_tab.py) — outcomes are
+        defined against a course, not derived from grades — so this now
+        cross-launches that rather than pretending to be it.
+        """
+        try:
+            from education_system.systems.university.domains.academics.interfaces.gui._cross_launchers import (
+                open_course_gui,
+            )
+            gui = open_course_gui(self.root, getattr(self.app, 'auth', None))
+            self._select_tab(gui, "Learning Outcomes")
+        except Exception as exc:
+            logger.exception("Could not open Course Management for learning outcomes")
+            messagebox.showerror(
+                _t('gui.academics.grade_tracking.layout_manager.dialogs.info', default="Info"),
+                f"Could not open Course Management: {exc}")
 
     def show_competency_view(self):
         """Show competency view"""
@@ -707,25 +805,42 @@ class LayoutManager:
             if hasattr(self.app.analytics, 'create_prediction_content'):
                 self.app.analytics.create_prediction_content()
 
-    def show_performance_analysis_view(self):
-        """Show performance analysis view"""
-        self.show_analytics_view()
-
     def show_academic_progress(self):
         """Launch Academic Progress GUI"""
         try:
             from education_system.systems.university.domains.assessment.interfaces.gui.academic_progress.progress_gui import AcademicProgressGUI
-            import tkinter as tk
-            window = tk.Toplevel(self.root)
-            window.title(_t('gui.academics.grade_tracking.layout_manager.windows.academic_progress', default="Academic Progress"))
-            window.geometry("1200x800")
-            AcademicProgressGUI(window, self.auth)
+
+            # AcademicProgressGUI builds its own Toplevel from the parent it
+            # is given, so passing it a window we made here left that window
+            # empty on screen next to the real dashboard. Hand it the root and
+            # dress the window it creates instead.
+            gui = AcademicProgressGUI(self.root, self.auth)
+            window = getattr(gui, 'root', None)
+            if window is not None:
+                window.title(_t('gui.academics.grade_tracking.layout_manager.windows.academic_progress', default="Academic Progress"))
+                try:
+                    from education_system.platform.delivery.gui.window_sizing import center
+                    center(window, 1400, 900, minsize=(1000, 650))
+                except Exception:
+                    window.geometry("1400x900")
+                # Stacking owner, as make_toplevel() would have set it.
+                try:
+                    owner = active_window()
+                    if owner is not None and owner is not window:
+                        window.transient(owner)
+                    window.lift()
+                except Exception:
+                    logger.debug("Suppressed exception", exc_info=True)
         except Exception as e:
-            from tkinter import messagebox
+            from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import messagebox
             messagebox.showerror(_t('gui.academics.grade_tracking.layout_manager.dialogs.error', default="Error"), f"Failed to open Academic Progress: {e}")
 
     def show_analytics_view(self):
-        """Show analytics view"""
+        """Show analytics view.
+
+        Grade Curve Analysis, Performance Analysis and Learning Outcomes
+        used to fall through to here. They now reach their own screens.
+        """
         self._clear_content()
         self.current_view = "Analytics"
         if hasattr(self.app, 'analytics'):

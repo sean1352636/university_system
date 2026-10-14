@@ -128,7 +128,7 @@ class HSDatabase:
                 description=data.get('description'),
             )
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Finance link (#7) — if the incident carries an estimated cost,
         # post it as a charge against the responsible department.
@@ -152,7 +152,7 @@ class HSDatabase:
                         processed_by="health_safety_portal",
                     )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         return new_id
 
@@ -175,10 +175,9 @@ class HSDatabase:
             now = datetime.now().isoformat()
             with get_connection() as conn:
                 conn.execute(
-                    "INSERT INTO academic_calendar_events "
-                    "(id, name, date, description, event_type, "
-                    " date_added, last_modified, created_by) "
-                    "VALUES (?, ?, ?, ?, 'evacuation_drill', ?, ?, ?)",
+                    "INSERT INTO unified_events "
+                "(source_event_id, title, event_date, description, event_type, created_at, updated_at, created_by, source_type) "
+                "VALUES (?, ?, ?, ?, 'evacuation_drill', ?, ?, ?, 'academic_calendar')",
                     (event_id,
                      f"Evacuation drill — {location or 'campus'}",
                      drill_date,
@@ -194,7 +193,7 @@ class HSDatabase:
                         event_type="evacuation_drill", action="created",
                         date=drill_date)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             return event_id
         except Exception as exc:
             logger.warning("schedule_evacuation_drill failed: %s", exc)

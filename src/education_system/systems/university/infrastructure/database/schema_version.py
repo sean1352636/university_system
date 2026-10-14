@@ -10,7 +10,12 @@ import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
 
-REQUIRED_REVISION = "a83f5c7d9e12"
+# Must equal the Alembic head. ``require_supported_schema`` demands an exact
+# match, so leaving this behind the head does not degrade gracefully — it
+# makes the API server refuse to start against a correctly migrated
+# database, which is how it stood at b2e7f4a91c58. Bump it in the same
+# commit as any new migration; ``test_required_revision_is_head`` enforces it.
+REQUIRED_REVISION = "c7a3e91f4d20"
 
 
 @dataclass(frozen=True, slots=True)

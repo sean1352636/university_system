@@ -23,6 +23,23 @@ from education_system.systems.university.domains.academics.interfaces.gui.exam_m
 logger = logging.getLogger(__name__)
 
 
+def _grab_when_viewable(dialog: tk.Toplevel, retries: int = 5) -> None:
+    """Set a modal grab after the window manager has mapped ``dialog``."""
+    try:
+        if not dialog.winfo_exists():
+            return
+        if dialog.winfo_viewable():
+            dialog.grab_set()
+        elif retries > 0:
+            dialog.after(
+                50,
+                lambda: _grab_when_viewable(dialog, retries - 1),
+            )
+    except tk.TclError:
+        # The dialog may be destroyed while a deferred callback is pending.
+        return
+
+
 def _enrolled_ids(raw) -> List[str]:
     """Tolerate either a JSON string or an already-decoded list."""
     if not raw:
@@ -142,7 +159,6 @@ class ResultsEntryDialog(tk.Toplevel):
         self.title(f"Enter marks — {exam.module_code} ({exam.date})")
         self.geometry("520x520")
         self.transient(parent)
-        self.grab_set()
 
         self._exam = exam
         self._data_manager = data_manager
@@ -214,6 +230,10 @@ class ResultsEntryDialog(tk.Toplevel):
         ttk.Button(actions, text=_t('gui.academics.exam_management.tabs.results_tab.buttons.save_write_back', default="💾 Save & write back"),
                    command=self._save).pack(side=tk.RIGHT)
 
+        # A newly-created Toplevel is not necessarily mapped yet.  Grabbing it
+        # synchronously can raise "grab failed: window not viewable".
+        self.after_idle(lambda: _grab_when_viewable(self))
+
     def _save(self):
         results: dict[str, float] = {}
         invalid: list[str] = []
@@ -252,7 +272,7 @@ class ResultsEntryDialog(tk.Toplevel):
             if cu and cu.get("username"):
                 graded_by = cu["username"]
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         written, failed = results_service.apply_exam_results(
             self._exam, results, graded_by=graded_by,

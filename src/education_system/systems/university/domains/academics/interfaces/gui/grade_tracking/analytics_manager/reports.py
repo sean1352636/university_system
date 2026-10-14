@@ -3,7 +3,9 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, filedialog
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import make_toplevel
 import tkinter.scrolledtext as scrolledtext
 import csv
 import json
@@ -14,22 +16,24 @@ from education_system.systems.university.infrastructure.database.db import sqlit
 from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.analytics_manager.constants import get_connection
 from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.analytics_manager.utils import safe_grab_set
 
-try:
-    import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-except ImportError:
-    plt = None
-    FigureCanvasTkAgg = None
-
-try:
-    from reportlab.lib.pagesizes import letter
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-    from reportlab.lib.styles import getSampleStyleSheet
-    from reportlab.lib.units import inch
-except ImportError:
-    SimpleDocTemplate = None
-
 logger = logging.getLogger(__name__)
+
+
+def _load_matplotlib():
+    """Import pyplot and the Tk canvas on first use.
+
+    Kept out of module scope: pyplot costs ~2s and this module is imported
+    whenever Grade Tracking opens, long before anyone asks for a chart.
+    Returns ``(None, None)`` when matplotlib is not installed.
+    """
+    try:
+        import matplotlib
+        matplotlib.use('TkAgg')
+        import matplotlib.pyplot as plt
+        from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+    except ImportError:
+        return None, None
+    return plt, FigureCanvasTkAgg
 
 def _safe_spreadsheet_value(value):
     """Prevent spreadsheet applications from evaluating exported formulas.
@@ -55,52 +59,47 @@ class ReportsMixin:
                 if conn is not None:
                     return raw_conn, conn
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
         return raw_conn, raw_conn
 
     def _display_report(self, title, sections, footer=None):
         """Render report content in a separate window with email option."""
-        # Create separate window for report
-        report_window = tk.Toplevel(self.root)
+        report_window = make_toplevel(self.root)
         report_window.title(title)
-        report_window.geometry("800x600")
+        # 800x600 was not enough to read a cohort-sized report without
+        # scrolling; center() asks for a large window and clamps it to
+        # whatever the display can actually show.
+        try:
+            from education_system.platform.delivery.gui.window_sizing import center
+            center(report_window, 1200, 820, minsize=(820, 560))
+        except Exception:
+            report_window.geometry("1200x820")
+            report_window.minsize(820, 560)
 
-        # Create main frame
-        main_frame = ttk.Frame(report_window)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        # The text form still backs Email and Save, so it is built either
+        # way; only what is shown on screen changes.
+        report_content = self.sections_to_text(title, sections, footer)
 
-        # Create scrolled text widget for report
-        report_text = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD, font=('Courier', 10))
-        report_text.pack(fill=tk.BOTH, expand=True)
-
-        # Build report content
-        lines = [
-            title,
-            "=" * len(title),
-            f"Generated: {datetime.now():%Y-%m-%d %H:%M}",
-            ""
-        ]
-
-        for heading, content_lines in sections:
-            heading = heading.strip() or "Details"
-            lines.append(heading)
-            lines.append("-" * len(heading))
-            if content_lines:
-                lines.extend(content_lines)
-            else:
-                lines.append("No data available.")
-            lines.append("")
-
-        if footer:
-            lines.append(footer)
-
-        report_content = "\n".join(lines).rstrip() + "\n"
-        report_text.insert('1.0', report_content)
-        report_text.config(state='disabled')
-
-        # Button frame at bottom
+        # Buttons first: they are packed against the bottom, and a body
+        # that fills and expands before them would leave them no height.
         button_frame = ttk.Frame(report_window)
-        button_frame.pack(fill='x', padx=10, pady=10)
+        button_frame.pack(side='bottom', fill='x', padx=10, pady=10)
+
+        main_frame = ttk.Frame(report_window)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(10, 0))
+
+        rendered = False
+        try:
+            self.render_report_sections(main_frame, title, sections, footer)
+            rendered = True
+        except Exception:
+            logger.exception("Falling back to plain text for report %r", title)
+        if not rendered:
+            report_text = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD,
+                                                    font=('Courier', 10))
+            report_text.pack(fill=tk.BOTH, expand=True)
+            report_text.insert('1.0', report_content)
+            report_text.config(state='disabled')
 
         # Email to Admin button
         def email_to_admin():
@@ -219,6 +218,7 @@ class ReportsMixin:
 
     def show_grade_trends_chart(self):
         """Show grade trends in a visual chart"""
+        plt, FigureCanvasTkAgg = _load_matplotlib()
         if plt is None:
             messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.feature_unavailable', default="Feature Unavailable"), _t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.matplotlib_is_required_for_chart_visualization', default="Matplotlib is required for chart visualization."))
             return
@@ -258,10 +258,13 @@ class ReportsMixin:
             scores = [row[1] for row in data]
 
             # Create chart window
-            chart_window = tk.Toplevel(self.root)
+            chart_window = make_toplevel(self.root)
             chart_window.title(_t('gui.academics.grade_tracking.analytics_manager.reports.windows.grade_trends_chart', default="Grade Trends Chart"))
-            chart_window.geometry("900x600")
-
+            try:
+                from education_system.platform.delivery.gui.window_sizing import center
+                center(chart_window, 1200, 800, minsize=(900, 600))
+            except Exception:
+                chart_window.geometry("1200x800")
             fig, ax = plt.subplots(figsize=(11, 6))
             ax.plot(range(len(dates)), scores, marker='o', linestyle='-', linewidth=2, markersize=6, color='#2E86AB')
             ax.fill_between(range(len(dates)), scores, alpha=0.2, color='#2E86AB')
@@ -310,7 +313,7 @@ class ReportsMixin:
                 return
 
             # Selection dialog
-            dialog = tk.Toplevel(self.root)
+            dialog = make_toplevel(self.root)
             dialog.title(_t('gui.academics.grade_tracking.analytics_manager.reports.windows.select_student_for_progress_charts', default="Select Student for Progress Charts"))
             dialog.geometry("400x500")
             safe_grab_set(dialog)
@@ -351,6 +354,7 @@ class ReportsMixin:
 
     def _show_student_progress_charts(self, student_id, student_name):
         """Display progress charts for a specific student"""
+        plt, FigureCanvasTkAgg = _load_matplotlib()
         if plt is None:
             messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.feature_unavailable', default="Feature Unavailable"),
                               _t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.matplotlib_is_required_for_chart_visualization_install_it_with_p', default="Matplotlib is required for chart visualization.\n"
@@ -420,10 +424,13 @@ class ReportsMixin:
             scores = [row[1] for row in data]
 
             # Create chart window
-            chart_window = tk.Toplevel(self.root)
+            chart_window = make_toplevel(self.root)
             chart_window.title(f"Progress Charts - {student_name}")
-            chart_window.geometry("1000x700")
-
+            try:
+                from education_system.platform.delivery.gui.window_sizing import center
+                center(chart_window, 1280, 860, minsize=(960, 640))
+            except Exception:
+                chart_window.geometry("1280x860")
             fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
 
             # Chart 1: Score progression over time
@@ -495,7 +502,7 @@ class ReportsMixin:
                 return
 
             # Selection dialog
-            dialog = tk.Toplevel(self.root)
+            dialog = make_toplevel(self.root)
             dialog.title(_t('gui.academics.grade_tracking.analytics_manager.reports.windows.select_student_for_transcript', default="Select Student for Transcript"))
             dialog.geometry("400x500")
             safe_grab_set(dialog)
@@ -727,7 +734,10 @@ class ReportsMixin:
 
     def _export_transcript_pdf(self, student_id, full_name, course, enrollment_date, grades, gpa):
         """Export transcript as PDF file"""
-        if SimpleDocTemplate is None:
+        try:
+            from reportlab.lib.pagesizes import letter
+            from reportlab.platypus import SimpleDocTemplate
+        except ImportError:
             messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.pdf_export_requires_reportlab_library_please_install_it_with_pip', default="PDF export requires reportlab library. Please install it with: pip install reportlab"))
             return
 

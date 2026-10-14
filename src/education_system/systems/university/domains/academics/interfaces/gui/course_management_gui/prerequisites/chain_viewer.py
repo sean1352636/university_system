@@ -184,6 +184,7 @@ class PrerequisiteChainDialog:
                 select.append("is_required")
             if has_grade:
                 select.append("minimum_grade")
+            # db-audit: ignore[DBW001] - join over a code-controlled list
             cur.execute(f"SELECT {', '.join(select)} FROM course_prerequisites")
             for row in cur.fetchall():
                 cid, pid = row[0], row[1]

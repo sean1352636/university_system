@@ -104,7 +104,7 @@ class CourseOperationsMixin:
             # Get available alternative courses (excluding the one being deleted)
             cursor.execute('''
                 SELECT course_code FROM courses
-                WHERE (status = 'Active' OR status = 'active') AND course_code != ?
+                WHERE LOWER(COALESCE(status, 'active')) = 'active' AND course_code != ?
                 AND course_code IS NOT NULL AND course_code != ''
                 AND max_enrollment > current_enrollment
             ''')

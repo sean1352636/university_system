@@ -297,7 +297,7 @@ class SecurityDashboardCLI:
 
         try:
             cursor.execute("""
-                SELECT ak.id, ak.key_name, u.username, ak.created_at, ak.last_used_at,
+                SELECT ak.key_id, ak.key_name, u.username, ak.created_at, ak.last_used_at,
                        ak.rate_limit, ak.is_active
                 FROM api_keys ak
                 LEFT JOIN users u ON ak.user_id = u.id
@@ -684,10 +684,16 @@ def api_key_management_menu(dashboard):
         try:
             conn = dashboard._get_connection()
             cursor = conn.cursor()
-            cursor.execute("UPDATE api_keys SET is_active = 0 WHERE id = ?", (int(key_id),))
+            # key_id is the table's PK; the `id` column is a nullable leftover
+            # from a later schema patch and never matches a row.
+            cursor.execute("UPDATE api_keys SET is_active = 0 WHERE key_id = ?", (int(key_id),))
             conn.commit()
+            revoked = cursor.rowcount
             conn.close()
-            print(f"\n✅ API key {key_id} revoked successfully")
+            if revoked:
+                print(f"\n✅ API key {key_id} revoked successfully")
+            else:
+                print(f"\n❌ No API key with ID {key_id}")
         except Exception as e:
             print(f"\n❌ Error revoking key: {e}")
 

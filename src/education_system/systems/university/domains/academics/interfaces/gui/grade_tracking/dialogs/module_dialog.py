@@ -1,49 +1,30 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, filedialog
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import make_toplevel
 import tkinter.scrolledtext as scrolledtext
 from education_system.systems.university.infrastructure.database.db import sqlite3
 import os
 from pathlib import Path
 import csv
-import numpy as np
 import math
-from scipy import stats
 from datetime import datetime, timedelta
 import json
 from education_system import paths
+from education_system.systems.university.infrastructure.database.schemas.modules_table import ensure_modules_table
+from education_system.systems.university.infrastructure.database.schemas.modules_table import ensure_student_modules_table
+from education_system.systems.university.infrastructure.database.schemas.students_table import ensure_students_table
 
 # Use centralized path configuration
 DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 _CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
-# Optional imports with fallbacks
-try:
-    import pandas as pd
-except ImportError:
-    pd = None
-
-try:
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    import matplotlib
-    matplotlib.use('TkAgg')
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-except ImportError:
-    plt = None
-    sns = None
-    FigureCanvasTkAgg = None
-
-try:
-    from reportlab.lib.pagesizes import letter
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-    from reportlab.lib import colors
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib.units import inch
-except ImportError:
-    # ReportLab not available - PDF features will be disabled
-    SimpleDocTemplate = None
 
 # Database connection setup
 
@@ -55,7 +36,7 @@ def _patched_sqlite3_connect_grade(database, *args, **kwargs):
         if not database or db_name in (str(DEFAULT_DB_PATH), "student_grading_system.db"):
             return _original_sqlite3_connect_grade(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return _original_sqlite3_connect_grade(database, *args, **kwargs)
 
 sqlite3.connect = _patched_sqlite3_connect_grade
@@ -122,48 +103,13 @@ def init_basic_database():
         cursor = conn.cursor()
 
         # Create students table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS students (
-            student_id TEXT PRIMARY KEY,
-            first_name TEXT NOT NULL,
-            middle_name TEXT,
-            last_name TEXT NOT NULL,
-            course TEXT NOT NULL,
-            email_address TEXT,
-            gender TEXT,
-            dob TEXT,
-            enrollment_date TEXT DEFAULT (date('now')),
-            status TEXT DEFAULT 'Active'
-        )
-        ''')
+        ensure_students_table(cursor)
 
         # Create modules table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS modules (
-            module_code TEXT PRIMARY KEY,
-            module_name TEXT NOT NULL,
-            module_type TEXT,
-            credits INTEGER DEFAULT 1,
-            description TEXT,
-            course TEXT,
-            semester TEXT,
-            year INTEGER
-        )
-        ''')
+        ensure_modules_table(cursor)
 
         # Create student_modules table (enrollment)
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS student_modules (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id TEXT,
-            module_code TEXT,
-            enrollment_date TEXT DEFAULT (date('now')),
-            status TEXT DEFAULT 'Enrolled',
-            FOREIGN KEY (student_id) REFERENCES students (student_id),
-            FOREIGN KEY (module_code) REFERENCES modules (module_code),
-            UNIQUE(student_id, module_code)
-        )
-        ''')
+        ensure_student_modules_table(cursor)
 
         # Create assessments table
         cursor.execute('''
@@ -340,7 +286,7 @@ def safe_combo_update(obj, combo_attr, values):
 class ModuleDialog:
     def __init__(self, parent, title, data=None):
         self.result = None
-        self.dialog = tk.Toplevel(parent)
+        self.dialog = make_toplevel(parent)
         self.dialog.title(title)
         self.dialog.geometry("500x400")
         safe_grab_set(self.dialog)

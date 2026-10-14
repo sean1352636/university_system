@@ -98,7 +98,7 @@ Once MFA is enabled, the login flow adds a second step:
    - Or enter the code sent to your **email** (if email OTP is configured).
 4. If the code is valid, login completes.
 
-The MFA prompt appears in the Universal Login Window (`run.py`) as well as direct system launches.
+The MFA prompt appears in the Universal Login Window (`python -m education_system`) as well as direct system launches.
 
 ---
 

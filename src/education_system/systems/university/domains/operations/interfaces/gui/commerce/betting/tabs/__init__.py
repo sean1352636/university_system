@@ -1,12 +1,13 @@
-"""Betting shop notebook tab mixins."""
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.interfaces.gui.betting.tabs`` (campus commerce plugin).
 
-from .account import AccountTabMixin
-from .admin import AdminTabMixin
-from .casino import CasinoTabMixin
-from .predictions import PredictionsTabMixin
-from .sports import SportsTabMixin
+A mirror, not an alias: an aliased package would resolve this package's
+submodules through the new ``__path__`` and load each one a second time.
+Submodules are aliased individually; this copies the package's names.
+"""
+# layout-shim: education_system.systems.university.plugins.campus_commerce.interfaces.gui.betting.tabs
+import importlib as _importlib
 
-__all__ = [
-    "AccountTabMixin", "AdminTabMixin", "CasinoTabMixin",
-    "PredictionsTabMixin", "SportsTabMixin",
-]
+_new = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.interfaces.gui.betting.tabs")
+globals().update({k: v for k, v in vars(_new).items()
+                  if not (k.startswith("__") and k.endswith("__"))})
+del _importlib, _new

@@ -149,3 +149,21 @@ class ExtrasFrame(tk.Frame):
             self._status_var.set("Full launcher opened")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open launcher:\n{e}")
+
+
+def launch_as_toplevel(parent_window, *, auth=None):
+    """Open the compact extras catalogue from an existing application.
+
+    This is the public entry point used by system navigation.  The frame keeps
+    its ``Open Full Launcher`` action for users who prefer the larger,
+    category-based launcher.
+    """
+    window = tk.Toplevel(parent_window)
+    window.title("Extras & Tools")
+    window.geometry("900x600")
+    window.minsize(700, 500)
+    ExtrasFrame(window, auth=auth).pack(fill="both", expand=True)
+    return window
+
+
+__all__ = ["ExtrasFrame", "launch_as_toplevel"]

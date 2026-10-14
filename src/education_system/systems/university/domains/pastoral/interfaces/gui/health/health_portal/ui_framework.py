@@ -50,8 +50,12 @@ class UIFrameworkMixin:
         user_label = ttk.Label(header_frame, text=user_info)
         user_label.grid(row=0, column=1, sticky=tk.E)
 
-        logout_btn = ttk.Button(header_frame, text=_t("health_portal.btn.return_main"), command=self.return_to_main_menu)
-        logout_btn.grid(row=0, column=2, padx=(10, 0))
+        # Named for what it does: this returns to the university menu, it is
+        # not a logout. The Health Portal offers neither a logout nor a
+        # language switcher, matching the health CLI.
+        return_btn = ttk.Button(header_frame, text=_t("health_portal.btn.return_main"),
+                                command=self.return_to_main_menu)
+        return_btn.grid(row=0, column=2, padx=(10, 0))
 
         header_frame.columnconfigure(1, weight=1)
 
@@ -89,113 +93,158 @@ class UIFrameworkMixin:
         if self.nav_canvas.winfo_containing(event.x_root, event.y_root) == self.nav_canvas:
             self.nav_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
 
+    # Navigation is grouped into collapsible categories rather than one long
+    # scrolling column of ~35 buttons. Same shape as the health CLI, which
+    # groups the same actions into categories you open one at a time: you see
+    # the headings first, expand the one you want, and only that category's
+    # buttons are on screen. Categories the user has no permission for are
+    # never built, so there are no empty headings.
+    NAV_CATEGORIES = [
+        ("📋 Health Records & Clinical Data", [
+            ("manage_records", "manage_health_records", 'manage_health_records'),
+            ("view_records", "view_health_records",
+             ('view_any_health_record', 'view_own_health_record')),
+            ("view_history", "view_medical_history", None),
+            ("Allergies", "clinical_allergies", None),
+            ("Prescriptions", "clinical_prescriptions", None),
+            ("Lab Results", "clinical_lab_results", None),
+            ("Medical Conditions", "clinical_conditions", None),
+        ]),
+        ("🩺 Providers & Referrals", [
+            ("Provider Dashboard", "provider_dashboard", 'manage_health_records'),
+            ("Provider Schedules", "provider_schedules", 'manage_health_records'),
+            ("Referrals", "clinical_referrals", 'manage_health_records'),
+        ]),
+        ("📅 Appointments & Scheduling", [
+            ("schedule_appt", "schedule_appointment",
+             ('schedule_health_appointment', 'manage_health_appointments')),
+            ("view_appts", "view_appointments",
+             ('view_own_appointments', 'manage_health_appointments')),
+        ]),
+        ("💉 Vaccinations & Immunizations", [
+            ("record_vaccine", "record_vaccination", 'manage_vaccinations'),
+            ("view_vaccines", "view_vaccination_records",
+             ('view_own_vaccinations', 'manage_vaccinations', 'view_any_health_record')),
+        ]),
+        ("🏥 Care Plans & Clinical Management", [
+            ("Care Plans", "clinical_care_plans", 'manage_health_records'),
+            ("Screening", "clinical_screening", 'manage_health_records'),
+            ("Screening Schedules", "provider_screening", 'manage_health_records'),
+        ]),
+        ("🚨 Emergency & Safety", [
+            ("manage_contacts", "manage_emergency_contacts", None),
+        ]),
+        ("🌟 Wellness & Prevention", [
+            ("Wellness", "clinical_wellness", None),
+        ]),
+        ("🧠 Mental Health & Wellness", [
+            ("Mental Health & Wellness", "mental_health_wellness", None),
+        ]),
+        ("📊 Analytics & Reporting", [
+            ("generate_reports", "generate_health_reports",
+             ('view_any_health_record', 'manage_health_records')),
+            ("health_reports", "health_reports", 'view_any_health_record'),
+        ]),
+        ("✉️ Integration & Communications", [
+            ("email_manager", "email_manager", 'staff'),
+            ("send_report_email", "send_health_report_email", 'staff'),
+            ("send_record_email", "send_health_record_email", 'staff'),
+        ]),
+        ("♿ Accessibility & Accommodations", [
+            ("accessibility_tools", "open_accessibility_tools", None),
+            ("medical_accommodations", "medical_accommodations", None),
+        ]),
+        ("🦷 Health Services", [
+            ("Dentist", "show_dentist", None),
+        ]),
+        ("🔒 Data Management & Security", [
+            ("security_audit", "security_audit", 'admin'),
+            ("data_management", "data_management", 'admin'),
+            ("Integration Management", "integration_management", 'admin'),
+        ]),
+    ]
+
+    def _nav_label(self, key):
+        """Translate a nav label, falling back to the literal for new entries."""
+        if " " in key or key[:1].isupper():
+            return key
+        return _t(f"health_portal.nav.{key}")
+
+    def _nav_item_allowed(self, requirement):
+        """Whether the signed-in user may see a nav entry.
+
+        *requirement* is ``None`` (everyone), a role sentinel (``'admin'`` /
+        ``'staff'``), a permission name, or a tuple of permissions of which
+        any one is enough.
+        """
+        if requirement is None:
+            return True
+        if requirement == 'admin':
+            return self.is_admin()
+        if requirement == 'staff':
+            return self.is_admin() or self.is_staff()
+        if isinstance(requirement, tuple):
+            return any(self.auth.check_permission(name) for name in requirement)
+        return self.auth.check_permission(requirement)
+
+    def _visible_nav_categories(self):
+        """The categories, with unavailable entries and empty categories dropped."""
+        visible = []
+        for title, entries in self.NAV_CATEGORIES:
+            allowed = [(label, function_name)
+                       for label, function_name, requirement in entries
+                       if self._nav_item_allowed(requirement)]
+            if allowed:
+                visible.append((title, allowed))
+        return visible
+
+    def toggle_nav_category(self, title):
+        """Expand or collapse one category, then redraw the sidebar."""
+        expanded = getattr(self, '_nav_expanded', None)
+        if expanded is None:
+            expanded = self._nav_expanded = set()
+        if title in expanded:
+            expanded.discard(title)
+        else:
+            expanded.add(title)
+        self.populate_navigation()
+
     def populate_navigation(self):
-        """Populate navigation buttons based on user permissions and role"""
+        """Populate navigation as collapsible categories."""
         for widget in self.nav_buttons_frame.winfo_children():
             widget.destroy()
 
-        is_admin = self.is_admin()
-        is_staff = self.is_staff()
-        is_student = self.is_student()
+        if not hasattr(self, '_nav_expanded'):
+            # Open the first category on the very first draw so the sidebar
+            # never looks empty, then remember what the user opens.
+            self._nav_expanded = set()
+            first = self._visible_nav_categories()
+            if first:
+                self._nav_expanded.add(first[0][0])
 
         button_row = 0
-
-        def create_section_header(text):
-            nonlocal button_row
-            header = ttk.Label(self.nav_buttons_frame, text=text, font=('Arial', 10, 'bold'),
-                             background='#e0e0e0', anchor='w', padding=(5, 5))
-            header.grid(row=button_row, column=0, sticky=(tk.W, tk.E), pady=(5, 2), padx=2)
+        for title, entries in self._visible_nav_categories():
+            is_open = title in self._nav_expanded
+            header = ttk.Button(
+                self.nav_buttons_frame,
+                text=f"{'▼' if is_open else '▶'} {title}  ({len(entries)})",
+                width=30,
+                command=lambda t=title: self.toggle_nav_category(t),
+            )
+            header.grid(row=button_row, column=0, sticky=(tk.W, tk.E),
+                        pady=(6, 2), padx=2)
             button_row += 1
 
-        def create_nav_button(text, function_name):
-            nonlocal button_row
-            btn = ttk.Button(self.nav_buttons_frame, text=text,
-                           command=lambda: self.load_function(function_name), width=30)
-            btn.grid(row=button_row, column=0, sticky=(tk.W, tk.E), pady=2, padx=(10, 2))
-            button_row += 1
+            if not is_open:
+                continue
 
-        if (self.auth.check_permission('manage_health_records') or
-            self.auth.check_permission('view_own_health_record') or
-            self.auth.check_permission('view_any_health_record')):
-
-            create_section_header(_t("health_portal.nav.health_records"))
-
-            if self.auth.check_permission('manage_health_records'):
-                create_nav_button(_t("health_portal.nav.manage_records"), 'manage_health_records')
-            else:
-                create_nav_button(_t("health_portal.nav.view_records"), 'view_health_records')
-            create_nav_button(_t("health_portal.nav.view_history"), 'view_medical_history')
-            create_nav_button(_t("health_portal.nav.generate_reports"), 'generate_health_reports')
-
-        if (self.auth.check_permission('manage_health_appointments') or
-            self.auth.check_permission('schedule_health_appointment') or
-            self.auth.check_permission('view_own_appointments')):
-
-            create_section_header(_t("health_portal.nav.appointments"))
-
-            if (self.auth.check_permission('schedule_health_appointment') or
-                self.auth.check_permission('manage_health_appointments')):
-                create_nav_button(_t("health_portal.nav.schedule_appt"), 'schedule_appointment')
-
-            create_nav_button(_t("health_portal.nav.view_appts"), 'view_appointments')
-
-        if (self.auth.check_permission('manage_vaccinations') or
-            self.auth.check_permission('view_own_vaccinations') or
-            self.auth.check_permission('verify_vaccinations')):
-
-            create_section_header(_t("health_portal.nav.vaccinations"))
-
-            if self.auth.check_permission('manage_vaccinations'):
-                create_nav_button(_t("health_portal.nav.record_vaccine"), 'record_vaccination')
-
-            create_nav_button(_t("health_portal.nav.view_vaccines"), 'view_vaccination_records')
-
-        create_section_header(_t("health_portal.nav.emergency_contacts"))
-        create_nav_button(_t("health_portal.nav.manage_contacts"), 'manage_emergency_contacts')
-
-        if (is_admin or is_staff) and self.auth.check_permission('view_any_health_record'):
-            create_section_header(_t("health_portal.nav.reports_analytics"))
-            create_nav_button(_t("health_portal.nav.health_reports"), 'health_reports')
-
-        if is_admin or is_staff:
-            create_section_header(_t("health_portal.nav.integration"))
-            create_nav_button(_t("health_portal.nav.email_manager"), 'email_manager')
-            create_nav_button(_t("health_portal.nav.send_report_email"), 'send_health_report_email')
-            create_nav_button(_t("health_portal.nav.send_record_email"), 'send_health_record_email')
-
-        create_section_header(_t("health_portal.nav.accessibility"))
-        create_nav_button(_t("health_portal.nav.accessibility_tools"), 'open_accessibility_tools')
-        create_nav_button(_t("health_portal.nav.medical_accommodations"), 'medical_accommodations')
-
-        # Health Services (accessible to all)
-        create_section_header("Health Services")
-        create_nav_button("Dentist", 'show_dentist')
-
-        # Clinical Records (new GUI panels — parity with the health CLI)
-        create_section_header("Clinical Records")
-        create_nav_button("Allergies", 'clinical_allergies')
-        create_nav_button("Prescriptions", 'clinical_prescriptions')
-        create_nav_button("Lab Results", 'clinical_lab_results')
-        create_nav_button("Medical Conditions", 'clinical_conditions')
-        create_nav_button("Care Plans", 'clinical_care_plans')
-        create_nav_button("Referrals", 'clinical_referrals')
-        create_nav_button("Screening", 'clinical_screening')
-        create_nav_button("Wellness", 'clinical_wellness')
-
-        # Mental Health & Wellness
-        create_section_header("Mental Health & Wellness")
-        create_nav_button("Mental Health & Wellness", 'mental_health_wellness')
-
-        # Provider Tools (clinician-facing)
-        create_section_header("Provider Tools")
-        create_nav_button("Provider Schedules", 'provider_schedules')
-        create_nav_button("Provider Dashboard", 'provider_dashboard')
-        create_nav_button("Screening Schedules", 'provider_screening')
-
-        if is_admin:
-            create_section_header(_t("health_portal.nav.administration"))
-            create_nav_button(_t("health_portal.nav.security_audit"), 'security_audit')
-            create_nav_button(_t("health_portal.nav.data_management"), 'data_management')
+            for label, function_name in entries:
+                btn = ttk.Button(
+                    self.nav_buttons_frame, text=self._nav_label(label), width=28,
+                    command=lambda fn=function_name: self.load_function(fn))
+                btn.grid(row=button_row, column=0, sticky=(tk.W, tk.E),
+                         pady=2, padx=(18, 2))
+                button_row += 1
 
         self.nav_buttons_frame.columnconfigure(0, weight=1)
         self.nav_canvas.yview_moveto(0)
@@ -378,7 +427,7 @@ class UIFrameworkMixin:
                 self.root.destroy()
             else:
                 self.root.destroy()
-                from education_system.systems.university.interfaces.gui.shell.main import UnifiedManagementGUI
+                from education_system.systems.university.shell.gui.main import UnifiedManagementGUI
                 app = UnifiedManagementGUI(self.auth)
                 app.run()
         except Exception as e:

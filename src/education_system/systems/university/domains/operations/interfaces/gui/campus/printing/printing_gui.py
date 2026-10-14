@@ -6,6 +6,16 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+# Module level, because this file calls ``_t(...)`` directly from its methods.
+# It used to be imported inside __init__ and bound only to ``self._t``, which
+# left every one of those calls raising NameError as soon as the UI was built.
+try:
+    from education_system.systems.university.infrastructure.i18n import get_text as _t
+except ImportError:  # pragma: no cover - i18n is optional
+    def _t(key, default=None, **kwargs):
+        """Fallback that honours the ``default=`` every caller here passes."""
+        return default if default is not None else key
+
 
 class PrintingServicesGUI:
     """Print quota management and print job submission system."""
@@ -21,11 +31,7 @@ class PrintingServicesGUI:
         except Exception:
             self.auth = None
 
-        try:
-            from education_system.systems.university.infrastructure.i18n import get_text as _t
-            self._t = _t
-        except ImportError:
-            self._t = lambda key, **kw: key
+        self._t = _t
 
         self._init_db()
         self._build_ui()

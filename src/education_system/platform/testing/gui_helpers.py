@@ -58,8 +58,9 @@ class GUITestCase(unittest.TestCase):
     Usage:
         class TestStudentGUI(GUITestCase):
             def test_add_student_dialog(self):
-                from education_system.systems.university.domain.students.students.gui.student_gui import StudentGUI
-                gui = StudentGUI(self.root, user_info={"username": "admin"}, role="admin")
+                gui = build_student_gui(
+                    self.root, user_info={"username": "admin"}, role="admin"
+                )
                 self.pump_events()
 
                 # Find and click the "Add Student" button

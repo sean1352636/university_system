@@ -154,6 +154,7 @@ class EmployerPortalService:
         sets = ", ".join(f"{k} = ?" for k in fields)
         try:
             with self._conn() as conn:
+                # db-audit: ignore[DBW001] - filtered against a literal allow-list
                 conn.execute(
                     f"UPDATE employer_accounts SET {sets}, updated_at = datetime('now') "
                     "WHERE employer_id = ?",
@@ -267,6 +268,7 @@ class EmployerPortalService:
                     (review_id, signer_type, signer_name, comments),
                 )
                 col = f"{signer_type}_signed"
+                # db-audit: ignore[DBW001] - f-string of literal parts
                 conn.execute(
                     f"UPDATE placement_reviews SET {col} = 1, "
                     "updated_at = datetime('now') WHERE review_id = ?",

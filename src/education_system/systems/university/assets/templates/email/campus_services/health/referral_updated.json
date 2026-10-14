@@ -1,0 +1,9 @@
+{
+    "subject": "📝 Your specialist referral has been updated (Ref #$referral_id)",
+    "body": "Dear $student_name,\n\nYour specialist referral has been updated by $updated_by. The changes are listed below so you can see exactly what is different.\n\n=== WHAT CHANGED ===\n$change_list\n\n=== YOUR REFERRAL AS IT STANDS NOW ===\nReference Number: $referral_id\nSpecialty: $specialty\nSpecialist: $specialist_provider\nReferring Provider: $referring_provider\nUrgency: $urgency\nDate Referred: $referral_date\nAppointment Date: $appointment_date\nCurrent Status: $status\n\nReason for referral:\n$reason\n\nNotes:\n$notes\n\nUpdated On: $updated_at\n\n=== DO YOU NEED TO DO ANYTHING? ===\nIf the specialty, specialist or appointment date changed, check that the new details still work for you and contact the Health Centre if they do not. If only the notes or reason changed, no action is needed.\n\n=== IF THIS IS NOT RIGHT ===\nIf you did not expect these changes, contact the Health Centre quoting reference $referral_id. Any change can be reversed.\n\n=== CONTACT INFORMATION ===\nHealth Centre: health@university.edu\nPhone: (555) 123-4567\nOffice Hours: Monday-Friday, 9:00 AM - 5:00 PM\n\nBest regards,\nUniversity Health Centre\n\n$signature",
+    "variables": {
+        "notes": {"default": "None recorded."},
+        "appointment_date": {"default": "Not yet scheduled"},
+        "change_list": {"default": "  (no changes recorded)"}
+    }
+}

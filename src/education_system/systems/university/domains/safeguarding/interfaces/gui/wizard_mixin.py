@@ -79,7 +79,7 @@ class WizardMixin:
                 self.lang = existing_draft.get("lang") or self.lang
                 messagebox.showinfo(_t('gui.safeguarding.wizard_mixin.dialogs.draft', default="Draft"), tr("draft_restored", self.lang))
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         # Layout: wizard on left, history + support on right
         body = tk.Frame(self.container, bg="#f4f6fa")

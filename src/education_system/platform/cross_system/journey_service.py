@@ -26,6 +26,11 @@ except Exception:  # pragma: no cover - fallback if registry is unavailable
     _SYSTEM_LABELS = {}
     _AUTH_DB = None
 
+from education_system.platform.cross_system.identity_service import (  # noqa: E402
+    SYSTEM_SLOTS,
+    normalise_name,
+)
+
 # Candidate student tables, in preference order.
 # The learner table is named differently per system: most use ``students``,
 # primary/nursery use ``pupils``, apprenticeships uses ``apprentices``.
@@ -297,7 +302,7 @@ class JourneyService:
             conn.close()
 
     def get_transition_students(self, from_system=None, to_system=None,
-                                year=None, limit=200):
+                                year=None, limit=200, journey_id=None):
         """List the individual students behind recorded transitions.
 
         This is the drill-down for the cohort-flow funnel: given a
@@ -342,6 +347,9 @@ class JourneyService:
             if year and "occurred_at" in tcols:
                 clauses.append("substr(t.occurred_at, 1, 4) = ?")
                 params.append(str(year))
+            if journey_id:
+                clauses.append("t.journey_id = ?")
+                params.append(journey_id)
             where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
             params.append(limit)
 
@@ -391,27 +399,199 @@ class JourneyService:
             results.extend(self._search_system(system, like_pattern))
         return results
 
-    def get_journey(self, student_id=None, system=None, student_name=None):
+    # ------------------------------------------------------------------
+    # Canonical journey resolution (read-only, straight from auth.db)
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _follow_merges(conn, row):
+        """A merged (tombstoned) journey row -> its survivor's row."""
+        hops = 0
+        while (row is not None and "merged_into" in row.keys()
+               and row["merged_into"] and hops < 10):
+            row = conn.execute(
+                "SELECT * FROM student_journey WHERE journey_id = ?",
+                (row["merged_into"],)).fetchone()
+            hops += 1
+        return row
+
+    def _journey_row(self, journey_id=None, system=None, student_id=None):
+        """The live ``student_journey`` row for a journey id or a local id.
+
+        Opened read-only on the registry this service was given, never
+        through identity_service, so looking a learner up cannot initialise
+        or migrate the auth DB as a side effect.
+        """
+        conn = self._connect_auth()
+        if not conn:
+            return None
+        try:
+            if not _table_exists(conn, "student_journey"):
+                return None
+            row = None
+            if journey_id:
+                row = conn.execute(
+                    "SELECT * FROM student_journey WHERE journey_id = ?",
+                    (journey_id,)).fetchone()
+            elif system and student_id not in (None, ""):
+                slot = SYSTEM_SLOTS.get(system)
+                if slot:
+                    row = conn.execute(
+                        f"SELECT * FROM student_journey WHERE {slot[1]} = ? "  # nosec B608 - SYSTEM_SLOTS
+                        "ORDER BY created_at LIMIT 1",
+                        (str(student_id),)).fetchone()
+                if row is None and _table_exists(conn, "learner_enrolment"):
+                    hit = conn.execute(
+                        "SELECT journey_id FROM learner_enrolment WHERE "
+                        "system = ? AND local_student_id = ? "
+                        "ORDER BY created_at DESC LIMIT 1",
+                        (system, str(student_id))).fetchone()
+                    if hit:
+                        row = conn.execute(
+                            "SELECT * FROM student_journey WHERE journey_id = ?",
+                            (hit[0],)).fetchone()
+            row = self._follow_merges(conn, row)
+            return dict(row) if row is not None else None
+        except Exception as e:
+            logger.warning("Journey lookup failed: %s", e)
+            return None
+        finally:
+            conn.close()
+
+    def _journey_by_name(self, student_name):
+        """The one live journey whose legal name matches, else None.
+
+        Ambiguity (two live journeys with that name) returns None so the
+        caller falls back rather than picking a person at random.
+        """
+        target = normalise_name(student_name)
+        if not target:
+            return None
+        conn = self._connect_auth()
+        if not conn:
+            return None
+        try:
+            if not _table_exists(conn, "student_journey"):
+                return None
+            last = target.split()[-1]
+            rows = conn.execute(
+                "SELECT * FROM student_journey WHERE "
+                "LOWER(legal_last_name) LIKE ? "
+                "AND COALESCE(status, '') != 'merged'",
+                (f"%{last}%",)).fetchall()
+            hits = [dict(r) for r in rows if normalise_name(
+                f"{r['legal_first_name']} {r['legal_last_name']}") == target]
+            return hits[0] if len(hits) == 1 else None
+        except Exception as e:
+            logger.warning("Journey name lookup failed: %s", e)
+            return None
+        finally:
+            conn.close()
+
+    def _local_records(self, journey):
+        """Every (system, local id) of a journey: enrolment spells + slots."""
+        out = []
+        conn = self._connect_auth()
+        if conn:
+            try:
+                if _table_exists(conn, "learner_enrolment"):
+                    for r in conn.execute(
+                            "SELECT system, local_student_id FROM "
+                            "learner_enrolment WHERE journey_id = ? AND "
+                            "local_student_id IS NOT NULL ORDER BY "
+                            "COALESCE(start_date, created_at)",
+                            (journey["journey_id"],)).fetchall():
+                        pair = (r[0], str(r[1]))
+                        if pair not in out:
+                            out.append(pair)
+            finally:
+                conn.close()
+        for system, (_pk, id_col) in SYSTEM_SLOTS.items():
+            val = journey.get(id_col)
+            if val and (system, str(val)) not in out:
+                out.append((system, str(val)))
+        order_index = {s: i for i, s in enumerate(self._order)}
+        return sorted(out, key=lambda p: order_index.get(p[0], 99))
+
+    def get_journey(self, student_id=None, system=None, student_name=None,
+                    journey_id=None):
         """Build the full educational journey for a student.
 
-        The student is first located (by *student_id* within *system*, or by
-        *student_name*) to obtain a canonical name; every system is then
-        searched by that name and the matching records are assembled into a
-        single chronological journey ordered nursery -> university.
+        Resolved through the canonical registry: the learner's
+        ``journey_id`` is found (given directly, from *student_id* within
+        *system*, from *student_id* in any system, or from an unambiguous
+        legal *student_name*), and each stage is then read **by local id**
+        from every record that journey has held — every enrolment spell,
+        not only the latest per phase.
+
+        Only when the learner has no journey at all does it fall back to
+        the old heuristic of matching the name across systems, and then
+        only against records that are not themselves linked to a journey
+        (a linked record belongs to someone, and it is not this learner).
 
         Returns a dict with keys:
-            name, student_id, system, stages
+            name, student_id, system, stages, transitions, journey_id,
+            matched_by ("journey_id" | "name" | None)
 
         where ``stages`` is a list of per-system stage dicts, each containing:
             system, student_id, name, dob, year_group, status,
             enrolled_date, academic_history
         """
+        journey = None
+        if journey_id:
+            journey = self._journey_row(journey_id=journey_id)
+        if journey is None and system and student_id:
+            journey = self._journey_row(system=system, student_id=student_id)
+        if journey is None and student_id and not system:
+            for sys_key in self._order:
+                journey = self._journey_row(system=sys_key,
+                                            student_id=student_id)
+                if journey:
+                    system = sys_key
+                    break
+        if journey is None and student_name and not student_id:
+            journey = self._journey_by_name(student_name)
+        if journey is not None:
+            return self._journey_from_registry(journey, system, student_id)
+        return self._journey_by_name_match(student_id, system, student_name)
+
+    def _journey_from_registry(self, journey, system, student_id):
+        stages = []
+        for sys_key, local_id in self._local_records(journey):
+            stage = self._query_system(sys_key, student_id=local_id)
+            if stage is None:
+                # The system DB is unavailable, but the registry still knows
+                # the learner was there; show the stage rather than drop it.
+                stage = {"system": sys_key, "student_id": local_id,
+                         "name": "", "dob": journey.get("date_of_birth", ""),
+                         "year_group": "", "status": "unknown",
+                         "enrolled_date": "", "academic_history": []}
+            stages.append(stage)
+        name = (f"{journey.get('legal_first_name') or ''} "
+                f"{journey.get('legal_last_name') or ''}").strip()
+        anchor_system = system or journey.get("current_system") or ""
+        return {
+            "journey_id": journey["journey_id"],
+            "matched_by": "journey_id",
+            "name": name,
+            "student_id": student_id or next(
+                (s["student_id"] for s in stages
+                 if s["system"] == anchor_system), ""),
+            "system": anchor_system,
+            "stages": stages,
+            "transitions": self.get_transition_students(
+                journey_id=journey["journey_id"], limit=1000),
+        }
+
+    def _journey_by_name_match(self, student_id, system, student_name):
+        """Legacy heuristic for learners the registry does not know."""
         anchor = None
         if system and student_id:
             anchor = self._query_system(system, student_id=student_id)
         if anchor is None and student_name:
             for sys_key in self._order:
-                anchor = self._query_system(sys_key, name=student_name)
+                anchor = self._query_system(sys_key, name=student_name,
+                                            unlinked_only=True)
                 if anchor:
                     break
         if anchor is None and student_id:
@@ -423,6 +603,8 @@ class JourneyService:
 
         if anchor is None:
             return {
+                "journey_id": None,
+                "matched_by": None,
                 "name": student_name or "",
                 "student_id": student_id or "",
                 "system": system or "",
@@ -435,7 +617,8 @@ class JourneyService:
             for sys_key in self._order:
                 if sys_key in stages_by_system:
                     continue
-                stage = self._query_system(sys_key, name=name)
+                stage = self._query_system(sys_key, name=name,
+                                           unlinked_only=True)
                 if stage:
                     stages_by_system[sys_key] = stage
 
@@ -446,14 +629,15 @@ class JourneyService:
         )
 
         return {
+            "journey_id": None,
+            "matched_by": "name",
             "name": name,
             "student_id": anchor.get("student_id", student_id or ""),
             "system": anchor["system"],
             "stages": stages,
-            # Authoritative recorded moves from the registry. These can differ
-            # from len(stages): stages are name-matched *appearances* across
-            # system DBs (heuristic, may over-match same-named people), whereas
-            # transitions are the moves explicitly recorded in the registry.
+            # Stages here are name-matched *appearances* (heuristic, may
+            # over-match same-named people); transitions are whatever the
+            # registry recorded under that legal name.
             "transitions": self.get_student_transitions(name),
         }
 
@@ -515,7 +699,14 @@ class JourneyService:
     # per-system detailed query (for journey building)
     # ------------------------------------------------------------------
 
-    def _query_system(self, system, name=None, student_id=None):
+    def _query_system(self, system, name=None, student_id=None,
+                      unlinked_only=False):
+        """One learner row from ``system``, by exact id or by name.
+
+        ``unlinked_only`` restricts a name match to rows with no
+        ``journey_id``: the name fallback must not claim a record the
+        registry has already assigned to a (different) person.
+        """
         conn = self._connect(system)
         if not conn:
             return None
@@ -525,6 +716,8 @@ class JourneyService:
                 return None
             cols = _get_columns(conn, table)
             name_expr = self._name_search_expr(cols)
+            unlinked = (" AND (journey_id IS NULL OR journey_id = '')"
+                        if unlinked_only and "journey_id" in cols else "")
             id_col = self._id_column(cols)
 
             row = None
@@ -538,7 +731,8 @@ class JourneyService:
                     ).fetchone()
             elif name and name_expr:
                 row = conn.execute(
-                    f"SELECT * FROM {table} WHERE {name_expr} LIKE ? LIMIT 1",
+                    f"SELECT * FROM {table} WHERE {name_expr} LIKE ?"  # nosec B608
+                    f"{unlinked} LIMIT 1",
                     (f"%{name}%",),
                 ).fetchone()
 

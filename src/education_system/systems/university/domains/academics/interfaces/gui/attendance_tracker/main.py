@@ -221,7 +221,7 @@ class AttendanceGUI:
                 else:
                     # Running standalone, need to create main GUI
                     self.root.destroy()
-                    from education_system.systems.university.interfaces.gui.shell.main import UnifiedManagementGUI
+                    from education_system.systems.university.shell.gui.main import UnifiedManagementGUI
                     app = UnifiedManagementGUI(self.auth)
                     app.run()
             except Exception as e:

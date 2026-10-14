@@ -83,6 +83,7 @@ def init_enhanced_grades_db():
         # Add missing columns if learning_outcomes was created by another subsystem
         for col, col_type in [('course', 'TEXT'), ('importance', 'INTEGER')]:
             try:
+                # db-audit: ignore[DBW001] - loop over a literal table
                 cursor.execute(f'ALTER TABLE learning_outcomes ADD COLUMN {col} {col_type}')
             except sqlite3.OperationalError:
                 pass  # Column already exists

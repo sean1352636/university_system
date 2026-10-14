@@ -1,7 +1,10 @@
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
 from education_system.systems.university.infrastructure.utils.activity_logger import log_read
-from education_system.systems.university.domains.academics.domain.services.course_management.courses import view_course_details
+from education_system.systems.university.domains.academics.domain.services.course_management.courses import (
+    resolve_course_id,
+    view_course_details,
+)
 
 
 @log_read(module="course_management", description="Searching courses")
@@ -104,13 +107,13 @@ def search_courses(auth):
             print(f"{course[1]:<10} {course[2]:<30} {course[3]:<15} {course[4]:<15} {course[6]:<8} {enrollment_str:<12} {course[9]:<10}")
 
         # Option to view details
-        detail_choice = input("\nEnter course ID for details (or press Enter to continue): ").strip()
+        detail_choice = input("\nEnter course ID or code for details (or press Enter to continue): ").strip()
         if detail_choice:
-            try:
-                course_id = int(detail_choice)
+            course_id = resolve_course_id(cursor, detail_choice)
+            if course_id is None:
+                print("No course matches that ID or code.")
+            else:
                 view_course_details(cursor, course_id)
-            except ValueError:
-                print("Invalid course ID.")
 
     except sqlite3.Error as e:
         print(f"Database error: {e}")

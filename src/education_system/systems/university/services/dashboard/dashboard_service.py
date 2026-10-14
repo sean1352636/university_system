@@ -5,6 +5,9 @@ from datetime import datetime, timedelta
 
 from education_system.systems.university.infrastructure.database.db import get_connection
 from education_system.systems.university.infrastructure.sql_safety import validate_table_name
+from education_system.systems.university.services.bus.course_bridge import (
+    install_views as _install_bridge_views,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -390,8 +393,14 @@ class DashboardService:
 
                     try:
                         row = conn.execute(
-                            "SELECT ROUND(AVG(attendance_percentage), 1) as avg_att "
-                            "FROM attendance_analytics WHERE module_code = ?", (mc,)
+                            # Computed from attendance_records. This read
+                            # attendance_analytics, a summary table nothing in
+                            # the codebase writes to, so the rate was always
+                            # None.
+                            "SELECT ROUND(SUM(CASE WHEN LOWER(status) IN "
+                            "  ('present','late','excused') THEN 1 ELSE 0 END) "
+                            "  * 100.0 / COUNT(*), 1) as avg_att "
+                            "FROM attendance_records WHERE module_code = ?", (mc,)
                         ).fetchone()
                         info['attendance_rate'] = row['avg_att'] if row and row['avg_att'] is not None else None
                     except Exception:
@@ -491,12 +500,19 @@ class DashboardService:
 
                     try:
                         row = conn.execute(
-                            "SELECT ROUND(AVG(aa.attendance_percentage), 1) as avg_att "
-                            "FROM attendance_analytics aa "
-                            "JOIN modules m ON aa.module_code = m.module_code "
+                            # Same change: attendance_records is the table
+                            # check-ins are written to. aa.last_updated has no
+                            # equivalent, so the period filter uses the
+                            # attendance date itself, which is what the caller
+                            # means by a semester window anyway.
+                            "SELECT ROUND(SUM(CASE WHEN LOWER(ar.status) IN "
+                            "  ('present','late','excused') THEN 1 ELSE 0 END) "
+                            "  * 100.0 / COUNT(*), 1) as avg_att "
+                            "FROM attendance_records ar "
+                            "JOIN modules m ON ar.module_code = m.module_code "
                             "WHERE (m.instructor = ? OR m.module_code IN "
                             "(SELECT module_code FROM instructor_modules WHERE instructor_id = ?)) "
-                            "AND aa.last_updated BETWEEN ? AND ?",
+                            "AND ar.date BETWEEN ? AND ?",
                             (instructor_id, instructor_id, start, end)
                         ).fetchone()
                         semester['attendance_rate'] = row['avg_att'] if row and row['avg_att'] is not None else None
@@ -773,16 +789,22 @@ class DashboardService:
 
         try:
             with get_connection() as conn:
-                # Course utilization (enrollment count vs capacity from courses table)
+                # Course utilization: capacity from ``courses``, occupancy from
+                # the bridge view. ``courses.current_enrollment`` is a stale
+                # denormalised counter (0 on 17 of 21 rows) that no enrolment
+                # path maintains, so it is no longer read here.
                 try:
+                    _install_bridge_views(conn)
                     rows = conn.execute(
                         "SELECT c.course_code as module_code, c.course_name as module_name, "
                         "c.max_enrollment as capacity, "
-                        "c.current_enrollment as enrolled, "
+                        "COALESCE(occ.headcount, 0) as enrolled, "
                         "CASE WHEN c.max_enrollment > 0 "
-                        "  THEN ROUND(c.current_enrollment * 100.0 / c.max_enrollment, 1) "
+                        "  THEN ROUND(COALESCE(occ.headcount, 0) * 100.0 / c.max_enrollment, 1) "
                         "  ELSE 0 END as utilization_pct "
                         "FROM courses c "
+                        "LEFT JOIN v_course_occupancy occ "
+                        "  ON occ.course_code = COALESCE(NULLIF(TRIM(c.course_code), ''), c.code) "
                         "ORDER BY utilization_pct DESC"
                     ).fetchall()
                     data['course_utilization'] = [dict(r) for r in rows] if rows else []

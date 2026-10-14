@@ -47,6 +47,7 @@ class SearchFilterMixin:
 
             with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
                 cursor = conn.cursor()
+                # db-audit: ignore[DBW001] - string literal
                 cursor.execute(f"SELECT COUNT(*) FROM courses{where_sql}", params)
                 self._page_total = cursor.fetchone()[0] or 0
                 if hasattr(self, "_update_pager_label"):
@@ -56,18 +57,26 @@ class SearchFilterMixin:
                 page = getattr(self, "_page", 0)
                 offset = page * page_size
 
+                # The enrolment figure is counted live rather than read from
+                # the denormalised courses.current_enrollment, which drifts
+                # whenever a student is added by a path that forgets to bump
+                # it. Maintenance > Recalculate Enrollment Numbers writes the
+                # stored counter back in line.
+                from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core.enrolment_sync import (
+                    HEADCOUNT_SQL,
+                )
                 query = f"""
                 SELECT id, COALESCE(course_code, code) as course_code,
                        COALESCE(course_name, name) as course_name,
                        COALESCE(department, 'N/A') as department,
                        COALESCE(level, 'N/A') as level,
                        COALESCE(credit_hours, credits, 3.0) as credit_hours,
-                       COALESCE(current_enrollment, 0) || '/' || COALESCE(max_enrollment, 0) as enrollment,
+                       {{headcount}} || '/' || COALESCE(max_enrollment, 0) as enrollment,
                        COALESCE(status, 'Active') as status
-                FROM courses{where_sql}
+                FROM courses c{where_sql}
                 ORDER BY course_code
                 LIMIT ? OFFSET ?
-                """
+                """.replace("{headcount}", HEADCOUNT_SQL)
                 cursor.execute(query, (*params, page_size, offset))
                 courses = cursor.fetchall()
 
@@ -122,23 +131,28 @@ class SearchFilterMixin:
         self.show_course_details(values[0])
 
     def show_enrolled_students(self, course_code, course_name=""):
-        """Popup listing all students enrolled on *course_code*."""
+        """Popup for one course: enrolled students and the course's modules.
+
+        Two tabs rather than one list — the students on a course and the
+        modules that make it up are the two things you want when you click a
+        course, and they were previously a list and nowhere respectively.
+        """
         from tkinter import ttk
+        from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core.course_modules import (
+            COLUMNS as MODULE_COLUMNS,
+            modules_for_course,
+        )
+        from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core.enrolment_sync import (
+            students_for_course,
+        )
 
         try:
             with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    "SELECT student_id, "
-                    "TRIM(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) AS name, "
-                    "COALESCE(email_address, '') AS email, "
-                    "COALESCE(year_of_study, '') AS year, "
-                    "COALESCE(status, '') AS status "
-                    "FROM students WHERE course = ? "
-                    "ORDER BY last_name, first_name",
-                    (course_code,),
-                )
-                students = cursor.fetchall()
+                # Matched on the course name as well as its code: students.course
+                # is free text, and a few rows hold 'Computer Science' rather
+                # than 'CS'. A code-only lookup left those people off the list.
+                students = students_for_course(conn, course_code, course_name)
+                modules = modules_for_course(course_code, conn)
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"),
                                  _("course_management.messages.search_failed").format(error=e))
@@ -146,40 +160,64 @@ class SearchFilterMixin:
 
         win = tk.Toplevel(self.course_tree.winfo_toplevel())
         title_code = f"{course_name} ({course_code})" if course_name else course_code
-        win.title(f"Students Enrolled — {title_code}")
-        win.geometry("640x460")
-        win.minsize(500, 360)
+        win.title(f"Course — {title_code}")
+        win.geometry("760x520")
+        win.minsize(560, 380)
         win.transient(self.course_tree.winfo_toplevel())
         try:
             win.grab_set()
         except tk.TclError:
             pass
 
-        tk.Label(win, text=f"Students enrolled on {title_code}",
-                 font=("Arial", 12, "bold")).pack(anchor="w", padx=12, pady=(12, 2))
-        count_label = tk.Label(win, text=f"{len(students)} student(s)", fg="gray")
-        count_label.pack(anchor="w", padx=12, pady=(0, 8))
+        tk.Label(win, text=title_code,
+                 font=("Arial", 12, "bold")).pack(anchor="w", padx=12, pady=(12, 6))
 
-        tree_frame = ttk.Frame(win)
-        tree_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=(0, 8))
+        notebook = ttk.Notebook(win)
+        notebook.pack(fill=tk.BOTH, expand=True, padx=12, pady=(0, 8))
 
-        columns = ("ID", "Name", "Email", "Year", "Status")
-        y_scroll = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL)
-        tree = ttk.Treeview(tree_frame, columns=columns, show="headings",
-                            yscrollcommand=y_scroll.set)
-        y_scroll.config(command=tree.yview)
-        widths = {"ID": 90, "Name": 200, "Email": 220, "Year": 60, "Status": 90}
-        for col in columns:
-            tree.heading(col, text=col)
-            tree.column(col, width=widths.get(col, 100))
-        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        y_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        def _table(parent, columns, rows, widths, empty_message):
+            """A scrolled Treeview filled with *rows*, or an empty-state row."""
+            holder = ttk.Frame(parent)
+            holder.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
+            y_scroll = ttk.Scrollbar(holder, orient=tk.VERTICAL)
+            tree = ttk.Treeview(holder, columns=columns, show="headings",
+                                yscrollcommand=y_scroll.set)
+            y_scroll.config(command=tree.yview)
+            for col in columns:
+                tree.heading(col, text=col)
+                tree.column(col, width=widths.get(col, 100))
+            tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            y_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+            for row in rows:
+                tree.insert("", tk.END, values=row)
+            if not rows:
+                # Pad to the column count so the message lands in the first column.
+                tree.insert("", tk.END,
+                            values=(empty_message,) + ("",) * (len(columns) - 1))
+            return tree
 
-        for row in students:
-            tree.insert("", tk.END, values=row)
+        # --- Students tab ---
+        students_tab = ttk.Frame(notebook)
+        notebook.add(students_tab, text=f"Enrolled Students ({len(students)})")
+        _table(
+            students_tab,
+            ("ID", "Name", "Email", "Year", "Status"),
+            students,
+            {"ID": 90, "Name": 200, "Email": 220, "Year": 60, "Status": 90},
+            "No students enrolled on this course.",
+        )
 
-        if not students:
-            tree.insert("", tk.END, values=("", "No students enrolled on this course.", "", "", ""))
+        # --- Modules tab ---
+        modules_tab = ttk.Frame(notebook)
+        notebook.add(modules_tab, text=f"Modules ({len(modules)})")
+        _table(
+            modules_tab,
+            MODULE_COLUMNS,
+            modules,
+            {"Code": 110, "Module": 240, "Credits": 70, "Semester": 90,
+             "Type": 90, "Instructor": 150, "Status": 80},
+            "No modules are mapped to this course.",
+        )
 
         ttk.Button(win, text=_("common.close"), command=win.destroy).pack(pady=(0, 12))
 
@@ -187,6 +225,11 @@ class SearchFilterMixin:
         """Show detailed course information"""
         try:
             with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+                # Rows come back keyed by column name: the detail card used to
+                # read this row by position against an out-of-date column
+                # order, which is why "Available Spots" showed N/A while the
+                # list tab showed a real enrolment figure.
+                conn.row_factory = sqlite3.Row
                 cursor = conn.cursor()
 
                 cursor.execute("SELECT * FROM courses WHERE id = ?", (course_id,))
@@ -196,54 +239,64 @@ class SearchFilterMixin:
                     messagebox.showerror(_("common.error"), _("course_management.messages.course_not_found"))
                     return
 
-                # Switch to details tab and populate the card layout.
+                # Switch to details tab and populate the card layout. The
+                # modules are read on this connection so the card can list them.
                 self.notebook.select(1)  # Details tab
-                self.render_course_details(course)
+                self.render_course_details(course, conn=conn)
 
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), _("course_management.messages.failed_load_course_details", error=str(e)))
 
     def format_course_details(self, course):
         """Format course data for display."""
+        from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core.course_fields import (
+            available_spots,
+            course_fields,
+            is_legacy,
+        )
 
-        def get(i, default="N/A"):
-            return course[i] if len(course) > i and course[i] not in (None, "") else default
+        data = course_fields(course)
 
-        def years(i):
-            v = course[i] if len(course) > i else None
-            return f"{v} years" if v not in (None, "") else "N/A"
+        def get(name, default="N/A"):
+            v = data.get(name)
+            return v if v not in (None, "") else default
 
-        def money(i):
-            v = course[i] if len(course) > i else None
-            if isinstance(v, (int, float)):
+        def years(name):
+            v = data.get(name)
+            if v in (None, ""):
+                return "N/A"
+            # ``duration`` already reads "3 years" for most rows; only a bare
+            # number needs the unit appending.
+            text = str(v)
+            return text if not text.replace(".", "", 1).isdigit() else f"{text} years"
+
+        def money(name):
+            v = data.get(name)
+            if isinstance(v, (int, float)) and not isinstance(v, bool):
                 return f"£{v:,.2f}"
             return "N/A" if v in (None, "") else str(v)
 
-        def yesno(i):
-            if len(course) <= i:
+        def yesno(name):
+            v = data.get(name)
+            if v in (None, ""):
                 return "N/A"
-            v = course[i]
-            return "Yes" if bool(v) else "No" if v in (False, 0) else "N/A"
+            return "Yes" if bool(v) else "No"
 
         def avail_spots():
-            max_e = course[15] if len(course) > 15 else None
-            cur_e = course[16] if len(course) > 16 else None
-            if isinstance(max_e, (int, float)) and isinstance(cur_e, (int, float)):
-                return max_e - cur_e
-            return "N/A"
+            return available_spots(data)
 
-        if len(course) < 10:
+        if is_legacy(course):
             # Basic format for legacy schema
             details = f"""COURSE DETAILS
     {'='*50}
 
-    Course ID: {get(0)}
-    Course Code: {get(1)}
-    Course Name: {get(2)}
-    Description: {get(3)}
-    Duration: {years(4)}
-    Level: {get(5)}
-    Department: {get(6)}
+    Course ID: {get("id")}
+    Course Code: {get("course_code")}
+    Course Name: {get("course_name")}
+    Description: {get("description")}
+    Duration: {years("duration")}
+    Level: {get("level")}
+    Department: {get("department")}
     """
         else:
             # Enhanced format for full schema
@@ -251,38 +304,38 @@ class SearchFilterMixin:
     {'='*50}
 
     BASIC INFORMATION:
-    Course ID: {get(0)}
-    Course Code: {get(1)}
-    Course Name: {get(2)}
-    Description: {get(3)}
-    Department: {get(6)}
-    Level: {get(5)}
-    Course Type: {get(18)}
-    Status: {get(17)}
+    Course ID: {get("id")}
+    Course Code: {get("course_code")}
+    Course Name: {get("course_name")}
+    Description: {get("description")}
+    Department: {get("department")}
+    Level: {get("level")}
+    Course Type: {get("course_type")}
+    Status: {get("status")}
 
     ACADEMIC DETAILS:
-    Credit Hours: {get(7)}
-    Contact Hours/Week: {get(8)}
-    Duration: {years(4)}
-    Lab Required: {yesno(13)}
-    Online Available: {yesno(14)}
+    Credit Hours: {get("credit_hours")}
+    Contact Hours/Week: {get("contact_hours_per_week")}
+    Duration: {years("duration")}
+    Lab Required: {yesno("lab_required")}
+    Online Available: {yesno("online_available")}
 
     ENROLLMENT:
-    Max Enrollment: {get(15)}
-    Current Enrollment: {get(16)}
+    Max Enrollment: {get("max_enrollment")}
+    Current Enrollment: {get("current_enrollment")}
     Available Spots: {avail_spots()}
 
     ADDITIONAL INFORMATION:
-    Learning Outcomes: {get(9)}
-    Assessment Methods: {get(10)}
-    Required Textbooks: {get(11)}
-    Course Fee: {money(12)}
-    Tags: {get(19)}
-    Availability: {get(20)}
+    Learning Outcomes: {get("learning_outcomes")}
+    Assessment Methods: {get("assessment_methods")}
+    Required Textbooks: {get("required_textbooks")}
+    Course Fee: {money("course_fee")}
+    Tags: {get("tags")}
+    Availability: {get("availability_periods")}
 
     TIMESTAMPS:
-    Created: {get(21)}
-    Last Updated: {get(22)}
+    Created: {get("created_at")}
+    Last Updated: {get("updated_at")}
     """
         return details
 

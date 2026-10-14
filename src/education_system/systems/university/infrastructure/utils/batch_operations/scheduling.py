@@ -61,7 +61,7 @@ class SchedulingMixin:
         # Schedule the task
         schedule.every().day.at(import_time).do(self.automated_import_job, import_dir)
 
-        print(_t("shared.utils.batch_operations.daily_import_scheduled", directory=import_dir, time=import_time))
+        print(_t("shared.utils.batch_operations.daily_import_scheduled", directory=import_dir, time=import_time, default="Daily Import Scheduled {directory} {time}"))
         print(_t("shared.utils.batch_operations.schedule_note"))
 
     def setup_weekly_import(self):
@@ -88,7 +88,7 @@ class SchedulingMixin:
             self.automated_import_job, import_dir, email
         )
 
-        print(_t("shared.utils.batch_operations.weekly_import_scheduled", day=day_of_week, time=import_time))
+        print(_t("shared.utils.batch_operations.weekly_import_scheduled", day=day_of_week, time=import_time, default="Weekly Import Scheduled {day} {time}"))
 
     def setup_custom_schedule(self):
         """Set up custom schedule using cron-like syntax"""
@@ -96,8 +96,8 @@ class SchedulingMixin:
         print(_t("shared.utils.batch_operations.cron_instruction"))
         cron_expr = input(_t("shared.utils.batch_operations.prompt_cron_expression"))
         task_name = input(_t("shared.utils.batch_operations.prompt_task_name"))
-        print(_t("shared.utils.batch_operations.custom_schedule_created", name=task_name))
-        print(f"{_t('shared.utils.batch_operations.schedule')}: {cron_expr}")
+        print(_t("shared.utils.batch_operations.custom_schedule_created", name=task_name, default="Custom Schedule Created {name}"))
+        print(f"{_t('shared.utils.batch_operations.schedule', default='Schedule')}: {cron_expr}")
         # This would integrate with more advanced scheduling libraries
 
     def view_scheduled_tasks(self):
@@ -245,20 +245,20 @@ class SchedulingMixin:
 
                 if success:
                     logger.info(f"Email notification sent successfully to {email}")
-                    print(_t("shared.utils.batch_operations.email_sent", email=email))
+                    print(_t("shared.utils.batch_operations.email_sent", email=email, default="Email Sent {email}"))
                     return True
                 else:
                     logger.warning(f"Email notification failed for {email}")
-                    print(_t("shared.utils.batch_operations.email_failed", email=email))
+                    print(_t("shared.utils.batch_operations.email_failed", email=email, default="Email Failed {email}"))
                     return False
 
             except ImportError:
                 # Fallback to logging if email system not available
                 logger.info(f"Email notification (email system not available) to {email}: {message}")
-                print(_t("shared.utils.batch_operations.email_would_be_sent", email=email, message=message))
+                print(_t("shared.utils.batch_operations.email_would_be_sent", email=email, message=message, default="Email Would Be Sent {email} {message}"))
                 return False
 
         except Exception as e:
             logger.error(f"Failed to send email notification to {email}: {e}")
-            print(_t("shared.utils.batch_operations.email_send_failed", email=email, error=str(e)))
+            print(_t("shared.utils.batch_operations.email_send_failed", email=email, error=str(e), default="Email Send Failed {email} {error}"))
             return False

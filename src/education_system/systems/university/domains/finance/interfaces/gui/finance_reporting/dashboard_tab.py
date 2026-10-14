@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
@@ -154,14 +158,14 @@ def real_time_financial_dashboard(self):
                 cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE source_type = 'club' AND status = 'completed'")
                 total_revenue += cursor.fetchone()[0] or 0
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Add housing payments to total revenue
             try:
                 cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE source_type = 'housing' AND status = 'completed'")
                 total_revenue += cursor.fetchone()[0] or 0
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             cursor.execute("""
                 SELECT COALESCE(SUM(amount), 0) as today_collections
@@ -186,14 +190,14 @@ def real_time_financial_dashboard(self):
                 """)
                 outstanding += cursor.fetchone()[0] or 0
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Add late fees to outstanding
             try:
                 cursor.execute("SELECT COALESCE(SUM(late_fee_amount), 0) FROM late_fees WHERE waived = 0")
                 outstanding += cursor.fetchone()[0] or 0
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Get last 30 days daily collections
             cursor.execute("""
@@ -348,14 +352,14 @@ def update_dashboard_metrics(self):
                         'alert_count': str(alert_count)
                     }))
             except Exception:
-                pass  # Window was closed
+                logger.debug("Suppressed exception", exc_info=True)
 
         except Exception as e:
             try:
                 if self.root.winfo_exists():
                     self.root.after(0, lambda err=e: self.log_activity(f"Error updating metrics: {err}"))
             except Exception:
-                pass  # Window was closed
+                logger.debug("Suppressed exception", exc_info=True)
 
     thread = threading.Thread(target=update_in_background)
     thread.daemon = True
@@ -471,14 +475,14 @@ def show_realtime_dashboard(self):
             try:
                 activity_log.insert(tk.END, f"[ERROR] {e}\n")
             except Exception:
-                pass  # Window might be destroyed
+                logger.debug("Suppressed exception", exc_info=True)
 
         # Schedule next update only if window still exists
         try:
             if dashboard_window.winfo_exists():
                 after_id = dashboard_window.after(30000, update_realtime)  # Update every 30 seconds
         except Exception:
-            pass  # Window destroyed
+            logger.debug("Suppressed exception", exc_info=True)
 
     # Cleanup function to cancel scheduled updates
     def on_closing():
@@ -487,7 +491,7 @@ def show_realtime_dashboard(self):
             try:
                 dashboard_window.after_cancel(after_id)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
         dashboard_window.destroy()
 
     # Bind cleanup to window close

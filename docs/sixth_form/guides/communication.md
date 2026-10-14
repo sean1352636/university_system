@@ -138,6 +138,80 @@ Before parents can access data, an administrator must create a parent-student li
 
 Parents can be linked to multiple students, and students can have multiple linked parents.
 
+### How Parents Sign In
+
+Creating a parent account in the Parent Portal also registers it in the shared
+auth database as a `sixth_form` / `parent` user, so the parent signs in at the
+normal login screen with the same username and password — there is no separate
+parent login. The same credentials authenticate `POST /api/parent/login` on the
+sixth-form REST API.
+
+The account list shows a **Login** column. `RESET` means the account predates
+this mirroring and cannot reach the login screen yet; resetting its password
+registers it. A username already used by a staff or student account is rejected
+at creation rather than taking over that account.
+
+Changing the password works from either side: a reset in the Parent Portal
+updates the login, and a parent changing their own password at the login screen
+is picked up by the portal on their next API sign-in.
+
+### What a Parent Sees When They Sign In
+
+Signing in with the `parent` role opens the **Parent Portal**, not the staff
+interface — in both the GUI and the CLI. The staff window reaches the whole
+college (every student, safeguarding, finance, staff records), so the role is
+routed to a separate read-only window before that window is ever built.
+
+The portal has one tab (GUI) or numbered entry (CLI) per linked child, showing:
+
+| Section | Contents |
+|---------|----------|
+| Summary | Attendance %, overall standing, 30-day behaviour split, UCAS progress |
+| Subjects | Predicted, target, latest mock and forecast grades, on-target flag |
+| Attendance | Per-status counts plus every session missed or arrived late for |
+| Behaviour | Recent entries — date, type, category, points, what happened |
+| Coursework | What was set and handed in; marks only once released to the student |
+
+Every read goes through `child_detail`, which refuses any student the account is
+not linked to. The attendance breakdown uses the same window as the headline
+percentage, and the percentage itself comes from `risk_analytics` — `Late`
+counts as attending and authorised absence is excluded from the denominator.
+
+A parent whose shared-auth account has no portal record behind it gets an
+explanatory message pointing them at the college office, not the staff view.
+
+### The Parent Email Portal
+
+**My Email** (GUI header button, or `e` in the CLI menu) shows everything the
+college has emailed this parent, with a reading pane for the full body.
+
+It is scoped to `to_address` — mail sent to the parent's own address, and
+nothing else. Correspondence *about* a child is normally addressed to the
+student, and a guardian account is not a licence to read their child's mail.
+Opening a message re-checks the recipient rather than trusting the id it was
+given: message ids are sequential, so an unchecked id would let a parent walk
+the whole college's correspondence.
+
+An account with no email address on file gets an explanation rather than an
+empty list.
+
+### Welcome Email
+
+Creating a parent account sends the `welcome_parent` JSON template
+(`assets/templates/email/welcome_parent.json`) to the address on the account —
+sign-in name, password, what the portal does and does not show, and who to
+contact. It lands in the messages log, so it is the first thing waiting in the
+parent's own email portal when they sign in.
+
+Sending never fails account creation: the account and its shared-auth mirror
+already exist by that point, and losing them because the mail log was
+unavailable would make staff re-type the form for nothing. An account created
+without an email address is simply not mailed.
+
+> The template includes the password, matching `welcome_student.json`. If you
+> would rather not email credentials, remove the `{{password}}` line from the
+> template — the send path needs no change.
+
 ### Available Parent Views
 
 Once linked, parents can view the following information for each of their children:

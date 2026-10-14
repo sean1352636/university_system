@@ -16,7 +16,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock, PropertyMock
 
 # Import the module under test
-from education_system.systems.university.interfaces.gui.shell.email import email_manager_management_gui
+from education_system.systems.university.shell.gui.email import email_manager_management_gui
 
 @pytest.fixture
 def temp_db():
@@ -124,7 +124,7 @@ class TestEmailManagerManagementGUIInitialization:
     def test_gui_initializes_theme_manager(self, root_window, mock_auth):
         """Test that GUI initializes theme manager"""
         try:
-            with patch('education_system.systems.university.interfaces.gui.shell.theme_config.get_theme_manager'):
+            with patch('education_system.systems.university.shell.gui.theme_config.get_theme_manager'):
                 gui = email_manager_management_gui.EmailManagerManagementGUI(
                     root_window,
                     mock_auth
@@ -135,7 +135,7 @@ class TestEmailManagerManagementGUIInitialization:
 
     def test_gui_handles_missing_theme_manager(self, root_window, mock_auth):
         """Test that GUI handles missing theme manager gracefully"""
-        with patch('education_system.systems.university.interfaces.gui.shell.theme_config.get_theme_manager',
+        with patch('education_system.systems.university.shell.gui.theme_config.get_theme_manager',
                    side_effect=Exception('Theme manager not available')):
             try:
                 gui = email_manager_management_gui.EmailManagerManagementGUI(

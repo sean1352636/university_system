@@ -8,6 +8,9 @@ from education_system.systems.university.domains.pastoral.domain.student_life.st
 from education_system.systems.university.domains.pastoral.interfaces.cli.student_union_events.context import auth
 from education_system.systems.university.domains.pastoral.interfaces.cli.student_union_events.catalogue import view_events
 from education_system.systems.university.domains.pastoral.interfaces.cli.student_union_events.context import auth
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.identity import (
+    current_student_id as _current_student_id,
+)
 
 def register_for_event():
     """Register for an event"""
@@ -26,15 +29,13 @@ def register_for_event():
         cursor = conn.cursor()
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, auth)
 
-        if not result:
+        if not student_id:
             print("No student record is associated with your account.")
             conn.close()
             return
 
-        student_id = result[0]
 
         # Show available events
         view_events()
@@ -48,7 +49,7 @@ def register_for_event():
         # Check if event exists and is upcoming
         cursor.execute('''
         SELECT event_name, max_attendees, current_attendees
-        FROM union_events
+        FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union')
         WHERE event_id = ? AND status = 'upcoming'
         ''', (event_id,))
 
@@ -85,11 +86,9 @@ def register_for_event():
         ''', (event_id, student_id, registration_date, 'registered'))
 
 
-        # Update attendee count
-        cursor.execute('''
-        UPDATE union_events SET current_attendees = current_attendees + 1
-        WHERE event_id = ?
-        ''', (event_id,))
+        # The attendee count is derived from unified_event_registrations, so
+        # inserting the registration above is the whole update — the old
+        # hand-maintained counter could drift and no longer exists.
 
         conn.commit()
         print(f"You have successfully registered for {event[0]}!")
@@ -115,21 +114,19 @@ def view_my_events():
         cursor = conn.cursor()
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, auth)
 
-        if not result:
+        if not student_id:
             print("No student record is associated with your account.")
             conn.close()
             return
 
-        student_id = result[0]
 
         # Get events the student is registered for
         cursor.execute('''
         SELECT e.event_id, e.event_name, e.event_date, e.start_time, e.location,
                c.club_name, r.registration_date, r.attendance_status
-        FROM union_events e
+        FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e
         JOIN student_clubs c ON e.organizer_id = c.club_id
         JOIN unified_event_registrations r ON e.event_id = r.event_id
         WHERE r.user_id = ?

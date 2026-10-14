@@ -1,6 +1,9 @@
 """Split from course_planning_gui.py — provides mixins assembled in
 course_planning_gui/__init__.py into the final CoursePlanningGUI class."""
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -379,7 +382,7 @@ SEMESTER BREAKDOWN
                     )
                     sent += 1
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
             if sent > 0:
                 messagebox.showinfo(_t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.email_sent', default="Email Sent"), f"Report emailed to {sent} admin(s).")

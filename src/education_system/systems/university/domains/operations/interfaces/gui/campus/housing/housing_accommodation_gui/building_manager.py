@@ -12,6 +12,11 @@ from education_system.systems.university.infrastructure.utils.activity_logger im
 )
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import generate_id
+# Relocation rules live with the domain so the CLI and this GUI move
+# residents — and word the student's email — identically.
+from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.assignments import (
+    apply_relocations, describe_move, notify_relocated_residents, plan_relocations,
+)
 
 
 def show_building_management(gui_instance):
@@ -382,39 +387,79 @@ def delete_selected_building(gui_instance):
     building_id = building_data[0]
     building_name = building_data[1]
 
-    # Confirm deletion
-    result = messagebox.askyesno(_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.confirm_delete', default="Confirm Delete"),
-                               f"Are you sure you want to delete building '{building_name}'?\n"
-                               "This will also delete all associated rooms.")
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
 
-    if result:
-        try:
-            conn = get_connection()
-            cursor = conn.cursor()
+        # Residents no longer block the delete. Work out where each of them
+        # would go in the *other* buildings first, and show that plan in the
+        # confirmation so the operator approves the moves, not just the delete.
+        cursor.execute('SELECT room_id FROM housing_rooms WHERE building_id = ?', (building_id,))
+        room_ids = [row[0] for row in cursor.fetchall()]
 
-            # Check for occupied rooms
-            cursor.execute('SELECT COUNT(*) FROM housing_rooms WHERE building_id = ? AND status != "Available"',
-                         (building_id,))
-            occupied_count = cursor.fetchone()[0]
+        moves, unplaced = plan_relocations(cursor, room_ids,
+                                           exclude_building_ids=[building_id])
 
-            if occupied_count > 0:
-                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.error', default="Error"),
-                                   f"Cannot delete building. It has {occupied_count} occupied or reserved rooms.")
-                conn.close()
-                return
-
-            # Delete rooms and building
-            cursor.execute('DELETE FROM housing_rooms WHERE building_id = ?', (building_id,))
-            cursor.execute('DELETE FROM housing_buildings WHERE building_id = ?', (building_id,))
-
-            conn.commit()
+        if unplaced:
+            stuck = "\n".join(f"  • {row['student_name']} ({row['student_id']}) "
+                              f"in room {row['old_room_number']}"
+                              for row in unplaced)
+            messagebox.showerror(
+                _t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.error', default="Error"),
+                f"Cannot delete '{building_name}': {len(unplaced)} resident(s) "
+                f"have nowhere to go — every other building is full.\n\n{stuck}\n\n"
+                "Add rooms to another building, or free some up, then try again.")
             conn.close()
+            return
 
-            messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.success', default="Success"), f"Building '{building_name}' deleted successfully!")
-            refresh_buildings_list(gui_instance)
+        message = (f"Are you sure you want to delete building '{building_name}'?\n"
+                   "This will also delete all associated rooms.")
+        if moves:
+            plan = "\n".join("  • " + describe_move(move) for move in moves)
+            message += (f"\n\n{len(moves)} resident(s) will be moved automatically "
+                        f"into the remaining buildings:\n\n{plan}\n\n"
+                        "Their rent and contract dates stay the same, and each "
+                        "will be emailed their new building, room number and floor.")
 
-        except Exception as e:
-            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.error', default="Error"), f"Failed to delete building: {str(e)}")
+        if not messagebox.askyesno(
+                _t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.confirm_delete', default="Confirm Delete"),
+                message):
+            conn.close()
+            return
+
+        # Moves and deletion share one transaction, so a failure anywhere
+        # leaves both the building and its residents untouched.
+        if moves:
+            actor = 'housing'
+            if getattr(gui_instance, 'auth', None) and gui_instance.auth.current_user:
+                actor = gui_instance.auth.current_user.get('username', 'housing')
+            apply_relocations(
+                cursor, moves,
+                reason=(f"The building you were living in, {building_name}, "
+                        f"has been taken out of service."),
+                actor=actor,
+            )
+
+        # Delete rooms and building
+        cursor.execute('DELETE FROM housing_rooms WHERE building_id = ?', (building_id,))
+        cursor.execute('DELETE FROM housing_buildings WHERE building_id = ?', (building_id,))
+
+        conn.commit()
+        conn.close()
+
+        # Email only after the commit — a promise of a new room must never
+        # go out for a move that was rolled back.
+        summary = ""
+        if moves:
+            sent, failed = notify_relocated_residents(moves)
+            summary = (f"\n\n{len(moves)} resident(s) relocated. "
+                       f"Emails: {sent} sent, {failed} failed.")
+
+        messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.success', default="Success"), f"Building '{building_name}' deleted successfully!{summary}")
+        refresh_buildings_list(gui_instance)
+
+    except Exception as e:
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.error', default="Error"), f"Failed to delete building: {str(e)}")
 
 
 def show_building_rooms_management(gui_instance, building_id, building_name):

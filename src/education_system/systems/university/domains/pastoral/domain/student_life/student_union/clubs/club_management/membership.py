@@ -1,8 +1,15 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.domains.pastoral.domain.student_life.student_union.clubs.club_management._imports import (
     datetime, sqlite3, send_confirmation_email, get_auth,
 )
 import education_system.systems.university.domains.pastoral.domain.student_life.student_union.clubs.club_management._imports as _state
 from education_system.systems.university.domains.pastoral.domain.student_life.student_union.clubs.club_management import clubs as _clubs
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.identity import (
+    current_student_id as _current_student_id,
+)
 
 def _view_clubs():
     try:
@@ -13,7 +20,7 @@ def _view_clubs():
         if pkg is not None and hasattr(pkg, "view_clubs"):
             return pkg.view_clubs()
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return _clubs.view_clubs()
 
 
@@ -34,15 +41,13 @@ def join_club():
         conn = _state.resolve_get_connection()()
         cursor = conn.cursor()
 
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, auth)
 
-        if not result:
+        if not student_id:
             print("No student record is associated with your account.")
             conn.close()
             return
 
-        student_id = result[0]
 
         # First show available clubs
         _view_clubs()
@@ -111,15 +116,13 @@ def view_my_clubs():
         cursor = conn.cursor()
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, auth)
 
-        if not result:
+        if not student_id:
             print("No student record is associated with your account.")
             conn.close()
             return
 
-        student_id = result[0]
 
         # Get clubs the student is a member of
         cursor.execute('''
@@ -166,15 +169,13 @@ def club_member_directory():
         cursor = conn.cursor()
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, auth)
 
-        if not result:
+        if not student_id:
             print("No student record is associated with your account.")
             conn.close()
             return
 
-        student_id = result[0]
 
         # Get clubs the student is a member of
         cursor.execute('''

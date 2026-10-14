@@ -248,6 +248,32 @@ class TestDispatchCLI:
 # ── Auth module ──────────────────────────────────────────────────────────────
 
 class TestAuthModule:
+    @patch("education_system.launcher.auth.gc.collect")
+    @patch("education_system.launcher.auth.init_shared_auth")
+    def test_gui_login_collects_destroyed_tk_root_on_main_thread(
+        self, _init_auth, collect,
+    ):
+        """Tk callback cycles must be collected before system workers start."""
+        from education_system.launcher.auth import gui_universal_login
+
+        user = {"username": "sixth-form-user"}
+        auth = MagicMock()
+        window = MagicMock(
+            user_info=user,
+            system_key="sixth_form",
+            system_role="student",
+            auth=auth,
+        )
+        with patch(
+            "education_system.platform.delivery.gui.login_gui.UniversalLoginWindow",
+            return_value=window,
+        ):
+            result = gui_universal_login(target_system="sixth_form")
+
+        assert result == (user, "sixth_form", "student", auth)
+        window.mainloop.assert_called_once_with()
+        collect.assert_called_once_with()
+
     def test_init_shared_auth_creates_db(self, tmp_path):
         """init_shared_auth should create the auth DB without errors."""
         import os

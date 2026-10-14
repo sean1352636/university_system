@@ -1,4 +1,7 @@
 """Core attendance record CRUD operations."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 import datetime
 from education_system.systems.university.infrastructure.database.db import get_connection
@@ -231,7 +234,7 @@ def record_attendance(module_code, date, attendance_data, recorded_by="System"):
         session_id = find_or_create_session(module_code, date)
     except Exception as _exc:
         # Best-effort — don't block recording on session resolution.
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
     affected_students: list[str] = []
     try:
@@ -288,6 +291,6 @@ def record_attendance(module_code, date, attendance_data, recorded_by="System"):
                 )
         conn2.close()
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
     return True

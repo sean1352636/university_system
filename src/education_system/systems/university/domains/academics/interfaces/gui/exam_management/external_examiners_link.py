@@ -169,7 +169,7 @@ def list_examiners_for_exam(exam_id: int) -> List[Dict]:
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
 
 def list_exams_for_examiner(examiner_id: int) -> List[Dict]:
@@ -195,4 +195,4 @@ def list_exams_for_examiner(examiner_id: int) -> List[Dict]:
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)

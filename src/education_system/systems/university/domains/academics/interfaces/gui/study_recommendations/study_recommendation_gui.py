@@ -277,7 +277,7 @@ class StudyRecommendationGUI:
 
             module_combo['values'] = [f"{r[0]} - {r[1]}" for r in rows]
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         ttk.Label(dlg, text=_t('gui.academics.study_recommendations.study_recommendation.labels.topic', default="Topic:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         topic_var = tk.StringVar()
@@ -351,11 +351,16 @@ class StudyRecommendationGUI:
         try:
             stats = self.service.get_study_stats(self.student_id)
             self.stats_labels["Total Hours"].config(
-                text=f"{stats.get('total_hours', 0):.1f} hours")
+                text=f"{stats.get('total_hours') or 0:.1f} hours")
             self.stats_labels["Total Sessions"].config(
                 text=str(stats.get("total_sessions", 0)))
+            # None means nothing has been rated yet, which is not the same
+            # as "rated 0"; .get's default never fired because the key is
+            # present, so this used to raise on an unrated student.
+            effectiveness = stats.get("avg_effectiveness")
             self.stats_labels["Avg Effectiveness"].config(
-                text=f"{stats.get('avg_effectiveness', 0):.1f} / 5.0")
+                text=(f"{effectiveness:.1f} / 5.0" if effectiveness is not None
+                      else "Not rated yet"))
 
             streak = self.service.get_study_streak(self.student_id)
             self.stats_labels["Current Streak"].config(

@@ -7,6 +7,9 @@ Idempotent. Safe to call repeatedly: every statement is CREATE TABLE
 IF NOT EXISTS / CREATE INDEX IF NOT EXISTS / INSERT OR IGNORE.
 """
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.database.db import (
     sqlite3,
@@ -474,7 +477,7 @@ def _init_facilities_schemas() -> None:
                 try:
                     safe_alter_table_add_column(table, column, column_def, conn)
                 except Exception:
-                    pass  # Table doesn't exist yet, will be created below
+                    logger.debug("Suppressed exception", exc_info=True)
 
             # ---- equipment_categories ----
             cursor.execute('''

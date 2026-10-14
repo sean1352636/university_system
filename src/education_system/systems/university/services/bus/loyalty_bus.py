@@ -141,7 +141,7 @@ def points_balance(student_id: str | int) -> int:
                 if row:
                     total += int(row[0] or 0)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             # Legacy: SU points (table layout varies — sum points col
             # if present; tolerate missing table)
             try:
@@ -153,7 +153,7 @@ def points_balance(student_id: str | int) -> int:
                 if row:
                     total += int(row[0] or 0)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
     except Exception as exc:
         logger.warning("points_balance(%s) failed: %s", sid, exc)
     return total

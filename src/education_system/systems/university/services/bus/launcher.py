@@ -56,29 +56,29 @@ class ServiceLauncher:
 
     def list_services(self) -> None:
         """List all available services and their supported interfaces."""
-        print(f"\n{get_text('services.launcher.available_services')}")
+        print(f"\n{get_text('services.launcher.available_services', default='Available Services')}")
         print("=" * 50)
 
         for service_name, interfaces in self.available_services.items():
-            print(f"\n{get_text('services.launcher.service_icon')} {service_name}")
+            print(f"\n{get_text('services.launcher.service_icon', default='Service Icon')} {service_name}")
             for interface_type in ['gui', 'cli']:
-                status = get_text('services.launcher.status_available') if interface_type in interfaces else get_text('services.launcher.status_unavailable')
+                status = get_text('services.launcher.status_available', default="Status Available") if interface_type in interfaces else get_text('services.launcher.status_unavailable', default="Status Unavailable")
                 print(f"  {status} {interface_type.upper()}")
 
-        print(f"\n{get_text('services.launcher.total_services', count=len(self.available_services))}")
-        print(f"\n{get_text('services.launcher.usage_hint')}")
+        print(f"\n{get_text('services.launcher.total_services', count=len(self.available_services), default='Total Services {count}')}")
+        print(f"\n{get_text('services.launcher.usage_hint', default='Usage Hint')}")
 
     def launch_service(self, service_name: str, interface_type: str, **kwargs) -> bool:
         """Launch a specific service with the specified interface."""
         if service_name not in self.available_services:
-            print(get_text('services.launcher.service_not_found', service=service_name))
-            print(get_text('services.launcher.run_list_hint'))
+            print(get_text('services.launcher.service_not_found', service=service_name, default="Service Not Found {service}"))
+            print(get_text('services.launcher.run_list_hint', default="Run List Hint"))
             return False
 
         if interface_type not in self.available_services[service_name]:
-            print(get_text('services.launcher.interface_not_available', interface=interface_type, service=service_name))
+            print(get_text('services.launcher.interface_not_available', interface=interface_type, service=service_name, default="Interface Not Available {interface} {service}"))
             available = list(self.available_services[service_name].keys())
-            print(get_text('services.launcher.available_interfaces', interfaces=', '.join(available)))
+            print(get_text('services.launcher.available_interfaces', interfaces=', '.join(available), default="Available Interfaces {interfaces}"))
             return False
 
         try:
@@ -91,10 +91,10 @@ class ServiceLauncher:
                 return self._launch_cli(module, service_name, **kwargs)
 
         except ImportError as e:
-            print(get_text('services.launcher.import_failed', service=service_name, interface=interface_type, error=e))
+            print(get_text('services.launcher.import_failed', service=service_name, interface=interface_type, error=e, default="Import Failed {error} {interface} {service}"))
             return False
         except Exception as e:
-            print(get_text('services.launcher.launch_failed', service=service_name, interface=interface_type, error=e))
+            print(get_text('services.launcher.launch_failed', service=service_name, interface=interface_type, error=e, default="Launch Failed {error} {interface} {service}"))
             return False
 
     def _launch_gui(self, module, service_name: str, **kwargs) -> bool:

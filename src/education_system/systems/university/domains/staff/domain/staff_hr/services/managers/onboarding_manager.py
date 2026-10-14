@@ -165,7 +165,7 @@ class OnboardingManager:
                     'task_summary':  task_summary,
                 })
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             return assignment_id
 
     @staticmethod

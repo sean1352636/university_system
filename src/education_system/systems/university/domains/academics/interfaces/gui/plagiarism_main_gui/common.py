@@ -430,7 +430,7 @@ class SetupTestingDialog:
                   command=self.test_plagiarism).pack(side=tk.LEFT)
 
         # Results area
-        results_frame = ttk.LabelFrame(main_frame, text=_t("common.results"), padding=GuiConfig.PADDING_SMALL)
+        results_frame = ttk.LabelFrame(main_frame, text=_t("common.results", default="Results"), padding=GuiConfig.PADDING_SMALL)
         results_frame.pack(fill=tk.BOTH, expand=True, pady=(0, GuiConfig.PADDING_MEDIUM))
 
         self.results_text = scrolledtext.ScrolledText(

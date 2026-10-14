@@ -1,35 +1,13 @@
-"""Betting Shop Core Services Module"""
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.domain.betting.services`` (campus commerce plugin).
 
-from education_system.systems.university.domains.operations.domain.commerce.betting.services.betting_core import (
-    AccountManager,
-    SportsBettingManager,
-    PredictionMarketManager,
-    CasinoManager,
-    ReportManager,
-    init_betting_db,
-    generate_reference,
-    MIN_BET,
-    MAX_BET,
-    MIN_DEPOSIT,
-    MAX_DEPOSIT,
-    CASINO_GAMES,
-    PREDICTION_CATEGORIES,
-    BET_STATUSES
-)
+A mirror, not an alias: an aliased package would resolve this package's
+submodules through the new ``__path__`` and load each one a second time.
+Submodules are aliased individually; this copies the package's names.
+"""
+# layout-shim: education_system.systems.university.plugins.campus_commerce.domain.betting.services
+import importlib as _importlib
 
-__all__ = [
-    'AccountManager',
-    'SportsBettingManager',
-    'PredictionMarketManager',
-    'CasinoManager',
-    'ReportManager',
-    'init_betting_db',
-    'generate_reference',
-    'MIN_BET',
-    'MAX_BET',
-    'MIN_DEPOSIT',
-    'MAX_DEPOSIT',
-    'CASINO_GAMES',
-    'PREDICTION_CATEGORIES',
-    'BET_STATUSES'
-]
+_new = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.domain.betting.services")
+globals().update({k: v for k, v in vars(_new).items()
+                  if not (k.startswith("__") and k.endswith("__"))})
+del _importlib, _new

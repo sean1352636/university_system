@@ -37,7 +37,7 @@ nano .env
 make run-gui
 
 # Or using Python directly
-python run.py --gui
+python -m education_system --gui
 ```
 
 ## First Login

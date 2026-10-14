@@ -605,6 +605,7 @@ def escalate_overdue(*, as_of: str | None = None, owner: str = "doctoral-college
     with transaction() as conn:
         for source_type, table, id_column, statuses in sources:
             placeholders = ",".join("?" for _ in statuses)
+            # db-audit: ignore[DBW001] - literal collection; string literal
             rows = conn.execute(
                 f"""SELECT project_id, {id_column} AS source_id, due_date
                       FROM {table}
@@ -647,6 +648,7 @@ def project_record(project_id: int) -> dict[str, Any]:
         ):
             result[key] = [
                 dict(r)
+                # db-audit: ignore[DBW001] - loop over a literal table
                 for r in conn.execute(
                     f"SELECT * FROM {table} WHERE project_id = ? ORDER BY 1",
                     (project_id,),

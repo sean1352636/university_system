@@ -15,6 +15,14 @@ from education_system.systems.university.infrastructure.email.email_service impo
 from education_system.systems.university.infrastructure.email.template_utils import load_template, render_template
 from education_system.systems.university.infrastructure.activity_logger import log_activity
 
+# Full template paths. These templates sit two directories below
+# ``academics/`` and the bare basenames are only unique by luck, so name the
+# path in full: ``load_template`` resolves an exact path deterministically,
+# whereas a bare name depends on the mapping file and a one-level directory
+# scan that never reaches this depth.
+_LOW_ATTENDANCE_TEMPLATE = 'academics/student_support/low_attendance/low_attendance_alert'
+_PARENT_LOW_ATTENDANCE_TEMPLATE = 'academics/student_support/low_attendance/parent_low_attendance_alert'
+
 
 class AttendanceNotificationService:
     """Service for managing attendance notifications to students and parents"""
@@ -217,7 +225,7 @@ class AttendanceNotificationService:
         """
         try:
             # Load template
-            template = load_template('academics/low_attendance_alert')
+            template = load_template(_LOW_ATTENDANCE_TEMPLATE)
             if not template:
                 print("Error: low_attendance_alert template not found")
                 return False
@@ -238,7 +246,7 @@ class AttendanceNotificationService:
             }
 
             # Render template
-            subject, body = render_template('low_attendance_alert', template_vars)
+            subject, body = render_template(_LOW_ATTENDANCE_TEMPLATE, template_vars)
 
             if not subject or not body:
                 print("Error rendering template")
@@ -286,7 +294,7 @@ class AttendanceNotificationService:
                 return 0
 
             # Load template
-            template = load_template('academics/parent_low_attendance_alert')
+            template = load_template(_PARENT_LOW_ATTENDANCE_TEMPLATE)
             if not template:
                 print("Error: parent_low_attendance_alert template not found")
                 return 0
@@ -317,7 +325,7 @@ class AttendanceNotificationService:
                     }
 
                     # Render template
-                    subject, body = render_template('parent_low_attendance_alert', template_vars)
+                    subject, body = render_template(_PARENT_LOW_ATTENDANCE_TEMPLATE, template_vars)
 
                     if not subject or not body:
                         continue
@@ -450,8 +458,9 @@ Shortfall: {self.attendance_threshold - student_data['attendance_percentage']:.1
 
         Checks multiple tables in order of preference:
         1. module_schedule (linked to instructors table)
-        2. lms_courses (instructor_id field)
-        3. courses table (instructor_id field)
+        2. courses table (instructor_id field)
+
+        The lms_courses lookup that sat between them is gone with the LMS.
 
         Args:
             module_code: The module code to look up
@@ -471,18 +480,6 @@ Shortfall: {self.attendance_threshold - student_data['attendance_percentage']:.1
                     FROM module_schedule ms
                     JOIN instructors i ON ms.instructor_id = i.id
                     WHERE ms.module_code = ? AND i.email IS NOT NULL AND i.email != ''
-                    LIMIT 1
-                ''', (module_code,))
-                result = cursor.fetchone()
-                if result and result[0]:
-                    return result[0]
-
-                # Try 2: Get instructor from lms_courses -> instructors table
-                cursor.execute('''
-                    SELECT DISTINCT i.email
-                    FROM lms_courses lc
-                    JOIN instructors i ON lc.instructor_id = i.id OR lc.instructor_id = CAST(i.id AS TEXT)
-                    WHERE lc.module_code = ? AND i.email IS NOT NULL AND i.email != ''
                     LIMIT 1
                 ''', (module_code,))
                 result = cursor.fetchone()

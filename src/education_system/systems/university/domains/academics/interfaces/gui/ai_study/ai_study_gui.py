@@ -3,6 +3,9 @@ AI Study Companion GUI
 
 Provides graphical interface for AI-powered study features.
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
@@ -33,7 +36,7 @@ class AIStudyGUI:
             self._owns_window = False
         else:
             self.window = tk.Toplevel(parent) if parent else tk.Tk()
-            self.window.title(_t("ai_study.window.title", default="AI Study Companion"))
+            self.window.title(_t("ai_study.window.title", default="===== WINDOW ====="))
             self.window.geometry("1000x700")
             self._owns_window = True
 
@@ -347,7 +350,7 @@ class AIStudyGUI:
                 # Query academic_calendar_events for this module's exam
                 exam_event = conn.execute("""
                     SELECT date_start, date, name
-                    FROM academic_calendar_events
+                    FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar')
                     WHERE event_type = 'Exam'
                     AND (name LIKE ? OR name LIKE ?)
                     ORDER BY date_start DESC, date DESC
@@ -373,14 +376,14 @@ class AIStudyGUI:
                             self.window.after(2000, lambda: self.exam_date_entry.config(foreground='black'))
 
                         except Exception:
-                            pass
+                            logger.debug("Suppressed exception", exc_info=True)
                 else:
                     # No exam found - clear the field
                     self.exam_date_entry.delete(0, tk.END)
 
         except Exception:
             # Silently fail - user can still enter date manually
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     # Event handlers
 

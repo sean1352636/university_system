@@ -1,8 +1,7 @@
 """Shared GUI frame for managing security questions.
 
 Provides ``SecurityQuestionsFrame`` — a tk.Frame that can be embedded
-in any education subsystem's main window or settings area.  Follows the
-same pattern as ``MFASettingsFrame``.
+in any education subsystem's main window or settings area.
 """
 
 import tkinter as tk

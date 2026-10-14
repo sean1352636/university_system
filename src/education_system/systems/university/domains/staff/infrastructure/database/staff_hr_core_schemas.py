@@ -786,6 +786,7 @@ def _init_core_schemas() -> None:
 
             for idx_name, table, columns in indexes:
                 try:
+                    # db-audit: ignore[DBW001] - literal collection
                     cursor.execute(f'CREATE INDEX IF NOT EXISTS {idx_name} ON {table}({columns})')
                 except sqlite3.Error:
                     pass  # Index may already exist

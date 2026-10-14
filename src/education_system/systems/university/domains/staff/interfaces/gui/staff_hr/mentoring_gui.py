@@ -10,6 +10,9 @@ Provides interface for:
 """
 
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -144,7 +147,7 @@ class MentoringGUI:
                 pid = p.get('programme_id') or p.get('id')
                 self._programme_cache[pid] = p.get('name', '')
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _load_my_mentoring(self):
         """Load user's mentoring relationships."""
@@ -1349,7 +1352,7 @@ class MentoringGUI:
                     start_date=datetime.now().strftime('%Y-%m-%d')
                 )
             except Exception:
-                pass  # Match was created but activation failed; still report success
+                logger.debug("Suppressed exception", exc_info=True)
 
             messagebox.showinfo(_t('gui.staff.staff_hr.mentoring.dialogs.success', default="Success"), f"Match created and activated. ID: {match_id}")
             self.admin_match_mentee_entry.delete(0, tk.END)
@@ -1359,7 +1362,7 @@ class MentoringGUI:
             try:
                 self._load_my_mentoring()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
         except Exception as e:
             messagebox.showerror(_t('gui.staff.staff_hr.mentoring.dialogs.error', default="Error"), str(e))
 

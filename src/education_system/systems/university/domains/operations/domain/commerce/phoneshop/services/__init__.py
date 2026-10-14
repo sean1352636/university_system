@@ -1,10 +1,13 @@
-"""Phone Shop Services Module"""
-from education_system.systems.university.domains.operations.domain.commerce.phoneshop.services.phoneshop_core import (
-    ProductManager, OrderManager, TransactionManager, ReportManager,
-    init_phoneshop_db, PHONE_CATEGORIES, ORDER_STATUSES
-)
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.domain.phoneshop.services`` (campus commerce plugin).
 
-__all__ = [
-    'ProductManager', 'OrderManager', 'TransactionManager', 'ReportManager',
-    'init_phoneshop_db', 'PHONE_CATEGORIES', 'ORDER_STATUSES'
-]
+A mirror, not an alias: an aliased package would resolve this package's
+submodules through the new ``__path__`` and load each one a second time.
+Submodules are aliased individually; this copies the package's names.
+"""
+# layout-shim: education_system.systems.university.plugins.campus_commerce.domain.phoneshop.services
+import importlib as _importlib
+
+_new = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.domain.phoneshop.services")
+globals().update({k: v for k, v in vars(_new).items()
+                  if not (k.startswith("__") and k.endswith("__"))})
+del _importlib, _new

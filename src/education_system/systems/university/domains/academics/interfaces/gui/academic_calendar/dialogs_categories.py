@@ -1,12 +1,19 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import logging
 import tkinter as tk
-from tkinter import ttk, messagebox, simpledialog
+from tkinter import ttk, simpledialog
 from datetime import datetime, timedelta
 from typing import Any, Optional, List, Dict
 from education_system.systems.university.infrastructure.i18n import get_text as _
 from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar.utils import safe_grab_set
+# Message boxes parented to the window that raised them, not the main
+# GUI — see _dialogs.
+from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar._dialogs import messagebox
 
 gui_logger = logging.getLogger(__name__)
 
@@ -186,14 +193,15 @@ class AssignTagDialog:
         # Load existing events for the dropdown
         self.event_map = {}
         try:
+            from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar._calendar_events import CALENDAR_EVENTS
             rows = calendar_manager.db_manager.execute_query(
-                "SELECT id, name FROM academic_calendar_events ORDER BY name"
+                f"SELECT id, name FROM {CALENDAR_EVENTS} ORDER BY name"
             )
             for row in rows:
                 label = f"{row['name']} ({row['id'][:8]}...)"
                 self.event_map[label] = row['id']
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         if not self.event_map:
             messagebox.showwarning(_("common.warning"), _t('gui.academics.academic_calendar.dialogs_categories.dialogs.no_events_found_create_an_event_first', default="No events found. Create an event first."))

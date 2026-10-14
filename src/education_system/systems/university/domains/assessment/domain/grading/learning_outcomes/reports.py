@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 import os
 import numpy as np
 from datetime import datetime
@@ -307,7 +311,7 @@ def generate_student_outcome_report(cursor, student_id):
             try:
                 os.remove(chart_filename)
             except Exception:
-                pass  # Ignore errors during cleanup
+                logger.debug("Suppressed exception", exc_info=True)
 
         print(f"\nLearning outcome report generated: {report_filename}")
 
@@ -696,7 +700,7 @@ def generate_course_outcome_report(cursor, course):
             if 'chart2_filename' in locals() and os.path.exists(chart2_filename):
                 os.remove(chart2_filename)
         except Exception:
-            pass  # Ignore errors during cleanup
+            logger.debug("Suppressed exception", exc_info=True)
 
         print(f"\nCourse outcome report generated: {report_filename}")
 
@@ -1175,7 +1179,7 @@ def generate_all_courses_outcome_report(cursor):
             if 'chart4_filename' in locals() and os.path.exists(chart4_filename):
                 os.remove(chart4_filename)
         except Exception:
-            pass  # Ignore errors during cleanup
+            logger.debug("Suppressed exception", exc_info=True)
 
         print(f"\nCross-course outcome report generated: {report_filename}")
 
@@ -1718,7 +1722,7 @@ def generate_module_outcome_report(cursor, module_code):
             if 'chart2_filename' in locals() and os.path.exists(chart2_filename):
                 os.remove(chart2_filename)
         except Exception:
-            pass  # Ignore errors during cleanup
+            logger.debug("Suppressed exception", exc_info=True)
 
         print(f"\nModule outcome report generated: {report_filename}")
 

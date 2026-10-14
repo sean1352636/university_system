@@ -1,0 +1,22 @@
+{
+  "template_name": "exam_analytics_report",
+  "description": "Exam analytics summary sent from the Exam Management analytics view to an administrator: attempt counts, score spread, pass rate and per-question difficulty.",
+  "category": "academics",
+  "subject": "Exam Analytics Report: $exam_title",
+  "body": "Hello,\n\n$sender_name has sent you the analytics report for the exam below, generated on $generated_at.\n\nExam: $exam_title\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nTotal attempts:   $total_attempts\nAverage score:    $average_score%\nLowest score:     $min_score%\nHighest score:    $max_score%\nPassed:           $pass_count\nPass rate:        $pass_rate%\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nQuestion analysis\n$question_analysis\n\nA low 'Correct%' on a question usually means it was too hard, ambiguous, or taught unclearly — worth reviewing before the paper is reused.\n\nKind regards,\nUniversity Examination Office\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nThis is an automated notification. Please do not reply to this email.",
+  "variables": [
+    "exam_title",
+    "sender_name",
+    "generated_at",
+    "total_attempts",
+    "average_score",
+    "min_score",
+    "max_score",
+    "pass_count",
+    "pass_rate",
+    "question_analysis"
+  ],
+  "recipients": ["admin", "staff"],
+  "priority": "normal",
+  "active": true
+}

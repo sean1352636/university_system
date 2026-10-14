@@ -438,7 +438,7 @@ class DataManager:
         # aren't blocked.
         try:
             from education_system.systems.university.domains.academics.interfaces.gui._cross_services import (
-                current_period, is_holiday,
+                current_period, describe_holiday,
             )
             if exam.date:
                 window = current_period("exam_window", on_date=exam.date)
@@ -448,10 +448,15 @@ class DataManager:
                         f"exam window. Update the calendar's exam_window "
                         f"or pick a date inside it."
                     )
-                if is_holiday(exam.date):
+                # Name the holiday and its span: "falls on a holiday"
+                # alone leaves the user guessing which one and how far
+                # they need to move the exam.
+                holiday = describe_holiday(exam.date)
+                if holiday:
                     raise RuntimeError(
-                        f"Exam date {exam.date} falls on a holiday "
-                        f"(see Academic Calendar). Pick a different date."
+                        f"Exam date {exam.date} falls on a holiday: "
+                        f"{holiday}.\n\nPick a date outside it, or remove "
+                        f"the holiday in the Academic Calendar."
                     )
         except RuntimeError:
             raise
@@ -593,7 +598,7 @@ class DataManager:
                     cursor = conn.execute("SELECT COALESCE(MAX(id), 0) + 1 FROM exams")
                     return cursor.fetchone()[0]
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         # Fallback to in-memory list
         if not self.exams:
@@ -608,7 +613,7 @@ class DataManager:
                     cursor = conn.execute("SELECT COALESCE(MAX(id), 0) + 1 FROM rooms")
                     return cursor.fetchone()[0]
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         # Fallback to in-memory list
         if not self.rooms:

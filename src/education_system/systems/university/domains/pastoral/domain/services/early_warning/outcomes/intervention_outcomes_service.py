@@ -151,6 +151,7 @@ class InterventionOutcomesService:
                 sets.append("sessions_total = ?")
                 params.append(sessions_total)
             params.append(intervention_id)
+            # db-audit: ignore[DBW001] - join over a code-controlled list
             conn.execute(
                 f"UPDATE intervention_outcomes SET {', '.join(sets)} "
                 "WHERE intervention_id = ?",

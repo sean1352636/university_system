@@ -1,21 +1,28 @@
 """Student management functionality"""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, filedialog
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import make_toplevel
 import tkinter.scrolledtext as scrolledtext
 from education_system.systems.university.infrastructure.database.db import sqlite3
 import os
 from pathlib import Path
 import csv
-import numpy as np
 import math
-from scipy import stats
 from datetime import datetime, timedelta
 import json
 from education_system import paths
 from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.utils import ensure_column_exists
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.utils import attr_alive
+from education_system.systems.university.infrastructure.database.schemas.modules_table import ensure_modules_table
+from education_system.systems.university.infrastructure.database.schemas.modules_table import ensure_student_modules_table
+from education_system.systems.university.infrastructure.database.schemas.students_table import ensure_students_table
 
 # Use centralized path configuration
 DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
@@ -42,32 +49,6 @@ except ImportError:
     ACTIVITY_LOGGER_AVAILABLE = False
     log_activity = lambda *args, **kwargs: None
 
-# Optional imports with fallbacks
-try:
-    import pandas as pd
-except ImportError:
-    pd = None
-
-try:
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    import matplotlib
-    matplotlib.use('TkAgg')
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-except ImportError:
-    plt = None
-    sns = None
-    FigureCanvasTkAgg = None
-
-try:
-    from reportlab.lib.pagesizes import letter
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-    from reportlab.lib import colors
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib.units import inch
-except ImportError:
-    # ReportLab not available - PDF features will be disabled
-    SimpleDocTemplate = None
 
 # Database connection setup
 
@@ -79,7 +60,7 @@ def _patched_sqlite3_connect_grade(database, *args, **kwargs):
         if not database or db_name in (str(DEFAULT_DB_PATH), "student_grading_system.db"):
             return _original_sqlite3_connect_grade(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return _original_sqlite3_connect_grade(database, *args, **kwargs)
 
 sqlite3.connect = _patched_sqlite3_connect_grade
@@ -144,48 +125,13 @@ def init_basic_database():
         cursor = conn.cursor()
 
         # Create students table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS students (
-        student_id TEXT PRIMARY KEY,
-        first_name TEXT NOT NULL,
-        middle_name TEXT,
-        last_name TEXT NOT NULL,
-        course TEXT NOT NULL,
-        email_address TEXT,
-        gender TEXT,
-        dob TEXT,
-        enrollment_date TEXT DEFAULT (date('now')),
-        status TEXT DEFAULT 'Active'
-        )
-        ''')
+        ensure_students_table(cursor)
 
         # Create modules table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS modules (
-        module_code TEXT PRIMARY KEY,
-        module_name TEXT NOT NULL,
-        module_type TEXT,
-        credits INTEGER DEFAULT 1,
-        description TEXT,
-        course TEXT,
-        semester TEXT,
-        year INTEGER
-        )
-        ''')
+        ensure_modules_table(cursor)
 
         # Create student_modules table (enrollment)
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS student_modules (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        student_id TEXT,
-        module_code TEXT,
-        enrollment_date TEXT DEFAULT (date('now')),
-        status TEXT DEFAULT 'Enrolled',
-        FOREIGN KEY (student_id) REFERENCES students (student_id),
-        FOREIGN KEY (module_code) REFERENCES modules (module_code),
-        UNIQUE(student_id, module_code)
-        )
-        ''')
+        ensure_student_modules_table(cursor)
 
         # Create assessments table
         cursor.execute('''
@@ -360,6 +306,32 @@ def safe_combo_update(obj, combo_attr, values):
 class StudentManager:
     """Student management functionality"""
 
+    def _display_report(self, title, sections, footer=None):
+        """Show a section report, using the analytics manager's renderer.
+
+        This class calls _display_report but never defined it, so
+        Student Progress, Competency Profile, At-Risk Student and Module
+        Grade reports all raised AttributeError on click. The renderer
+        lives on AnalyticsManager; rather than a third copy, delegate.
+        """
+        analytics = getattr(self.app, "analytics", None)
+        renderer = getattr(analytics, "_display_report", None)
+        if callable(renderer):
+            return renderer(title, sections, footer)
+        messagebox.showinfo(title, self._plain_report(title, sections, footer))
+
+    @staticmethod
+    def _plain_report(title, sections, footer=None):
+        """Last-resort text form if analytics is unavailable."""
+        lines = [title, "=" * len(title), ""]
+        for heading, content in sections or []:
+            lines.append((heading or "Details").strip())
+            lines += list(content) if content else ["No data available."]
+            lines.append("")
+        if footer:
+            lines.append(footer)
+        return "\n".join(lines).strip()
+
     def __init__(self, app):
         self.app = app
         self.root = app.root
@@ -373,6 +345,10 @@ class StudentManager:
         if hasattr(self.app, 'layout') and hasattr(self.app.layout, 'content_frame'):
             return self.app.layout.content_frame
         return None
+
+    def _widget_alive(self, name):
+        """True when ``self.<name>`` exists and its Tk widget is not destroyed."""
+        return attr_alive(self, name)
 
     def get_cursor(self):
         """Get a valid database cursor, creating connection if needed"""
@@ -409,8 +385,8 @@ class StudentManager:
         showing all students regardless of their course.
         """
         try:
-            # Check if combo exists
-            if not hasattr(self, 'course_filter_combo'):
+            # Check the combo exists and has not been destroyed
+            if not self._widget_alive('course_filter_combo'):
                 return
 
             # Get database cursor
@@ -605,20 +581,23 @@ class StudentManager:
                                 row.get('last_name', ''),
                                 row.get('course', ''),
                                 row.get('email_address', ''),
-                                row.get('phone_number', ''),
+                                row.get('phone', ''),
                                 row.get('address', ''),
                                 row.get('enrollment_date', datetime.now().strftime('%Y-%m-%d')),
                                 row.get('status', 'Active'),
                                 row.get('date_of_birth', ''),
                                 row.get('gender', ''),
-                                row.get('nationality', '')
                             )
 
+                            # The CSV headers are phone / date_of_birth;
+                            # the table's columns are phone / dob. There is no
+                            # nationality column at all — it lives on the visa
+                            # and equality records — so it is not imported.
                             cursor.execute('''
                             INSERT INTO students (student_id, first_name, middle_name, last_name, course,
-                                                email_address, phone_number, address, enrollment_date,
-                                                status, date_of_birth, gender, nationality)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                                email_address, phone, address, enrollment_date,
+                                                status, dob, gender)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                             ''', student_data)
                             imported_count += 1
                         except sqlite3.IntegrityError:
@@ -665,7 +644,7 @@ class StudentManager:
                 with open(file_path, 'w', newline='', encoding='utf-8') as file:
                     writer = csv.writer(file)
                     writer.writerow(['student_id', 'first_name', 'middle_name', 'last_name', 'course',
-                                   'email_address', 'phone_number', 'address', 'enrollment_date',
+                                   'email_address', 'phone', 'address', 'enrollment_date',
                                    'status', 'date_of_birth', 'gender', 'nationality'])
                     # Student names/addresses are user-controlled at enrolment;
                     # escape formula triggers so an export cannot run a formula
@@ -682,8 +661,9 @@ class StudentManager:
     def refresh_students(self):
         """Refresh student list display"""
         try:
-            # Check if student_tree exists before accessing it
-            if not hasattr(self, 'student_tree') or not self.student_tree:
+            # The tree is destroyed whenever the user navigates to another
+            # view; a stale reference here is normal, not an error.
+            if not self._widget_alive('student_tree'):
                 return
 
             # Get database cursor
@@ -761,6 +741,11 @@ class StudentManager:
 
             self.update_status(f"Loaded {len(students)} students")
 
+        except tk.TclError:
+            # Widget torn down mid-refresh (view switched / window closed).
+            # Nothing to show the user — the display is already gone.
+            return
+
         except Exception as e:
             messagebox.showerror(_t('gui.academics.grade_tracking.student_manager.dialogs.error', default="Error"), f"Failed to refresh students: {e}")
 
@@ -768,6 +753,9 @@ class StudentManager:
     def search_students(self, event):
         """Search students based on text input"""
         try:
+            if not self._widget_alive('student_tree'):
+                return
+
             # Get database cursor
             cursor = self.get_cursor()
             if not cursor:
@@ -1298,9 +1286,13 @@ class StudentManager:
         """Generate a comprehensive performance dashboard"""
         try:
             # Create dashboard window
-            dashboard_window = tk.Toplevel(self.root)
+            dashboard_window = make_toplevel(self.root)
             dashboard_window.title(_t('gui.academics.grade_tracking.student_manager.windows.performance_dashboard', default="Performance Dashboard"))
-            dashboard_window.geometry("1200x800")
+            try:
+                from education_system.platform.delivery.gui.window_sizing import center
+                center(dashboard_window, 1400, 900, minsize=(1000, 650))
+            except Exception:
+                dashboard_window.geometry("1400x900")
             safe_grab_set(dashboard_window)
 
             # Title
@@ -1357,7 +1349,7 @@ class StudentManager:
         """Show grade trends chart"""
         try:
             # Create trends window
-            trends_window = tk.Toplevel(self.root)
+            trends_window = make_toplevel(self.root)
             trends_window.title(_t('gui.academics.grade_tracking.student_manager.windows.grade_trends_chart', default="Grade Trends Chart"))
             trends_window.geometry("800x600")
             safe_grab_set(trends_window)
@@ -1381,7 +1373,7 @@ class StudentManager:
         """Show student progress charts"""
         try:
             # Create progress charts window
-            progress_window = tk.Toplevel(self.root)
+            progress_window = make_toplevel(self.root)
             progress_window.title(_t('gui.academics.grade_tracking.student_manager.windows.student_progress_charts', default="Student Progress Charts"))
             progress_window.geometry("800x600")
             safe_grab_set(progress_window)

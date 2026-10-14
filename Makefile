@@ -1,7 +1,7 @@
 # Education Management System - Makefile
 # Development commands for the university system
 
-.PHONY: lock supply-chain-check audit verify-install sbom supply-chain security-gate help install install-dev clean test test-all test-cov test-shared test-university test-security test-gui test-auth test-coverage test-coverage-report coverage-university coverage-university-core architecture-check lint format run seed portal docker load-test perf-test mutation-test load-test-ui
+.PHONY: lock supply-chain-check audit verify-install sbom supply-chain security-gate help install install-dev clean test test-all test-cov test-shared test-university test-security test-gui test-auth test-coverage test-coverage-report coverage-university coverage-university-core architecture-check layout-check lint format run seed portal docker load-test perf-test mutation-test load-test-ui
 
 .DEFAULT_GOAL := help
 
@@ -16,6 +16,13 @@ UNIVERSITY_SRC := $(SRC)/systems/university
 COVERAGE_UNIVERSITY_MIN ?= 0.8
 # Tests live in one tree at the repo root. (pyproject testpaths mirrors this.)
 TESTS := tests
+UNIVERSITY_TESTS := \
+	tests/unit/systems/university \
+	tests/integration/systems/university \
+	tests/contract/university \
+	tests/end_to_end/university \
+	tests/smoke/university \
+	tests/performance/benchmarks
 
 help: ## Show this help
 	@echo "Education Management System"
@@ -71,10 +78,10 @@ test-shared: ## Run shared module tests
 	$(PYTEST) tests/unit/platform/ -v --timeout=60
 
 test-university: ## Run the default fast, non-GUI university suite
-	$(PYTEST) tests/unit/systems/university/ -v -m "not slow and not gui" --timeout=60
+	$(PYTEST) $(UNIVERSITY_TESTS) -v -m "not slow and not gui" --timeout=60
 
 test-security: ## Run university security and authentication tests (including legacy unmarked files)
-	$(PYTEST) tests/unit/systems/university/infrastructure/security tests/unit/systems/university/infrastructure/auth -n 0 -v --timeout=60
+	$(PYTEST) tests/security tests/unit/systems/university/infrastructure/security tests/unit/systems/university/infrastructure/auth -n 0 -v --timeout=60
 
 test-gui: ## Run all GUI tests serially (use xvfb-run on headless Linux)
 	$(PYTEST) $(TESTS) -m gui -n 0 -v --timeout=120
@@ -98,7 +105,7 @@ coverage-shared: ## Enforce the higher coverage bar on shared/core code (fail un
 		--cov-report=term-missing --cov-fail-under=70 -m "not slow and not gui" --timeout=60
 
 coverage-university: ## Measure the whole university tree and block coverage regressions
-	$(PYTEST) tests/unit/systems/university/ \
+	$(PYTEST) $(UNIVERSITY_TESTS) \
 		-m "not slow and not gui" --timeout=60 \
 		--cov=$(UNIVERSITY_SRC) --cov-branch \
 		--cov-report=xml:coverage-university.xml \
@@ -106,18 +113,18 @@ coverage-university: ## Measure the whole university tree and block coverage reg
 
 coverage-university-core: ## Enforce coverage for modernised university core (fail under 60%)
 	$(PYTEST) \
-		tests/unit/systems/university/domain/admissions/test_admissions_lifecycle.py \
-		tests/unit/systems/university/domain/learners/test_student_lifecycle.py \
-		tests/unit/systems/university/domain/assessment/test_assessment_boards.py \
-		tests/unit/systems/university/domain/academics/test_programme_governance.py \
-		tests/unit/systems/university/domain/academics/research/test_pgr_service.py \
+		tests/unit/systems/university/domains/admissions/test_admissions_lifecycle.py \
+		tests/unit/systems/university/domains/learners/test_student_lifecycle.py \
+		tests/unit/systems/university/domains/assessment/test_assessment_boards.py \
+		tests/unit/systems/university/domains/academics/test_programme_governance.py \
+		tests/unit/systems/university/domains/academics/research/test_pgr_service.py \
 		tests/unit/systems/university/services/test_in_process_events.py \
 		tests/unit/systems/university/services/test_operations.py \
-		--cov=$(SRC)/systems/university/domain/admissions/services/admissions_lifecycle.py \
-		--cov=$(SRC)/systems/university/domain/learners/student_lifecycle.py \
-		--cov=$(SRC)/systems/university/domain/assessment/boards \
-		--cov=$(SRC)/systems/university/domain/academics/programme_governance \
-		--cov=$(SRC)/systems/university/domain/academics/research/pgr \
+		--cov=$(SRC)/systems/university/domains/admissions/domain/services/admissions_lifecycle.py \
+		--cov=$(SRC)/systems/university/domains/learners/domain/student_lifecycle.py \
+		--cov=$(SRC)/systems/university/domains/assessment/domain/boards \
+		--cov=$(SRC)/systems/university/domains/academics/domain/programme_governance \
+		--cov=$(SRC)/systems/university/domains/academics/domain/research/pgr \
 		--cov=$(SRC)/systems/university/services/events \
 		--cov=$(SRC)/systems/university/services/operations.py \
 		--cov-report=term-missing --cov-fail-under=60 --timeout=60 -n 0
@@ -140,6 +147,9 @@ type-check: ## Type check
 
 architecture-check: ## Enforce boundaries and size limits for modernised core
 	$(PYTHON) tools/university/check_architecture.py
+
+layout-check: ## Ratchet the file/directory layout (see tools/check_layout.py)
+	$(PYTHON) tools/check_layout.py
 
 security-scan: ## Run bandit security scan
 	$(PYTHON) -m bandit -r $(SRC)/ -c pyproject.toml -lll
@@ -232,13 +242,13 @@ ci: clean lint test-cov security-scan supply-chain-check ## Simulate full CI pip
 # ==========================================
 
 load-test: ## Run headless Locust load test (50 users, 60 s) — server must be running
-	$(PYTHON) -m locust -f tests/performance/locustfile.py --headless -u 50 -r 5 --run-time 60s --host http://localhost:5000
+	$(PYTHON) -m locust -f tests/performance/load/locustfile.py --headless -u 50 -r 5 --run-time 60s --host http://localhost:5000
 
 load-test-ui: ## Open Locust web UI for interactive load testing — server must be running
-	$(PYTHON) -m locust -f tests/performance/locustfile.py --host http://localhost:5000
+	$(PYTHON) -m locust -f tests/performance/load/locustfile.py --host http://localhost:5000
 
 perf-test: ## Run standalone SQLite benchmark (no server required)
-	$(PYTHON) tests/performance/benchmark_db.py
+	$(PYTHON) tests/performance/benchmarks/benchmark_db.py
 
 mutation-test: ## Run focused mutation testing against the email boundary
 	mutmut run --paths-to-mutate src/education_system/systems/university/infrastructure/email/smtp.py --tests-dir tests/unit/systems/university/infrastructure/email

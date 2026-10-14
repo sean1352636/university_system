@@ -33,7 +33,8 @@ logger = logging.getLogger(__name__)
 
 FOOTER_LABEL = "Apprenticeships"
 
-# Where the window modules live, one package per role.
+# Where the window modules live: one package per role, plus ``shared`` for
+# screens several roles open — the service scopes what each of them sees.
 _WINDOW_PACKAGE = "education_system.systems.apprenticeships.interfaces.gui.windows"
 
 # Appended to every role's menu. Account screens belong to everyone, so
@@ -52,40 +53,83 @@ SYSTEM_CATEGORY_ADMIN: list[tuple[str, str]] = [
 ]
 
 # role -> [(category, [(label, module)])]. ``module`` is the dotted tail
-# under the role's window package; each one exposes ``render(gui)``.
+# under _WINDOW_PACKAGE (a role package or ``shared``); each one exposes
+# ``render(gui)``.
 NAV_BY_ROLE: dict[str, list[tuple[str, list[tuple[str, str]]]]] = {
     config.ADMIN: [
         ("Overview", [
             ("Dashboard", "admin.dashboard"),
+            ("My Tasks", "shared.tasks"),
+            ("Calendar", "shared.calendar"),
+            ("Search", "shared.search"),
+            ("Awaiting Signature", "shared.signatures"),
             ("Reports", "admin.reports"),
         ]),
         ("People", [
-            ("Admissions", "admin.admissions"),
+            ("Admissions", "shared.admissions"),
             ("Apprentices", "admin.apprentices"),
             ("Employers", "admin.employers"),
+            ("Employer Contacts", "shared.employer_contacts"),
             ("Staff & Caseloads", "admin.staff"),
+            ("Workload", "shared.workload"),
+        ]),
+        ("Cross-System", [
+            ("University Progression", "shared.university_progression"),
+            ("Learner Journey (360)", "shared.learner_journey"),
         ]),
         ("Delivery", [
             ("Programmes & KSBs", "admin.programmes"),
+            ("Learning Plans", "shared.learning_plan"),
+            ("Degree Apprenticeships", "admin.degree_apprenticeships"),
+        ]),
+        ("Progress", [
+            ("Action Plans", "shared.actions"),
+            ("Assignments", "shared.assignments"),
+            ("Skills Matrix", "shared.skills_matrix"),
+            ("Functional Skills", "shared.functional_skills"),
+            ("Qualifications", "shared.qualifications"),
+        ]),
+        ("Support", [
+            ("Support & Adjustments", "shared.support"),
+            ("Welfare & Risk", "shared.welfare"),
         ]),
         ("Assurance", [
             ("Funding", "admin.funding"),
             ("Compliance", "admin.compliance"),
+            ("Documents", "shared.documents"),
+            ("Audit Log", "admin.audit_log"),
+            ("Employer Risk", "admin.employer_risk"),
+        ]),
+        ("Quality", [
+            ("Complaints", "shared.complaints"),
+            ("Appeals", "shared.appeals"),
+            ("Surveys", "shared.surveys"),
         ]),
         ("Communication", [
-            ("Correspondence", "admin.email"),
+            ("Correspondence", "shared.email"),
         ]),
     ],
     config.STAFF: [
         ("Overview", [
             ("Dashboard", "staff.dashboard"),
+            ("My Tasks", "shared.tasks"),
+            ("Calendar", "shared.calendar"),
+            ("Search", "shared.search"),
+            ("Awaiting Signature", "shared.signatures"),
             ("My Caseload", "staff.caseload"),
+            ("Workload", "shared.workload"),
             # Read-only for staff: a tutor plans around who is coming
             # without being able to admit them. The screen itself gates
             # the Accept/Decline buttons on admission.decide.
-            ("Admissions Queue", "staff.admissions"),
+            ("Admissions Queue", "shared.admissions"),
+        ]),
+        # Read-only board for staff; submitting needs admission.decide.
+        ("Cross-System", [
+            ("University Progression", "shared.university_progression"),
+            ("Learner Journey (360)", "shared.learner_journey"),
         ]),
         ("Delivery", [
+            ("Learning Plans", "shared.learning_plan"),
             ("Training Sessions", "staff.training"),
             ("Off-the-Job Approvals", "staff.assessments"),
         ]),
@@ -94,55 +138,106 @@ NAV_BY_ROLE: dict[str, list[tuple[str, list[tuple[str, str]]]]] = {
             ("Progress Reviews", "staff.reviews"),
             ("Gateway Checks", "staff.gateway_checks"),
         ]),
+        ("Progress", [
+            ("Action Plans", "shared.actions"),
+            ("Assignments", "shared.assignments"),
+            ("Skills Matrix", "shared.skills_matrix"),
+            ("Functional Skills", "shared.functional_skills"),
+            ("Qualifications", "shared.qualifications"),
+        ]),
+        ("Support", [
+            ("Support & Adjustments", "shared.support"),
+            ("Welfare & Risk", "shared.welfare"),
+            ("Employer Contacts", "shared.employer_contacts"),
+            ("Documents", "shared.documents"),
+        ]),
+        ("Quality", [
+            ("Complaints", "shared.complaints"),
+            ("Surveys", "shared.surveys"),
+        ]),
         ("Communication", [
-            ("Correspondence", "staff.email"),
+            ("Correspondence", "shared.email"),
         ]),
     ],
     config.APPRENTICE: [
         ("My Apprenticeship", [
             ("Dashboard", "apprentice.dashboard"),
+            ("My Tasks", "shared.tasks"),
+            ("Calendar", "shared.calendar"),
+            ("Search", "shared.search"),
             ("My Details", "apprentice.profile"),
-            ("Training Plan", "apprentice.training_plan"),
+            ("Learning Plan", "shared.learning_plan"),
         ]),
         ("My Evidence", [
             ("Off-the-Job Hours", "apprentice.off_the_job_hours"),
             ("Portfolio", "apprentice.portfolio"),
             ("Progress Reviews", "apprentice.reviews"),
+            ("Action Plans", "shared.actions"),
+            ("Assignments", "shared.assignments"),
+            ("Skills Matrix", "shared.skills_matrix"),
+            ("Functional Skills", "shared.functional_skills"),
+            ("Qualifications", "shared.qualifications"),
+            ("Documents", "shared.documents"),
         ]),
         ("Finishing", [
             ("Gateway", "apprentice.gateway"),
             ("End-Point Assessment", "apprentice.epa"),
         ]),
+        ("Support & Feedback", [
+            ("Support & Adjustments", "shared.support"),
+            ("Awaiting Signature", "shared.signatures"),
+            ("Complaints", "shared.complaints"),
+            ("Appeals", "shared.appeals"),
+            ("Surveys", "shared.surveys"),
+        ]),
         ("Communication", [
-            ("Messages", "apprentice.email"),
+            ("Messages", "shared.email"),
         ]),
     ],
     config.EMPLOYER: [
         ("Overview", [
             ("Dashboard", "employer.dashboard"),
+            ("My Tasks", "shared.tasks"),
+            ("Calendar", "shared.calendar"),
+            ("Search", "shared.search"),
             ("My Apprentices", "employer.apprentices"),
+            ("Learning Plans", "shared.learning_plan"),
+            ("Skills Matrix", "shared.skills_matrix"),
+            ("Qualifications", "shared.qualifications"),
+            ("Support & Adjustments", "shared.support"),
         ]),
         ("Approvals", [
             ("Off-the-Job Hours", "employer.training"),
             ("Evidence", "employer.evidence"),
             ("Progress Reviews", "employer.reviews"),
+            ("Action Plans", "shared.actions"),
+            ("Awaiting Signature", "shared.signatures"),
+            ("Documents", "shared.documents"),
         ]),
         ("Feedback", [
             ("Give Feedback", "employer.feedback"),
+            ("Surveys", "shared.surveys"),
+            ("Complaints", "shared.complaints"),
         ]),
         ("Communication", [
-            ("Messages", "employer.email"),
+            ("Messages", "shared.email"),
         ]),
     ],
     config.END_POINT_ASSESSOR: [
         ("Overview", [
             ("Dashboard", "end_point_assessor.dashboard"),
+            ("My Tasks", "shared.tasks"),
+            ("Calendar", "shared.calendar"),
+            ("Search", "shared.search"),
         ]),
         ("Assessment", [
             ("Gateway Requests", "end_point_assessor.gateway"),
             ("Bookings", "end_point_assessor.bookings"),
             ("Results", "end_point_assessor.results"),
             ("Resits", "end_point_assessor.resits"),
+            ("Appeals", "shared.appeals"),
+            ("EPA Documents", "shared.documents"),
+            ("Complaints", "shared.complaints"),
         ]),
     ],
 }
@@ -175,6 +270,15 @@ class ApprenticeshipsGUI:
         self._open_default()
         self._start_idle_watch()
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
+        # There are five paths that destroy the root (idle timeout, close,
+        # logout, switch to CLI, switch system) and a pending idle timer
+        # outlives all of them: Tk then fires the callback into a torn-down
+        # interpreter and reports
+        #   invalid command name "<id>_idle_expired"
+        # Cancelling on <Destroy> covers every path at once, including any
+        # added later. <Destroy> fires for descendants too, so match the
+        # root itself.
+        self.root.bind("<Destroy>", self._cancel_idle_on_destroy, add="+")
 
     # ── Layout ──────────────────────────────────────────────────────
 
@@ -228,9 +332,52 @@ class ApprenticeshipsGUI:
         nav = ttk.LabelFrame(parent, text="Navigation", padding=6)
         nav.grid(row=1, column=0, sticky="nsew", padx=(0, 10))
         nav.rowconfigure(0, weight=1)
+        nav.columnconfigure(0, weight=1)
 
-        holder = ttk.Frame(nav, width=250)
-        holder.pack(fill="both", expand=True)
+        canvas = tk.Canvas(nav, width=250, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(nav, orient="vertical", command=canvas.yview)
+        holder = ttk.Frame(canvas)
+        holder_window = canvas.create_window((0, 0), window=holder, anchor="nw")
+
+        holder.bind(
+            "<Configure>",
+            lambda _event: canvas.configure(scrollregion=canvas.bbox("all")),
+        )
+        canvas.bind(
+            "<Configure>",
+            lambda event: canvas.itemconfigure(holder_window, width=event.width),
+        )
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.grid(row=0, column=0, sticky="nsew")
+        scrollbar.grid(row=0, column=1, sticky="ns")
+
+        def _on_wheel(event: tk.Event) -> str | None:
+            """Scroll only when the pointer event came from this navigation pane."""
+            widget = event.widget
+            while widget is not None and widget is not canvas:
+                try:
+                    widget = widget.nametowidget(widget.winfo_parent())
+                except (KeyError, tk.TclError):
+                    widget = None
+            if widget is not canvas:
+                return None
+
+            if getattr(event, "num", None) == 4:
+                units = -1
+            elif getattr(event, "num", None) == 5:
+                units = 1
+            else:
+                delta = getattr(event, "delta", 0)
+                if not delta:
+                    return None
+                units = -1 if delta > 0 else 1
+            canvas.yview_scroll(units, "units")
+            return "break"
+
+        self.root.bind("<MouseWheel>", _on_wheel, add="+")
+        self.root.bind("<Button-4>", _on_wheel, add="+")
+        self.root.bind("<Button-5>", _on_wheel, add="+")
+
         for category, items in self.nav_tree():
             ttk.Label(
                 holder, text=category.upper(), font=("", 8, "bold"),
@@ -241,6 +388,9 @@ class ApprenticeshipsGUI:
                     holder, text=label, width=28,
                     command=self._opener(module, label),
                 ).pack(anchor="w", pady=1)
+
+        holder.update_idletasks()
+        canvas.configure(scrollregion=canvas.bbox("all"))
 
     def _build_content(self, parent: ttk.Frame) -> None:
         wrapper = ttk.Frame(parent, relief="flat")
@@ -294,6 +444,24 @@ class ApprenticeshipsGUI:
         assert self.content_frame is not None
         self._current = module
         title = label or module
+        if module == "system.change_password":
+            from education_system.platform.delivery.gui.change_password_gui import (
+                ChangePasswordFrame,
+            )
+
+            ChangePasswordFrame(self.content_frame, auth=self.auth).pack(
+                fill="both", expand=True
+            )
+            self.status_var.set("Account security · Change password")
+            return
+        if module == "system.mfa":
+            # The shared multi-method wizard (authenticator app / SMS /
+            # email / recovery codes), not the old TOTP-only settings frame.
+            from education_system.platform.delivery.gui import mfa_setup_gui
+
+            mfa_setup_gui.open_mfa(self, auth=self.auth)
+            self.status_var.set("Account security · Multi-factor authentication")
+            return
         try:
             screen = importlib.import_module(f"{_WINDOW_PACKAGE}.{module}")
             screen.render(self)
@@ -372,8 +540,27 @@ class ApprenticeshipsGUI:
                 pass
         self._idle_after = self.root.after(self._idle_ms, self._idle_expired)
 
+    def _cancel_idle_on_destroy(self, event=None) -> None:
+        """Drop any pending idle timer when the main window goes away."""
+        if event is not None and event.widget is not self.root:
+            return
+        if self._idle_after is None:
+            return
+        try:
+            self.root.after_cancel(self._idle_after)
+        except tk.TclError:
+            pass
+        self._idle_after = None
+
     def _idle_expired(self) -> None:
         self._idle_after = None
+        # The timer can still be in flight while the window is being torn
+        # down; doing anything with a dead root raises TclError.
+        try:
+            if not self.root.winfo_exists():
+                return
+        except tk.TclError:
+            return
         logger.info("Apprenticeships GUI idle timeout for user=%s", self.actor.username)
         from education_system import switch
 
@@ -441,7 +628,7 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
     if shared_auth is None or not getattr(shared_auth, "current_user", None):
         logger.error("Apprenticeships GUI invoked without a shared_auth session")
         raise RuntimeError(
-            "The apprenticeships GUI must be launched via run.py — "
+            "The apprenticeships GUI must be launched via python -m education_system — "
             "no standalone login is available."
         )
     branding.set_system_name(SYSTEM_NAME)
@@ -459,5 +646,5 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
 
 
 if __name__ == "__main__":
-    print("Launch via: python run.py --apprenticeships --gui")
+    print("Launch via: python -m education_system --apprenticeships --gui")
     raise SystemExit(2)

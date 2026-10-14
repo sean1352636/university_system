@@ -44,6 +44,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import (
     show_gui_language_selector,
 )
+import tkinter.simpledialog  # noqa: F401 - registers tk.simpledialog
 
 # Email service
 try:
@@ -203,14 +204,6 @@ class BlockchainCredentialsGUI:
         # Refresh all button
         ttk.Button(button_frame, text=_t("common.refresh_all"),
                   command=self.refresh_all_data).pack(side='left', padx=(0, 10))
-
-        # Language selector button
-        self.lang_btn = ttk.Button(
-            button_frame,
-            text=f"🌐 {_t('gui.change_language')} [{get_current_language_name()}]",
-            command=self.change_language
-        )
-        self.lang_btn.pack(side='right', padx=(10, 0))
 
         # Status row
         status_frame = ttk.Frame(header_frame)

@@ -24,223 +24,112 @@ except Exception:  # pragma: no cover - optional dependency
 
 auth: Optional[UserAuth] = None
 
-# Helper functions for cross-module dependencies
-def engagement_trend_analysis():
-    """Show engagement trend analysis."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import analytics
-    return analytics.engagement_trend_analysis()
+# ---------------------------------------------------------------------------
+# Cross-module pass-throughs
+# ---------------------------------------------------------------------------
+#
+# These names exist so one Student Union module can reach another without an
+# import cycle. They used to be hand-written stubs that took no arguments and
+# forwarded none, while every real caller passes `(student_id, cursor, conn)`
+# or `(auth_obj)` — so each one died with "takes 0 positional arguments but N
+# were given" the moment a user picked that screen. Several also pointed at a
+# module that imports the same name straight back from here, which would have
+# recursed, and a few named a module that has no such function at all.
+#
+# The table below records where each name is *actually* implemented; the
+# adapter forwards the caller's arguments to it. Legacy callers that still
+# pass an `auth_obj` to a screen that now reads the module-level `auth` get
+# that extra argument dropped rather than a TypeError.
 
-def event_popularity_predictions():
-    """Show event popularity predictions."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import analytics
-    return analytics.event_popularity_predictions()
+_DELEGATES = {
+    "engagement_trend_analysis": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.clubs.club_management.community",
+    "member_retention_insights": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.clubs.club_management.community",
+    "event_popularity_predictions": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.events.event_management",
+    "generate_advanced_analytics": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.analytics",
+    "learning_analytics_dashboard": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.analytics",
+    "auto_award_points": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.points",
+    "check_and_award_badges": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.clubs.club_management.rewards",
+    "manage_book_clubs": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.clubs.club_management.community",
+    "manage_shared_resources": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.support",
+    "knowledge_sharing_sessions": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.events.application.knowledge_sharing",
+    "manage_learning_integration": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.events",
+    "manage_community_engagement": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.clubs.club_management.community",
+    "display_club_menu": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.administration.student_union_core",
+    "display_event_menu": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.administration.student_union_core",
+    "display_facility_menu": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.administration.student_union_core",
+    "display_election_menu": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.administration.student_union_core",
+    "display_admin_menu": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.administration.student_union_core",
+    "manage_engagement_rewards": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.clubs.club_management.rewards",
+    "manage_interclub_competitions": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.clubs.club_management.competitions",
+    "manage_peer_support_system": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.support",
+    "manage_academic_support": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.support",
+    "manage_mentorship_system": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.clubs.club_management.mentorship",
+    "manage_equipment_system": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.facilities.facility_management",
+    "manage_green_initiatives": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.sustainability",
+    "manage_virtual_events": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.events.event_management",
+    "manage_enhanced_voting": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.voting",
+    "manage_support_groups_admin": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.administration.admin_management",
+    "generate_support_reports": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.administration.admin_management",
+    "manage_sustainable_events": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.events.event_management",
+    "generate_environmental_reports": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.administration.admin_management",
+    "view_elections_with_campaigns": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.elections.election_management",
+    "view_elections": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.elections.election_management",
+    "view_candidate_profiles": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.elections.election_management",
+    "view_election_results": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.elections.election_management",
+    "election_accessibility_features": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.elections.election_management",
+    "nominate_for_election": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.elections.election_management",
+    "vote_in_election": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.elections.election_management",
+    "submit_campaign_materials": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.elections.election_management",
+    "track_campaign_expenses": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.elections.election_management",
+    "set_up_election": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.elections.election_management",
+    "monitor_campaign_compliance": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.elections.election_management",
+    "election_security_audit": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.elections.election_management",
+    "export_voting_configuration": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.administration.admin_management",
+    "import_voting_configuration": "education_system.systems.university.domains.pastoral.domain.student_life.student_union.administration.admin_management",
+}
 
-def member_retention_insights():
-    """Show member retention insights."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import analytics
-    return analytics.member_retention_insights()
 
-def auto_award_points():
-    """Auto award points."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import points
-    return points.auto_award_points()
+def _resolve(name):
+    """Import and return the module that implements ``name``."""
+    import importlib
+    return getattr(importlib.import_module(_DELEGATES[name]), name)
 
-def manage_book_clubs():
-    """Manage book clubs."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import events
-    return events.manage_book_clubs()
 
-def manage_shared_resources():
-    """Manage shared resources."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import events
-    return events.manage_shared_resources()
+def _call(name, args, kwargs):
+    """Call the real implementation, tolerating superseded call styles."""
+    import inspect
 
-def knowledge_sharing_sessions():
-    """Knowledge sharing sessions."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import events
-    return events.knowledge_sharing_sessions()
+    impl = _resolve(name)
+    try:
+        params = inspect.signature(impl).parameters
+    except (TypeError, ValueError):       # pragma: no cover - builtins
+        return impl(*args, **kwargs)
 
-def learning_analytics_dashboard():
-    """Learning analytics dashboard."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import analytics
-    return analytics.learning_analytics_dashboard()
+    if not any(p.kind is p.VAR_POSITIONAL for p in params.values()):
+        accepts = sum(
+            1 for p in params.values()
+            if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)
+        )
+        if len(args) > accepts:
+            # e.g. display_club_menu(auth) against a screen that now reads
+            # the module-level auth: drop what it cannot take.
+            args = args[:accepts]
+    if not any(p.kind is p.VAR_KEYWORD for p in params.values()):
+        kwargs = {k: v for k, v in kwargs.items() if k in params}
+    return impl(*args, **kwargs)
 
-def display_club_menu(auth_obj):
-    """Display club menu."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import menu
-    return menu.display_club_menu(auth_obj)
 
-def display_event_menu(auth_obj):
-    """Display event menu."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import menu
-    return menu.display_event_menu(auth_obj)
+def _make_delegate(name):
+    def delegate(*args, **kwargs):
+        return _call(name, args, kwargs)
+    delegate.__name__ = name
+    delegate.__qualname__ = name
+    delegate.__doc__ = f"Delegates to ``{_DELEGATES[name]}.{name}``."
+    return delegate
 
-def display_facility_menu(auth_obj):
-    """Display facility menu."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import menu
-    return menu.display_facility_menu(auth_obj)
 
-def display_election_menu(auth_obj):
-    """Display election menu."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import menu
-    return menu.display_election_menu(auth_obj)
+for _name in _DELEGATES:
+    globals()[_name] = _make_delegate(_name)
+del _name
 
-def manage_engagement_rewards(auth_obj):
-    """Manage engagement rewards."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import points
-    return points.manage_engagement_rewards(auth_obj)
-
-def manage_interclub_competitions(auth_obj):
-    """Manage interclub competitions."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import competitions
-    return competitions.manage_interclub_competitions(auth_obj)
-
-def manage_peer_support_system(auth_obj):
-    """Manage peer support system."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import support
-    return support.manage_peer_support_system(auth_obj)
-
-def manage_academic_support(auth_obj):
-    """Manage academic support."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import support
-    return support.manage_academic_support(auth_obj)
-
-def manage_mentorship_system(auth_obj):
-    """Manage mentorship system."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import support
-    return support.manage_mentorship_system(auth_obj)
-
-def manage_equipment_system(auth_obj):
-    """Manage equipment system."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import facilities
-    return facilities.manage_equipment_system(auth_obj)
-
-def manage_green_initiatives(auth_obj):
-    """Manage green initiatives."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import sustainability
-    return sustainability.manage_green_initiatives(auth_obj)
-
-def manage_community_engagement(auth_obj):
-    """Manage community engagement."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import volunteering
-    return volunteering.manage_community_engagement(auth_obj)
-
-def manage_virtual_events(auth_obj):
-    """Manage virtual events."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import events
-    return events.manage_virtual_events(auth_obj)
-
-def manage_learning_integration(auth_obj):
-    """Manage learning integration."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import events
-    return events.manage_learning_integration(auth_obj)
-
-def generate_advanced_analytics(auth_obj):
-    """Generate advanced analytics."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import analytics
-    return analytics.generate_advanced_analytics(auth_obj)
-
-def manage_enhanced_voting(auth_obj):
-    """Manage enhanced voting."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import voting
-    return voting.manage_enhanced_voting(auth_obj)
-
-def display_admin_menu(auth_obj):
-    """Display admin menu."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import menu
-    return menu.display_admin_menu(auth_obj)
-
-def check_and_award_badges(student_id):
-    """Check and award badges."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import points
-    return points.check_and_award_badges(student_id)
-
-def manage_support_groups_admin():
-    """Manage support groups admin."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import support
-    return support.manage_support_groups_admin()
-
-def generate_support_reports():
-    """Generate support reports."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import support
-    return support.generate_support_reports()
-
-def manage_sustainable_events():
-    """Manage sustainable events."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import sustainability
-    return sustainability.manage_sustainable_events()
-
-def generate_environmental_reports():
-    """Generate environmental reports."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import sustainability
-    return sustainability.generate_environmental_reports()
-
-def view_elections_with_campaigns():
-    """View elections with campaigns."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import voting
-    return voting.view_elections_with_campaigns()
-
-def view_elections():
-    """View elections."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import voting
-    return voting.view_elections()
-
-def view_candidate_profiles():
-    """View candidate profiles."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import voting
-    return voting.view_candidate_profiles()
-
-def view_election_results():
-    """View election results."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import voting
-    return voting.view_election_results()
-
-def election_accessibility_features():
-    """Election accessibility features."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import voting
-    return voting.election_accessibility_features()
-
-def nominate_for_election():
-    """Nominate for election."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import voting
-    return voting.nominate_for_election()
-
-def vote_in_election():
-    """Vote in election."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import voting
-    return voting.vote_in_election()
-
-def submit_campaign_materials():
-    """Submit campaign materials."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import voting
-    return voting.submit_campaign_materials()
-
-def track_campaign_expenses():
-    """Track campaign expenses."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import voting
-    return voting.track_campaign_expenses()
-
-def set_up_election():
-    """Set up election."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import voting
-    return voting.set_up_election()
-
-def monitor_campaign_compliance():
-    """Monitor campaign compliance."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import voting
-    return voting.monitor_campaign_compliance()
-
-def election_security_audit():
-    """Election security audit."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import voting
-    return voting.election_security_audit()
-
-def export_voting_configuration():
-    """Export voting configuration."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import voting
-    return voting.export_voting_configuration()
-
-def import_voting_configuration():
-    """Import voting configuration."""
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import voting
-    return voting.import_voting_configuration()
+__all__ = ["auth", *sorted(_DELEGATES)]

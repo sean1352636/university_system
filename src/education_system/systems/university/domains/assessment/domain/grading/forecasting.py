@@ -36,11 +36,11 @@ def export_batch_predictions(predictions, prediction_type):
                     pred['confidence']
                 ])
 
-    print(get_text("academics.forecasting.batch_predictions_exported", filename=filename))
+    print(get_text("academics.forecasting.batch_predictions_exported", filename=filename, default="Batch Predictions Exported {filename}"))
 
 def forecast_single_course(cursor, course):
     """Forecast performance for a single course"""
-    print("\n--- " + get_text("academics.forecasting.performance_forecast_title", course=course) + " ---")
+    print("\n--- " + get_text("academics.forecasting.performance_forecast_title", course=course, default="===== PERFORMANCE FORECAST ===== {course}") + " ---")
 
     # Get historical monthly performance data
     cursor.execute('''
@@ -58,7 +58,7 @@ def forecast_single_course(cursor, course):
     historical_data = cursor.fetchall()
 
     if len(historical_data) < 6:
-        print(get_text("academics.forecasting.insufficient_data"))
+        print(get_text("academics.forecasting.insufficient_data", default="Insufficient Data"))
         return
 
     # Prepare data for forecasting
@@ -75,24 +75,24 @@ def forecast_single_course(cursor, course):
     future_x = np.arange(len(averages), len(averages) + forecast_periods)
     forecasted_values = trend_line(future_x)
 
-    print(get_text("academics.forecasting.historical_period", start=months[0], end=months[-1]))
-    print(get_text("academics.forecasting.current_average", avg=f"{np.mean(averages):.1f}"))
-    print(get_text("academics.forecasting.trend_per_month", trend=f"{coefficients[0]:+.2f}"))
+    print(get_text("academics.forecasting.historical_period", start=months[0], end=months[-1], default="Historical Period {end} {start}"))
+    print(get_text("academics.forecasting.current_average", avg=f"{np.mean(averages):.1f}", default="Current Average {avg}"))
+    print(get_text("academics.forecasting.trend_per_month", trend=f"{coefficients[0]:+.2f}", default="Trend Per Month {trend}"))
 
-    print("\n" + get_text("academics.forecasting.forecast_next_months", periods=forecast_periods))
+    print("\n" + get_text("academics.forecasting.forecast_next_months", periods=forecast_periods, default="Forecast Next Months {periods}"))
     for i, forecast in enumerate(forecasted_values, 1):
         bounded_forecast = max(0, min(100, forecast))
-        print(get_text("academics.forecasting.month_forecast", month=i, value=f"{bounded_forecast:.1f}"))
+        print(get_text("academics.forecasting.month_forecast", month=i, value=f"{bounded_forecast:.1f}", default="Month Forecast {month} {value}"))
 
     # Forecast confidence
     residuals = averages - trend_line(x)
     mse = np.mean(residuals**2)
-    print("\n" + get_text("academics.forecasting.forecast_accuracy"))
-    print(get_text("academics.forecasting.standard_error", error=f"{np.sqrt(mse):.1f}"))
+    print("\n" + get_text("academics.forecasting.forecast_accuracy", default="Forecast Accuracy"))
+    print(get_text("academics.forecasting.standard_error", error=f"{np.sqrt(mse):.1f}", default="Standard Error {error}"))
 
 def forecast_module_difficulty(cursor):
     """Forecast module difficulty trends"""
-    print("\n" + get_text("academics.forecasting.module_difficulty_title"))
+    print("\n" + get_text("academics.forecasting.module_difficulty_title", default="===== MODULE DIFFICULTY ====="))
 
     # Get modules with sufficient historical data
     cursor.execute('''
@@ -110,10 +110,10 @@ def forecast_module_difficulty(cursor):
     modules = cursor.fetchall()
 
     if not modules:
-        print(get_text("academics.forecasting.no_modules_with_data"))
+        print(get_text("academics.forecasting.no_modules_with_data", default="No Modules With Data."))
         return
 
-    print("\n" + get_text("academics.forecasting.analyzing_difficulty_trends", count=len(modules)))
+    print("\n" + get_text("academics.forecasting.analyzing_difficulty_trends", count=len(modules), default="Analyzing Difficulty Trends {count}"))
 
     difficulty_forecasts = []
 
@@ -126,13 +126,13 @@ def forecast_module_difficulty(cursor):
     difficulty_forecasts.sort(key=lambda x: x['projected_difficulty'], reverse=True)
 
     # Display results
-    print("\n" + get_text("academics.forecasting.module_difficulty_forecasts"))
+    print("\n" + get_text("academics.forecasting.module_difficulty_forecasts", default="Module Difficulty Forecasts"))
     print("="*80)
-    print(f"{get_text('academics.forecasting.header_module'):<15} {get_text('academics.forecasting.header_current_avg'):<12} {get_text('academics.forecasting.header_trend'):<10} {get_text('academics.forecasting.header_projected'):<12} {get_text('academics.forecasting.header_status')}")
+    print(f"{get_text('academics.forecasting.header_module', default='Header Module'):<15} {get_text('academics.forecasting.header_current_avg', default='Header Current Avg'):<12} {get_text('academics.forecasting.header_trend', default='Header Trend'):<10} {get_text('academics.forecasting.header_projected', default='Header Projected'):<12} {get_text('academics.forecasting.header_status', default='Header Status')}")
     print("-"*80)
 
     for forecast in difficulty_forecasts:
-        status = get_text("academics.forecasting.status_getting_harder") if forecast['trend'] < -1 else get_text("academics.forecasting.status_getting_easier") if forecast['trend'] > 1 else get_text("academics.forecasting.status_stable")
+        status = get_text("academics.forecasting.status_getting_harder", default="Status Getting Harder") if forecast['trend'] < -1 else get_text("academics.forecasting.status_getting_easier", default="Status Getting Easier") if forecast['trend'] > 1 else get_text("academics.forecasting.status_stable", default="Status Stable")
         print(f"{forecast['code']:<15} {forecast['current_avg']:<12.1f}% "
               f"{forecast['trend']:<10.2f} {forecast['projected_difficulty']:<12.1f}% {status}")
 
@@ -175,7 +175,7 @@ def forecast_module_difficulty_single(cursor, module_code, module_name):
 
 def forecast_success_rates(cursor):
     """Forecast student success rate trends"""
-    print("\n" + get_text("academics.forecasting.success_rate_title"))
+    print("\n" + get_text("academics.forecasting.success_rate_title", default="===== SUCCESS RATE ====="))
 
     # Get monthly success rates (passing grades)
     cursor.execute('''
@@ -192,7 +192,7 @@ def forecast_success_rates(cursor):
     monthly_success_data = cursor.fetchall()
 
     if len(monthly_success_data) < 6:
-        print(get_text("academics.forecasting.insufficient_success_rate_data"))
+        print(get_text("academics.forecasting.insufficient_success_rate_data", default="Insufficient Success Rate Data"))
         return
 
     # Calculate success rates

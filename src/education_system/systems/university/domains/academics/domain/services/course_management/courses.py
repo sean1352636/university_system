@@ -11,6 +11,343 @@ from education_system.systems.university.domains.academics.domain.services.cours
 from education_system.systems.university.domains.academics.domain.services.course_management.validation import validate_course_code
 
 
+def _snapshot_course_version(conn, cursor, course_id, *, change_reason="",
+                             created_by=None):
+    """Version the catalogue entry for *course_id* before it is overwritten.
+
+    Best-effort: a versioning failure must not abort a legitimate course edit,
+    so problems are reported and the update proceeds.
+    """
+    try:
+        from education_system.systems.university.services.bus.course_versions import (
+            snapshot_course,
+        )
+        cursor.execute(
+            "SELECT COALESCE(NULLIF(TRIM(course_code), ''), code) FROM courses "
+            "WHERE id = ?", (course_id,))
+        row = cursor.fetchone()
+        if not row or not row[0]:
+            return None
+        return snapshot_course(row[0], change_reason=change_reason,
+                               created_by=created_by, conn=conn)
+    except Exception as exc:  # pragma: no cover - defensive
+        print(f"Note: could not record a catalogue version ({exc}).")
+        return None
+
+
+def resolve_course_id(cursor, value):
+    """Resolve user input to a courses.id.
+
+    ``courses.id`` is TEXT (normally the course code), so the input must never be
+    coerced with ``int()``. Accepts the id, the course_code or the legacy code
+    column, case-insensitively. Returns the real id, or None if nothing matches.
+    """
+    value = (value or '').strip()
+    if not value:
+        return None
+    cursor.execute(
+        """
+        SELECT id FROM courses
+        WHERE id = ? COLLATE NOCASE
+           OR course_code = ? COLLATE NOCASE
+           OR code = ? COLLATE NOCASE
+        LIMIT 1
+        """,
+        (value, value, value),
+    )
+    row = cursor.fetchone()
+    return row[0] if row else None
+
+
+def _fit(value, width, fallback='N/A'):
+    """Render a value in a fixed-width column, truncating with an ellipsis."""
+    text = str(value) if value not in (None, '') else fallback
+    return text[:width - 3] + "..." if len(text) > width else text
+
+
+# Sentinels accepted at any prompt of the create-course flow.
+_CANCEL_WORDS = {'cancel', 'quit', 'exit'}
+_BACK_WORDS = {'back', 'b'}
+
+
+class _UserAbort(Exception):
+    """Raised when the user cancels the whole create-course flow."""
+
+
+class _GoBack(Exception):
+    """Raised when the user wants to re-answer the previous question."""
+
+
+def _prompt(text, default=None):
+    """Prompt for a single value, honouring the 'back' and 'cancel' sentinels.
+
+    An empty answer falls back to ``default`` when one is given, so a step that
+    is revisited via 'back' re-offers whatever was entered the first time.
+    """
+    suffix = f" [{default}]" if default not in (None, '') else ""
+    try:
+        raw = input(f"{text}{suffix}: ")
+    except (EOFError, KeyboardInterrupt):
+        print()
+        raise _UserAbort
+    value = raw.strip()
+    lowered = value.lower()
+    if lowered in _CANCEL_WORDS:
+        raise _UserAbort
+    if lowered in _BACK_WORDS:
+        raise _GoBack
+    if not value and default is not None:
+        return str(default)
+    return value
+
+
+def _step_course_code(data, cursor):
+    while True:
+        course_code = _prompt(
+            get_text('course_mgmt.prompts.course_code', default='Enter course code (e.g., CS101)'),
+            data.get('course_code'),
+        ).upper()
+        if not course_code:
+            print(get_text('course_mgmt.errors.code_empty', default='Error: Course code cannot be empty.'))
+            continue
+
+        if not validate_course_code(course_code):
+            print(get_text('course_mgmt.errors.code_invalid', default='Error: Invalid course code format. It should be 2-4 letters followed by 2-3 numbers.'))
+            continue
+
+        cursor.execute("SELECT course_code FROM courses WHERE course_code = ?", (course_code,))
+        if cursor.fetchone():
+            print(get_text('course_mgmt.errors.code_exists', default="Error: Course code '{code}' already exists.").format(code=course_code))
+            continue
+
+        data['course_code'] = course_code
+        return
+
+
+def _step_course_name(data, cursor):
+    while True:
+        course_name = _prompt(
+            get_text('course_mgmt.prompts.course_name', default='Enter course name'),
+            data.get('course_name'),
+        )
+        if not course_name:
+            print(get_text('course_mgmt.errors.name_empty', default='Error: Course name cannot be empty.'))
+            continue
+        if len(course_name) < 5:
+            print(get_text('course_mgmt.errors.name_short', default='Error: Course name must be at least 5 characters.'))
+            continue
+        data['course_name'] = course_name
+        return
+
+
+def _step_description(data, cursor):
+    data['description'] = _prompt(
+        get_text('course_mgmt.prompts.description', default='Enter course description'),
+        data.get('description'),
+    )
+
+
+def _step_duration(data, cursor):
+    duration = None
+    duration_input = _prompt(
+        get_text('course_mgmt.prompts.duration', default='Enter course duration in years (e.g., 3, 4)'),
+        data.get('duration'),
+    )
+    if duration_input:
+        try:
+            duration = int(duration_input)
+            if duration <= 0:
+                print(get_text('course_mgmt.warnings.duration_positive', default='Warning: Duration must be positive. Setting to null.'))
+                duration = None
+        except ValueError:
+            print(get_text('course_mgmt.warnings.duration_number', default='Warning: Duration must be a number. Setting to null.'))
+    data['duration'] = duration
+
+
+def _step_level(data, cursor):
+    level_options = ["Undergraduate", "Postgraduate", "PhD", "Certificate", "Diploma"]
+    print(f"\n{get_text('course_mgmt.prompts.select_level', default='Select course level')}:")
+    for i, level in enumerate(level_options, 1):
+        print(f"{i}. {level}")
+
+    level = None
+    level_choice = _prompt(
+        get_text('course_mgmt.prompts.enter_choice_or_type', default='Enter choice (1-5) or type level'),
+        data.get('level'),
+    )
+    if level_choice:
+        if level_choice.isdigit():
+            idx = int(level_choice) - 1
+            if 0 <= idx < len(level_options):
+                level = level_options[idx]
+        else:
+            level = level_choice
+    data['level'] = level
+
+
+def _step_department(data, cursor):
+    data['department'] = _prompt(
+        get_text('course_mgmt.prompts.department', default='Enter department'),
+        data.get('department'),
+    )
+
+
+def _step_credit_hours(data, cursor):
+    credit_hours = 3.0
+    credit_input = _prompt("Enter credit hours", data.get('credit_hours', 3.0))
+    if credit_input:
+        try:
+            credit_hours = float(credit_input)
+        except ValueError:
+            print("Warning: Invalid credit hours. Using default 3.0")
+    data['credit_hours'] = credit_hours
+
+
+def _step_contact_hours(data, cursor):
+    contact_hours = 3
+    contact_input = _prompt("Enter contact hours per week", data.get('contact_hours', 3))
+    if contact_input:
+        try:
+            contact_hours = int(contact_input)
+        except ValueError:
+            print("Warning: Invalid contact hours. Using default 3")
+    data['contact_hours'] = contact_hours
+
+
+def _step_learning_outcomes(data, cursor):
+    data['learning_outcomes'] = _prompt("Enter learning outcomes (optional)", data.get('learning_outcomes'))
+
+
+def _step_assessment_methods(data, cursor):
+    data['assessment_methods'] = _prompt("Enter assessment methods (optional)", data.get('assessment_methods'))
+
+
+def _step_required_textbooks(data, cursor):
+    data['required_textbooks'] = _prompt("Enter required textbooks (optional)", data.get('required_textbooks'))
+
+
+def _step_course_fee(data, cursor):
+    course_fee = 0.0
+    fee_input = _prompt("Enter course fee", data.get('course_fee', 0.0))
+    if fee_input:
+        try:
+            course_fee = float(fee_input)
+        except ValueError:
+            print("Warning: Invalid fee. Using default 0.0")
+    data['course_fee'] = course_fee
+
+
+def _step_lab_required(data, cursor):
+    default = 'y' if data.get('lab_required') else 'n'
+    data['lab_required'] = _prompt("Is lab required? (y/n)", default).lower() == 'y'
+
+
+def _step_online_available(data, cursor):
+    default = 'y' if data.get('online_available') else 'n'
+    data['online_available'] = _prompt("Is online version available? (y/n)", default).lower() == 'y'
+
+
+def _step_max_enrollment(data, cursor):
+    max_enrollment = 30
+    max_input = _prompt("Enter maximum enrollment", data.get('max_enrollment', 30))
+    if max_input:
+        try:
+            max_enrollment = int(max_input)
+        except ValueError:
+            print("Warning: Invalid enrollment number. Using default 30")
+    data['max_enrollment'] = max_enrollment
+
+
+def _step_course_type(data, cursor):
+    type_options = ["Core", "Elective", "Major-specific", "General Education"]
+    print("\nSelect course type:")
+    for i, ctype in enumerate(type_options, 1):
+        print(f"{i}. {ctype}")
+
+    course_type = "Core"
+    type_choice = _prompt("Enter choice (1-4) or type", data.get('course_type', 'Core'))
+    if type_choice:
+        if type_choice.isdigit():
+            idx = int(type_choice) - 1
+            if 0 <= idx < len(type_options):
+                course_type = type_options[idx]
+        else:
+            course_type = type_choice
+    data['course_type'] = course_type
+
+
+def _step_tags(data, cursor):
+    data['tags'] = _prompt("Enter tags (comma-separated, optional)", data.get('tags'))
+
+
+def _step_availability(data, cursor):
+    print("\nSelect availability periods (comma-separated):")
+    print("Options: Fall, Spring, Summer, Winter")
+    availability = _prompt("Enter periods", data.get('availability', 'Fall,Spring'))
+    data['availability'] = availability or "Fall,Spring"
+
+
+def _step_confirm(data, cursor):
+    print("\nReview new course")
+    print("-----------------")
+    for label, key in (
+        ("Course code", 'course_code'),
+        ("Course name", 'course_name'),
+        ("Description", 'description'),
+        ("Duration (years)", 'duration'),
+        ("Level", 'level'),
+        ("Department", 'department'),
+        ("Credit hours", 'credit_hours'),
+        ("Contact hours/week", 'contact_hours'),
+        ("Learning outcomes", 'learning_outcomes'),
+        ("Assessment methods", 'assessment_methods'),
+        ("Required textbooks", 'required_textbooks'),
+        ("Course fee", 'course_fee'),
+        ("Lab required", 'lab_required'),
+        ("Online available", 'online_available'),
+        ("Max enrollment", 'max_enrollment'),
+        ("Course type", 'course_type'),
+        ("Tags", 'tags'),
+        ("Availability", 'availability'),
+    ):
+        value = data.get(key)
+        if isinstance(value, bool):
+            value = 'Yes' if value else 'No'
+        print(f"  {label}: {value if value not in (None, '') else '-'}")
+
+    while True:
+        answer = _prompt("Create this course? (y/n)", 'y').lower()
+        if answer in ('y', 'yes'):
+            return
+        if answer in ('n', 'no'):
+            raise _UserAbort
+        print("Please answer 'y' or 'n' (or 'back' to change an answer, 'cancel' to abort).")
+
+
+# Ordered prompt sequence. 'back' at any step returns to the previous entry.
+_CREATE_COURSE_STEPS = (
+    _step_course_code,
+    _step_course_name,
+    _step_description,
+    _step_duration,
+    _step_level,
+    _step_department,
+    _step_credit_hours,
+    _step_contact_hours,
+    _step_learning_outcomes,
+    _step_assessment_methods,
+    _step_required_textbooks,
+    _step_course_fee,
+    _step_lab_required,
+    _step_online_available,
+    _step_max_enrollment,
+    _step_course_type,
+    _step_tags,
+    _step_availability,
+    _step_confirm,
+)
+
+
 @log_create(module="course_management", description="Creating new course with enhanced features")
 def create_enhanced_course(auth):
     """Create a new course with all enhanced features"""
@@ -32,161 +369,94 @@ def create_enhanced_course(auth):
 
         print(f"\n{get_text('course_mgmt.create_title', default='Create New Enhanced Course')}")
         print("==========================")
+        print("Type 'back' at any prompt to change the previous answer, or 'cancel' to abort.")
 
-        # Basic course information
-        while True:
-            course_code = input(f"{get_text('course_mgmt.prompts.course_code', default='Enter course code (e.g., CS101)')}: ").strip().upper()
-            if not course_code:
-                print(get_text('course_mgmt.errors.code_empty', default='Error: Course code cannot be empty.'))
-                continue
-
-            if not validate_course_code(course_code):
-                print(get_text('course_mgmt.errors.code_invalid', default='Error: Invalid course code format. It should be 2-4 letters followed by 2-3 numbers.'))
-                continue
-
-            cursor.execute("SELECT course_code FROM courses WHERE course_code = ?", (course_code,))
-            if cursor.fetchone():
-                print(get_text('course_mgmt.errors.code_exists', default="Error: Course code '{code}' already exists.").format(code=course_code))
-                continue
-            break
-
-        while True:
-            course_name = input(f"{get_text('course_mgmt.prompts.course_name', default='Enter course name')}: ").strip()
-            if not course_name:
-                print(get_text('course_mgmt.errors.name_empty', default='Error: Course name cannot be empty.'))
-                continue
-            if len(course_name) < 5:
-                print(get_text('course_mgmt.errors.name_short', default='Error: Course name must be at least 5 characters.'))
-                continue
-            break
-
-        description = input(f"{get_text('course_mgmt.prompts.description', default='Enter course description')}: ").strip()
-
-        # Duration
-        duration = None
-        duration_input = input(f"{get_text('course_mgmt.prompts.duration', default='Enter course duration in years (e.g., 3, 4)')}: ").strip()
-        if duration_input:
+        # Walk the prompt sequence, allowing the user to step backwards.
+        data = {}
+        index = 0
+        while index < len(_CREATE_COURSE_STEPS):
             try:
-                duration = int(duration_input)
-                if duration <= 0:
-                    print(get_text('course_mgmt.warnings.duration_positive', default='Warning: Duration must be positive. Setting to null.'))
-                    duration = None
-            except ValueError:
-                print(get_text('course_mgmt.warnings.duration_number', default='Warning: Duration must be a number. Setting to null.'))
+                _CREATE_COURSE_STEPS[index](data, cursor)
+            except _GoBack:
+                if index == 0:
+                    print("Already at the first question. Type 'cancel' to abort.")
+                    continue
+                index -= 1
+                continue
+            except _UserAbort:
+                print("\nCourse creation cancelled. No course was created.")
+                return False
+            index += 1
 
-        # Level
-        level_options = ["Undergraduate", "Postgraduate", "PhD", "Certificate", "Diploma"]
-        print(f"\n{get_text('course_mgmt.prompts.select_level', default='Select course level')}:")
-        for i, level in enumerate(level_options, 1):
-            print(f"{i}. {level}")
+        course_code = data['course_code']
+        course_name = data['course_name']
+        description = data['description']
+        duration = data['duration']
+        level = data['level']
+        department = data['department']
+        credit_hours = data['credit_hours']
+        contact_hours = data['contact_hours']
+        learning_outcomes = data['learning_outcomes']
+        assessment_methods = data['assessment_methods']
+        required_textbooks = data['required_textbooks']
+        course_fee = data['course_fee']
+        lab_required = data['lab_required']
+        online_available = data['online_available']
+        max_enrollment = data['max_enrollment']
+        course_type = data['course_type']
+        tags = data['tags']
+        availability = data['availability']
 
-        level = None
-        level_choice = input(f"{get_text('course_mgmt.prompts.enter_choice_or_type', default='Enter choice (1-5) or type level')}: ").strip()
-        if level_choice:
-            if level_choice.isdigit():
-                idx = int(level_choice) - 1
-                if 0 <= idx < len(level_options):
-                    level = level_options[idx]
-            else:
-                level = level_choice
+        # Canonical write, shared with the Course Management GUI and the API.
+        # The service owns code uniqueness, the id convention (code as id),
+        # both column families and the course.changed event, so this command
+        # no longer keeps its own copy of any of that.
+        from education_system.systems.university.application.course_lifecycle_service import (
+            CourseCommand,
+            CourseLifecycleService,
+            CourseValidationError,
+        )
+        actor = str((auth.current_user or {}).get('id', 'unknown'))
+        try:
+            result = CourseLifecycleService().create(
+                CourseCommand(
+                    course_code=course_code, course_name=course_name,
+                    credit_hours=credit_hours, description=description,
+                    level=level, department=department,
+                    max_enrollment=max_enrollment, course_type=course_type,
+                    course_fee=course_fee,
+                    lab_required=bool(lab_required),
+                    online_available=bool(online_available),
+                ),
+                actor_id=actor,
+            )
+        except CourseValidationError as exc:
+            for field, message in exc.errors.items():
+                print(f"Error: {field} {message}")
+            return False
 
-        department = input(f"{get_text('course_mgmt.prompts.department', default='Enter department')}: ").strip()
+        # Fields the prompt sequence collects that the CourseCommand does not
+        # carry. Written straight after creation rather than widening the
+        # command, so the extra catalogue detail this CLI gathers is kept.
+        extra = {
+            "duration": duration,
+            "contact_hours_per_week": contact_hours,
+            "learning_outcomes": learning_outcomes,
+            "assessment_methods": assessment_methods,
+            "required_textbooks": required_textbooks,
+            "tags": tags,
+            "availability_periods": availability,
+        }
+        try:
+            CourseLifecycleService().update(
+                result.course_code, extra, actor_id=actor,
+                reason="Detail captured during course creation",
+            )
+        except CourseValidationError as exc:
+            print(f"Note: course created, but extra detail was not saved: {exc}")
 
-        # Enhanced fields
-        credit_hours = 3.0
-        credit_input = input("Enter credit hours (default 3.0): ").strip()
-        if credit_input:
-            try:
-                credit_hours = float(credit_input)
-            except ValueError:
-                print("Warning: Invalid credit hours. Using default 3.0")
-
-        contact_hours = 3
-        contact_input = input("Enter contact hours per week (default 3): ").strip()
-        if contact_input:
-            try:
-                contact_hours = int(contact_input)
-            except ValueError:
-                print("Warning: Invalid contact hours. Using default 3")
-
-        learning_outcomes = input("Enter learning outcomes (optional): ").strip()
-        assessment_methods = input("Enter assessment methods (optional): ").strip()
-        required_textbooks = input("Enter required textbooks (optional): ").strip()
-
-        course_fee = 0.0
-        fee_input = input("Enter course fee (default 0.0): ").strip()
-        if fee_input:
-            try:
-                course_fee = float(fee_input)
-            except ValueError:
-                print("Warning: Invalid fee. Using default 0.0")
-
-        lab_required = input("Is lab required? (y/n): ").strip().lower() == 'y'
-        online_available = input("Is online version available? (y/n): ").strip().lower() == 'y'
-
-        max_enrollment = 30
-        max_input = input("Enter maximum enrollment (default 30): ").strip()
-        if max_input:
-            try:
-                max_enrollment = int(max_input)
-            except ValueError:
-                print("Warning: Invalid enrollment number. Using default 30")
-
-        # Course type
-        type_options = ["Core", "Elective", "Major-specific", "General Education"]
-        print("\nSelect course type:")
-        for i, ctype in enumerate(type_options, 1):
-            print(f"{i}. {ctype}")
-
-        course_type = "Core"
-        type_choice = input("Enter choice (1-4) or type: ").strip()
-        if type_choice:
-            if type_choice.isdigit():
-                idx = int(type_choice) - 1
-                if 0 <= idx < len(type_options):
-                    course_type = type_options[idx]
-            else:
-                course_type = type_choice
-
-        tags = input("Enter tags (comma-separated, optional): ").strip()
-
-        # Availability periods
-        print("\nSelect availability periods (comma-separated):")
-        print("Options: Fall, Spring, Summer, Winter")
-        availability = input("Enter periods (default: Fall,Spring): ").strip()
-        if not availability:
-            availability = "Fall,Spring"
-
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-        # Generate unique ID for the course
-        import uuid
-        course_id = str(uuid.uuid4())
-
-        # Insert the course
-        cursor.execute('''
-        INSERT INTO courses (
-            id, code, name, date_added,
-            course_code, course_name, description, duration, level, department,
-            credit_hours, contact_hours_per_week, learning_outcomes, assessment_methods,
-            required_textbooks, course_fee, lab_required, online_available,
-            max_enrollment, course_type, tags, availability_periods,
-            created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            course_id, course_code, course_name, timestamp,
-            course_code, course_name, description, duration, level, department,
-            credit_hours, contact_hours, learning_outcomes, assessment_methods,
-            required_textbooks, course_fee, lab_required, online_available,
-            max_enrollment, course_type, tags, availability,
-            timestamp, timestamp
-        ))
-
-        course_id = cursor.lastrowid
-        conn.commit()
-
-        print(f"\nEnhanced course '{course_name}' (Code: {course_code}) created successfully!")
-        print(f"Course ID: {course_id}")
+        print(f"\nEnhanced course '{course_name}' (Code: {result.course_code}) created successfully!")
+        print(f"Course ID: {result.course_id}")
         return True
 
     except sqlite3.Error as e:
@@ -243,29 +513,31 @@ def view_all_courses(auth):
             return
 
         print(f"\n{get_text('course_mgmt.all_courses_title', default='All Courses (Enhanced View)')}:")
-        print(f"{get_text('course_mgmt.headers.id', default='ID'):<5} {get_text('course_mgmt.headers.code', default='Code'):<8} {get_text('course_mgmt.headers.name', default='Name'):<25} {get_text('course_mgmt.headers.dept', default='Dept'):<12} {get_text('course_mgmt.headers.level', default='Level'):<12} {get_text('course_mgmt.headers.type', default='Type'):<12} {get_text('course_mgmt.headers.credits', default='Credits'):<8} {get_text('course_mgmt.headers.enrolled', default='Enrolled'):<10} {get_text('course_mgmt.headers.status', default='Status'):<10}")
-        print("-" * 102)
+        print(f"{get_text('course_mgmt.headers.id', default='ID'):<12} {get_text('course_mgmt.headers.code', default='Code'):<8} {get_text('course_mgmt.headers.name', default='Name'):<25} {get_text('course_mgmt.headers.dept', default='Dept'):<12} {get_text('course_mgmt.headers.level', default='Level'):<12} {get_text('course_mgmt.headers.type', default='Type'):<12} {get_text('course_mgmt.headers.credits', default='Credits'):<8} {get_text('course_mgmt.headers.enrolled', default='Enrolled'):<10} {get_text('course_mgmt.headers.status', default='Status'):<10}")
+        print("-" * 117)
 
         for course in courses:
             course_id, code, name, dept, level, ctype, credits, current, max_enroll, status, created = course
 
-            # Truncate long names
-            name_display = name[:22] + "..." if len(name) > 25 else name
-            dept_display = dept[:9] + "..." if dept and len(dept) > 12 else dept or get_text('common.na', default='N/A')
-            level_display = level[:9] + "..." if level and len(level) > 12 else level or get_text('common.na', default='N/A')
-            type_display = ctype[:9] + "..." if ctype and len(ctype) > 12 else ctype or get_text('common.na', default='N/A')
+            # Truncate long values so the columns stay aligned
+            na = get_text('common.na', default='N/A')
+            id_display = _fit(course_id, 12, na)
+            name_display = _fit(name, 25, na)
+            dept_display = _fit(dept, 12, na)
+            level_display = _fit(level, 12, na)
+            type_display = _fit(ctype, 12, na)
             enrollment_display = f"{current or 0}/{max_enroll or 0}"
 
-            print(f"{course_id:<5} {code:<8} {name_display:<25} {dept_display:<12} {level_display:<12} {type_display:<12} {credits:<8} {enrollment_display:<10} {status:<10}")
+            print(f"{id_display:<12} {code:<8} {name_display:<25} {dept_display:<12} {level_display:<12} {type_display:<12} {credits:<8} {enrollment_display:<10} {status:<10}")
 
         # Enhanced detail view option
-        detail_choice = input(f"\n{get_text('course_mgmt.prompts.detail_view', default='Enter a course ID for detailed view (or press Enter to return)')}: ")
+        detail_choice = input(f"\n{get_text('course_mgmt.prompts.detail_view', default='Enter a course ID or code for detailed view (or press Enter to return)')}: ")
         if detail_choice.strip():
-            try:
-                detail_id = int(detail_choice)
+            detail_id = resolve_course_id(cursor, detail_choice)
+            if detail_id is None:
+                print(get_text('course_mgmt.errors.invalid_id', default='No course matches that ID or code.'))
+            else:
                 view_course_details(cursor, detail_id)
-            except ValueError:
-                print(get_text('course_mgmt.errors.invalid_id', default='Invalid ID. Please enter a number.'))
 
     except sqlite3.Error as e:
         print(f"Database error: {e}")
@@ -278,8 +550,14 @@ def view_all_courses(auth):
 
 def view_course_details(cursor, course_id):
     """View detailed information about a specific course"""
+    # Select the columns by name: `SELECT *` positions do not match the physical
+    # column order of the courses table, which previously mislabelled every field.
     cursor.execute("""
-    SELECT * FROM courses WHERE id = ?
+    SELECT id, course_code, course_name, description, duration, level, department,
+           credit_hours, contact_hours_per_week, course_type, max_enrollment,
+           current_enrollment, status, lab_required, online_available, course_fee,
+           tags, availability_periods
+    FROM courses WHERE id = ?
     """, (course_id,))
 
     course = cursor.fetchone()
@@ -287,26 +565,30 @@ def view_course_details(cursor, course_id):
         print("Course not found.")
         return
 
+    (cid, code, name, description, duration, level, department, credit_hours,
+     contact_hours, course_type, max_enrollment, current_enrollment, status,
+     lab_required, online_available, course_fee, tags, availability) = course
+
     print("\nDetailed Course Information:")
     print("-" * 40)
-    print(f"ID: {course[0]}")
-    print(f"Code: {course[1]}")
-    print(f"Name: {course[2]}")
-    print(f"Description: {course[3] or 'N/A'}")
-    print(f"Duration: {course[4]} years" if course[4] else "Duration: N/A")
-    print(f"Level: {course[5] or 'N/A'}")
-    print(f"Department: {course[6] or 'N/A'}")
-    print(f"Credit Hours: {course[7]}")
-    print(f"Contact Hours/Week: {course[8]}")
-    print(f"Course Type: {course[15]}")
-    print(f"Max Enrollment: {course[14]}")
-    print(f"Current Enrollment: {course[15]}")
-    print(f"Status: {course[16]}")
-    print(f"Lab Required: {'Yes' if course[12] else 'No'}")
-    print(f"Online Available: {'Yes' if course[13] else 'No'}")
-    print(f"Course Fee: £{course[11]}")
-    print(f"Tags: {course[17] or 'None'}")
-    print(f"Availability: {course[18]}")
+    print(f"ID: {cid}")
+    print(f"Code: {code}")
+    print(f"Name: {name}")
+    print(f"Description: {description or 'N/A'}")
+    print(f"Duration: {duration} years" if duration else "Duration: N/A")
+    print(f"Level: {level or 'N/A'}")
+    print(f"Department: {department or 'N/A'}")
+    print(f"Credit Hours: {credit_hours}")
+    print(f"Contact Hours/Week: {contact_hours}")
+    print(f"Course Type: {course_type or 'N/A'}")
+    print(f"Max Enrollment: {max_enrollment or 0}")
+    print(f"Current Enrollment: {current_enrollment or 0}")
+    print(f"Status: {status or 'N/A'}")
+    print(f"Lab Required: {'Yes' if lab_required else 'No'}")
+    print(f"Online Available: {'Yes' if online_available else 'No'}")
+    print(f"Course Fee: £{course_fee or 0.0}")
+    print(f"Tags: {tags or 'None'}")
+    print(f"Availability: {availability or 'N/A'}")
 
 
 @log_update(module="course_management", description="Updating course")
@@ -413,20 +695,37 @@ def update_course(auth):
             except ValueError:
                 print("Invalid enrollment number. Keeping current value.")
 
-        # Update the course
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        # Canonical write, shared with the GUI and the API. The service takes
+        # the version snapshot itself and mirrors course_name/credit_hours
+        # onto the legacy name/credits columns, which this command did not do.
+        from education_system.systems.university.application.course_lifecycle_service import (
+            CourseLifecycleService,
+            CourseValidationError,
+        )
+        actor = str((auth.current_user or {}).get('id', 'unknown'))
+        if new_code and str(new_code).upper() != str(code).upper():
+            # students.course stores the code by value, so renaming one would
+            # orphan every enrolment on it. Changing a code needs a migration.
+            print(f"Note: the course code stays '{code}'. Renaming a code would "
+                  "orphan existing enrolments, so it is not editable here.")
+        try:
+            CourseLifecycleService().update(
+                course_id,
+                {
+                    "course_name": new_name,
+                    "description": new_desc,
+                    "credit_hours": new_credit_hours,
+                    "max_enrollment": new_max_enrollment,
+                },
+                actor_id=actor,
+                reason="Updated via course management CLI",
+            )
+        except CourseValidationError as exc:
+            for field, message in exc.errors.items():
+                print(f"Error: {field} {message}")
+            return False
 
-        # Update query handling both schemas
-        cursor.execute("""
-        UPDATE courses
-        SET course_code = ?, course_name = ?, description = ?, credit_hours = ?,
-            max_enrollment = ?, updated_at = ?
-        WHERE id = ?
-        """, (new_code, new_name, new_desc, new_credit_hours, new_max_enrollment, timestamp, course_id))
-
-        conn.commit()
-
-        print(f"\nCourse updated successfully: {new_code} - {new_name}")
+        print(f"\nCourse updated successfully: {code} - {new_name}")
         return True
 
     except sqlite3.Error as e:
@@ -529,18 +828,25 @@ def delete_course(auth):
                 print("Delete cancelled.")
                 return False
 
-        # Delete related records first
-        cursor.execute("DELETE FROM course_prerequisites WHERE course_id = ? OR prerequisite_course_id = ?", (course_id, course_id))
-        cursor.execute("DELETE FROM course_schedule WHERE course_id = ?", (course_id,))
-        cursor.execute("DELETE FROM course_waitlist WHERE course_id = ?", (course_id,))
-        cursor.execute("DELETE FROM course_history WHERE course_id = ?", (course_id,))
-        cursor.execute("DELETE FROM course_analytics WHERE course_id = ?", (course_id,))
-
-        # Delete the course
-        cursor.execute("DELETE FROM courses WHERE id = ?", (course_id,))
-        rows_deleted = cursor.rowcount
-
-        conn.commit()
+        # Canonical cascade, shared with the GUI and the API. The impact was
+        # printed and confirmed above, which is what acknowledged_impact
+        # records; the service refuses a blind delete without it.
+        from education_system.systems.university.application.course_lifecycle_service import (
+            CourseLifecycleService,
+            CourseValidationError,
+        )
+        actor = str((auth.current_user or {}).get('id', 'unknown'))
+        try:
+            CourseLifecycleService().delete(
+                course_id, actor_id=actor,
+                reason="Deleted via course management CLI",
+                acknowledged_impact=True,
+            )
+            rows_deleted = 1
+        except CourseValidationError as exc:
+            for field, message in exc.errors.items():
+                print(f"Error: {field} {message}")
+            return False
 
         if rows_deleted > 0:
             print(f"\nCourse '{code} - {name}' and all related data deleted successfully.")

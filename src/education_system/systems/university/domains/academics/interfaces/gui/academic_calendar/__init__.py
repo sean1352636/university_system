@@ -105,7 +105,6 @@ from education_system.systems.university.domains.academics.interfaces.gui.academ
     AddResourceDialog,
     BookResourceDialog,
     CourseManagementDialog,
-    AddCourseDialog,
 )
 
 # Category Dialogs
@@ -209,7 +208,6 @@ __all__ = [
     'AddResourceDialog',
     'BookResourceDialog',
     'CourseManagementDialog',
-    'AddCourseDialog',
     'EventCategoriesDialog',
     'AddCategoryDialog',
     'AddTagDialog',

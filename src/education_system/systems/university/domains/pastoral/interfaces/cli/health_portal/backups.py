@@ -52,7 +52,7 @@ def create_manual_backup(auth):
 
     try:
         # Create backups directory
-        backup_dir = paths.UNIVERSITY_DATA_DIR / 'backups' / 'health'
+        backup_dir = paths.UNIVERSITY_BACKUP_HEALTH_DIR
         backup_dir.mkdir(parents=True, exist_ok=True)
 
         # Create backup filename with timestamp
@@ -256,7 +256,7 @@ def restore_from_backup(auth):
 
         # Create safety backup of current database first
         print("\nCreating safety backup of current database...")
-        safety_backup_dir = paths.UNIVERSITY_DATA_DIR / 'backups' / 'safety'
+        safety_backup_dir = paths.UNIVERSITY_BACKUP_SAFETY_DIR
         safety_backup_dir.mkdir(parents=True, exist_ok=True)
 
         safety_timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')

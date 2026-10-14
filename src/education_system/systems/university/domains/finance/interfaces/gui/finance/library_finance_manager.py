@@ -1,4 +1,5 @@
 """Library Finance Manager - Comprehensive library financial operations"""
+from education_system.systems.university.shell.gui import report_view as _rv
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -439,7 +440,7 @@ University Library System
         stats_frame = tk.LabelFrame(parent, text=_t('gui.finance.finance.library_finance_manager.labels.revenue_statistics', default="Revenue Statistics"), bg='white', font=('Arial', 12, 'bold'))
         stats_frame.pack(fill='x', padx=10, pady=10)
 
-        self.revenue_stats_text = tk.Text(stats_frame, height=12, bg='#f8f9fa', font=('Courier', 10))
+        self.revenue_stats_text = _rv.TextReportView(stats_frame, height=12, bg='#f8f9fa', font=('Courier', 10))
         self.revenue_stats_text.pack(fill='x', padx=10, pady=10)
 
         # Chart area

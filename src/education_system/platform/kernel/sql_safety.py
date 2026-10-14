@@ -94,9 +94,6 @@ KNOWN_TABLES: FrozenSet[str] = frozenset({
     'academic_misconduct_cases',
     'plagiarism_results',
     'forensic_cases',
-    'lms_courses',
-    'lms_quizzes',
-    'lms_gradebook',
 
     # Finance tables
     'transactions',

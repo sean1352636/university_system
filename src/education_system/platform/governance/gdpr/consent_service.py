@@ -5,6 +5,7 @@ Supports granting, withdrawing, and querying consent by type and user.
 """
 
 import logging
+import sqlite3
 from datetime import datetime
 
 from education_system.platform.identity.auth.db import connect
@@ -28,7 +29,16 @@ CONSENT_TYPES = {
     "research": "Use of anonymised data for research purposes",
     "cookies_analytics": "Website analytics cookies",
     "cookies_functional": "Functional website cookies",
+    "transition_handover": (
+        "Releasing sensitive support information (SEND, medical, support "
+        "plans) to the next provider when the learner moves on"),
 }
+
+#: Prefixes that mark a transition's consent_reference as pointing at a
+#: consent_records row. Any other reference (a college's own consent id,
+#: "learner-consent:all") belongs to the caller's system, and cannot be
+#: checked here.
+_RECORD_REFERENCE_PREFIXES = ("consent_records:", "consent:")
 
 
 class ConsentService:
@@ -182,3 +192,52 @@ class ConsentService:
             return [dict(r) for r in rows]
         finally:
             conn.close()
+
+
+def transition_handover_reference(record_id: int) -> str:
+    """The consent_reference a transition should carry for a
+    ``transition_handover`` consent record, so approve_handover can check it
+    against this service rather than taking it on trust."""
+    return f"consent_records:{int(record_id)}"
+
+
+def verify_transition_handover_consent(consent_reference: str | None, *,
+                                       db_path: str | None = None
+                                       ) -> bool | None:
+    """Check a transition's consent_reference against consent_records.
+
+    Returns True if the reference names a granted, unwithdrawn
+    ``transition_handover`` record. Returns False if it names a record, but
+    one of another type, withdrawn or missing: a reference that claims to be
+    ours and fails the check must not be honoured. Returns None if the
+    reference is not in our format at all. Those are the sending system's
+    own consent ids, and the caller keeps its existing behaviour for them.
+    """
+    if not consent_reference:
+        return None
+    ref = str(consent_reference).strip()
+    record_id: int | None = None
+    for prefix in _RECORD_REFERENCE_PREFIXES:
+        if ref.startswith(prefix):
+            try:
+                record_id = int(ref[len(prefix):])
+            except ValueError:
+                return False
+            break
+    if record_id is None:
+        return None
+    conn = connect(db_path)
+    try:
+        row = conn.execute(
+            "SELECT consent_type, granted, withdrawn_at FROM consent_records "
+            "WHERE id = ?", (record_id,)).fetchone()
+    except sqlite3.OperationalError:
+        logger.warning("consent_records unavailable; consent reference %s "
+                       "cannot be verified", ref)
+        return False
+    finally:
+        conn.close()
+    if row is None:
+        return False
+    return (row["consent_type"] == "transition_handover"
+            and bool(row["granted"]) and not row["withdrawn_at"])

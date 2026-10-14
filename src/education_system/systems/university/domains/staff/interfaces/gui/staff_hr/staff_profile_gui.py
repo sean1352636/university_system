@@ -561,7 +561,7 @@ class StaffProfileGUI:
     def _upload_document(self):
         """Upload a new document."""
         dialog = tk.Toplevel(self.root)
-        dialog.title(_t("staff_profile.documents.upload_dialog.title", default="Upload Document"))
+        dialog.title(_t("staff_profile.documents.upload_dialog.title", default="===== UPLOAD DIALOG ====="))
         dialog.geometry("400x350")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -700,7 +700,7 @@ class StaffProfileGUI:
         filter_frame = ttk.Frame(tab)
         filter_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Label(filter_frame, text=_t("staff_profile.workload.filter_label", default="Academic Year:")).pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t("staff_profile.workload.filter_label", default="Label")).pack(side=tk.LEFT, padx=5)
         self.workload_year_var = tk.StringVar(value=str(datetime.now().year))
         ttk.Entry(filter_frame, textvariable=self.workload_year_var, width=10).pack(side=tk.LEFT, padx=5)
 

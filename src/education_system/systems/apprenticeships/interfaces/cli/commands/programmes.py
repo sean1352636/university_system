@@ -7,6 +7,7 @@ from collections.abc import Callable
 from functools import partial
 
 from education_system.systems.apprenticeships import config
+from education_system.systems.apprenticeships.domain.programmes import versions
 from education_system.systems.apprenticeships.domain.programmes.models import Programme
 from education_system.systems.apprenticeships.interfaces.cli import prompts
 from education_system.systems.apprenticeships.services import programme_service
@@ -21,6 +22,8 @@ def menu(actor: Actor) -> None:
         ("View a standard", partial(_view, actor)),
         ("Knowledge, skills and behaviours", partial(_ksb_menu, actor)),
         ("Occupational duties", partial(_duty_menu, actor)),
+        ("Curriculum", partial(_curriculum_menu, actor)),
+        ("Version history", partial(_versions, actor)),
     ]
     if actor.can("programme.manage"):
         entries += [
@@ -28,7 +31,10 @@ def menu(actor: Actor) -> None:
             ("Edit a standard", partial(_edit, actor)),
             ("Activate a standard", partial(_activate, actor)),
             ("Withdraw a standard", partial(_withdraw, actor)),
+            ("Cut a new version", partial(_new_version, actor)),
         ]
+    if actor.can("training.manage"):
+        entries.append(("Apply the curriculum to an apprentice", partial(_apply, actor)))
     if actor.is_admin:
         entries.append(("Delete a standard", partial(_delete, actor)))
     prompts.run_menu("Programmes and KSBs", entries)
@@ -54,8 +60,9 @@ def _list(actor: Actor) -> None:
 def _view(actor: Actor) -> None:
     programme = pick(actor)
     breakdown = programme_service.ksb_breakdown(actor, programme.programme_id)
-    prompts.title(f"{programme.reference} {programme.title}")
+    prompts.title(f"{programme.reference} v{programme.version} {programme.title}")
     prompts.details([
+        ("Version", programme.version),
         ("Level", programme.level_label),
         ("Pathway", programme.pathway),
         ("Duration", f"{programme.duration_months} months"),
@@ -129,7 +136,8 @@ def _activate(actor: Actor) -> None:
 
 
 def _withdraw(actor: Actor) -> None:
-    programme = pick(actor, status="Active")
+    # Superseded versions too: once their last apprentice finishes they can close.
+    programme = pick(actor, in_delivery=True)
     reason = prompts.ask("Reason for withdrawing it", required=True)
     updated = programme_service.withdraw_programme(actor, programme.programme_id, reason=reason)
     prompts.ok(f"{updated.reference} is closed to new enrolments.")
@@ -146,6 +154,154 @@ def _delete(actor: Actor) -> None:
     programme_service.delete_programme(actor, programme.programme_id, reason=reason)
     prompts.ok(f"Deleted {programme.reference} {programme.title}.")
     prompts.pause()
+
+
+# ═════════════════════════════════════════════════════════════════════
+# Versions
+# ═════════════════════════════════════════════════════════════════════
+
+def _new_version(actor: Actor) -> None:
+    programme = pick(actor, heading="Standard to revise")
+    prompts.note(
+        f"The KSBs, duties and curriculum of v{programme.version} are copied across. "
+        f"v{programme.version} becomes Superseded: its apprentices stay on it, and new "
+        "starts go onto the new version."
+    )
+    version = prompts.ask("New version", default=versions.next_version(programme.version),
+                          required=True)
+    reason = prompts.ask("What changed")
+    created = programme_service.new_version(
+        actor, programme.programme_id, version=version, reason=reason or None
+    )
+    prompts.ok(f"{created.reference} v{created.version} created ({created.status}).")
+    prompts.pause()
+
+
+def _versions(actor: Actor) -> None:
+    programme = pick(actor)
+    prompts.title(f"{programme.reference}: version history")
+    prompts.table(
+        (("Version", 8), ("Title", 34), ("Status", 11), ("Apprentices", -11),
+         ("Created", 17)),
+        programme_service.version_history(actor, programme.programme_id),
+        lambda h: (h.programme.version, h.programme.title, h.programme.status,
+                   h.apprentices, h.programme.created_at),
+        noun="version",
+    )
+    prompts.pause()
+
+
+# ═════════════════════════════════════════════════════════════════════
+# Curriculum
+# ═════════════════════════════════════════════════════════════════════
+
+def _curriculum_menu(actor: Actor) -> None:
+    entries: list[tuple[str, Callable[[], None]]] = [
+        ("List a standard's curriculum", partial(_list_modules, actor)),
+    ]
+    if actor.can("programme.manage"):
+        entries += [
+            ("Add a module", partial(_add_module, actor)),
+            ("Edit a module", partial(_edit_module, actor)),
+            ("Delete a module", partial(_delete_module, actor)),
+        ]
+    if actor.can("training.manage"):
+        entries += [
+            ("Apply the curriculum to an apprentice", partial(_apply, actor)),
+            ("Apply the curriculum to everyone on a standard", partial(_apply_cohort, actor)),
+        ]
+    prompts.run_menu("Curriculum", entries)
+
+
+def _list_modules(actor: Actor) -> None:
+    programme = pick(actor)
+    prompts.title(f"Curriculum — {programme.reference} v{programme.version} {programme.title}")
+    _module_table(programme_service.list_modules(actor, programme.programme_id))
+    prompts.pause()
+
+
+def _add_module(actor: Actor) -> None:
+    programme = pick(actor)
+    created = programme_service.add_module(
+        actor, programme.programme_id, _module_payload(None)
+    )
+    prompts.ok(f"Added {created.stage}: {created.title} to {programme.reference}.")
+    prompts.pause()
+
+
+def _edit_module(actor: Actor) -> None:
+    _, module = _pick_module(actor)
+    updated = programme_service.update_module(actor, module.module_id, _module_payload(module))
+    prompts.ok(f"Updated {updated.title}.")
+    prompts.pause()
+
+
+def _delete_module(actor: Actor) -> None:
+    _, module = _pick_module(actor)
+    prompts.note("Plans it was already applied to keep their objective.")
+    if not prompts.ask_yes_no(f"Delete {module.title}?"):
+        raise prompts.Abort
+    programme_service.delete_module(actor, module.module_id,
+                                    reason=prompts.ask("Reason (optional)") or None)
+    prompts.ok(f"Deleted {module.title}.")
+    prompts.pause()
+
+
+def _apply(actor: Actor) -> None:
+    from education_system.systems.apprenticeships.interfaces.cli.commands import apprentices
+
+    summary = apprentices.pick(actor, heading="Whose learning plan?")
+    result = programme_service.apply_curriculum(actor, summary.apprentice.apprentice_id)
+    prompts.ok(f"{summary.full_name}'s learning plan: {result.summary}.")
+    prompts.pause()
+
+
+def _apply_cohort(actor: Actor) -> None:
+    programme = pick(actor, in_delivery=True)
+    if not prompts.ask_yes_no(
+        f"Apply the curriculum to everyone on {programme.reference} v{programme.version}?"
+    ):
+        raise prompts.Abort
+    results = programme_service.apply_curriculum_to_cohort(actor, programme.programme_id)
+    added = sum(len(r.created) for r in results)
+    prompts.ok(f"{len(results)} learning plan(s) checked; {added} objective(s) added.")
+    prompts.pause()
+
+
+def _pick_module(actor: Actor):
+    programme = pick(actor)
+    modules = programme_service.list_modules(actor, programme.programme_id)
+    module = prompts.choose(
+        "Module", modules, render=lambda m: f"{m.stage} #{m.position} — {m.title}"
+    )
+    return programme, module
+
+
+def _module_payload(module) -> dict[str, object]:
+    def current(attr: str) -> str:
+        value = getattr(module, attr, None) if module is not None else None
+        return "" if value is None else str(value)
+
+    return {
+        "title": prompts.ask("Module", default=current("title"), required=True),
+        "stage": prompts.ask("Stage (e.g. Year 1)", default=current("stage") or "Year 1",
+                             required=True),
+        "position": prompts.ask("Position (blank puts it last)", default=current("position")),
+        "ksb_codes": prompts.ask("KSBs (comma-separated)", default=current("ksb_codes")),
+        "planned_hours": prompts.ask("Planned off-the-job hours",
+                                     default=current("planned_hours") or "0"),
+        "description": prompts.ask("Description", default=current("description")),
+    }
+
+
+def _module_table(modules: list) -> None:
+    prompts.table(
+        (("Stage", 10), ("#", -3), ("Module", 32), ("KSBs", 18), ("Hours", -6)),
+        modules,
+        lambda m: (m.stage, m.position, m.title, m.ksb_codes, m.planned_hours),
+        noun="module",
+        empty="no modules yet",
+    )
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -275,7 +431,7 @@ def pick(actor: Actor, *, heading: str = "Standard", **filters: object) -> Progr
     return prompts.choose(
         heading,
         programme_service.list_programmes(actor, **filters),
-        render=lambda p: f"{p.reference} {p.title} — Level {p.level}, {p.status}",
+        render=lambda p: f"{p.reference} v{p.version} {p.title} — Level {p.level}, {p.status}",
     )
 
 
@@ -316,11 +472,11 @@ def _pick_methods(current: list[str] | None = None) -> list[str]:
 
 def _table(programmes: list[Programme]) -> None:
     prompts.table(
-        (("Reference", 10), ("Title", 34), ("Lvl", -4), ("Months", -7),
-         ("Band", -5), ("Status", 10), ("EPA methods", 30)),
+        (("Reference", 10), ("Ver", 5), ("Title", 32), ("Lvl", -4), ("Months", -7),
+         ("Band", -5), ("Status", 11), ("EPA methods", 28)),
         programmes,
-        lambda p: (p.reference, p.title, p.level, p.duration_months, p.funding_band,
-                   p.status, ", ".join(p.epa_methods)),
+        lambda p: (p.reference, p.version, p.title, p.level, p.duration_months,
+                   p.funding_band, p.status, ", ".join(p.epa_methods)),
         noun="standard",
     )
 

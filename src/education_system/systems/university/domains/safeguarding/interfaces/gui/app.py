@@ -41,10 +41,24 @@ from education_system.systems.university.domains.safeguarding.interfaces.gui.cas
 from education_system.systems.university.domains.safeguarding.interfaces.gui.tools_mixin import (
     ToolsMixin,
 )
+from education_system.systems.university.domains.safeguarding.interfaces.gui.register_mixin import (
+    RegisterMixin,
+)
+from education_system.systems.university.domains.safeguarding.interfaces.gui.session_lock_mixin import (
+    SessionLockMixin,
+)
+from education_system.platform.delivery.gui.portal_dismiss import add_dismiss_button
 
 
 class SafeguardingApp(
-    WizardMixin, StaffDashboardMixin, CaseDetailMixin, CaseActionsMixin, ToolsMixin, tk.Tk
+    WizardMixin,
+    StaffDashboardMixin,
+    CaseDetailMixin,
+    CaseActionsMixin,
+    ToolsMixin,
+    RegisterMixin,
+    SessionLockMixin,
+    tk.Tk,
 ):
     def __init__(self, host=None):
         """Build the Safeguarding portal.
@@ -114,12 +128,23 @@ class SafeguardingApp(
             )
             self.show_student_dashboard()
 
+        # Case detail is the most sensitive screen in the portal and is
+        # routinely left open on an unattended desk — lock it after a period
+        # without activity. Started last so a failure here cannot stop the
+        # console from building.
+        if self.user:
+            try:
+                self._start_idle_watch()
+            except Exception:
+                logger.warning("could not start the idle session lock", exc_info=True)
+
     def mainloop(self, n: int = 0):
         if not self._owns_root:
             return
         super().mainloop(n)
 
     def destroy(self):
+        self.stop_idle_watch()
         if self._owns_root:
             super().destroy()
         else:
@@ -180,6 +205,33 @@ class SafeguardingApp(
         exit_btn.pack(side="right", padx=12, pady=10)
         # Bind ESC anywhere as a panic key
         self._host.bind_all("<Escape>", lambda _e: quick_exit())
+
+        # Ordinary way out, distinct from the orange safe-exit above: hand the
+        # user back to the main window rather than slamming the portal shut.
+        # The label reflects how this instance is actually hosted.
+        add_dismiss_button(
+            bar,
+            self._host,
+            on_before=self.stop_idle_watch,
+            padx=(4, 12),
+        )
+
+        # Manual lock — the idle timer is a backstop, not the primary way to
+        # clear the screen before walking away from it.
+        if self.user:
+            tk.Button(
+                bar,
+                text=_t('gui.safeguarding.app.buttons.lock', default="Lock"),
+                bg="#1f3a5f",
+                fg="white",
+                relief="flat",
+                font=("Segoe UI", 9, "bold"),
+                padx=10,
+                pady=4,
+                activebackground="#274875",
+                activeforeground="white",
+                command=lambda: self.lock_session(reason="locked by user"),
+            ).pack(side="right", padx=4, pady=10)
 
         # Tools menu — staff only (gates inside the dialogs further restrict).
         if self.user and _is_staff_role(self.user.get("role")):

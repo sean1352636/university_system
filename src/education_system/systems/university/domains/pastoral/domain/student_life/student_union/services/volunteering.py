@@ -5,6 +5,9 @@ from education_system.systems.university.infrastructure.database.db import sqlit
 from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import union_context as ctx
 from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.union_context import auto_award_points
 from education_system.systems.university.infrastructure.i18n import get_text as _t
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.identity import (
+    current_student_id as _current_student_id,
+)
 
 def browse_volunteer_opportunities(cursor):
     """Browse available volunteer opportunities"""
@@ -54,9 +57,10 @@ def signup_for_volunteer_opportunity(opportunity_id, cursor):
     try:
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (ctx.auth.current_user['id'],))
-        result = cursor.fetchone()
-        student_id = result[0]
+        student_id = _current_student_id(cursor, ctx.auth)
+        if not student_id:
+            print("You must be logged in to do that.")
+            return
 
         # Check opportunity details
         cursor.execute('''

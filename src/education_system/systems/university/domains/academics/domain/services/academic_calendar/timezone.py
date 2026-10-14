@@ -42,7 +42,7 @@ class EnhancedTimeZoneManager:
                 utc_offset_hours INTEGER NOT NULL,
                 is_dst_active BOOLEAN DEFAULT FALSE,
                 created_at TEXT NOT NULL,
-                FOREIGN KEY (event_id) REFERENCES academic_calendar_events (id) ON DELETE CASCADE
+                FOREIGN KEY (event_id) REFERENCES unified_events (source_event_id) ON DELETE CASCADE
             )''')
 
         except Exception as e:
@@ -90,7 +90,7 @@ class EnhancedTimeZoneManager:
         try:
             # Get event details
             event_rows = self.db_manager.execute_query(
-                "SELECT * FROM academic_calendar_events WHERE id = ?", (event_id,)
+                "SELECT * FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') WHERE id = ?", (event_id,)
             )
             if not event_rows:
                 return {'error': 'Event not found'}

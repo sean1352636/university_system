@@ -23,6 +23,7 @@ from education_system.systems.university.domains.pastoral.domain.equality_divers
     DEMOGRAPHIC_FIELDS,
     get_connection,
 )
+from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608 - identifier validation
 
 
 ADMIN_ROLES = {"admin", "administrator", "superadmin", "super_admin", "staff_admin"}
@@ -214,7 +215,10 @@ RECORD_EDITABLE_FIELDS = (
 )
 
 
+# db-audit: ignore[DBW001] - parameter passed through a validator
 def _table_columns(conn, table: str) -> list[str]:
+    # Identifiers cannot be parameterised, so they are validated instead.
+    table = validate_identifier(table)
     return [r[1] for r in conn.execute(f"PRAGMA table_info({table})")]
 
 
@@ -236,6 +240,7 @@ def list_records(search: str = "", filters: dict | None = None,
     conn = get_connection()
     try:
         cols = _table_columns(conn, "ed_people")
+        # db-audit: ignore[DBW001] - conditional between literals
         rows = conn.execute(
             f"SELECT * FROM ed_people{where} ORDER BY id DESC LIMIT ?",
             (*params, limit),
@@ -292,6 +297,7 @@ def update_record(record_id: int, updates: dict, updated_by: str = "cli-user") -
     sets = ", ".join(f"{k}=?" for k in fields) + ", updated_at=?, updated_by=?"
     conn = get_connection()
     try:
+        # db-audit: ignore[DBW001] - concatenation of literals
         cur = conn.execute(
             f"UPDATE ed_people SET {sets} WHERE id=?",
             (*fields.values(), datetime.now().strftime("%Y-%m-%d %H:%M:%S"),

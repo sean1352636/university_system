@@ -1,4 +1,7 @@
 """Methods _process_library_refund through load_book_costs."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -155,6 +158,57 @@ University Library System
             print(f"Error sending refund email: {e}")
             return False
 
+    def _render_revenue_report(self, report_text, payment_count, total_revenue,
+                               avg_payment, monthly_data, start_date, end_date):
+        """Draw the revenue report as headline cards plus a monthly table."""
+        host = getattr(self, "revenue_stats_host", None)
+        if host is None:
+            return
+        for child in host.winfo_children():
+            child.destroy()
+
+        tk.Label(host, text=f"Period: {start_date} to {end_date}",
+                 bg='white', fg='#6b7280', font=('Arial', 9)).pack(anchor='w')
+
+        cards = tk.Frame(host, bg='white')
+        cards.pack(fill='x', pady=(6, 10))
+        figures = [
+            (f"{payment_count:,}", "Payments Received", self.colors['info']),
+            (f"£{total_revenue:,.2f}", "Total Revenue", self.colors['success']),
+            (f"£{avg_payment:,.2f}", "Average Payment", self.colors['secondary']),
+        ]
+        for col, (value, label, colour) in enumerate(figures):
+            cards.columnconfigure(col, weight=1, uniform='rev')
+            cell = tk.Frame(cards, bg='white', highlightbackground='#e5e7eb',
+                            highlightthickness=1)
+            cell.grid(row=0, column=col, sticky='ew', padx=4)
+            tk.Label(cell, text=value, bg='white', fg=colour,
+                     font=('Arial', 17, 'bold')).pack(pady=(10, 0))
+            tk.Label(cell, text=label, bg='white', fg='#6b7280',
+                     font=('Arial', 9)).pack(pady=(0, 10))
+
+        if not monthly_data:
+            tk.Label(host, text="No payments in this period.", bg='white',
+                     fg='#6b7280', font=('Arial', 10, 'italic')).pack(anchor='w')
+            return
+
+        table = tk.Frame(host, bg='white')
+        table.pack(fill='both', expand=True)
+        columns = ('Month', 'Payments', 'Revenue')
+        tree = ttk.Treeview(table, columns=columns, show='headings', height=8)
+        for col, width, anchor in (('Month', 140, 'w'), ('Payments', 110, 'e'),
+                                   ('Revenue', 140, 'e')):
+            tree.heading(col, text=col)
+            tree.column(col, width=width, anchor=anchor)
+        tree.tag_configure('odd', background='#f7f9fb')
+        for i, (month, payments, revenue) in enumerate(monthly_data):
+            tree.insert('', 'end', tags=('odd',) if i % 2 else (),
+                        values=(month, f"{payments:,}", f"£{revenue:,.2f}"))
+        scroll = ttk.Scrollbar(table, orient='vertical', command=tree.yview)
+        tree.configure(yscrollcommand=scroll.set)
+        tree.pack(side='left', fill='both', expand=True)
+        scroll.pack(side='right', fill='y')
+
     def generate_revenue_report(self):
         """Generate revenue report for specified date range"""
         start_date = self.start_date_var.get().strip()
@@ -195,7 +249,6 @@ University Library System
             monthly_data = cursor.fetchall()
             conn.close()
 
-            self.revenue_stats_text.delete('1.0', tk.END)
             report = f"""
 LIBRARY FINE REVENUE REPORT
 Period: {start_date} to {end_date}
@@ -214,8 +267,12 @@ Month          Payments      Revenue
             for month, payments, revenue in monthly_data:
                 report += f"{month}         {payments:>8}      £{revenue:>10,.2f}\n"
             report += f"{'='*60}\n"
-            self.revenue_stats_text.insert('1.0', report)
+            # The text form is still what Email Report and Export CSV send,
+            # so it is built either way; only the on-screen view changes.
             self._last_revenue_report = report
+            self._render_revenue_report(
+                report, payment_count, total_revenue, avg_payment, monthly_data,
+                start_date, end_date)
 
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Failed to generate revenue report:\n{str(e)}")
@@ -250,7 +307,7 @@ Month          Payments      Revenue
                     )
                     sent += 1
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
             if sent > 0:
                 messagebox.showinfo(_t('gui.academics.library.finance_parts.libraryfinancemanager_process_library_refund.dialogs.email_sent', default="Email Sent"), f"Report emailed to {sent} admin(s).")
@@ -262,7 +319,10 @@ Month          Payments      Revenue
 
     def show_revenue_charts(self):
         """Display revenue charts"""
-        if not MATPLOTLIB_AVAILABLE:
+        # Read through _shared, not as a bare global: finance_shared resolves
+        # matplotlib on first access, so these names are absent from the
+        # globals() splice at the top of this module.
+        if not _shared.MATPLOTLIB_AVAILABLE:
             messagebox.showwarning(_t('gui.academics.library.finance_parts.libraryfinancemanager_process_library_refund.dialogs.not_available', default="Not Available"), _t('gui.academics.library.finance_parts.libraryfinancemanager_process_library_refund.dialogs.matplotlib_is_not_available_for_charts', default="Matplotlib is not available for charts."))
             return
 
@@ -296,7 +356,7 @@ Month          Payments      Revenue
                 messagebox.showinfo(_t('gui.academics.library.finance_parts.libraryfinancemanager_process_library_refund.dialogs.no_data', default="No Data"), _t('gui.academics.library.finance_parts.libraryfinancemanager_process_library_refund.dialogs.no_revenue_data_found_for_the_specified_period', default="No revenue data found for the specified period."))
                 return
 
-            fig = Figure(figsize=(10, 6), dpi=100)
+            fig = _shared.Figure(figsize=(10, 6), dpi=100)
             ax1 = fig.add_subplot(1, 2, 1)
             months = [item[0] for item in monthly_data]
             revenues = [item[1] for item in monthly_data]
@@ -315,7 +375,7 @@ Month          Payments      Revenue
             ax2.set_title('Revenue Trend', fontsize=12, fontweight='bold')
 
             fig.tight_layout()
-            canvas = FigureCanvasTkAgg(fig, master=self.revenue_chart_frame)
+            canvas = _shared.FigureCanvasTkAgg(fig, master=self.revenue_chart_frame)
             canvas.draw()
             canvas.get_tk_widget().pack(fill='both', expand=True)
 

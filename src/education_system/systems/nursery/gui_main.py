@@ -765,7 +765,7 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
     if shared_auth is None or not getattr(shared_auth, "current_user", None):
         logger.error("nursery GUI invoked without a shared_auth session")
         raise RuntimeError(
-            "nursery_system GUI must be launched via run.py — "
+            "nursery_system GUI must be launched via python -m education_system — "
             "no standalone login is available."
         )
     cu = shared_auth.current_user or {}
@@ -780,5 +780,5 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
 
 
 if __name__ == "__main__":
-    print("Launch via: python run.py --gui  (then choose Nursery)")
+    print("Launch via: python -m education_system --gui  (then choose Nursery)")
     raise SystemExit(2)

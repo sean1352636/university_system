@@ -1,4 +1,7 @@
 """UniversityChatbot: main orchestrator class that composes all sub-modules."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 import json
 import os
@@ -102,7 +105,7 @@ class UniversityChatbot:
 
             subscribe(EVENT_SELECTION_CHANGED, _on_selection)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Cross-domain bus integration (#10): turn events that affect a
         # specific user into queued chatbot messages they'll see on their
@@ -206,7 +209,7 @@ class UniversityChatbot:
 
                 subscribe(EVENT_CASE_OPENED, _on_case)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             # Document changes don't get a message — chatbot just
             # invalidates its local index. Hook reserved for future RAG.
             subscribe(EVENT_DOCUMENT_CHANGED, lambda **_: None)
@@ -273,7 +276,7 @@ class UniversityChatbot:
                 )
                 return inbox_prefix + ack
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         try:
             if session_id and session_id in self.active_sessions:
@@ -467,8 +470,8 @@ class UniversityChatbot:
     def get_application_status(self, identifier):
         return database_utils.get_application_status(self, identifier)
 
-    def search_staff_directory(self, query):
-        return database_utils.search_staff_directory(self, query)
+    def search_staff_directory(self, query="", limit=10):
+        return database_utils.search_staff_directory(self, query, limit)
 
     def get_room_bookings(self, student_id):
         return database_utils.get_room_bookings(self, student_id)
@@ -815,9 +818,15 @@ class UniversityChatbot:
                 "department": "admissions"
             },
             "administrative": {
+                # "staff" / "employee" are matched on their own, not just as
+                # "staff directory": a plain "list all staff members" scored no
+                # intent at all and fell through to the general handler, which
+                # answered with a canned capabilities blurb about finances
+                # instead of the staff list it was asked for.
                 "patterns": ["leave of absence", "deferral", "id card", "replacement",
                              "room booking", "facility", "staff directory", "contact",
-                             "department", "office hours"],
+                             "department", "office hours", "staff", "employee",
+                             "employees", "faculty member", "who works"],
                 "responses": ["I can help with administrative tasks.", "Let me assist with that."],
                 "requires_auth": False,
                 "department": "administrative"

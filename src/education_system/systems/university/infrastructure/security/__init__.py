@@ -49,9 +49,9 @@ from education_system.systems.university.infrastructure.security.password_genera
 # on first access via __getattr__, so `from ...security import AuditLogViewerGUI`
 # keeps working for code that actually needs the viewer.
 _LAZY_ATTRS = {
-    "AuditLogViewerGUI": "education_system.systems.university.interfaces.gui.shell.security.audit_log_viewer_gui",
-    "AnomalyDetector": "education_system.systems.university.interfaces.gui.shell.security.audit_log_viewer_gui",
-    "show_audit_log_viewer": "education_system.systems.university.interfaces.gui.shell.security.audit_log_viewer_gui",
+    "AuditLogViewerGUI": "education_system.systems.university.shell.gui.security.audit_log_viewer_gui",
+    "AnomalyDetector": "education_system.systems.university.shell.gui.security.audit_log_viewer_gui",
+    "show_audit_log_viewer": "education_system.systems.university.shell.gui.security.audit_log_viewer_gui",
 }
 
 

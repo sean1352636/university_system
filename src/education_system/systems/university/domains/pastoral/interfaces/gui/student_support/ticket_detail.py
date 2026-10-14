@@ -1,7 +1,13 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+
+from ._dialogs import make_toplevel, messagebox
 import tkinter.font as tkFont
 from datetime import datetime, timedelta
 import json
@@ -24,6 +30,7 @@ from education_system.systems.university.infrastructure.utils.gui_language_selec
     show_gui_language_selector,
     create_language_menu_button,
 )
+from education_system.systems.university.infrastructure.email.sign_off import office_name
 
 # Import activity logger for audit trail
 try:
@@ -68,7 +75,7 @@ def _patched_sqlite_connect(database, *args, **kwargs):
         if not database or db_name == str(DEFAULT_DB_PATH):
             return _original_sqlite3_connect(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return _original_sqlite3_connect(database, *args, **kwargs)
 
 sqlite3.connect = _patched_sqlite_connect
@@ -175,10 +182,9 @@ class TicketDetailMixin:
         ticket_id = ticket.get('ticket_id', 'N/A')
         ticket_title = ticket.get('subject', 'Untitled')
 
-        detail_window = tk.Toplevel(self.root)
+        detail_window = make_toplevel(self.root)
         detail_window.title(f"🎫 Ticket #{ticket_id} - {ticket_title}")
         detail_window.geometry("1600x950")
-        detail_window.transient(self.root)
 
         # Create notebook for different sections
         detail_notebook = ttk.Notebook(detail_window, padding="10")
@@ -509,10 +515,9 @@ class TicketDetailMixin:
 
         ticket_id = ticket.get('ticket_id', 'N/A')
 
-        edit_window = tk.Toplevel(self.root)
+        edit_window = make_toplevel(self.root)
         edit_window.title(f"✏️ Edit Ticket #{ticket_id}")
         edit_window.geometry("900x700")
-        edit_window.transient(self.root)
         edit_window.grab_set()
 
         main_frame = ttk.Frame(edit_window, padding="20")
@@ -763,7 +768,7 @@ class TicketDetailMixin:
                     'created_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                     'description': description[:500] + '...' if len(description) > 500 else description,
                     'portal_link': '/support',
-                    'signature': 'University Student Support System'
+                    'signature': office_name('Student Support')
                 }
 
                 # Render the email template
@@ -788,7 +793,7 @@ class TicketDetailMixin:
                         'description': description[:500] + ('...' if len(description) > 500 else '')
                     }
 
-                    subject, body = render_template('support_ticket_created_admin', fallback_template_vars)
+                    subject, body = render_template('campus_services/helpdesk/support_ticket_created_admin', fallback_template_vars)
 
                     if not subject or not body:
                         raise RuntimeError("support_ticket_created_admin template is empty")
@@ -854,7 +859,7 @@ class TicketDetailMixin:
                     'update_type': update_type,
                     'update_details': update_details,
                     'updated_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                    'signature': 'University Student Support Team'
+                    'signature': office_name('Student Support Team')
                 }
 
                 # Render the email template
@@ -876,7 +881,7 @@ class TicketDetailMixin:
                         'update_details': update_details
                     }
 
-                    subject, body = render_template('support_ticket_update_user', fallback_template_vars)
+                    subject, body = render_template('campus_services/helpdesk/support_ticket_update_user', fallback_template_vars)
 
                     if not subject or not body:
                         raise RuntimeError("support_ticket_update_user template is empty")
@@ -949,7 +954,7 @@ class TicketDetailMixin:
                     'student_name': student_name,
                     'status_message': f'Status changed from "{old_status}" to "{new_status}"',
                     'status_explanation': status_explanations.get(new_status, 'Your ticket status has been updated.'),
-                    'signature': 'University Student Support Team'
+                    'signature': office_name('Student Support Team')
                 }
 
                 subject, body = render_template('ticket_status_changed_notification', template_vars)
@@ -969,10 +974,9 @@ class TicketDetailMixin:
 
     def show_status_update_dialog(self, ticket_id):
         """Show dialog to update ticket status"""
-        status_dialog = tk.Toplevel(self.root)
+        status_dialog = make_toplevel(self.root)
         status_dialog.title(f"Update Status - Ticket #{ticket_id}")
         status_dialog.geometry("900x550")
-        status_dialog.transient(self.root)
         status_dialog.grab_set()
 
         form_frame = ttk.Frame(status_dialog, padding="20")

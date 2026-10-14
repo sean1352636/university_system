@@ -64,9 +64,9 @@ def save_search_profile():
 
         # Now insert the saved search
         cursor.execute('''
-        INSERT INTO saved_searches (user_id, search_name, search_criteria)
-        VALUES (?, ?, ?)
-        ''', (_globals.current_user, name, json.dumps(criteria)))
+        INSERT INTO saved_searches (user_id, name, search_name, search_criteria)
+        VALUES (?, ?, ?, ?)
+        ''', (_globals.current_user, name, name, json.dumps(criteria)))
 
         conn.commit()
         conn.close()
@@ -83,7 +83,7 @@ def view_saved_searches():
         cursor = conn.cursor()
 
         cursor.execute('''
-        SELECT id, search_name, search_criteria, created_date, is_shared
+        SELECT search_id, search_name, search_criteria, created_date, is_shared
         FROM saved_searches
         WHERE user_id = ? OR is_shared = 1
         ORDER BY created_date DESC
@@ -121,7 +121,7 @@ def load_saved_search():
 
         cursor.execute('''
         SELECT search_name, search_criteria FROM saved_searches
-        WHERE id = ? AND (user_id = ? OR is_shared = 1)
+        WHERE search_id = ? AND (user_id = ? OR is_shared = 1)
         ''', (search_id, _globals.current_user))
 
         result = cursor.fetchone()
@@ -219,7 +219,7 @@ def delete_saved_search():
         # Check if search exists and belongs to user
         cursor.execute('''
         SELECT search_name FROM saved_searches
-        WHERE id = ? AND user_id = ?
+        WHERE search_id = ? AND user_id = ?
         ''', (search_id, _globals.current_user))
 
         result = cursor.fetchone()
@@ -231,7 +231,7 @@ def delete_saved_search():
         confirm = input(f"Delete search '{search_name}'? (y/n): ").strip().lower()
 
         if confirm == 'y':
-            cursor.execute('DELETE FROM saved_searches WHERE id = ?', (search_id,))
+            cursor.execute('DELETE FROM saved_searches WHERE search_id = ?', (search_id,))
             conn.commit()
             print(f"✅ Search '{search_name}' deleted successfully.")
         else:
@@ -255,7 +255,7 @@ def share_search_profile():
         # Check if search exists and belongs to user
         cursor.execute('''
         SELECT search_name FROM saved_searches
-        WHERE id = ? AND user_id = ?
+        WHERE search_id = ? AND user_id = ?
         ''', (search_id, _globals.current_user))
 
         result = cursor.fetchone()
@@ -270,7 +270,7 @@ def share_search_profile():
             cursor.execute('''
             UPDATE saved_searches
             SET is_shared = 1
-            WHERE id = ?
+            WHERE search_id = ?
             ''', (search_id,))
             conn.commit()
             print(f"✅ Search '{search_name}' is now shared with all users.")

@@ -4,6 +4,7 @@ from education_system.systems.university.domains.academics.interfaces.gui.course
     tk, ttk, messagebox, sqlite3, _, DEFAULT_DB_PATH, datetime,
     DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES,
 )
+from education_system.systems.university.domains.academics.interfaces.gui._field_pickers import attach_combo, recent_years, time_values
 
 
 class SchedulingMixin:
@@ -167,47 +168,45 @@ class SchedulingMixin:
                 instructor_id = int(instructor_var.get().split(" - ")[0])
 
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0)
-                try:
-                    conn.execute('PRAGMA journal_mode=WAL')  # Enable WAL mode for better concurrency
-                    cursor = conn.cursor()
+                conn.execute('PRAGMA journal_mode=WAL')  # Enable WAL mode for better concurrency
+                cursor = conn.cursor()
 
-                    # Ensure course_schedule table exists with proper schema
-                    cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS course_schedule (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        course_code TEXT NOT NULL,
-                        day_of_week TEXT NOT NULL,
-                        start_time TEXT NOT NULL,
-                        end_time TEXT NOT NULL,
-                        room_id INTEGER,
-                        instructor_id INTEGER,
-                        session_type TEXT,
-                        semester TEXT,
-                        year INTEGER,
-                        created_at TEXT NOT NULL,
-                        updated_at TEXT,
-                        FOREIGN KEY (room_id) REFERENCES rooms(id),
-                        FOREIGN KEY (instructor_id) REFERENCES instructors(id)
-                    )
-                    ''')
+                # Ensure course_schedule table exists with proper schema
+                cursor.execute('''
+                CREATE TABLE IF NOT EXISTS course_schedule (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    course_code TEXT NOT NULL,
+                    day_of_week TEXT NOT NULL,
+                    start_time TEXT NOT NULL,
+                    end_time TEXT NOT NULL,
+                    room_id INTEGER,
+                    instructor_id INTEGER,
+                    session_type TEXT,
+                    semester TEXT,
+                    year INTEGER,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT,
+                    FOREIGN KEY (room_id) REFERENCES rooms(id),
+                    FOREIGN KEY (instructor_id) REFERENCES instructors(id)
+                )
+                ''')
 
-                    # Get current semester and year
-                    current_semester = "Fall"  # You can make this dynamic
-                    current_year = datetime.now().year
+                # Get current semester and year
+                current_semester = "Fall"  # You can make this dynamic
+                current_year = datetime.now().year
 
-                    # Check for schedule conflicts
-                    cursor.execute("""
-                        SELECT id FROM course_schedule
-                        WHERE course_code = ? AND day_of_week = ? AND semester = ? AND year = ?
-                        AND ((start_time <= ? AND end_time > ?) OR (start_time < ? AND end_time >= ?))
-                    """, (module_code, day_var.get(), current_semester, current_year,
-                         start_time_var.get(), start_time_var.get(),
-                         end_time_var.get(), end_time_var.get()))
+                # Check for schedule conflicts
+                cursor.execute("""
+                    SELECT id FROM course_schedule
+                    WHERE course_code = ? AND day_of_week = ? AND semester = ? AND year = ?
+                    AND ((start_time <= ? AND end_time > ?) OR (start_time < ? AND end_time >= ?))
+                """, (module_code, day_var.get(), current_semester, current_year,
+                     start_time_var.get(), start_time_var.get(),
+                     end_time_var.get(), end_time_var.get()))
 
-                    if cursor.fetchone():
-                        messagebox.showerror(_t('gui.academics.course_management_gui.recommendations.scheduling.dialogs.schedule_conflict', default="Schedule Conflict"),
-                                           f"Schedule conflict detected for {module_code} on {day_var.get()}")
-                finally:
+                if cursor.fetchone():
+                    messagebox.showerror(_t('gui.academics.course_management_gui.recommendations.scheduling.dialogs.schedule_conflict', default="Schedule Conflict"),
+                                       f"Schedule conflict detected for {module_code} on {day_var.get()}")
                     conn.close()
                     return
 
@@ -837,21 +836,24 @@ class SchedulingMixin:
         # Year
         ttk.Label(form_frame, text=_t('gui.academics.course_management_gui.recommendations.scheduling.labels.year', default="Year:")).grid(row=row, column=0, sticky=tk.W, pady=5)
         year_var = tk.StringVar(value=str(current[2]))
-        year_entry = ttk.Entry(form_frame, textvariable=year_var, width=27)
+        year_entry = attach_combo(form_frame, recent_years(ahead=3, back=3),
+                                  textvariable=year_var, width=25)
         year_entry.grid(row=row, column=1, sticky=tk.W, pady=5, padx=5)
         row += 1
 
         # Start time
         ttk.Label(form_frame, text=_t('gui.academics.course_management_gui.recommendations.scheduling.labels.start_time_hh_mm', default="Start Time (HH:MM):")).grid(row=row, column=0, sticky=tk.W, pady=5)
         start_time_var = tk.StringVar(value=current[3] or '')
-        start_time_entry = ttk.Entry(form_frame, textvariable=start_time_var, width=27)
+        start_time_entry = attach_combo(form_frame, time_values(),
+                                       textvariable=start_time_var, width=25)
         start_time_entry.grid(row=row, column=1, sticky=tk.W, pady=5, padx=5)
         row += 1
 
         # End time
         ttk.Label(form_frame, text=_t('gui.academics.course_management_gui.recommendations.scheduling.labels.end_time_hh_mm', default="End Time (HH:MM):")).grid(row=row, column=0, sticky=tk.W, pady=5)
         end_time_var = tk.StringVar(value=current[4] or '')
-        end_time_entry = ttk.Entry(form_frame, textvariable=end_time_var, width=27)
+        end_time_entry = attach_combo(form_frame, time_values(),
+                                     textvariable=end_time_var, width=25)
         end_time_entry.grid(row=row, column=1, sticky=tk.W, pady=5, padx=5)
         row += 1
 

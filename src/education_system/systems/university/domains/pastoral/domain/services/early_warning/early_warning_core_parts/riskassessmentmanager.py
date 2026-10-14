@@ -1,4 +1,7 @@
 """Extracted class implementation."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from .. import early_warning_core_shared as _shared
 globals().update({name: value for name, value in _shared.__dict__.items() if not name.startswith("__")})
@@ -69,21 +72,41 @@ class RiskAssessmentManager:
 
     @staticmethod
     def _calculate_academic_risk(student_id: str) -> int:
-        """Calculate academic risk score (0-100)"""
+        """Calculate academic risk score (0-100) from recorded grades.
+
+        Reads ``grades`` and ``student_grades`` — the tables marks are
+        actually written to. It previously read ``lms_gradebook``, which is
+        empty, so the "no rows" branch defaulted the average to 70 and every
+        student scored 0 academic risk regardless of how they were doing.
+        """
         conn = get_connection()
         cursor = conn.cursor()
 
         try:
-            # Get average grades
             cursor.execute('''
-                SELECT AVG(CAST(score as REAL) / CAST(max_score as REAL) * 100) as avg_grade
-                FROM lms_gradebook
-                WHERE student_id = ?
-                AND graded_at >= date('now', '-3 months')
-            ''', (student_id,))
+                SELECT AVG(pct) AS avg_grade, COUNT(*) AS n FROM (
+                    SELECT COALESCE(
+                               percentage,
+                               CASE WHEN COALESCE(max_points, 0) > 0
+                                    THEN points_earned * 100.0 / max_points END,
+                               score
+                           ) AS pct
+                    FROM grades WHERE student_id = ?
+                    UNION ALL
+                    SELECT percentage AS pct
+                    FROM student_grades WHERE student_id = ?
+                )
+                WHERE pct IS NOT NULL
+            ''', (student_id, student_id))
 
             result = cursor.fetchone()
-            avg_grade = result['avg_grade'] if result and result['avg_grade'] else 70
+            if not result or not result['n']:
+                # No marks recorded — no evidence either way, so no risk. This
+                # is not the same as scoring well, and it is why a brand-new
+                # student sits at 0 rather than being flagged.
+                return 0
+
+            avg_grade = result['avg_grade'] or 0
 
             # Convert grade to risk (lower grade = higher risk)
             if avg_grade >= 70:
@@ -105,20 +128,26 @@ class RiskAssessmentManager:
         cursor = conn.cursor()
 
         try:
+            # Computed from attendance_records, the table check-ins are
+            # written to. It previously read attendance_analytics — an empty
+            # summary table nothing populates — so this always returned 0.
             cursor.execute('''
-                SELECT AVG(attendance_percentage) as avg_attendance,
-                       MAX(consecutive_absences) as max_consecutive
-                FROM attendance_analytics
+                SELECT
+                    SUM(CASE WHEN LOWER(status) IN ('present','late','excused')
+                             THEN 1 ELSE 0 END) AS attended,
+                    COUNT(*) AS total
+                FROM attendance_records
                 WHERE student_id = ?
             ''', (student_id,))
 
             result = cursor.fetchone()
+            total = (result['total'] if result else 0) or 0
+            if not total:
+                return 0  # Never registered anywhere — no evidence of risk.
 
-            if not result or not result['avg_attendance']:
-                return 0  # No data, assume no risk
-
-            avg_attendance = result['avg_attendance']
-            max_consecutive = result['max_consecutive'] or 0
+            avg_attendance = (result['attended'] or 0) * 100.0 / total
+            max_consecutive = RiskAssessmentManager._max_consecutive_absences(
+                cursor, student_id)
 
             # Calculate risk based on attendance
             attendance_risk = 0
@@ -144,30 +173,76 @@ class RiskAssessmentManager:
             conn.close()
 
     @staticmethod
+    def _max_consecutive_absences(cursor, student_id: str) -> int:
+        """Longest run of consecutive absences in the student's record."""
+        cursor.execute('''
+            SELECT status FROM attendance_records
+            WHERE student_id = ? ORDER BY date
+        ''', (student_id,))
+        longest = run = 0
+        for row in cursor.fetchall():
+            if str(row['status'] or '').strip().lower() == 'absent':
+                run += 1
+                longest = max(longest, run)
+            else:
+                run = 0
+        return longest
+
+    @staticmethod
     def _calculate_engagement_risk(student_id: str) -> int:
-        """Calculate engagement risk score (0-100)"""
+        """Calculate engagement risk score (0-100) from submission behaviour.
+
+        This used to run an LMS query, throw the result away and
+        ``return 30`` — a placeholder. Because it was a constant, it was the
+        *only* component contributing anything, which is why every student
+        scored exactly 6 overall (30 × the 0.2 engagement weight).
+
+        Submission behaviour is the engagement signal this database actually
+        has: how much of the work set for a student's modules they have
+        handed in, and whether it arrives late.
+        """
         conn = get_connection()
         cursor = conn.cursor()
 
         try:
-            # Check LMS engagement
             cursor.execute('''
-                SELECT COUNT(*) as video_views
-                FROM lms_video_lectures
-                WHERE video_id IN (
-                    SELECT DISTINCT content_id FROM lms_course_content
-                    WHERE lms_course_id IN (
-                        SELECT lms_course_id FROM lms_courses WHERE module_code IN (
-                            SELECT module_code FROM student_modules WHERE student_id = ?
-                        )
-                    )
+                SELECT COUNT(*) AS expected FROM assignments
+                WHERE module_code IN (
+                    SELECT module_code FROM student_modules WHERE student_id = ?
                 )
             ''', (student_id,))
+            row = cursor.fetchone()
+            expected = (row['expected'] if row else 0) or 0
+            if not expected:
+                # Nothing has been set, so nothing can be missed.
+                return 0
 
-            # Simple heuristic: if student has viewed videos recently, lower risk
-            # In real system, would track actual student views, discussion participation, etc.
+            cursor.execute('''
+                SELECT COUNT(DISTINCT assignment_id) AS submitted,
+                       SUM(CASE WHEN late_submission THEN 1 ELSE 0 END) AS late
+                FROM assignment_submissions
+                WHERE student_id = ?
+            ''', (student_id,))
+            row = cursor.fetchone()
+            submitted = (row['submitted'] if row else 0) or 0
+            late = (row['late'] if row else 0) or 0
 
-            return 30  # Placeholder
+            rate = min(submitted / expected, 1.0)
+            if rate >= 0.9:
+                risk = 0
+            elif rate >= 0.7:
+                risk = 20
+            elif rate >= 0.5:
+                risk = 50
+            else:
+                risk = 80
+
+            if late:
+                # Handing work in, but late, is a weaker signal than not
+                # handing it in at all — a nudge, not a jump.
+                risk += 10
+
+            return min(risk, 100)
 
         finally:
             conn.close()
@@ -179,22 +254,49 @@ class RiskAssessmentManager:
         cursor = conn.cursor()
 
         try:
-            # Check for outstanding fees
+            # Outstanding fees. 'overdue' counts as well as 'unpaid' — only
+            # matching 'unpaid' missed the state that actually matters.
             cursor.execute('''
                 SELECT COUNT(*) as unpaid_count
                 FROM student_fees
-                WHERE student_id = ? AND status = 'unpaid'
+                WHERE student_id = ?
+                  AND LOWER(COALESCE(status, '')) IN ('unpaid', 'overdue', 'pending')
             ''', (student_id,))
-
             result = cursor.fetchone()
-            unpaid_count = result['unpaid_count'] if result else 0
+            unpaid_count = (result['unpaid_count'] if result else 0) or 0
 
             if unpaid_count == 0:
-                return 0
+                risk = 0
             elif unpaid_count <= 2:
-                return 30
+                risk = 30
             else:
-                return 70
+                risk = 70
+
+            # The finance system raises its own alerts, and they are a far
+            # stronger signal than a fee row's status: an active
+            # 'payment_overdue' or 'high_risk_student' alert is finance
+            # already having decided this student is a concern.
+            try:
+                cursor.execute('''
+                    SELECT COUNT(*) AS active,
+                           SUM(CASE WHEN LOWER(COALESCE(priority,'')) IN ('high','critical')
+                                    THEN 1 ELSE 0 END) AS urgent
+                    FROM financial_alerts
+                    WHERE student_id = ?
+                      AND LOWER(COALESCE(status, '')) = 'active'
+                ''', (student_id,))
+                row = cursor.fetchone()
+                active = (row['active'] if row else 0) or 0
+                urgent = (row['urgent'] if row else 0) or 0
+                if urgent:
+                    risk = max(risk, 70)
+                elif active:
+                    risk = max(risk, 40)
+            except Exception:
+                # financial_alerts is optional — absent on a lean install.
+                logger.debug("Suppressed exception", exc_info=True)
+
+            return min(risk, 100)
 
         finally:
             conn.close()

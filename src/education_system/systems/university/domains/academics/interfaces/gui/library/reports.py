@@ -3,6 +3,9 @@ Enhanced Library Management System - GUI Version
 Maintains all original CLI functions while adding a modern GUI interface
 Backwards compatible with existing database and auth systems
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -92,15 +95,11 @@ except ImportError:
     FINANCE_ACCOUNT_AVAILABLE = False
     print("Warning: Student finance account integration not available")
 
-# Import matplotlib for library finance charts
-try:
-    import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-    from matplotlib.figure import Figure
-    MATPLOTLIB_AVAILABLE = True
-except ImportError:
-    MATPLOTLIB_AVAILABLE = False
-    print("Warning: Matplotlib not available for library finance charts")
+# Matplotlib is imported lazily by finance_shared, the one module in this
+# package whose names are actually read (by the two chart dialogs under
+# finance_parts/). This module carried an identical eager copy of that import
+# and never used any of it — importing matplotlib.pyplot costs ~1.3s and was
+# paid by anything that touched the library package at all.
 
 # Import email service for library finance notifications
 try:
@@ -197,7 +196,7 @@ def _show_report_message(self, title: str, body: str):
         self.report_text.delete("1.0", tk.END)
         self.report_text.insert(tk.END, composed)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     try:
         self.show_report_in_window(title, composed)
     except Exception:
@@ -977,7 +976,7 @@ def show_report_in_window(self, title: str = "Library Report", report_content: s
     try:
         report_window.transient(self.master)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
     header = tk.Frame(report_window, bg="#2c3e50", height=44)
     header.pack(fill="x")
@@ -990,12 +989,27 @@ def show_report_in_window(self, title: str = "Library Report", report_content: s
              font=("Arial", 9, "italic"),
              bg="#2c3e50", fg="#bdc3c7").pack(side="right", padx=12)
 
+    # Action bar first: it is packed against the bottom, and a fill/expand
+    # body packed before it would leave it no room on a short screen.
+    btn_bar = ttk.Frame(report_window, padding=(8, 4, 8, 10))
+    btn_bar.pack(side="bottom", fill="x")
+
     body_frame = ttk.Frame(report_window, padding=8)
     body_frame.pack(fill="both", expand=True)
-    text = ScrolledText(body_frame, wrap=tk.WORD, font=("Consolas", 10))
-    text.pack(fill="both", expand=True)
-    text.insert(tk.END, report_content)
-    text.config(state=tk.DISABLED)
+
+    # Render the report as cards and tables. The raw text is still what
+    # gets emailed and saved below, so an unparseable report degrades to
+    # the original monospaced view rather than showing nothing.
+    rendered = False
+    try:
+        rendered = self.render_text_report(body_frame, report_content, title=title)
+    except Exception:
+        logger.exception("Falling back to plain text for report %r", title)
+    if not rendered:
+        text = ScrolledText(body_frame, wrap=tk.WORD, font=("Consolas", 10))
+        text.pack(fill="both", expand=True)
+        text.insert(tk.END, report_content)
+        text.config(state=tk.DISABLED)
 
     # ---- Action handlers -------------------------------------------------
     def _admin_emails():
@@ -1110,8 +1124,6 @@ def show_report_in_window(self, title: str = "Library Report", report_content: s
                 parent=report_window)
 
     # ---- Buttons (only the three the user wants) -------------------------
-    btn_bar = ttk.Frame(report_window, padding=(8, 4, 8, 10))
-    btn_bar.pack(fill="x")
     ttk.Button(btn_bar, text=_t('gui.academics.library.reports.buttons.email_to_admin', default="📧 Email to Admin"),
                command=email_to_admin).pack(side="left", padx=4)
     ttk.Button(btn_bar, text=_t('gui.academics.library.reports.buttons.save_as_txt', default="💾 Save as TXT"),

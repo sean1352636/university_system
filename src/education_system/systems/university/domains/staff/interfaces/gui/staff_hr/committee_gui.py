@@ -10,6 +10,9 @@ Provides interface for:
 """
 
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -327,7 +330,7 @@ class CommitteeGUI:
             for c in all_committees:
                 committee_names[c.get('id')] = c.get('name', '')
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         for m in meetings:
             status = m.get('status', '').lower()
@@ -820,7 +823,7 @@ class CommitteeGUI:
             for c in all_committees:
                 committee_names[c.get('id')] = c.get('name', '')
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         display_values = []
         for m in meetings:
@@ -1009,7 +1012,7 @@ class CommitteeGUI:
                 votes = CommitteeManager.get_meeting_votes(m.get('id'))
                 all_votes.extend(votes)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         for v in all_votes:
             vote_id = v.get('id')

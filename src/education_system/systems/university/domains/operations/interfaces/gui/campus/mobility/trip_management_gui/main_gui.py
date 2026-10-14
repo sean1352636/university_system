@@ -15,13 +15,12 @@ from education_system.systems.university.domains.operations.interfaces.gui.campu
 if CALENDAR_AVAILABLE:
     from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui._imports import CalendarConfig, AcademicCalendarManager
 
-from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui.trip_dialogs import TripDetailsDialog, CreateTripDialog, UpdateTripDialog, TripSelectionDialog
+from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui.trip_dialogs import TripDetailsDialog, CreateTripDialog, UpdateTripDialog, TripSelectionDialog, notify_trip_participants
 from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui.registration_dialogs import CancelRegistrationDialog, RegisterForTripDialog, PaymentStatusDialog, ParticipantStatusDialog
 from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui.itinerary_dialogs import ViewItineraryDialog, ItineraryDialog
 from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui.expense_dialogs import AddExpenseDialog, EditExpenseDialog
 from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui.staff_dialogs import AssignStaffDialog
 from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui.report_dialogs import ReportGeneratorDialog
-from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui.calendar_dialogs import CreateCalendarEventDialog
 from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui.export_dialog import ExportDataDialog
 from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui.about_dialog import AboutDialog
 
@@ -61,7 +60,7 @@ class TripManagementGUI:
         if self.root is None:
             self.root = tk.Tk()
         # It's fine to set title/geometry on a Toplevel as well
-        self.root.title(_t("trip.title"))
+        self.root.title(_t("trip.title", default="Trip Management"))
         self.root.geometry("1400x900+%d+%d" % ((self.root.winfo_screenwidth() - 1400) // 2, (self.root.winfo_screenheight() - 900) // 2))
         self.root.minsize(1200, 800)
 
@@ -105,77 +104,92 @@ class TripManagementGUI:
 
         # Admin/Staff can export data
         if is_admin or is_staff:
-            file_menu.add_command(label=_t("trip.menu.export_data"), command=self.export_data)
+            file_menu.add_command(label=_t("trip.menu.export_data", default="Export Data"), command=self.export_data)
             file_menu.add_separator()
 
-        file_menu.add_command(label=_t("common.exit"), command=self.root.quit)
+        # No Exit item: the window has a "Return to Main Menu" button, and
+        # root.quit() tore down the whole application when Trip Management
+        # was opened as a Toplevel from the main GUI.
 
         # Trip menu
         trip_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label=_t("trip.menu.trips"), menu=trip_menu)
-        trip_menu.add_command(label=_t("trip.menu.view_all_trips"), command=self.show_trips_view)
+        menubar.add_cascade(label=_t("trip.menu.trips", default="Trips"), menu=trip_menu)
+        trip_menu.add_command(label=_t("trip.menu.view_all_trips", default="View All Trips"), command=self.show_trips_view)
 
         # Admin/Staff can create trips
         if is_admin or is_staff:
-            trip_menu.add_command(label=_t("trip.menu.create_new_trip"), command=self.show_create_trip)
+            trip_menu.add_command(label=_t("trip.menu.create_new_trip", default="Create New Trip"), command=self.show_create_trip)
+
+        # View / Update / Delete: the dialogs existed but nothing reached them.
+        trip_menu.add_command(
+            label=_t("trip.menu.view_trip_details", default="View Trip Details"),
+            command=self.view_trip)
+        if is_admin or is_staff:
+            trip_menu.add_command(
+                label=_t("trip.menu.update_trip", default="Update Trip"),
+                command=self.update_trip)
+            trip_menu.add_command(
+                label=_t("trip.menu.delete_trip", default="Delete Trip"),
+                command=self.delete_trip)
 
         trip_menu.add_separator()
-        trip_menu.add_command(label=_t("trip.menu.my_registrations"), command=self.show_my_registrations)
+        trip_menu.add_command(label=_t("trip.menu.my_registrations", default="My Registrations"), command=self.show_my_registrations)
 
         # Cross-domain: surface risk-register entries linked to a
         # trip via risk_bus.list_risks_for("trip:N").
         def _show_trip_risks():
-            from tkinter import simpledialog
-            from education_system.systems.university.services.bus.risks_panel import (
-                show_risks_for,
-            )
-            tid = simpledialog.askstring(
-                _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.trip_risks', default="Trip risks"),
-                _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.trip_id_numeric', default="Trip ID (numeric):"), parent=self.root,
-            )
-            if not tid:
-                return
-            show_risks_for(self.root, f"trip:{tid.strip()}",
-                           title=f"Risks for trip {tid}")
+            # Was a free-text prompt that accepted any number, including ids
+            # with no trip behind them — which then showed an empty risk list
+            # indistinguishable from "this trip has no risks". Pick from the
+            # trips that actually exist instead.
+            def _open(trip_id):
+                from education_system.systems.university.services.bus.risks_panel import (
+                    show_risks_for,
+                )
+                name = self._trip_name(trip_id) or trip_id
+                show_risks_for(self.root, f"trip:{trip_id}",
+                               title=f"Risks for trip {name}")
+
+            TripSelectionDialog(self.root, self.auth, _open)
         trip_menu.add_separator()
         trip_menu.add_command(label=_t('gui.operations.campus.mobility.trip_management_gui.main.menus.view_trip_risks', default="View trip risks"),
                               command=_show_trip_risks)
 
         if self.auth.check_permission('cancel_trip_registration'):
-            trip_menu.add_command(label=_t("trip.menu.cancel_registration"), command=self.cancel_selected_registration)
+            trip_menu.add_command(label=_t("trip.menu.cancel_registration", default="Cancel Registration"), command=self.cancel_selected_registration)
 
         # Itinerary submenu
         if self.auth.check_permission('view_trips'):
             itinerary_menu = tk.Menu(trip_menu, tearoff=0)
-            trip_menu.add_cascade(label=_t("trip.menu.itinerary"), menu=itinerary_menu)
-            itinerary_menu.add_command(label=_t("trip.menu.view_trip_itinerary"), command=self.view_trip_itinerary)
+            trip_menu.add_cascade(label=_t("trip.menu.itinerary", default="Itinerary"), menu=itinerary_menu)
+            itinerary_menu.add_command(label=_t("trip.menu.view_trip_itinerary", default="View Trip Itinerary"), command=self.view_trip_itinerary)
 
             # Admin/Staff can manage itinerary
             if (is_admin or is_staff) and (self.auth.check_permission('manage_trips') or self.auth.check_permission('create_trips')):
-                itinerary_menu.add_command(label=_t("trip.menu.manage_itinerary"), command=self.add_trip_itinerary)
+                itinerary_menu.add_command(label=_t("trip.menu.manage_itinerary", default="Manage Itinerary"), command=self.add_trip_itinerary)
 
         # Reports menu (Admin/Staff only)
         if is_admin or is_staff:
             reports_menu = tk.Menu(menubar, tearoff=0)
-            menubar.add_cascade(label=_t("trip.menu.reports"), menu=reports_menu)
-            reports_menu.add_command(label=_t("trip.menu.trip_summary"), command=self.generate_trip_summary_report)
-            reports_menu.add_command(label=_t("trip.menu.participant_list"), command=self.generate_participant_report)
-            reports_menu.add_command(label=_t("trip.menu.financial_report"), command=self.generate_financial_report)
+            menubar.add_cascade(label=_t("trip.menu.reports", default="Reports"), menu=reports_menu)
+            reports_menu.add_command(label=_t("trip.menu.trip_summary", default="Trip Summary"), command=self.generate_trip_summary_report)
+            reports_menu.add_command(label=_t("trip.menu.participant_list", default="Participant List"), command=self.generate_participant_report)
+            reports_menu.add_command(label=_t("trip.menu.financial_report", default="Financial Report"), command=self.generate_financial_report)
 
         # Admin menu (Admin only)
         if is_admin and self.auth and self.auth.current_user and self.auth.check_permission('manage_trips'):
             admin_menu = tk.Menu(menubar, tearoff=0)
-            menubar.add_cascade(label=_t("trip.menu.admin"), menu=admin_menu)
-            admin_menu.add_command(label=_t("trip.menu.manage_participants"), command=self.show_manage_participants)
-            admin_menu.add_command(label=_t("trip.menu.assign_staff"), command=self.show_assign_staff)
-            admin_menu.add_command(label=_t("trip.menu.manage_expenses"), command=self.show_manage_expenses)
+            menubar.add_cascade(label=_t("trip.menu.admin", default="Admin"), menu=admin_menu)
+            admin_menu.add_command(label=_t("trip.menu.manage_participants", default="Manage Participants"), command=self.show_manage_participants)
+            admin_menu.add_command(label=_t("trip.menu.assign_staff", default="Assign Staff"), command=self.show_assign_staff)
+            admin_menu.add_command(label=_t("trip.menu.manage_expenses", default="Manage Expenses"), command=self.show_manage_expenses)
             admin_menu.add_separator()
-            admin_menu.add_command(label=_t("trip.menu.assign_trip_staff"), command=self.assign_trip_staff)
+            admin_menu.add_command(label=_t("trip.menu.assign_trip_staff", default="Assign Trip Staff"), command=self.assign_trip_staff)
 
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label=_t("menu.help"), menu=help_menu)
-        help_menu.add_command(label=_t("trip.menu.about"), command=self.show_about)
+        help_menu.add_command(label=_t("trip.menu.about", default="About"), command=self.show_about)
 
     def create_main_menu_button(self):
         """Place a persistent main-menu button in the top-right corner"""
@@ -200,7 +214,7 @@ class TripManagementGUI:
         header_frame = ttk.Frame(self.main_frame)
         header_frame.pack(fill=tk.X, pady=(0, 20))
 
-        ttk.Label(header_frame, text=_t("trip.header_title"),
+        ttk.Label(header_frame, text=_t("trip.header_title", default="Trip Management"),
                  font=('Arial', 18, 'bold')).pack(side=tk.LEFT)
 
         if self.auth and self.auth.current_user:
@@ -233,7 +247,7 @@ class TripManagementGUI:
     def add_trips_tab(self):
         """Add the trips overview tab"""
         trips_frame = ttk.Frame(self.notebook)
-        self.notebook.add(trips_frame, text=_t("trip.tabs.all_trips"))
+        self.notebook.add(trips_frame, text=_t("trip.tabs.all_trips", default="All Trips"))
 
         # Toolbar
         toolbar = ttk.Frame(trips_frame)
@@ -242,7 +256,7 @@ class TripManagementGUI:
         ttk.Button(toolbar, text=_t("common.refresh"), command=self.refresh_trips).pack(side=tk.LEFT, padx=(0, 5))
 
         if self.auth.check_permission('create_trips'):
-            ttk.Button(toolbar, text=_t("trip.btn.create_trip"), command=self.show_create_trip).pack(side=tk.LEFT, padx=5)
+            ttk.Button(toolbar, text=_t("trip.btn.create_trip", default="Create Trip"), command=self.show_create_trip).pack(side=tk.LEFT, padx=5)
 
         # Search frame
         search_frame = ttk.Frame(toolbar)
@@ -415,9 +429,9 @@ class TripManagementGUI:
         ttk.Button(cal_buttons_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.buttons.view_trip_events_in_calendar', default="View Trip Events in Calendar"),
                   command=self.view_trip_events_in_calendar).pack(pady=5, fill=tk.X)
 
-        if self.auth.check_permission('manage_schedules'):
-            ttk.Button(cal_buttons_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.buttons.create_calendar_event_for_trip', default="Create Calendar Event for Trip"),
-                      command=self.create_trip_calendar_event).pack(pady=5, fill=tk.X)
+        # Calendar events for trips are no longer created from here. A trip
+        # now starts life as a Trip-typed event in the Academic Calendar,
+        # which registers the trip itself — one direction, not two.
 
         # Calendar view area
         self.calendar_tree = ttk.Treeview(calendar_frame, columns=('trip', 'event', 'start_date', 'status'), show='tree headings')
@@ -1445,6 +1459,43 @@ class TripManagementGUI:
             else:
                 messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.error', default="Error"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.failed_to_delete_expense', default="Failed to delete expense"))
 
+    def _trip_name(self, trip_id):
+        """Trip name for a id, or None if it has gone."""
+        def op(conn):
+            row = conn.cursor().execute(
+                "SELECT trip_name FROM trips WHERE id = ?", (trip_id,)).fetchone()
+            return row[0] if row else None
+        return self.safe_db_operation(op)
+
+    def view_trip(self):
+        """Pick a trip and show its details."""
+        TripSelectionDialog(self.root, self.auth, self.open_trip_details)
+
+    def open_trip_details(self, trip_id):
+        """Open the read-only details dialog for a trip."""
+        def op(conn):
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM trips WHERE id = ?", (trip_id,))
+            trip = cursor.fetchone()
+            if not trip:
+                return None, []
+            cursor.execute(
+                """SELECT p.id, p.student_id, p.status, p.payment_status,
+                          COALESCE(u.first_name || ' ' || u.last_name, p.student_id)
+                     FROM trip_participants p
+                     LEFT JOIN users u ON u.id = p.user_id
+                    WHERE p.trip_id = ?""", (trip_id,))
+            return trip, cursor.fetchall()
+
+        result = self.safe_db_operation(op)
+        if not result or result[0] is None:
+            messagebox.showerror(
+                _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.error', default="Error"),
+                _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.trip_not_found', default="That trip no longer exists."))
+            return
+        trip, participants = result
+        TripDetailsDialog(self.root, trip, participants)
+
     def update_trip(self):
         """Update trip information"""
         # Show trip selection dialog first
@@ -1469,13 +1520,22 @@ class TripManagementGUI:
         trip_name = self.safe_db_operation(get_trip_info_operation)
 
         if trip_name and messagebox.askyesno(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.confirm_deletion', default="Confirm Deletion"), f"Are you sure you want to delete trip '{trip_name}'?"):
+            # Email the participants *before* the delete: their registrations
+            # go with the trip, so afterwards there is no one left to tell.
+            from datetime import datetime as _dt
+            sent = notify_trip_participants(
+                trip_id, "trip_cancelled",
+                {"cancelled_date": _dt.now().strftime("%Y-%m-%d %H:%M"),
+                 "reason_line": ""})
+
             def delete_trip_operation(conn):
                 cursor = conn.cursor()
                 cursor.execute('DELETE FROM trips WHERE id = ?', (trip_id,))
                 return True
 
             if self.safe_db_operation(delete_trip_operation):
-                messagebox.showinfo(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.success', default="Success"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.trip_deleted_successfully', default="Trip deleted successfully"))
+                note = f"\n\n{sent} participant(s) emailed." if sent else ""
+                messagebox.showinfo(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.success', default="Success"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.trip_deleted_successfully', default="Trip deleted successfully") + note)
                 self.refresh_trips()
                 self.load_trip_summary()
             else:
@@ -1506,7 +1566,7 @@ class TripManagementGUI:
                    e.name as calendar_event_name,
                    e.id as calendar_event_id
             FROM trips t
-            LEFT JOIN academic_calendar_events e ON t.id = e.trip_id
+            LEFT JOIN (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') e ON t.id = e.trip_id
             ORDER BY t.start_date ASC
             ''')
 
@@ -1603,14 +1663,6 @@ class TripManagementGUI:
             logging.error(f"Error viewing trip events in calendar: {e}")
             messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.error', default="Error"), f"Failed to view trip events: {str(e)}")
 
-    def create_trip_calendar_event(self):
-        """Create calendar event for trip"""
-        if not self.calendar_manager:
-            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.calendar_unavailable', default="Calendar Unavailable"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.calendar_integration_is_not_available', default="Calendar integration is not available."))
-            return
-
-        CreateCalendarEventDialog(self.root, self.auth, self.calendar_manager, self.show_trips_with_calendar)
-
     def return_to_main_menu(self):
         """Return to the main menu"""
         try:
@@ -1621,7 +1673,7 @@ class TripManagementGUI:
             else:
                 # Running standalone, need to create main GUI
                 self.root.destroy()
-                from education_system.systems.university.interfaces.gui.shell.main import UnifiedManagementGUI
+                from education_system.systems.university.shell.gui.main import UnifiedManagementGUI
                 app = UnifiedManagementGUI(self.auth)
                 app.run()
         except Exception as e:

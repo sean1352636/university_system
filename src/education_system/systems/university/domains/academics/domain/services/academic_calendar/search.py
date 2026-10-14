@@ -26,7 +26,7 @@ class AdvancedSearchManager:
                        GROUP_CONCAT(DISTINCT et.name) as tags,
                        GROUP_CONCAT(DISTINCT c.name) as courses,
                        ec.name as category_name
-                FROM academic_calendar_events e
+                FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') e
                 LEFT JOIN event_tag_assignments eta ON e.id = eta.event_id
                 LEFT JOIN event_tags et ON eta.tag_id = et.id
                 LEFT JOIN course_events ce ON e.id = ce.event_id

@@ -111,17 +111,17 @@ class DbOperationsMixin:
                         for _sid, _mod in module_data:
                             assess_module_enrolment_fee(_sid, _mod)
                     except Exception:
-                        pass  # best-effort; never block batch import
+                        logger.debug("Suppressed exception", exc_info=True)
 
                     # Auto-place library holds for required textbooks.
                     try:
-                        from education_system.systems.university.domains.operations.domain.commerce.textbooks.services.library_holds import (
+                        from education_system.systems.university.plugins.campus_commerce.domain.textbooks.services.library_holds import (
                             place_holds_for_enrolment,
                         )
                         for _sid, _mod in module_data:
                             place_holds_for_enrolment(_sid, _mod)
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
 
                     # Materialise derived student timetables.
                     try:
@@ -131,7 +131,7 @@ class DbOperationsMixin:
                         for _sid, _mod in module_data:
                             sync_for_student_enrolment(_sid, _mod)
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
 
                     result.successful_imports += 1
 
@@ -153,15 +153,15 @@ class DbOperationsMixin:
                     self.save_import_progress(remaining_records, len(records), f"import_resume_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pkl")
 
             conn.commit()
-            print("\n" + _t("shared.utils.batch_operations.import_success", count=result.successful_imports))
+            print("\n" + _t("shared.utils.batch_operations.import_success", count=result.successful_imports, default="Import Success {count}"))
 
             if result.failed_imports > 0:
-                print(_t("shared.utils.batch_operations.import_failed", count=result.failed_imports))
+                print(_t("shared.utils.batch_operations.import_failed", count=result.failed_imports, default="Import Failed {count}"))
 
         except sqlite3.Error as e:
             conn.rollback()
             logger.error(f"Database error during import: {e}")
-            print(_t("shared.utils.batch_operations.database_error", error=str(e)))
+            print(_t("shared.utils.batch_operations.database_error", error=str(e), default="Database Error {error}"))
             result.failed_imports = len(records)
         finally:
             conn.close()
@@ -227,7 +227,7 @@ class DbOperationsMixin:
 
         # Create backup before updates
         backup_path = self.create_database_backup(auto=True)
-        print(_t("shared.utils.batch_operations.backup_created", path=backup_path))
+        print(_t("shared.utils.batch_operations.backup_created", path=backup_path, default="Backup Created {path}"))
 
         try:
             # Read file
@@ -274,7 +274,7 @@ class DbOperationsMixin:
 
                 progress.update()
 
-            print("\n" + _t("shared.utils.batch_operations.validation_stats", valid=len(valid_records), errors=len(error_records)))
+            print("\n" + _t("shared.utils.batch_operations.validation_stats", valid=len(valid_records), errors=len(error_records), default="Validation Stats {errors} {valid}"))
 
             if error_records:
                 self.display_validation_errors(error_records)
@@ -292,7 +292,7 @@ class DbOperationsMixin:
 
         except Exception as e:
             logger.error(f"Error processing update file: {e}")
-            print(_t("shared.utils.batch_operations.error_processing", error=str(e)))
+            print(_t("shared.utils.batch_operations.error_processing", error=str(e), default="Error Processing. {error}"))
 
     def update_batch_records(self, records: List[Dict]) -> ImportResult:
         """Enhanced batch update with comprehensive tracking"""
@@ -376,15 +376,15 @@ class DbOperationsMixin:
                 progress.update()
 
             conn.commit()
-            print("\n" + _t("shared.utils.batch_operations.update_success", count=result.successful_imports))
+            print("\n" + _t("shared.utils.batch_operations.update_success", count=result.successful_imports, default="Update Success {count}"))
 
             if result.failed_imports > 0:
-                print(_t("shared.utils.batch_operations.update_failed", count=result.failed_imports))
+                print(_t("shared.utils.batch_operations.update_failed", count=result.failed_imports, default="Update Failed {count}"))
 
         except sqlite3.Error as e:
             conn.rollback()
             logger.error(f"Database error during batch update: {e}")
-            print(_t("shared.utils.batch_operations.database_error_update", error=str(e)))
+            print(_t("shared.utils.batch_operations.database_error_update", error=str(e), default="Database Error Update {error}"))
         finally:
             conn.close()
             result.end_time = datetime.datetime.now()
@@ -407,6 +407,7 @@ class DbOperationsMixin:
             # Capture which of the old course-specific modules the student
             # was actually enrolled in so we can cancel their unpaid fees.
             actually_dropped = [
+                # db-audit: ignore[DBW001] - join of placeholders
                 row[0] for row in cursor.execute(
                     f'SELECT module_code FROM student_modules '
                     f'WHERE student_id = ? AND module_code IN ({placeholders})',
@@ -414,6 +415,7 @@ class DbOperationsMixin:
                 ).fetchall()
             ]
 
+            # db-audit: ignore[DBW001] - join of placeholders
             cursor.execute(f'''
             DELETE FROM student_modules
             WHERE student_id = ? AND module_code IN ({placeholders})
@@ -449,12 +451,12 @@ class DbOperationsMixin:
                 for _sid, code in module_data:
                     assess_module_enrolment_fee(_sid, code)
             except Exception:
-                pass  # best-effort
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Sync library holds: release dropped modules, place new.
             new_codes = {m for _s, m in module_data}
             try:
-                from education_system.systems.university.domains.operations.domain.commerce.textbooks.services.library_holds import (
+                from education_system.systems.university.plugins.campus_commerce.domain.textbooks.services.library_holds import (
                     place_holds_for_enrolment,
                     release_holds_for_drop,
                 )
@@ -464,7 +466,7 @@ class DbOperationsMixin:
                 for _sid, code in module_data:
                     place_holds_for_enrolment(_sid, code)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Sync derived timetable rows.
             try:
@@ -477,7 +479,7 @@ class DbOperationsMixin:
                 for _sid, code in module_data:
                     sync_for_student_enrolment(_sid, code)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         except Exception as e:
             logger.error(f"Error updating modules for student {student_id}: {e}")
@@ -534,7 +536,7 @@ class DbOperationsMixin:
             print(_t("shared.utils.batch_operations.no_students_found"))
             return
 
-        print(_t("shared.utils.batch_operations.found_students", count=len(student_ids)))
+        print(_t("shared.utils.batch_operations.found_students", count=len(student_ids), default="Found Students {count}"))
 
         # Get module to add
         module_code = input(_t("shared.utils.batch_operations.prompt_module_code"))
@@ -542,7 +544,7 @@ class DbOperationsMixin:
         module_type = input(_t("shared.utils.batch_operations.prompt_module_type"))
 
         # Confirm operation
-        confirm = input(_t("shared.utils.batch_operations.confirm_add_module", code=module_code, count=len(student_ids)))
+        confirm = input(_t("shared.utils.batch_operations.confirm_add_module", code=module_code, count=len(student_ids), default="Confirm Add Module {code} {count}"))
         if confirm.lower() != 'y':
             return
 
@@ -570,17 +572,17 @@ class DbOperationsMixin:
             conn.close()
 
             if not student_ids:
-                print(_t("shared.utils.batch_operations.no_students_with_module", code=module_code))
+                print(_t("shared.utils.batch_operations.no_students_with_module", code=module_code, default="No Students With Module. {code}"))
                 return
 
-            print(_t("shared.utils.batch_operations.students_with_module", count=len(student_ids), code=module_code))
+            print(_t("shared.utils.batch_operations.students_with_module", count=len(student_ids), code=module_code, default="Students With Module {code} {count}"))
 
-            confirm = input(_t("shared.utils.batch_operations.confirm_remove_module", code=module_code, count=len(student_ids)))
+            confirm = input(_t("shared.utils.batch_operations.confirm_remove_module", code=module_code, count=len(student_ids), default="Confirm Remove Module {code} {count}"))
             if confirm.lower() == 'y':
                 self.execute_bulk_module_operation('remove', student_ids, module_code)
 
         except sqlite3.Error as e:
-            print(_t("shared.utils.batch_operations.database_error", error=str(e)))
+            print(_t("shared.utils.batch_operations.database_error", error=str(e), default="Database Error {error}"))
 
     def bulk_replace_modules(self):
         """Replace one module with another for multiple students"""
@@ -606,12 +608,12 @@ class DbOperationsMixin:
             conn.close()
 
             if not student_ids:
-                print(_t("shared.utils.batch_operations.no_students_with_module", code=old_module))
+                print(_t("shared.utils.batch_operations.no_students_with_module", code=old_module, default="No Students With Module. {code}"))
                 return
 
-            print(_t("shared.utils.batch_operations.students_with_module", count=len(student_ids), code=old_module))
+            print(_t("shared.utils.batch_operations.students_with_module", count=len(student_ids), code=old_module, default="Students With Module {code} {count}"))
 
-            confirm = input(_t("shared.utils.batch_operations.confirm_replace_module", old=old_module, new=new_module_code, count=len(student_ids)))
+            confirm = input(_t("shared.utils.batch_operations.confirm_replace_module", old=old_module, new=new_module_code, count=len(student_ids), default="Confirm Replace Module {count} {new} {old}"))
             if confirm.lower() == 'y':
                 # Remove old module
                 self.execute_bulk_module_operation('remove', student_ids, old_module)
@@ -619,7 +621,7 @@ class DbOperationsMixin:
                 self.execute_bulk_module_operation('add', student_ids, new_module_code, new_module_name, new_module_type)
 
         except sqlite3.Error as e:
-            print(_t("shared.utils.batch_operations.database_error", error=str(e)))
+            print(_t("shared.utils.batch_operations.database_error", error=str(e), default="Database Error {error}"))
 
     def import_module_enrollments(self):
         """Import module enrollments from file"""
@@ -639,19 +641,19 @@ class DbOperationsMixin:
                 missing_fields = [f for f in required_fields if f not in reader.fieldnames]
 
                 if missing_fields:
-                    print(_t("shared.utils.batch_operations.missing_required_fields", fields=', '.join(missing_fields)))
+                    print(_t("shared.utils.batch_operations.missing_required_fields", fields=', '.join(missing_fields), default="Missing Required Fields {fields}"))
                     return
 
                 enrollments = list(reader)
 
-            print(_t("shared.utils.batch_operations.found_enrollment_records", count=len(enrollments)))
+            print(_t("shared.utils.batch_operations.found_enrollment_records", count=len(enrollments), default="Found Enrollment Records {count}"))
 
             confirm = input(_t("shared.utils.batch_operations.prompt_import_enrollments"))
             if confirm.lower() == 'y':
                 self.process_module_enrollments(enrollments)
 
         except Exception as e:
-            print(_t("shared.utils.batch_operations.error_reading_file", error=str(e)))
+            print(_t("shared.utils.batch_operations.error_reading_file", error=str(e), default="Error Reading File. {error}"))
 
     def execute_bulk_module_operation(self, operation: str, student_ids: List[str], module_code: str, module_name: str = None, module_type: str = None):
         """Execute bulk module operations"""
@@ -694,7 +696,7 @@ class DbOperationsMixin:
                                 assess_module_enrolment_fee,
                                 cancel_module_enrolment_fee,
                             )
-                            from education_system.systems.university.domains.operations.domain.commerce.textbooks.services.library_holds import (
+                            from education_system.systems.university.plugins.campus_commerce.domain.textbooks.services.library_holds import (
                                 place_holds_for_enrolment,
                                 release_holds_for_drop,
                             )
@@ -711,7 +713,7 @@ class DbOperationsMixin:
                                 release_holds_for_drop(student_id, module_code)
                                 clear_for_student_drop(student_id, module_code)
                         except Exception:
-                            pass
+                            logger.debug("Suppressed exception", exc_info=True)
 
                 except sqlite3.Error as e:
                     logger.error(f"Error {operation}ing module for student {student_id}: {e}")
@@ -719,11 +721,11 @@ class DbOperationsMixin:
                 progress.update()
 
             conn.commit()
-            print("\n" + _t("shared.utils.batch_operations.module_operation_success", operation=operation, count=success_count))
+            print("\n" + _t("shared.utils.batch_operations.module_operation_success", operation=operation, count=success_count, default="Module Operation Success {count} {operation}"))
 
         except sqlite3.Error as e:
             conn.rollback()
-            print(_t("shared.utils.batch_operations.database_error", error=str(e)))
+            print(_t("shared.utils.batch_operations.database_error", error=str(e), default="Database Error {error}"))
         finally:
             conn.close()
 
@@ -745,7 +747,7 @@ class DbOperationsMixin:
                 missing_fields = [f for f in required_fields if f not in reader.fieldnames]
 
                 if missing_fields:
-                    print(_t("shared.utils.batch_operations.missing_required_fields", fields=', '.join(missing_fields)))
+                    print(_t("shared.utils.batch_operations.missing_required_fields", fields=', '.join(missing_fields), default="Missing Required Fields {fields}"))
                     return
 
                 for row in reader:
@@ -755,11 +757,11 @@ class DbOperationsMixin:
                         if 0 <= grade_value <= 100:
                             grades.append(row)
                         else:
-                            print(_t("shared.utils.batch_operations.invalid_grade_value", grade=grade_value, student_id=row['student_id']))
+                            print(_t("shared.utils.batch_operations.invalid_grade_value", grade=grade_value, student_id=row['student_id'], default="Invalid Grade Value. {grade} {student_id}"))
                     except ValueError:
-                        print(_t("shared.utils.batch_operations.invalid_grade_format", grade=row['grade'], student_id=row['student_id']))
+                        print(_t("shared.utils.batch_operations.invalid_grade_format", grade=row['grade'], student_id=row['student_id'], default="Invalid Grade Format. {grade} {student_id}"))
 
-            print(_t("shared.utils.batch_operations.found_grade_records", count=len(grades)))
+            print(_t("shared.utils.batch_operations.found_grade_records", count=len(grades), default="Found Grade Records {count}"))
 
             if grades:
                 confirm = input(_t("shared.utils.batch_operations.prompt_import_grades"))
@@ -767,7 +769,7 @@ class DbOperationsMixin:
                     self.process_grade_data(grades)
 
         except Exception as e:
-            print(_t("shared.utils.batch_operations.error_reading_grade_file", error=str(e)))
+            print(_t("shared.utils.batch_operations.error_reading_grade_file", error=str(e), default="Error Reading Grade File. {error}"))
 
     def process_grade_data(self, grades: List[Dict]):
         """Process and import grade data"""
@@ -816,11 +818,11 @@ class DbOperationsMixin:
                 progress.update()
 
             conn.commit()
-            print("\n" + _t("shared.utils.batch_operations.grades_import_success", count=success_count))
+            print("\n" + _t("shared.utils.batch_operations.grades_import_success", count=success_count, default="Grades Import Success {count}"))
 
         except sqlite3.Error as e:
             conn.rollback()
-            print(_t("shared.utils.batch_operations.database_error", error=str(e)))
+            print(_t("shared.utils.batch_operations.database_error", error=str(e), default="Database Error {error}"))
         finally:
             conn.close()
 
@@ -930,13 +932,13 @@ class DbOperationsMixin:
                 progress.update()
 
             conn.commit()
-            print("\n" + _t("shared.utils.batch_operations.enrollments_processed", count=success_count))
+            print("\n" + _t("shared.utils.batch_operations.enrollments_processed", count=success_count, default="Enrollments Processed {count}"))
             if error_count > 0:
-                print(_t("shared.utils.batch_operations.enrollments_failed", count=error_count))
+                print(_t("shared.utils.batch_operations.enrollments_failed", count=error_count, default="Enrollments Failed {count}"))
 
         except sqlite3.Error as e:
             conn.rollback()
-            print(_t("shared.utils.batch_operations.database_error", error=str(e)))
+            print(_t("shared.utils.batch_operations.database_error", error=str(e), default="Database Error {error}"))
         finally:
             conn.close()
 

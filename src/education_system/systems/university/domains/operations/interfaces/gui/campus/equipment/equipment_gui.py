@@ -343,7 +343,7 @@ class EquipmentRentalGUI:
         # any other value filters the list to a single RENTAL_STATUSES value
         filter_frame = ttk.Frame(left_frame)
         filter_frame.pack(fill=tk.X, pady=(0, 10))
-        ttk.Label(filter_frame, text=_t("equipment.labels.status") + ":").pack(side=tk.LEFT)
+        ttk.Label(filter_frame, text=_t("equipment.labels.status", default="Status") + ":").pack(side=tk.LEFT)
         self.returns_status_filter = ttk.Combobox(
             filter_frame, values=['active'] + RENTAL_STATUSES, width=15, state='readonly')
         self.returns_status_filter.set('active')
@@ -651,7 +651,7 @@ class EquipmentRentalGUI:
             total = item['daily_rate'] * days * quantity
             self.rental_cost_var.set(f"£{total:.2f} ({days} days x {quantity})")
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _clear_rental_form(self):
         """Clear the rental form"""

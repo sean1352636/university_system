@@ -1,4 +1,5 @@
 """Budget category management"""
+from education_system.systems.university.shell.gui import report_view as _rv
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -470,7 +471,7 @@ class BudgetCategoriesMixin:
             output = mystdout.getvalue()
             sys.stdout = old_stdout
 
-            text_widget = ScrolledText(dialog, height=25, width=80, font=('Courier', 10))
+            text_widget = _rv.TextReportView(dialog, height=25, width=80, font=('Courier', 10))
             text_widget.pack(fill='both', expand=True, padx=10, pady=10)
             text_widget.insert('1.0', output)
 

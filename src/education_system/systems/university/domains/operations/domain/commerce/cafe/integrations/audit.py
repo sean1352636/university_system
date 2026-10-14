@@ -1,2 +1,11 @@
-from education_system.systems.university.infrastructure.utils.activity_logger import log_activity, log_create, log_read, log_update, log_delete, log_menu_navigation
-__all__ = [name for name in globals() if name.startswith("log_")]
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.domain.cafe.integrations.audit`` (campus commerce plugin).
+
+The old name *is* the new module object, so ``mock.patch`` and
+``monkeypatch`` targets still act on the real code. Delete once nothing
+imports the old path.
+"""
+# layout-shim: education_system.systems.university.plugins.campus_commerce.domain.cafe.integrations.audit
+import importlib as _importlib
+import sys as _sys
+
+_sys.modules[__name__] = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.domain.cafe.integrations.audit")

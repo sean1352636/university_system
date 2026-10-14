@@ -58,28 +58,33 @@ class AuditAction(str, Enum):
     SAFEGUARDING_REPORT = "safeguarding.report"
     SAFEGUARDING_VIEW = "safeguarding.view"
 
+    # Cross-system — data or identity crossing a system boundary. Kept
+    # apart from data.* so a funding or data-protection audit can ask
+    # "what left this system, and on whose authority?" in one filter.
+    CROSS_SYSTEM_TRANSFER = "cross_system.transfer"
+    CROSS_BOUNDARY_HANDOVER = "cross_system.handover"
+    CROSS_SYSTEM_ACCESS = "cross_system.access"
+    IDENTITY_MERGE = "cross_system.identity_merge"
 
-_SCHEMA = """
-CREATE TABLE IF NOT EXISTS audit_log (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    timestamp TEXT NOT NULL DEFAULT (datetime('now')),
-    system_key TEXT NOT NULL,
-    action TEXT NOT NULL,
-    user_id INTEGER,
-    username TEXT,
-    target_type TEXT,
-    target_id TEXT,
-    details TEXT,
-    ip_address TEXT,
-    user_agent TEXT
-);
 
-CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_log(timestamp);
-CREATE INDEX IF NOT EXISTS idx_audit_system ON audit_log(system_key);
-CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_log(action);
-CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_log(user_id);
-CREATE INDEX IF NOT EXISTS idx_audit_target ON audit_log(target_type, target_id);
-"""
+# The audit_log table is owned by `audit_service`, which is the only
+# module that may define its shape.
+#
+# This module used to carry a rival CREATE TABLE of its own, naming the
+# columns target_type / target_id / user_agent where the canonical table
+# names them resource_type / resource_id and adds severity + checksum.
+# Both used CREATE TABLE IF NOT EXISTS against the same file, so whichever
+# ran first won and the other silently wrote to a table it did not
+# describe. In practice audit_service won — it holds the live rows — and
+# every write from here failed at `CREATE INDEX ... (target_type, ...)`
+# with "no such column: target_type", taking the calling operation down
+# with it because an unrecorded audit entry raises.
+#
+# The public keyword arguments below stay `target_type` / `target_id`:
+# they are this class's vocabulary, callers use them, and they map onto
+# the canonical columns on the way in.
+_TARGET_TO_RESOURCE = {"target_type": "resource_type",
+                       "target_id": "resource_id"}
 
 
 class AuditLogger:
@@ -106,11 +111,10 @@ class AuditLogger:
         return conn
 
     def _ensure_db(self) -> None:
-        conn = self._connect()
-        try:
-            conn.executescript(_SCHEMA)
-        finally:
-            conn.close()
+        """Create the canonical table via its owner, never a local copy."""
+        from education_system.platform.governance.audit import audit_service
+
+        audit_service.init_audit_db(self._db_path)
 
     def log(
         self,
@@ -123,31 +127,46 @@ class AuditLogger:
         details: dict | str | None = None,
         ip_address: str | None = None,
         user_agent: str | None = None,
+        severity: str = "info",
     ) -> int:
         """Record an audit entry. Returns the entry ID.
+
+        Writes through `AuditService` so the row carries the same columns
+        and the same tamper-detection checksum as every other entry — a
+        row this class wrote by hand would fail `verify_integrity`, which
+        reads exactly like evidence of tampering.
 
         Raises:
             SecurityControlError: if the entry could not be written. Audit is a
                 security control; a caller that cannot record what it did must
                 not proceed as though it had.
         """
+        from education_system.platform.governance.audit.audit_service import (
+            AuditService,
+        )
+
         if isinstance(action, AuditAction):
             action = action.value
-        if isinstance(details, dict):
-            details = json.dumps(details)
 
-        conn = self._connect()
+        # The canonical table has no user_agent column. It travels inside
+        # details rather than being dropped: for the auth events this
+        # logger records, the client string is often the only thing that
+        # distinguishes a normal login from a suspicious one.
+        if user_agent:
+            if isinstance(details, dict):
+                details = {**details, "user_agent": user_agent}
+            elif details is None:
+                details = {"user_agent": user_agent}
+            else:
+                details = f"{details} [user_agent={user_agent}]"
+
         try:
-            cursor = conn.execute(
-                """INSERT INTO audit_log
-                   (system_key, action, user_id, username, target_type,
-                    target_id, details, ip_address, user_agent)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (self.system_key, action, user_id, username, target_type,
-                 target_id, details, ip_address, user_agent),
+            return AuditService(self._db_path).log(
+                action, system_key=self.system_key, user_id=user_id,
+                username=username, resource_type=target_type,
+                resource_id=target_id, details=details,
+                ip_address=ip_address, severity=severity,
             )
-            conn.commit()
-            return cursor.lastrowid
         except Exception as e:
             # An audit write that fails is a control failure, not a warning to
             # be dropped on the floor: the caller had every reason to believe
@@ -165,8 +184,6 @@ class AuditLogger:
                 exc=e,
             )
             raise SecurityControlError("audit.write", str(e), cause=e) from e
-        finally:
-            conn.close()
 
     def query(
         self,
@@ -203,10 +220,10 @@ class AuditLogger:
             conditions.append("username = ?")
             params.append(username)
         if target_type:
-            conditions.append("target_type = ?")
+            conditions.append("resource_type = ?")
             params.append(target_type)
         if target_id:
-            conditions.append("target_id = ?")
+            conditions.append("resource_id = ?")
             params.append(target_id)
         if since:
             conditions.append("timestamp >= ?")
@@ -232,6 +249,11 @@ class AuditLogger:
                         d["details"] = json.loads(d["details"])
                     except (json.JSONDecodeError, TypeError):
                         pass
+                # Callers of this class speak target_*; the row speaks
+                # resource_*. Both keys are present so a caller reading
+                # either gets an answer instead of a KeyError.
+                for target_key, resource_key in _TARGET_TO_RESOURCE.items():
+                    d[target_key] = d.get(resource_key)
                 result.append(d)
             return result
         finally:

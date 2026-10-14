@@ -5,6 +5,9 @@ manager and other components for debugging and code analysis.
 """
 
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from typing import Any, Optional, List
 import ast
@@ -125,7 +128,7 @@ def check_syntax_errors(source_code: str, *args: Any, **kwargs: Any) -> Optional
                 # Not a file path, treat as source code
                 pass
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
     # Check syntax using ast.parse
     try:

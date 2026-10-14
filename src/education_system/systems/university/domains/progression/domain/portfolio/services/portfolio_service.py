@@ -566,6 +566,7 @@ class PortfolioService:
             values = list(update_fields.values()) + [portfolio_id]
 
             with transaction() as conn:
+                # db-audit: ignore[DBW001] - filtered against a literal allow-list
                 conn.execute(
                     f"UPDATE portfolios SET {set_clause} WHERE portfolio_id = ?",
                     values
@@ -714,6 +715,7 @@ class PortfolioService:
             values = list(update_fields.values()) + [item_id]
 
             with transaction() as conn:
+                # db-audit: ignore[DBW001] - filtered against a literal allow-list
                 conn.execute(
                     f"UPDATE portfolio_items SET {set_clause} WHERE item_id = ?",
                     values
@@ -933,6 +935,7 @@ class PortfolioService:
             values = list(update_fields.values()) + [skill_id]
 
             with transaction() as conn:
+                # db-audit: ignore[DBW001] - filtered against a literal allow-list
                 conn.execute(
                     f"UPDATE student_skills SET {set_clause} WHERE skill_id = ?",
                     values
@@ -1175,6 +1178,7 @@ class PortfolioService:
             values = list(update_fields.values()) + [student_id]
 
             with transaction() as conn:
+                # db-audit: ignore[DBW001] - filtered against a literal allow-list
                 conn.execute(
                     f"UPDATE public_profiles SET {set_clause} WHERE student_id = ?",
                     values

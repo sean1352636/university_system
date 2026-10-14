@@ -481,7 +481,7 @@ class GPACalculatorGUI:
                     if r['avg_score'] is not None:
                         out[r['module_code']] = float(r['avg_score'])
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return out
 
     def _load_remaining_required_modules(self) -> list[dict]:
@@ -523,7 +523,7 @@ class GPACalculatorGUI:
                 with path.open('r', encoding='utf-8') as f:
                     return {**defaults, **json.load(f)}
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return defaults
 
     def _load_saved_scenarios(self) -> dict[str, dict]:
@@ -551,7 +551,7 @@ class GPACalculatorGUI:
                 if row and row['student_id']:
                     return row['student_id']
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return username
 
     # ── UI builders (8) ──────────────────────────────────────────────
@@ -792,7 +792,7 @@ class GPACalculatorGUI:
             self.window.clipboard_clear()
             self.window.clipboard_append(text)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _on_print(self):
         """[49] Tk has no portable print API — route to PDF export."""

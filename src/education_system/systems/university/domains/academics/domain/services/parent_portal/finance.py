@@ -114,7 +114,7 @@ class FinanceMixin:
             print("This function is only available for parent accounts.")
             return
 
-        if not self.auth.check_permission('manage_meal_account'):
+        if not self.auth.check_permission('manage_meal_plans'):
             print("You don't have permission to manage meal accounts.")
             return
 
@@ -361,7 +361,11 @@ class FinanceMixin:
                 campaign_id = selected_campaign[0]
 
                 # Get donation details
-                amount = float(input("Enter donation amount: £"))
+                try:
+                    amount = float(input("Enter donation amount: £"))
+                except ValueError:
+                    print("Invalid donation amount.")
+                    return
                 if amount <= 0:
                     print("Invalid donation amount.")
                     return
@@ -419,8 +423,6 @@ class FinanceMixin:
 
             except (ValueError, IndexError):
                 print("Invalid selection.")
-            except ValueError:
-                print("Invalid donation amount.")
 
         except sqlite3.Error as e:
             print(f"Database error processing donation: {e}")

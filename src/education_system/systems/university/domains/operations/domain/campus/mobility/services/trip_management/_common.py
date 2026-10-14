@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.database.db import sqlite3, DatabaseManager
 # Sibling modules in this package import DEFAULT_DB_PATH *from here* (see
 # database.py). The paths consolidation added the UNIVERSITY_ prefix at the
@@ -81,7 +85,7 @@ try:  # pragma: no cover - test-only fallback
                 return True
         auth = _TestAuthStub()
 except Exception:
-    pass
+    logger.debug("Suppressed exception", exc_info=True)
 
 def set_auth(auth_instance):
     global auth

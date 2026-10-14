@@ -2,6 +2,9 @@
 Virtual Classroom Management GUI
 Comprehensive interface for managing virtual classrooms, sessions, participants, and recordings
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -37,6 +40,7 @@ from education_system.systems.university.domains.academics.domain.services.virtu
 from education_system.systems.university.domains.academics.domain.services.virtual_classroom.recording_manager import (
     RecordingManager
 )
+from education_system.systems.university.domains.academics.interfaces.gui._field_pickers import attach_picker, attach_date, attach_combo, time_values
 
 sys.modules.setdefault(
     'university_system.modules.domain.academics.gui.virtual_classroom_gui',
@@ -73,7 +77,7 @@ class _SafeStringVar:
             try:
                 self._tk_var.set(value)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
 
 class _FallbackTreeview:
@@ -237,15 +241,6 @@ class VirtualClassroomGUI:
         )
         title_label.grid(row=0, column=0, sticky="w")
 
-        # Return to Homepage button
-        return_btn = ttk.Button(
-            header_frame,
-            text=_("virtual_classroom.buttons.return_to_homepage"),
-            command=self._return_to_homepage,
-            style='Accent.TButton'
-        )
-        return_btn.grid(row=0, column=1, padx=(10, 0), sticky="e")
-
         # Create notebook for tabs
         self.notebook = ttk.Notebook(main_frame)
         self.notebook.grid(row=1, column=0, sticky="nsew")
@@ -357,6 +352,13 @@ class VirtualClassroomGUI:
             toolbar,
             text=_("virtual_classroom.buttons.end_session"),
             command=self._end_session
+        ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            toolbar,
+            text=_("virtual_classroom.buttons.record_attendance",
+                   default="Record Attendance"),
+            command=self._sync_attendance
         ).pack(side=tk.LEFT, padx=5)
 
         ttk.Button(
@@ -573,6 +575,67 @@ class VirtualClassroomGUI:
 
     # ==================== Classroom Management Methods ====================
 
+    # ---- Email + module wiring -------------------------------------
+    #
+    # Everything below routes through the university's existing email
+    # service (email_service.notifications), so online classes queue,
+    # log and audit exactly like every other university email.
+
+    def _email_class(self, classroom_id, event, extra=None):
+        """Notify the class about *event*; returns a line for the dialog.
+
+        Never raises: failing to email must not undo a class that was
+        genuinely created, edited or deleted. What actually happened is
+        reported instead of being assumed.
+        """
+        try:
+            from education_system.systems.university.infrastructure.email.email_service.notifications import (
+                send_online_class_notification,
+            )
+            result = send_online_class_notification(classroom_id, event, extra=extra)
+        except Exception as exc:
+            return f"\n\nNo emails were sent: {exc}"
+        if result.get("reason"):
+            return f"\n\nNo emails were sent: {result['reason']}"
+        line = (f"\n\n{result['sent']} of {result['recipients']} recipient(s) "
+                "emailed (lecturer and enrolled students).")
+        if result.get("failed"):
+            line += f"\n{result['failed']} could not be delivered."
+        return line
+
+    def _store_module_code(self, classroom_id, module_code):
+        """Persist the module a class belongs to.
+
+        Kept out of ``create_classroom`` because the column is a late
+        addition: databases built before it exists get it added here
+        rather than failing the insert.
+        """
+        if not module_code:
+            return
+        try:
+            from education_system.systems.university.infrastructure.database.db import get_connection
+            with get_connection() as conn:
+                cols = {r[1] for r in conn.execute("PRAGMA table_info(virtual_classrooms)")}
+                if "module_code" not in cols:
+                    conn.execute("ALTER TABLE virtual_classrooms ADD COLUMN module_code TEXT")
+                conn.execute("UPDATE virtual_classrooms SET module_code = ? "
+                             "WHERE classroom_id = ?", (module_code, classroom_id))
+                conn.commit()
+        except Exception:
+            logger.exception("Could not store module_code for classroom %s", classroom_id)
+
+    def _classroom_snapshot(self, classroom_id):
+        """The fields the update email compares, before a change."""
+        try:
+            from education_system.systems.university.infrastructure.database.db import get_connection
+            with get_connection() as conn:
+                row = conn.execute("SELECT * FROM virtual_classrooms WHERE classroom_id = ?",
+                                   (classroom_id,)).fetchone()
+            return dict(row) if row is not None else {}
+        except Exception:
+            logger.debug("snapshot failed", exc_info=True)
+            return {}
+
     def _create_classroom_dialog(self):
         """Open dialog to create a new classroom"""
         dialog = tk.Toplevel(self.parent)
@@ -607,15 +670,24 @@ class VirtualClassroomGUI:
         fields['platform'].current(0)
         row += 1
 
-        # Instructor ID
-        ttk.Label(main_frame, text=_("virtual_classroom.labels.instructor_id_required")).grid(row=row, column=0, sticky="w", pady=5)
-        fields['instructor_id'] = ttk.Entry(main_frame, width=40)
+        # Lecturer — chosen from the instructor list, not typed as a row id.
+        ttk.Label(main_frame, text=_("virtual_classroom.labels.instructor_required",
+                                     default="Lecturer *:")).grid(row=row, column=0, sticky="w", pady=5)
+        fields['instructor_id'] = attach_picker(main_frame, 'instructor', width=38)
         fields['instructor_id'].grid(row=row, column=1, pady=5)
         row += 1
 
-        # Course ID (optional)
+        # Module — this is what decides who gets emailed about the class,
+        # and which module the attendance is recorded against.
+        ttk.Label(main_frame, text=_("virtual_classroom.labels.module",
+                                     default="Module:")).grid(row=row, column=0, sticky="w", pady=5)
+        fields['module_code'] = attach_picker(main_frame, 'module', width=38)
+        fields['module_code'].grid(row=row, column=1, pady=5)
+        row += 1
+
+        # Course (used only when no module is set)
         ttk.Label(main_frame, text=_("virtual_classroom.labels.course_id")).grid(row=row, column=0, sticky="w", pady=5)
-        fields['course_id'] = ttk.Entry(main_frame, width=40)
+        fields['course_id'] = attach_picker(main_frame, 'course', width=38)
         fields['course_id'].grid(row=row, column=1, pady=5)
         row += 1
 
@@ -650,7 +722,9 @@ class VirtualClassroomGUI:
         features_frame.grid(row=row, column=1, sticky="w", pady=5)
 
         feature_vars = {}
-        feature_names = ['whiteboard', 'breakout_rooms', 'recording', 'polling', 'chat', 'screen_sharing']
+        # breakout_rooms / polling / chat were dropped: they are the host
+        # platform's features, not ours, and nothing synced them back.
+        feature_names = ['whiteboard', 'recording', 'screen_sharing']
         for feature in feature_names:
             var = tk.BooleanVar(value=True)
             ttk.Checkbutton(features_frame, text=_("virtual_classroom.features." + feature), variable=var).pack(anchor="w")
@@ -674,12 +748,16 @@ class VirtualClassroomGUI:
                 # Prepare features dict
                 features = {name: var.get() for name, var in feature_vars.items()}
 
-                # Create classroom
+                # course_id is TEXT and holds a code like 'CS'; the old
+                # int() coercion raised ValueError on every real course.
+                course_id = fields['course_id'].get().strip() or None
+                module_code = fields['module_code'].get().strip() or None
+
                 classroom_id = self.classroom_manager.create_classroom(
                     session_name=fields['session_name'].get().strip(),
                     instructor_id=int(fields['instructor_id'].get().strip()),
                     platform=fields['platform'].get(),
-                    course_id=int(fields['course_id'].get().strip()) if fields['course_id'].get().strip() else None,
+                    course_id=course_id,
                     meeting_link=fields['meeting_link'].get().strip() or None,
                     meeting_id=fields['meeting_id'].get().strip() or None,
                     passcode=fields['passcode'].get().strip() or None,
@@ -688,8 +766,13 @@ class VirtualClassroomGUI:
                 )
 
                 if classroom_id:
+                    self._store_module_code(classroom_id, module_code)
                     log_activity(f'Created virtual classroom: {classroom_id}')
-                    messagebox.showinfo(_("common.success"), _("virtual_classroom.messages.classroom_created").format(id=classroom_id))
+                    sent = self._email_class(classroom_id, 'created')
+                    messagebox.showinfo(
+                        _("common.success"),
+                        _("virtual_classroom.messages.classroom_created").format(id=classroom_id)
+                        + sent)
                     dialog.destroy()
                     self._refresh_classrooms()
                 else:
@@ -749,6 +832,17 @@ class VirtualClassroomGUI:
         platform_label.grid(row=row, column=1, sticky="w", pady=5)
         row += 1
 
+        # Module — editable here because it decides who is emailed about
+        # the class and which module its attendance lands against, so a
+        # class attached to the wrong one has to be correctable.
+        ttk.Label(main_frame, text=_("virtual_classroom.labels.module",
+                                     default="Module:")).grid(row=row, column=0, sticky="w", pady=5)
+        fields['module_code'] = attach_picker(main_frame, 'module', width=38)
+        if classroom.get('module_code'):
+            fields['module_code'].set(classroom['module_code'])
+        fields['module_code'].grid(row=row, column=1, pady=5)
+        row += 1
+
         # Meeting Link
         ttk.Label(main_frame, text=_("virtual_classroom.labels.meeting_link")).grid(row=row, column=0, sticky="w", pady=5)
         fields['meeting_link'] = ttk.Entry(main_frame, width=40)
@@ -798,7 +892,9 @@ class VirtualClassroomGUI:
                 existing_features = {}
 
         feature_vars = {}
-        feature_names = ['whiteboard', 'breakout_rooms', 'recording', 'polling', 'chat', 'screen_sharing']
+        # breakout_rooms / polling / chat were dropped: they are the host
+        # platform's features, not ours, and nothing synced them back.
+        feature_names = ['whiteboard', 'recording', 'screen_sharing']
         for feature in feature_names:
             var = tk.BooleanVar(value=existing_features.get(feature, True))
             ttk.Checkbutton(features_frame, text=_("virtual_classroom.features." + feature), variable=var).pack(anchor="w")
@@ -819,6 +915,10 @@ class VirtualClassroomGUI:
                 # Prepare features dict
                 features = {name: var.get() for name, var in feature_vars.items()}
 
+                # Snapshot first: the update email says what changed, which
+                # can only be worked out against the values being replaced.
+                before = self._classroom_snapshot(classroom_id)
+
                 # Update classroom
                 success = self.classroom_manager.update_classroom(
                     classroom_id=classroom_id,
@@ -832,8 +932,20 @@ class VirtualClassroomGUI:
                 )
 
                 if success:
+                    self._store_module_code(classroom_id,
+                                            fields['module_code'].get().strip() or None)
                     log_activity(f'Updated virtual classroom: {classroom_id}')
-                    messagebox.showinfo(_("common.success"), _("virtual_classroom.messages.classroom_updated"), parent=dialog)
+                    after = self._classroom_snapshot(classroom_id)
+                    from education_system.systems.university.infrastructure.email.email_service.notifications import (
+                        describe_online_class_changes,
+                    )
+                    sent = self._email_class(
+                        classroom_id, 'updated',
+                        extra={'changes': describe_online_class_changes(before, after)})
+                    messagebox.showinfo(
+                        _("common.success"),
+                        _("virtual_classroom.messages.classroom_updated") + sent,
+                        parent=dialog)
                     dialog.destroy()
                     self._refresh_classrooms()
                 else:
@@ -865,9 +977,15 @@ class VirtualClassroomGUI:
         if messagebox.askyesno(_("virtual_classroom.dialogs.confirm_delete"),
                               _("virtual_classroom.messages.confirm_delete_classroom").format(name=classroom_name)):
             try:
+                # Email first. The audience is derived from the classroom
+                # row, so after deletion there is nobody left to tell.
+                sent = self._email_class(classroom_id, 'cancelled')
+
                 if self.classroom_manager.delete_classroom(classroom_id):
                     log_activity(f'Deleted virtual classroom: {classroom_id}')
-                    messagebox.showinfo(_("common.success"), _("virtual_classroom.messages.classroom_deleted"))
+                    messagebox.showinfo(
+                        _("common.success"),
+                        _("virtual_classroom.messages.classroom_deleted") + sent)
                     self._refresh_classrooms()
                 else:
                     messagebox.showerror(_("common.error"), _("virtual_classroom.errors.delete_classroom_failed"))
@@ -941,25 +1059,29 @@ class VirtualClassroomGUI:
         fields['session_type'].current(0)
         row += 1
 
-        # Start Date
+        # Start Date — day / month / year dropdowns. A typed YYYY-MM-DD
+        # box could only fail one way: strptime raising below, after the
+        # form was already filled in.
         ttk.Label(main_frame, text=_("virtual_classroom.labels.start_date_required")).grid(row=row, column=0, sticky="w", pady=5)
-        fields['start_date'] = ttk.Entry(main_frame, width=40)
-        fields['start_date'].insert(0, datetime.now().strftime("%Y-%m-%d"))
-        fields['start_date'].grid(row=row, column=1, pady=5)
+        fields['start_date'] = attach_date(main_frame)
+        fields['start_date'].set(datetime.now().strftime("%Y-%m-%d"))
+        fields['start_date'].grid(row=row, column=1, pady=5, sticky="w")
         row += 1
 
-        # Start Time
+        # Start Time — quarter-hour steps across the teaching day.
         ttk.Label(main_frame, text=_("virtual_classroom.labels.start_time_required")).grid(row=row, column=0, sticky="w", pady=5)
-        fields['start_time'] = ttk.Entry(main_frame, width=40)
-        fields['start_time'].insert(0, "09:00")
-        fields['start_time'].grid(row=row, column=1, pady=5)
+        fields['start_time'] = attach_combo(main_frame, time_values(), width=10)
+        fields['start_time'].set("09:00")
+        fields['start_time'].grid(row=row, column=1, pady=5, sticky="w")
         row += 1
 
-        # Duration
+        # Duration — the lengths a session is actually timetabled for.
         ttk.Label(main_frame, text=_("virtual_classroom.labels.duration_required")).grid(row=row, column=0, sticky="w", pady=5)
-        fields['duration'] = ttk.Spinbox(main_frame, from_=15, to=480, width=38)
-        fields['duration'].set(60)
-        fields['duration'].grid(row=row, column=1, pady=5)
+        fields['duration'] = attach_combo(
+            main_frame,
+            ["30", "45", "60", "90", "120", "150", "180", "240"], width=10)
+        fields['duration'].set("60")
+        fields['duration'].grid(row=row, column=1, pady=5, sticky="w")
         row += 1
 
         # Notes
@@ -981,11 +1103,15 @@ class VirtualClassroomGUI:
                 # Parse classroom ID
                 classroom_id = int(fields['classroom'].get().split(':')[0])
 
-                # Parse datetime
                 date_str = fields['start_date'].get().strip()
                 time_str = fields['start_time'].get().strip()
-                datetime_str = f"{date_str} {time_str}"
-                start_time = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M")
+                if not date_str:
+                    messagebox.showerror(
+                        _("common.error"),
+                        _("virtual_classroom.errors.select_start_date",
+                          default="Pick a start date."), parent=dialog)
+                    return
+                start_time = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
 
                 # Create session
                 session_id = self.session_manager.create_session(
@@ -998,7 +1124,19 @@ class VirtualClassroomGUI:
 
                 if session_id:
                     log_activity(f'Created virtual session: {session_id}')
-                    messagebox.showinfo(_("common.success"), _("virtual_classroom.messages.session_scheduled").format(id=session_id))
+                    end = start_time + timedelta(minutes=int(fields['duration'].get()))
+                    sent = self._email_class(classroom_id, 'scheduled', extra={
+                        'session_date': start_time.strftime('%d %B %Y'),
+                        'start_time': start_time.strftime('%H:%M'),
+                        'end_time': end.strftime('%H:%M'),
+                        'duration_minutes': fields['duration'].get(),
+                        'session_type': fields['session_type'].get(),
+                        'session_notes': fields['notes'].get("1.0", "end-1c").strip(),
+                    })
+                    messagebox.showinfo(
+                        _("common.success"),
+                        _("virtual_classroom.messages.session_scheduled").format(id=session_id)
+                        + sent)
                     dialog.destroy()
                     self._refresh_sessions()
                 else:
@@ -1059,12 +1197,70 @@ class VirtualClassroomGUI:
         try:
             if self.session_manager.end_session(session_id):
                 log_activity(f'Ended virtual session: {session_id}')
-                messagebox.showinfo(_("common.success"), _("virtual_classroom.messages.session_ended"))
+                # end_session publishes attendance to the central records;
+                # say whether that actually happened rather than leaving the
+                # instructor to assume it did.
+                note = self._attendance_summary_text(session_id)
+                messagebox.showinfo(
+                    _("common.success"),
+                    _("virtual_classroom.messages.session_ended") + note)
                 self._refresh_sessions()
             else:
                 messagebox.showerror(_("common.error"), _("virtual_classroom.errors.end_session_failed"))
         except Exception as e:
             messagebox.showerror(_("common.error"), _("virtual_classroom.errors.end_session_failed_with_error").format(error=str(e)))
+
+    def _attendance_summary_text(self, session_id):
+        """Human-readable outcome of the last attendance sync for a session."""
+        try:
+            from education_system.systems.university.domains.academics.domain.services.virtual_classroom.attendance_sync import (
+                sync_session_attendance,
+            )
+            result = sync_session_attendance(session_id)
+        except Exception as exc:
+            return f"\n\nAttendance was not recorded: {exc}"
+        if result.get("reason"):
+            return f"\n\nAttendance was not recorded: {result['reason']}"
+        return (f"\n\n{result['written']} attendance record(s) written for "
+                f"module {result['module_code']}.")
+
+    def _sync_attendance(self):
+        """Publish the selected session's attendance to the central records.
+
+        Available separately from ending a session so a register can be
+        corrected afterwards — re-running updates the existing rows rather
+        than duplicating them.
+        """
+        selection = self.sessions_tree.selection()
+        if not selection:
+            messagebox.showwarning(
+                _("common.warning"),
+                _("virtual_classroom.messages.select_session_for_attendance",
+                  default="Select a session first."))
+            return
+        session_id = self.sessions_tree.item(selection[0])['values'][0]
+        try:
+            from education_system.systems.university.domains.academics.domain.services.virtual_classroom.attendance_sync import (
+                sync_session_attendance,
+            )
+            result = sync_session_attendance(session_id)
+        except Exception as exc:
+            messagebox.showerror(_("common.error"),
+                                 f"Could not record attendance: {exc}")
+            return
+
+        if result.get("reason"):
+            messagebox.showwarning(
+                _("common.warning"),
+                f"No attendance recorded.\n\n{result['reason']}")
+            return
+        log_activity(f'Recorded attendance for virtual session: {session_id}')
+        messagebox.showinfo(
+            _("common.success"),
+            f"{result['written']} attendance record(s) written for module "
+            f"{result['module_code']}.\n"
+            f"{result['skipped']} non-student participant(s) skipped.\n\n"
+            "These now appear in the main attendance records.")
 
     def _view_session_details(self):
         """View details of selected session"""
@@ -1645,7 +1841,7 @@ class VirtualClassroomGUI:
             if isinstance(current, str):
                 return
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         title_attr = getattr(self.parent, 'title', None)
         if hasattr(title_attr, 'return_value'):
@@ -1662,7 +1858,7 @@ class VirtualClassroomGUI:
             if values:
                 return values
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return ()
 
     def _return_to_homepage(self):

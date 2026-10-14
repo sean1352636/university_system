@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.database.db import sqlite3, DatabaseManager
 from datetime import datetime
 import os
@@ -777,7 +781,7 @@ def review_application():
                     end_date=dates[1],
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         # Send notification to student
         send_internship_notification(application[0], application[1], new_status, feedback)

@@ -2,19 +2,19 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import logging
-from education_system.systems.university.interfaces.gui.shell.main._tk_callback_filter import install_clean_close as _install_clean_close
-
-# Import utility functions
-from education_system.systems.university.interfaces.gui.shell.main.imports.gui_imports import (
-    _safe_entry_insert,
-    _safe_set_combobox,
-)
+from contextlib import ExitStack
+from education_system.platform.delivery.gui.tk_callback_filter import install_clean_close as _install_clean_close
 
 # Import i18n
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 # Import database connection
-from education_system.systems.university.infrastructure.database.db import get_db_connection, get_connection, transaction
+from education_system.systems.university.infrastructure.database.db import (
+    get_db_connection,
+    get_connection,
+    reuse_connection,
+    transaction,
+)
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608
 
 logger = logging.getLogger(__name__)
@@ -33,11 +33,35 @@ logger = logging.getLogger(__name__)
 # silent risk.
 # ---------------------------------------------------------------------------
 
+def _configure_status_tags(tree) -> None:
+    """Give the status tags their colours. Colour is a hint, never the only
+    signal — the Status column carries the actual value."""
+    try:
+        tree.tag_configure("status_inactive", foreground="#a05000")
+        tree.tag_configure("status_unknown", foreground="#777777")
+    except tk.TclError:
+        logger.debug("Could not configure status tags", exc_info=True)
+
+
+def _status_tag(status) -> str:
+    """Row tag for the records list.
+
+    A withdrawn or suspended student used to be indistinguishable from an
+    active one in this list, which is precisely where anyone looks first.
+    """
+    value = (status or "").strip().lower()
+    if value == "active":
+        return "status_active"
+    if not value:
+        return "status_unknown"
+    return "status_inactive"
+
+
 # Canonical column list for the records list view. Matches what the tree
 # treeview headers expect (id / full_name / email / course / reg_date).
 _LIST_COLS_SQL = (
     "student_id, first_name, middle_name, last_name, "
-    "email_address, course, registration_datetime"
+    "email_address, course, status, registration_datetime"
 )
 
 
@@ -53,7 +77,20 @@ def _row_get(row, key, default=None):
         return default
 
 
-def _load_students_into(self, tree, *, search_term=None, search_field=None):
+#: Columns the free-text filter searches. Kept to what the list displays, so
+#: a hit is always visible in the row it matched.
+_QUICK_SEARCH_COLUMNS = ("student_id", "first_name", "middle_name", "last_name",
+                         "email_address", "course", "status")
+
+#: Rows per page. The list previously issued an unbounded SELECT and rendered
+#: every student into the tree; that is fine for a handful and degrades badly
+#: as the roll grows, because Tk pays for each row whether or not it is on
+#: screen.
+DEFAULT_PAGE_SIZE = 100
+
+
+def _load_students_into(self, tree, *, search_term=None, search_field=None,
+                        quick_search=None, limit=None, offset=0):
     """Single canonical loader for the records list treeview.
 
     Used by ``view_students`` (legacy panel hook used by
@@ -65,21 +102,31 @@ def _load_students_into(self, tree, *, search_term=None, search_field=None):
     *search_term* + *search_field*, when given, narrow the result set
     server-side. Field is validated against an allow-list before being
     interpolated into the SQL because parameter substitution doesn't
-    apply to identifiers."""
+    apply to identifiers.
+
+    *quick_search* is the free-text box above the list: it matches any of
+    :data:`_QUICK_SEARCH_COLUMNS`. It is applied in SQL rather than by
+    filtering the loaded rows, so a search still reaches students on other
+    pages — an in-memory filter would silently only ever search the page you
+    happen to be looking at.
+
+    *limit* / *offset* page the query. Returns the total number of matching
+    rows (ignoring the page window) so a caller can render a pager, or 0 when
+    the tree has gone away."""
     if tree is None:
-        return
+        return 0
     try:
         if not tree.winfo_exists():
-            return
+            return 0
     except tk.TclError:
-        return
+        return 0
 
     # Clear existing rows
     try:
         for item in tree.get_children():
             tree.delete(item)
     except tk.TclError:
-        return
+        return 0
 
     conn = None
     try:
@@ -90,7 +137,7 @@ def _load_students_into(self, tree, *, search_term=None, search_field=None):
                 _t("student.failed_load_student_data",
                    error="database connection unavailable"),
             )
-            return
+            return 0
 
         # Default ordering (by surname, forename); search overrides
         # the WHERE clause but keeps the same SELECT list + ORDER BY.
@@ -102,7 +149,7 @@ def _load_students_into(self, tree, *, search_term=None, search_field=None):
         elif search_term and search_field:
             allowed = {
                 'first_name', 'last_name', 'student_id',
-                'course', 'email_address',
+                'course', 'email_address', 'status',
             }
             if search_field in allowed:
                 safe = validate_identifier(search_field, "column")
@@ -113,17 +160,39 @@ def _load_students_into(self, tree, *, search_term=None, search_field=None):
                     where = f"WHERE LOWER([{safe}]) LIKE LOWER(?)"
                     params.append(f"%{search_term}%")
 
+        # Free-text box: OR across the displayed columns. Column names come
+        # from a module constant, never from input, and each is put through
+        # validate_identifier as well.
+        term = (quick_search or "").strip()
+        if term:
+            clauses = []
+            for column in _QUICK_SEARCH_COLUMNS:
+                safe = validate_identifier(column, "column")
+                clauses.append(f"LOWER(COALESCE([{safe}], '')) LIKE LOWER(?)")
+                params.append(f"%{term}%")
+            joined = " OR ".join(clauses)
+            where = f"{where} AND ({joined})" if where else f"WHERE ({joined})"
+
+        cursor = conn.cursor()
+        # Total before paging, so the pager can say "of N".
+        # db-audit: ignore[DBW001] - where is built from validated identifiers
+        cursor.execute(f"SELECT COUNT(*) FROM students {where}", params)
+        total = cursor.fetchone()[0] or 0
+
         sql = (
             f"SELECT {_LIST_COLS_SQL} FROM students "
             f"{where} ORDER BY last_name, first_name"
         )
-        cursor = conn.cursor()
-        cursor.execute(sql, params)
+        page_params = list(params)
+        if limit is not None:
+            sql += " LIMIT ? OFFSET ?"
+            page_params.extend([int(limit), int(offset or 0)])
+        cursor.execute(sql, page_params)
 
         for r in cursor.fetchall():
             # Tuple-positional but bound to our explicit SELECT list,
             # not to the underlying schema — order matches _LIST_COLS_SQL.
-            sid, first, middle, last, email, course, reg = r
+            sid, first, middle, last, email, course, status, reg = r
             full_name = " ".join(
                 p for p in (first, middle, last) if p
             ).strip() or sid
@@ -134,22 +203,26 @@ def _load_students_into(self, tree, *, search_term=None, search_field=None):
                     full_name,
                     email or "",
                     course or "",
+                    status or "",
                     (reg[:10] if reg else "N/A"),
                 ),
+                tags=(_status_tag(status),),
             )
+        return total
     except tk.TclError:
-        return
+        return 0
     except Exception as exc:
         messagebox.showerror(
             _t("common.error"),
             _t("student.failed_load_student_data", error=str(exc)),
         )
+        return 0
     finally:
         try:
             if conn is not None:
                 conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
 def show_student_records(self):
     """Show student records interface inside the main GUI's content
@@ -193,11 +266,11 @@ def show_student_records(self):
         # close-action removes that tab.
         nb = getattr(self, "workspace_notebook", None)
         def _close_tab(host=None, _nb=nb):
-            try:
-                if _nb is not None and host is not None:
-                    _nb.forget(host)
-            except Exception:
-                pass
+            # Destroy the tab's widgets too — forget() alone left the whole
+            # Student Records screen alive under the notebook.
+            from education_system.platform.delivery.gui.portal_dismiss import forget_tab
+            if _nb is not None and host is not None:
+                forget_tab(_nb, host)
         # Builder receives the tab frame + the close action bound
         # to it.
         opener(title, lambda host: _build(host, lambda: _close_tab(host)))
@@ -235,6 +308,11 @@ def _build_student_records(self, host, close_action):
 
     ttk.Button(button_frame, text=_t("student.create_student"),
               command=self.create_student_dialog).pack(side=tk.LEFT, padx=5)
+    if self.auth and self.auth.check_permission('delete_any_student'):
+        ttk.Button(button_frame,
+                   text=_t("student.delete_student", default="Delete Student"),
+                   command=lambda: self.delete_selected_student(tree)).pack(
+            side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_t("student.export_data"),
               command=self.export_data_dialog).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_t("gui.refresh"),
@@ -268,7 +346,7 @@ def _build_student_records(self, host, close_action):
     tree_frame = ttk.Frame(records_frame)
     tree_frame.pack(fill=tk.BOTH, expand=True)
 
-    columns = (_t("student.col_id"), _t("student.col_name"), _t("student.col_email"), _t("student.col_course"), _t("student.col_reg_date"))
+    columns = (_t("student.col_id"), _t("student.col_name"), _t("student.col_email"), _t("student.col_course"), _t("student.col_status", default="Status"), _t("student.col_reg_date"))
     tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=30)
 
     # Configure columns + bind heading-clicks for ascending/descending
@@ -312,6 +390,7 @@ def _build_student_records(self, host, close_action):
         _t("student.col_name"):     220,
         _t("student.col_email"):    240,
         _t("student.col_course"):   80,
+        _t("student.col_status"):   110,
         _t("student.col_reg_date"): 100,
     }
     for col in columns:
@@ -337,6 +416,7 @@ def _build_student_records(self, host, close_action):
     tree_frame.columnconfigure(0, weight=1)
 
     # Bind double-click event
+    _configure_status_tags(tree)
     tree.bind('<Double-1>', lambda event: self.on_student_double_click_window(event, tree))
 
     # Right-click cross-jumps to every module keyed by student_id.
@@ -358,64 +438,117 @@ def _build_student_records(self, host, close_action):
     # Load student data
     self.view_students_in_window(tree)
 
-    # ── Inline search filter ────────────────────────────────────────
-    # Snapshot every loaded row so KeyRelease can rebuild from the
-    # cached snapshot rather than re-querying the DB on every
-    # keystroke. Refreshing the tree (e.g. after a CRUD operation)
-    # rebuilds the snapshot.
-    full_rows: list[tuple] = []
+    # ── Paging + server-side quick search ───────────────────────────
+    # The filter runs in SQL, not over the loaded rows: with a page window
+    # an in-memory filter would only ever search the page on screen, which
+    # looks like "that student doesn't exist".
+    state = {"page": 0, "size": DEFAULT_PAGE_SIZE, "total": 0, "after": None}
+    self._records_pager = state          # so refreshes can reuse the page
 
-    def _snapshot():
-        full_rows.clear()
-        for iid in tree.get_children(""):
-            full_rows.append(tuple(tree.item(iid, "values") or ()))
+    pager = ttk.Frame(main_frame)
+    pager.pack(fill=tk.X, pady=(4, 0))
+    prev_btn = ttk.Button(pager, text="◀ Prev", width=9)
+    prev_btn.pack(side=tk.LEFT)
+    next_btn = ttk.Button(pager, text="Next ▶", width=9)
+    next_btn.pack(side=tk.LEFT, padx=(6, 12))
+    page_var = tk.StringVar(value="")
+    ttk.Label(pager, textvariable=page_var).pack(side=tk.LEFT)
 
-    def _refresh_status():
-        n = len(tree.get_children(""))
-        total = len(full_rows)
-        if n == total:
-            status_var.set(f"{n} student(s)")
-        else:
-            status_var.set(f"{n} of {total} student(s)")
+    ttk.Label(pager, text=_t("student.rows_per_page", default="Rows per page:")).pack(
+        side=tk.RIGHT, padx=(8, 4))
+    size_combo = ttk.Combobox(pager, width=6, state="readonly",
+                              values=("50", "100", "250", "500"))
+    size_combo.set(str(DEFAULT_PAGE_SIZE))
+    size_combo.pack(side=tk.RIGHT)
 
-    def _apply_filter(*_args):
-        term = (search_var.get() or "").strip().lower()
+    def _pages():
+        size = max(1, state["size"])
+        return max(1, -(-state["total"] // size))   # ceil
+
+    def _load_page():
+        # Called as a plain function, like every other use in this module:
+        # ``_load_students_into`` is not among the names main_gui patches onto
+        # UnifiedManagementGUI, so ``self._load_students_into`` raised
+        # AttributeError and the Student Records tab failed to build.
+        term = (search_var.get() or "").strip()
+        state["total"] = _load_students_into(
+            self, tree, quick_search=term or None,
+            limit=state["size"], offset=state["page"] * state["size"]) or 0
+        # A search (or a deletion) can leave us past the end.
+        if state["page"] >= _pages():
+            state["page"] = _pages() - 1
+            state["total"] = _load_students_into(
+                self, tree, quick_search=term or None,
+                limit=state["size"], offset=state["page"] * state["size"]) or 0
+        shown = len(tree.get_children(""))
+        first = state["page"] * state["size"] + 1 if shown else 0
+        page_var.set(
+            f"Page {state['page'] + 1} of {_pages()}   "
+            f"({first}–{first + shown - 1} of {state['total']} students)"
+            if shown else
+            (f"No students match “{term}”" if term else "No students"))
+        prev_btn.state(["!disabled"] if state["page"] > 0 else ["disabled"])
+        next_btn.state(["!disabled"] if state["page"] + 1 < _pages() else ["disabled"])
+        status_var.set("")
+
+    self._reload_records_page = _load_page
+
+    def _goto(delta):
+        state["page"] = max(0, min(_pages() - 1, state["page"] + delta))
+        _load_page()
+
+    prev_btn.configure(command=lambda: _goto(-1))
+    next_btn.configure(command=lambda: _goto(1))
+
+    def _on_size(_e=None):
         try:
-            for iid in tree.get_children(""):
-                tree.delete(iid)
-        except tk.TclError:
-            return
-        for row in full_rows:
-            if not term or any(term in str(v).lower() for v in row):
-                tree.insert("", tk.END, values=row)
-        _refresh_status()
+            state["size"] = int(size_combo.get())
+        except ValueError:
+            state["size"] = DEFAULT_PAGE_SIZE
+        state["page"] = 0
+        _load_page()
 
-    _snapshot()
-    _refresh_status()
-    search_var.trace_add("write", _apply_filter)
+    size_combo.bind("<<ComboboxSelected>>", _on_size)
+
+    def _on_search(*_args):
+        # Debounce: each keystroke now costs a query, so wait for a pause
+        # rather than hitting the database on every character.
+        if state["after"] is not None:
+            try:
+                main_frame.after_cancel(state["after"])
+            except tk.TclError:
+                pass
+        def _run():
+            state["after"] = None
+            state["page"] = 0
+            _load_page()
+        try:
+            state["after"] = main_frame.after(250, _run)
+        except tk.TclError:
+            _run()
+
+    search_var.trace_add("write", _on_search)
     search_entry.bind("<Escape>", lambda _e: search_var.set(""))
 
-    # Wrap the existing refresh button so a re-load also re-snapshots
-    # for the in-memory filter. Walk the buttons in button_frame to
-    # find the Refresh widget by its translated label.
+    # Refresh re-runs the current page rather than reloading everything.
     refresh_label = _t("gui.refresh")
     for child in button_frame.winfo_children():
         try:
             if isinstance(child, ttk.Button) and child.cget("text") == refresh_label:
-                child.configure(command=lambda: (
-                    self.view_students_in_window(tree),
-                    _snapshot(),
-                    _apply_filter(),
-                ))
+                child.configure(command=_load_page)
                 break
         except tk.TclError:
             pass
+
+    _load_page()
+
+
 def create_student_treeview(self, parent):
     """Create treeview widget for displaying student data"""
     tree_frame = ttk.Frame(parent)
     tree_frame.pack(fill=tk.BOTH, expand=True)
 
-    columns = (_t("student.col_id"), _t("student.col_name"), _t("student.col_email"), _t("student.col_course"), _t("student.col_reg_date"))
+    columns = (_t("student.col_id"), _t("student.col_name"), _t("student.col_email"), _t("student.col_course"), _t("student.col_status", default="Status"), _t("student.col_reg_date"))
     self.student_tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=30)
 
     # Configure columns
@@ -434,6 +567,7 @@ def create_student_treeview(self, parent):
     h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
 
     # Bind events
+    _configure_status_tags(self.student_tree)
     self.student_tree.bind('<Double-1>', self.on_student_double_click)
 def view_students(self):
     """Refresh the panel-mode student tree (used by ``student_crud_gui``
@@ -447,8 +581,64 @@ def view_students(self):
 
 
 def view_students_in_window(self, tree):
-    """Refresh the records-window tree. Thin delegate."""
+    """Refresh the records-window tree.
+
+    Routes through the window's pager when one exists so a refresh after a
+    create/edit/delete redraws the page the user is on, keeping the search
+    term and page number — rather than silently reloading every student and
+    leaving the pager describing a result set that is no longer on screen.
+    """
+    reload_page = getattr(self, "_reload_records_page", None)
+    if callable(reload_page):
+        try:
+            reload_page()
+            return
+        except tk.TclError:
+            # Window has gone; fall through to the plain load.
+            self._reload_records_page = None
     _load_students_into(self, tree)
+
+
+def _selected_student_id(self, tree):
+    """The student id of the selected row, or None."""
+    try:
+        if tree is None or not tree.winfo_exists():
+            return None
+        selection = tree.selection()
+        if not selection:
+            return None
+        values = tree.item(selection[0]).get('values', []) or []
+        return values[0] if values else None
+    except tk.TclError:
+        return None
+
+
+def delete_selected_student(self, tree):
+    """Delete the student selected in the records list.
+
+    Delete previously lived only on the main navigation panel, so the one
+    window devoted to student records could create and edit but not remove —
+    the verb was missing exactly where people look for it. The confirmation
+    and the actual deletion stay in ``delete_student_dialog``; this only
+    resolves the selection and refreshes the list afterwards.
+    """
+    if not (self.auth and self.auth.check_permission('delete_any_student')):
+        messagebox.showerror(
+            _t("common.access_denied", default="Access denied"),
+            "You don't have permission to delete student records.")
+        return
+    student_id = self._selected_student_id(tree)
+    if not student_id:
+        messagebox.showwarning(_t("common.warning", default="Warning"),
+                               "Select a student to delete.")
+        return
+    try:
+        self.delete_student_dialog(student_id)
+    except Exception as exc:
+        logger.exception("delete from records list failed for %s", student_id)
+        messagebox.showerror(_t("common.error"), str(exc))
+        return
+    self.view_students_in_window(tree)
 
 
 def _double_click_handler(self, tree):
@@ -480,6 +670,75 @@ def on_student_double_click(self, event):
 def on_student_double_click_window(self, event, tree):
     """Window-mode double-click handler."""
     _double_click_handler(self, tree)
+def _defer_tab(notebook, tab, builder):
+    """Populate *tab* the first time the user selects it.
+
+    ``show_student_details`` used to build every tab up front, so opening
+    one record paid for all of them. The Library tab was the worst offender
+    by an order of magnitude: importing ``LibrarySummaryFrame`` reaches
+    ``finance_integration`` → ``finance_context``, which imports matplotlib,
+    seaborn, scipy, sklearn and pandas at module scope — ~9s on the first
+    double-click of a session, spent before the window painted anything, for
+    a tab most viewers never open.
+
+    The tab is added to the notebook immediately so it stays visible and in
+    the same order; only its contents are deferred. ``builder(tab)`` runs at
+    most once — a failure is logged and not retried, matching the try/except
+    that wrapped each tab when they were built eagerly.
+    """
+    pending = getattr(notebook, '_deferred_tabs', None)
+    if pending is None:
+        pending = {}
+        notebook._deferred_tabs = pending
+
+        def _on_tab_changed(_event=None):
+            try:
+                selected = notebook.select()
+            except Exception:
+                return
+            build = pending.pop(selected, None)
+            if build is None:
+                return
+            try:
+                widget = notebook.nametowidget(selected)
+            except Exception:
+                return
+            # The builders below can take a moment (the Library import in
+            # particular). Paint something first, or the tab just sits
+            # blank with no sign that anything is happening.
+            placeholder = ttk.Label(
+                widget, text=_t("common.loading", default="Loading…"), padding=20)
+            placeholder.pack()
+            try:
+                widget.update_idletasks()
+            except Exception:
+                logger.debug("Suppressed exception", exc_info=True)
+            try:
+                build(widget)
+            except Exception:
+                logger.exception("Could not build deferred tab %s", selected)
+            finally:
+                try:
+                    placeholder.destroy()
+                except Exception:
+                    logger.debug("Suppressed exception", exc_info=True)
+
+        notebook.bind('<<NotebookTabChanged>>', _on_tab_changed, add='+')
+
+    pending[str(tab)] = builder
+
+
+def _open_early_warning(self, student_id):
+    """Open the early-warning module focused on this student."""
+    try:
+        from education_system.systems.university.domains.learners.interfaces.gui.students._cross_links import (
+            _jump,
+        )
+        _jump("early_warning", {"student_id": student_id})
+    except Exception:
+        logger.exception("could not open early warning for %s", student_id)
+
+
 def show_student_details(self, student_id):
     """Enhanced student details viewer with comprehensive information display.
 
@@ -509,6 +768,19 @@ def show_student_details(self, student_id):
     detail_window.geometry("900x700")
     detail_window.transient(self.root)
 
+    # student_records.db now carries ~1,800 tables, so SQLite spends ~77ms
+    # parsing the schema on each new connection. Building this window opened
+    # one per section — the student row here, then another inside
+    # _load_academic_data — and paid that over and over. reuse_connection()
+    # makes the nested get_db_connection() calls hand back the same
+    # connection, so the cost is paid once; the call sites are unchanged, and
+    # their conn.close() becomes a no-op until the block exits.
+    #
+    # ExitStack rather than a `with` so the ~390-line body below keeps its
+    # current indentation and stays reviewable as a diff.
+    _shared_conn = ExitStack()
+    _shared_conn.enter_context(reuse_connection())
+
     try:
         conn = get_db_connection()
         if not conn:
@@ -524,7 +796,7 @@ def show_student_details(self, student_id):
         try:
             conn.row_factory = _sqlite3.Row
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         cursor = conn.cursor()
         cursor.execute('SELECT * FROM students WHERE student_id = ?', (student_id,))
         student = cursor.fetchone()
@@ -555,6 +827,8 @@ def show_student_details(self, student_id):
         s_age = _row_get(student, 'age')
         s_course = _row_get(student, 'course')
         s_reg = _row_get(student, 'registration_datetime')
+        s_pronouns = _row_get(student, 'pronouns')
+        s_emergency = _row_get(student, 'emergency_contact')
 
         title = s_title if s_title else na
         first_name = s_first if s_first else na
@@ -575,8 +849,47 @@ def show_student_details(self, student_id):
             sub_bits.append(f"ID: {s_id}")
         if course not in (na, ''):
             sub_bits.append(course)
+        if s_pronouns:
+            sub_bits.append(s_pronouns)
         if s_email:
             sub_bits.append(s_email)
+        # Risk badge. Every student carries an early-warning profile scored
+        # across academic, attendance, engagement and financial signals; the
+        # record used to show none of it. Clicking opens the early-warning
+        # module for this student.
+        try:
+            from education_system.systems.university.domains.learners.interfaces.gui.students._cross_links import (
+                RISK_COLOURS, risk_badge_text, risk_component_alert, student_risk,
+            )
+            _risk = student_risk(student_id)
+        except Exception:
+            _risk = None
+        if _risk:
+            _level = str(_risk.get('risk_level') or '').strip().lower()
+            _badge = ttk.Label(
+                hero, text=risk_badge_text(_risk), font=('Arial', 10, 'bold'),
+                foreground=RISK_COLOURS.get(_level, '#555555'), cursor='hand2')
+            _badge.pack(anchor='w', pady=(4, 0))
+            _badge.bind(
+                '<Button-1>',
+                lambda _e, u=student_id: self._open_early_warning(u))
+            # A high single component is the case the headline level hides,
+            # so it gets its own line in warning colour rather than being
+            # appended to a line that says "Low".
+            _alert = risk_component_alert(_risk)
+            if _alert:
+                _alert_lbl = ttk.Label(hero, text=_alert, font=('Arial', 9, 'bold'),
+                                       foreground='#c2410c', cursor='hand2')
+                _alert_lbl.pack(anchor='w')
+                _alert_lbl.bind(
+                    '<Button-1>',
+                    lambda _e, u=student_id: self._open_early_warning(u))
+            if _risk.get('last_assessed'):
+                ttk.Label(hero,
+                          text=f"assessed {str(_risk['last_assessed'])[:10]}"
+                               " — click for detail",
+                          font=('Arial', 8), foreground='#777777').pack(anchor='w')
+
         if sub_bits:
             ttk.Label(hero, text=' · '.join(sub_bits),
                       font=('Arial', 10), foreground='#555555').pack(anchor='w', pady=(2, 0))
@@ -633,8 +946,33 @@ def show_student_details(self, student_id):
         _add_field(demographics, 0, _t("student_details.label_gender"), gender)
         _add_field(demographics, 1, _t("student_details.label_date_of_birth"), s_dob or na)
         _add_field(demographics, 2, _t("student_details.label_age"), age_value)
+        _add_field(demographics, 3,
+                   _t("student_details.label_pronouns", default="Pronouns"),
+                   s_pronouns or na)
 
-        # Card 3 — Academic info
+        # Card 3 — Emergency contact. Held on every student record but
+        # displayed nowhere until now, which made it useless in the
+        # situation it exists for.
+        emergency_card = ttk.LabelFrame(
+            cards,
+            text=_t("student_details.header_emergency_contact",
+                    default="Emergency Contact"),
+            padding=15)
+        emergency_card.pack(fill=tk.X, pady=6)
+        emergency_card.columnconfigure(1, weight=1)
+        if s_emergency:
+            _add_field(emergency_card, 0,
+                       _t("student_details.label_emergency_contact",
+                          default="Emergency contact"),
+                       s_emergency)
+        else:
+            ttk.Label(emergency_card,
+                      text=_t("student_details.no_emergency_contact",
+                              default="No emergency contact on record."),
+                      font=('Arial', 10, 'italic'),
+                      foreground='#a05000').grid(row=0, column=0, sticky='w')
+
+        # Card 4 — Academic info
         academic_info_card = ttk.LabelFrame(cards, text=_t("student_details.header_academic_info"),
                                             padding=15)
         academic_info_card.pack(fill=tk.X, pady=6)
@@ -800,21 +1138,24 @@ def show_student_details(self, student_id):
         # Library activity tab — embedded summary widget driven by the
         # cross-module API. Renders an empty/zero panel when the
         # student has no library records.
-        try:
+        #
+        # Deferred: the import below is the single most expensive thing this
+        # window does (see _defer_tab). Nothing here touches the DB, so it
+        # sits outside the reuse block quite happily.
+        library_tab = ttk.Frame(notebook)
+        notebook.add(library_tab, text=_t('gui.learners.students.student_records.tabs.library', default="📚 Library"))
+
+        def _build_library_tab(tab):
             from education_system.systems.university.domains.academics.interfaces.gui.library.cross_module_api import (
                 LibrarySummaryFrame,
             )
-            library_tab = ttk.Frame(notebook)
-            notebook.add(library_tab, text=_t('gui.learners.students.student_records.tabs.library', default="📚 Library"))
             LibrarySummaryFrame(
-                library_tab,
+                tab,
                 user_id=student_id,
                 on_open_library=getattr(self, "show_library_management", None),
             ).pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        except Exception:
-            import logging
-            logging.getLogger(__name__).exception(
-                "Could not embed LibrarySummaryFrame")
+
+        _defer_tab(notebook, library_tab, _build_library_tab)
 
         # ── Summary tab ─────────────────────────────────────────
         # Cross-domain at-a-glance metrics: finance / attendance /
@@ -822,19 +1163,23 @@ def show_student_details(self, student_id):
         # in-process panel that reads bus-side tables directly. Keeps
         # the user from having to drill into 4 separate windows just
         # to see "is this student in trouble".
-        try:
-            summary_tab = ttk.Frame(notebook)
-            notebook.add(summary_tab, text=_t('gui.learners.students.student_records.tabs.summary', default="📊 Summary"))
-            _build_student_summary(
-                summary_tab, student_id, na,
-                on_open_finance=lambda: self.show_student_finance_account()
-                    if hasattr(self, 'show_student_finance_account') else None,
-                on_open_attendance=lambda: self.view_student_attendance(
-                    student_id, s_email, s_first, s_last)
-                    if hasattr(self, 'view_student_attendance') else None,
-            )
-        except Exception:
-            logger.exception("Could not build student summary tab")
+        summary_tab = ttk.Frame(notebook)
+        notebook.add(summary_tab, text=_t('gui.learners.students.student_records.tabs.summary', default="📊 Summary"))
+
+        def _build_summary_tab(tab):
+            # Its three counter queries each opened their own connection;
+            # share one for the burst.
+            with reuse_connection():
+                _build_student_summary(
+                    tab, student_id, na,
+                    on_open_finance=lambda: self.show_student_finance_account()
+                        if hasattr(self, 'show_student_finance_account') else None,
+                    on_open_attendance=lambda: self.view_student_attendance(
+                        student_id, s_email, s_first, s_last)
+                        if hasattr(self, 'view_student_attendance') else None,
+                )
+
+        _defer_tab(notebook, summary_tab, _build_summary_tab)
 
         # ── All DB Records tab (admin only) ─────────────────────
         # 8.117.100: surfaces every table in the central DB that
@@ -843,12 +1188,18 @@ def show_student_details(self, student_id):
         # ``student_id``, counts rows per table for the current
         # student, and shows a Treeview with double-click drill-down
         # to a sub-window listing the actual rows.
+        #
+        # Deferred as well: its opening _refresh() sweeps sqlite_master and
+        # runs PRAGMA table_info over all ~1,800 tables to find the ~380 with
+        # a student_id column (~265ms), which is wasted on every open for a
+        # tab that is an occasional diagnostic.
         try:
             current_role = (self.auth.current_user or {}).get('role', '') if self.auth else ''
             if current_role == 'admin':
                 admin_tab = ttk.Frame(notebook)
                 notebook.add(admin_tab, text=_t('gui.learners.students.student_records.tabs.all_records_admin', default="🛡 All Records (Admin)"))
-                _build_student_all_records_tab(admin_tab, student_id)
+                _defer_tab(notebook, admin_tab,
+                           lambda tab: _build_student_all_records_tab(tab, student_id))
         except Exception:
             logger.exception("Could not build admin all-records tab")
 
@@ -871,8 +1222,19 @@ def show_student_details(self, student_id):
                       command=lambda: self.update_student_dialog(student_id),
                       width=30).pack(pady=10)
 
+        # Registration status. Gated with the edit permission: it rewrites
+        # the authoritative students row and pauses module enrolments.
+        if self.auth.check_permission('update_any_student'):
+            ttk.Button(actions_frame,
+                      text=_t("student_details.btn_manage_lifecycle",
+                              default="Registration Status…"),
+                      command=lambda: self.manage_student_lifecycle(
+                          student_id, s_first, s_last),
+                      width=30).pack(pady=5)
+
         if self.auth.check_permission('manage_grades'):
-            ttk.Button(actions_frame, text=_t("student_details.btn_manage_grades"),
+            ttk.Button(actions_frame, text=_t("student_details.btn_view_grades",
+                                              default="View Grades"),
                       command=lambda: self.manage_student_grades(student_id, s_first, s_last),
                       width=30).pack(pady=5)
 
@@ -904,6 +1266,12 @@ def show_student_details(self, student_id):
     except Exception as e:
         messagebox.showerror(_t("common.error"), _t("student_details.error_load_details", error=str(e)))
         detail_window.destroy()
+    finally:
+        # Release the shared connection. Deferred tab builders and the
+        # window's own callbacks run long after this and open their own —
+        # a shared connection held for the window's lifetime would keep a
+        # read transaction open and grow the WAL.
+        _shared_conn.close()
 
 def _load_academic_data(self, student_id, modules_tree, grades_tree,
                         attendance_tree, summary_label, na):
@@ -1137,7 +1505,7 @@ def _build_student_all_records_tab(tab, student_id):
             try:
                 conn.close()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
     ttk.Button(toolbar, text=_t('gui.learners.students.student_records.buttons.refresh', default="Refresh"),
                command=_refresh).pack(side=tk.RIGHT)
@@ -1203,9 +1571,13 @@ def _build_student_summary(tab, student_id, na,
     + academic-misconduct cases (open count). All queries are scoped
     by ``student_id`` and tolerate missing tables — older deployments
     that don't have ``disciplinary_records`` / ``student_fees`` see an
-    "n/a" tile rather than a stack trace."""
-    import sqlite3
-    from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+    "n/a" tile rather than a stack trace.
+
+    The three counters go through ``get_db_connection()`` rather than a raw
+    ``sqlite3.connect``, so that wrapping the call in ``reuse_connection()``
+    actually collapses them onto one connection — a raw connect bypasses the
+    sharing entirely and pays the ~77ms schema parse three times over."""
+    import sqlite3  # for sqlite3.OperationalError on deployments missing a table
 
     title_lbl = ttk.Label(tab, text=_t('gui.learners.students.student_records.labels.at_a_glance_summary', default="At-a-glance summary"),
                           font=('Arial', 14, 'bold'))
@@ -1239,7 +1611,7 @@ def _build_student_summary(tab, student_id, na,
     finance_balance = "—"
     finance_color = None
     try:
-        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
+        conn = get_db_connection()
         try:
             row = conn.execute(
                 "SELECT COUNT(*), COALESCE(SUM(amount), 0) "
@@ -1273,7 +1645,7 @@ def _build_student_summary(tab, student_id, na,
     att_sub = ""
     att_color = None
     try:
-        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
+        conn = get_db_connection()
         try:
             row = conn.execute(
                 "SELECT "
@@ -1310,7 +1682,7 @@ def _build_student_summary(tab, student_id, na,
     case_color = None
     case_seen = False
     try:
-        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
+        conn = get_db_connection()
         try:
             row = conn.execute(
                 "SELECT COUNT(*) FROM disciplinary_records "

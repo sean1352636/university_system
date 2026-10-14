@@ -143,6 +143,101 @@ class TestMFAEnableDisable:
         assert mfa.get_remaining_recovery_codes(user_id) == 0
 
 
+class TestIsMFAEnabledAgreesWithEnrolment:
+    """``is_mfa_enabled`` is the login gate, so it must agree with what the
+    MFA settings screen reports.
+
+    It used to consult ``mfa_secrets`` alone — the TOTP secret. Enrolling an
+    email or SMS factor writes ``mfa_methods`` / ``mfa_user_settings`` and
+    never touches ``mfa_secrets``, so those users showed "ENABLED" in every
+    UI and were silently never challenged at login.
+    """
+
+    # These two tables are created by the MFA enrolment flows rather than by
+    # initialise_auth_db, so the helpers make them on demand — which is also
+    # why is_mfa_enabled has to tolerate their absence.
+    _METHODS_DDL = """
+        CREATE TABLE IF NOT EXISTS mfa_methods (
+            id                INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id           INTEGER NOT NULL,
+            method_type       TEXT NOT NULL,
+            method_identifier TEXT,
+            is_primary        INTEGER NOT NULL DEFAULT 0,
+            is_enabled        INTEGER NOT NULL DEFAULT 0
+        )
+    """
+    _SETTINGS_DDL = """
+        CREATE TABLE IF NOT EXISTS mfa_user_settings (
+            user_id               INTEGER PRIMARY KEY,
+            verification_disabled INTEGER NOT NULL DEFAULT 0,
+            mfa_enabled           INTEGER DEFAULT 0
+        )
+    """
+
+    @classmethod
+    def _enable_method(cls, auth_db, user_id, method_type="email",
+                       identifier="user@example.test", enabled=1):
+        import sqlite3
+        conn = sqlite3.connect(auth_db)
+        conn.execute(cls._METHODS_DDL)
+        conn.execute(
+            "INSERT INTO mfa_methods (user_id, method_type, method_identifier, "
+            " is_enabled) VALUES (?, ?, ?, ?)",
+            (user_id, method_type, identifier, enabled),
+        )
+        conn.commit()
+        conn.close()
+
+    @classmethod
+    def _set_verification_disabled(cls, auth_db, user_id, disabled):
+        import sqlite3
+        conn = sqlite3.connect(auth_db)
+        conn.execute(cls._SETTINGS_DDL)
+        conn.execute(
+            "INSERT INTO mfa_user_settings (user_id, mfa_enabled, verification_disabled) "
+            "VALUES (?, 1, ?) "
+            "ON CONFLICT(user_id) DO UPDATE SET "
+            "  verification_disabled = excluded.verification_disabled",
+            (user_id, disabled),
+        )
+        conn.commit()
+        conn.close()
+
+    def test_absent_mfa_tables_do_not_break_the_gate(self, mfa, user_id):
+        """A fresh auth DB has neither table; the gate must not raise."""
+        assert mfa.is_mfa_enabled(user_id) is False
+
+    def test_email_enrolment_requires_mfa_without_any_totp_secret(self, mfa, user_id, auth_db):
+        self._enable_method(auth_db, user_id, "email")
+        assert mfa.is_mfa_enabled(user_id) is True
+
+    def test_sms_enrolment_requires_mfa(self, mfa, user_id, auth_db):
+        self._enable_method(auth_db, user_id, "sms", "+447700900000")
+        assert mfa.is_mfa_enabled(user_id) is True
+
+    def test_a_disabled_method_does_not_require_mfa(self, mfa, user_id, auth_db):
+        self._enable_method(auth_db, user_id, "email", enabled=0)
+        assert mfa.is_mfa_enabled(user_id) is False
+
+    def test_totp_secret_still_requires_mfa(self, mfa, user_id):
+        mfa.setup_totp(user_id, "testuser")
+        assert mfa.is_mfa_enabled(user_id) is True
+
+    def test_verification_disabled_overrides_an_enabled_method(self, mfa, user_id, auth_db):
+        """Deliberately suspending MFA for an account must still win."""
+        self._enable_method(auth_db, user_id, "email")
+        self._set_verification_disabled(auth_db, user_id, 1)
+        assert mfa.is_mfa_enabled(user_id) is False
+
+    def test_verification_disabled_overrides_a_totp_secret(self, mfa, user_id, auth_db):
+        mfa.setup_totp(user_id, "testuser")
+        self._set_verification_disabled(auth_db, user_id, 1)
+        assert mfa.is_mfa_enabled(user_id) is False
+
+    def test_no_factors_at_all_does_not_require_mfa(self, mfa, user_id):
+        assert mfa.is_mfa_enabled(user_id) is False
+
+
 # ── Recovery codes ────────────────────────────────────────────────────────
 
 

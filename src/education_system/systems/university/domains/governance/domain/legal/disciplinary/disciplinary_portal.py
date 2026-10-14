@@ -9,6 +9,9 @@ The portal does not own its own tables or data — it is a view onto the
 shared store, so records created here are visible to attendance, exam
 management, and any other module that touches the same tables.
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
@@ -90,11 +93,11 @@ def _bootstrap_auth_from_env():
             )
             _shared_set_auth(shim)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
     except Exception:
         # Don't block portal startup if auth wiring fails — the portal
         # itself doesn't need auth, only the misconduct panel does.
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
 
 _bootstrap_auth_from_env()
@@ -118,7 +121,7 @@ def _current_username() -> str:
                     or user.get('email')
                     or str(user.get('id') or 'Admin'))
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return 'Admin'
 
 
@@ -146,7 +149,7 @@ class DatabaseManager:
         except Exception:
             # Bootstrap failures are surfaced via downstream queries —
             # don't block portal startup.
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def get_connection(self):
         return sqlite3.connect(self.db_path)
@@ -174,6 +177,7 @@ class DatabaseManager:
     def get_all_students(self):
         conn = self.get_connection()
         cursor = conn.cursor()
+        # db-audit: ignore[DBW001] - string literal
         cursor.execute(
             f"SELECT {self._STUDENT_PROJECTION} FROM students "
             "ORDER BY last_name, first_name")
@@ -185,6 +189,7 @@ class DatabaseManager:
         conn = self.get_connection()
         cursor = conn.cursor()
         q = f"%{query}%"
+        # db-audit: ignore[DBW001] - string literal
         cursor.execute(
             f"SELECT {self._STUDENT_PROJECTION} FROM students "
             "WHERE student_id LIKE ? OR first_name LIKE ? "
@@ -198,6 +203,7 @@ class DatabaseManager:
     def get_student(self, student_id):
         conn = self.get_connection()
         cursor = conn.cursor()
+        # db-audit: ignore[DBW001] - string literal
         cursor.execute(
             f"SELECT {self._STUDENT_PROJECTION} FROM students "
             "WHERE student_id = ?", (student_id,))
@@ -250,7 +256,7 @@ class DatabaseManager:
                 severity=severity, offense_type=itype,
             )
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         return record_id
 
@@ -273,6 +279,7 @@ class DatabaseManager:
     def get_incidents_by_student(self, student_id):
         conn = self.get_connection()
         cursor = conn.cursor()
+        # db-audit: ignore[DBW001] - string literal
         cursor.execute(
             f"SELECT {self._INCIDENT_PROJECTION} "
             "FROM disciplinary_records WHERE user_id = ? "
@@ -285,6 +292,7 @@ class DatabaseManager:
     def get_incident(self, incident_id):
         conn = self.get_connection()
         cursor = conn.cursor()
+        # db-audit: ignore[DBW001] - string literal
         cursor.execute(
             f"SELECT {self._INCIDENT_PROJECTION} "
             "FROM disciplinary_records WHERE record_id = ?",
@@ -315,7 +323,7 @@ class DatabaseManager:
                             case_id=incident_id, kind="disciplinary",
                             outcome=status)
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
         finally:
             conn.close()
 
@@ -384,7 +392,7 @@ class DatabaseManager:
                 try:
                     kwargs["duration_days"] = int(duration or 0)
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
             elif mapped in ("warning", "verbal warning", "written warning",
                             "probation", "community service", "reprimand",
                             "censure"):
@@ -405,11 +413,12 @@ class DatabaseManager:
                     **kwargs,
                 )
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def get_actions_by_incident(self, incident_id):
         conn = self.get_connection()
         cursor = conn.cursor()
+        # db-audit: ignore[DBW001] - string literal
         cursor.execute(
             f"SELECT {self._ACTION_PROJECTION} "
             "FROM disciplinary_actions WHERE record_id = ? "
@@ -664,7 +673,7 @@ class DisciplinaryPortal:
             try:
                 self._open_incident_by_id(int(prefill_record_id))
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
     def _open_incident_by_id(self, record_id):
         """Navigate to the incidents view and open details for record_id.
@@ -855,7 +864,7 @@ class DisciplinaryPortal:
             try:
                 win.destroy()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
     def _escalate_incident(self, record_id, parent_dialog):
         """Confirm + run escalation, then jump into the new case."""
@@ -881,12 +890,12 @@ class DisciplinaryPortal:
         try:
             parent_dialog.destroy()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         if hasattr(self, 'incidents_tree'):
             try:
                 self.refresh_incidents()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
         self.open_academic_misconduct(prefill_case_id=case_id)
 
     # ============================================================

@@ -21,17 +21,15 @@ from tkinter import ttk, messagebox, scrolledtext
 from urllib.parse import urlparse
 
 from education_system.platform.features.messaging.messaging_service import InterSystemMessagingService
+from education_system import paths as _paths
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_NAMES = {
-    "university": "University",
-    "sixth_form": "Sixth Form College",
-    "secondary": "Secondary School",
-    "primary": "Primary School",
-    "nursery": "Nursery",
-}
-ALL_SYSTEM_KEYS = ["nursery", "primary", "secondary", "sixth_form", "university"]
+# Read from paths rather than restated here: a local copy of this list drifts
+# silently, and every system missing from it becomes unreachable from this
+# screen rather than raising anything.
+SYSTEM_NAMES = dict(_paths.SYSTEM_LABELS)
+ALL_SYSTEM_KEYS = list(_paths.SYSTEM_ORDER)
 
 KIND_LABEL = {
     "university": "Message",
@@ -551,7 +549,7 @@ class UnifiedInboxPanel(tk.Frame):
                 messagebox.showinfo("Info", "Dashboard unavailable.", parent=self)
                 return
             try:
-                from education_system.systems.university.interfaces.gui.shell.email.email_gui.chat_dialogs import (
+                from education_system.systems.university.shell.gui.email.email_gui.chat_dialogs import (
                     ReplyMessageDialog,
                 )
                 ReplyMessageDialog(self._root, self._dashboard, item["id"])

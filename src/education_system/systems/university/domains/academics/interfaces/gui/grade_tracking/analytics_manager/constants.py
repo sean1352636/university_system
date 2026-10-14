@@ -1,10 +1,13 @@
 """Constants and database connection setup for analytics manager."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 import os
 from pathlib import Path
 
 import tkinter as tk
-from tkinter import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import messagebox
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from education_system import paths
@@ -23,7 +26,7 @@ def _patched_sqlite3_connect_grade(database, *args, **kwargs):
         if not database or db_name in (str(DEFAULT_DB_PATH), "student_grading_system.db"):
             return _original_sqlite3_connect_grade(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return _original_sqlite3_connect_grade(database, *args, **kwargs)
 
 

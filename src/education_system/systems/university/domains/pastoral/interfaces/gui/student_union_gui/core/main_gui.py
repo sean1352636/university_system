@@ -64,7 +64,6 @@ from education_system.systems.university.domains.pastoral.interfaces.gui.student
     add_sidebar_header as _add_sidebar_header,
     add_sidebar_button as _add_sidebar_button,
     add_sidebar_separator as _add_sidebar_separator,
-    switch_to_cli as _switch_to_cli,
     return_to_homescreen as _return_to_homescreen,
     setup_main_menu as _setup_main_menu,
     create_main_menu_button as _create_main_menu_button,
@@ -260,6 +259,8 @@ from education_system.systems.university.domains.pastoral.interfaces.gui.student
 from education_system.systems.university.domains.pastoral.interfaces.gui.student_union_gui.core.navigation import (
     open_student_council_dialog as _open_student_council_dialog,
 )
+from education_system.systems.university.infrastructure.database.schemas.students_table import ensure_students_table
+from education_system.systems.university.infrastructure.database.schemas.users_table import ensure_users_table
 
 class StudentUnionGUI:
     """Main GUI application for Student Union Management System"""
@@ -270,7 +271,6 @@ class StudentUnionGUI:
     add_sidebar_header = _add_sidebar_header
     add_sidebar_button = _add_sidebar_button
     add_sidebar_separator = _add_sidebar_separator
-    switch_to_cli = _switch_to_cli
     return_to_homescreen = _return_to_homescreen
     setup_main_menu = _setup_main_menu
     create_main_menu_button = _create_main_menu_button
@@ -621,17 +621,7 @@ class StudentUnionGUI:
                 cursor = conn.cursor()
 
                 # Create basic tables if they don't exist
-                cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS users (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        username TEXT UNIQUE NOT NULL,
-                        password_hash TEXT NOT NULL,
-                        email TEXT,
-                        role TEXT DEFAULT 'student',
-                        created_at TEXT,
-                        last_login TEXT
-                    )
-                ''')
+                ensure_users_table(cursor)
 
                 # Add last_login column if it doesn't exist (migration)
                 try:
@@ -640,17 +630,7 @@ class StudentUnionGUI:
                     cursor.execute("ALTER TABLE users ADD COLUMN last_login TEXT")
                     conn.commit()
 
-                cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS students (
-                        student_id TEXT PRIMARY KEY,
-                        first_name TEXT NOT NULL,
-                        last_name TEXT NOT NULL,
-                        email_address TEXT UNIQUE NOT NULL,
-                        course TEXT,
-                        year_of_study INTEGER,
-                        enrollment_date TEXT
-                    )
-                ''')
+                ensure_students_table(cursor)
 
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS student_clubs (
@@ -670,24 +650,8 @@ class StudentUnionGUI:
                     )
                 ''')
 
-                cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS union_events (
-                        event_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        event_name TEXT NOT NULL,
-                        description TEXT,
-                        organizer_id INTEGER,
-                        event_date TEXT,
-                        start_time TEXT,
-                        end_time TEXT,
-                        location TEXT,
-                        category TEXT,
-                        max_attendees INTEGER,
-                        current_attendees INTEGER DEFAULT 0,
-                        status TEXT DEFAULT 'upcoming',
-                        created_at TEXT,
-                        FOREIGN KEY (organizer_id) REFERENCES student_clubs (club_id)
-                    )
-                ''')
+                # Union events live in ``unified_events`` tagged
+                # ``source_type = 'union'``; no per-union table is created.
 
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS club_members (
@@ -716,24 +680,8 @@ class StudentUnionGUI:
                     )
                 ''')
 
-                cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS union_events (
-                        event_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        event_name TEXT NOT NULL,
-                        description TEXT,
-                        organizer_id INTEGER,
-                        event_date TEXT,
-                        start_time TEXT,
-                        end_time TEXT,
-                        location TEXT,
-                        category TEXT,
-                        max_attendees INTEGER,
-                        current_attendees INTEGER DEFAULT 0,
-                        status TEXT DEFAULT 'upcoming',
-                        created_at TEXT,
-                        FOREIGN KEY (organizer_id) REFERENCES student_clubs (club_id)
-                    )
-                ''')
+                # Union events live in ``unified_events`` tagged
+                # ``source_type = 'union'``; no per-union table is created.
 
                 conn.commit()
             finally:
@@ -946,8 +894,6 @@ class StudentUnionGUI:
         self.add_sidebar_separator()
         self.add_sidebar_header("❓ Help", "")
         self.add_sidebar_button("About", self.show_about, "ℹ️")
-        if CLI_AVAILABLE:
-            self.add_sidebar_button("Switch to CLI", self.switch_to_cli, "💻")
 
         # Return to Homescreen
         self.add_sidebar_separator()

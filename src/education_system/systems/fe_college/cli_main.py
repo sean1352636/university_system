@@ -151,7 +151,7 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
     if shared_auth is None or not getattr(shared_auth, "current_user", None):
         logger.error("FE College CLI invoked without a shared_auth session")
         raise RuntimeError(
-            "The FE College CLI must be launched via run.py — "
+            "The FE College CLI must be launched via python -m education_system — "
             "no standalone login is available."
         )
     current = shared_auth.current_user or {}
@@ -174,5 +174,5 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
 
 
 if __name__ == "__main__":
-    print("Launch via: python run.py --fecollege --cli")
+    print("Launch via: python -m education_system --fecollege --cli")
     raise SystemExit(2)

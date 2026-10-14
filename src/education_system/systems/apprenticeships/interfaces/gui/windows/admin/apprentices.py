@@ -83,6 +83,8 @@ def render(gui) -> None:
         buttons.append(("Change Status", lambda: _change_status(gui, table)))
         buttons.append(("Start Programme", lambda: _start(gui, table)))
         buttons.append(("Assign Tutor", lambda: _assign_tutor(gui, table)))
+    if gui.actor.can("training.manage"):
+        buttons.append(("Apply Curriculum", lambda: _apply_curriculum(gui, table)))
     buttons.append(("View Detail", lambda: _view(gui, table)))
     if gui.actor.is_admin:
         buttons.append(("Delete", lambda: _delete(gui, table)))
@@ -231,7 +233,7 @@ def _edit(gui, table: widgets.DataTable) -> None:
     )
     if not ok or summary is None:
         return
-    choices = _choices(gui)
+    choices = _choices(gui, keep_programme_id=summary.apprentice.programme_id)
 
     def save(values: dict[str, Any]) -> None:
         apprentice_service.update_apprentice(
@@ -337,6 +339,9 @@ def _change_status(gui, table: widgets.DataTable) -> None:
             gui.actor, apprentice_id, values.get("new_status", ""),
             reason=values.get("reason") or None,
             effective_date=values.get("effective_date") or None,
+            notes=values.get("notes") or None,
+            expected_return=values.get("expected_return") or None,
+            last_activity_date=values.get("last_activity_date") or None,
         )
 
     dialog = widgets.FormDialog(
@@ -347,7 +352,16 @@ def _change_status(gui, table: widgets.DataTable) -> None:
             {"key": "effective_date", "label": "Effective date",
              "help": "YYYY-MM-DD. Today if left blank."},
             {"key": "reason", "label": "Reason", "kind": "text",
-             "help": "Required for a break in learning, a withdrawal or a transfer."},
+             "help": "Required for a break in learning, a withdrawal or a transfer. "
+                     "For a break or withdrawal, a standard reason such as "
+                     "'Long-term sickness' or 'Left employment' is filed under it; "
+                     "anything else is filed as Other."},
+            {"key": "notes", "label": "Details",
+             "help": "Anything the reason alone does not say. Needed for Other."},
+            {"key": "expected_return", "label": "Expected return",
+             "help": "Breaks only. YYYY-MM-DD."},
+            {"key": "last_activity_date", "label": "Last day of learning",
+             "help": "Withdrawals only. YYYY-MM-DD; the effective date if left blank."},
         ],
         save,
         intro="Only the moves the lifecycle allows from here are offered.",
@@ -416,6 +430,24 @@ def _assign_tutor(gui, table: widgets.DataTable) -> None:
         gui.refresh()
 
 
+def _apply_curriculum(gui, table: widgets.DataTable) -> None:
+    """Put the programme's curriculum modules on the apprentice's learning plan."""
+    apprentice_id = table.require_selection_int("apply a curriculum")
+    if apprentice_id is None:
+        return
+    if not widgets.confirm(
+        "Add one learning-plan objective for each module of this apprentice's programme?\n\n"
+        "Modules already on the plan are left alone, so this only adds what is new.",
+        title="Apply curriculum",
+    ):
+        return
+    ok, result = widgets.guard(
+        lambda: programme_service.apply_curriculum(gui.actor, apprentice_id)
+    )
+    if ok:
+        widgets.inform(f"Learning plan updated: {result.summary}.")
+
+
 def _delete(gui, table: widgets.DataTable) -> None:
     apprentice_id = table.require_selection_int("delete a record")
     if apprentice_id is None:
@@ -442,13 +474,20 @@ def _delete(gui, table: widgets.DataTable) -> None:
 # Lookups
 # ═════════════════════════════════════════════════════════════════════
 
-def _choices(gui) -> dict[str, list[tuple[str, int]]]:
+def _choices(gui, *, keep_programme_id: int | None = None) -> dict[str, list[tuple[str, int]]]:
     """Label/id pairs for the form comboboxes.
 
     Comboboxes hand back the label the user picked, so each list is kept as
     pairs and mapped back to an id on save.
+
+    Programmes are the Active versions a new start may go on, plus — when
+    editing — the version already on the record even if it has since been
+    superseded. Without it, the combo would open blank and saving the form
+    would quietly take the apprentice off their programme.
     """
-    _, programmes = widgets.guard(lambda: programme_service.list_programmes(gui.actor))
+    _, programmes = widgets.guard(lambda: programme_service.enrolment_options(
+        gui.actor, keep_programme_id=keep_programme_id,
+    ))
     _, employers = widgets.guard(lambda: employer_service.list_employers(gui.actor))
     tutors: list[tuple[str, int]] = []
     if gui.actor.can("staff.view"):
@@ -460,7 +499,8 @@ def _choices(gui) -> dict[str, list[tuple[str, int]]]:
         tutors = [(f"{m.full_name} ({m.staff_role})", m.staff_id) for m in (staff or [])]
     return {
         "programmes": [
-            (f"{p.reference} — {p.title}", p.programme_id) for p in (programmes or [])
+            (f"{p.reference} v{getattr(p, 'version', '1.0')} — {p.title}", p.programme_id)
+            for p in (programmes or [])
         ],
         "employers": [(e.name, e.employer.employer_id) for e in (employers or [])],
         "tutors": tutors,

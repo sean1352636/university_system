@@ -48,8 +48,9 @@ NAV_CATEGORIES: list[tuple[str, list[tuple[str, str]]]] = [
         ("Parent Portal", "open_parent_portal"),
     ]),
     ("Academic Management", [
-        ("Academic Year", "open_academic_year"),
-        ("Calendar", "open_calendar"),
+        # One entry, was two: the year structure (terms, breaks,
+        # INSET) and the events calendar now share one window.
+        ("Academic Year & Calendar", "open_academic_year"),
         ("Courses", "open_courses"),
         ("Subjects & A-Levels", "open_subjects"),
         ("Class Groups", "open_class_groups"),
@@ -87,11 +88,10 @@ NAV_CATEGORIES: list[tuple[str, list[tuple[str, str]]]] = [
         ("SEF Builder", "open_sef_builder"),
     ]),
     ("UCAS & Careers", [
-        ("UCAS Applications", "open_ucas"),
-        ("UCAS Workflow", "open_ucas_workflow"),
-        ("Personal Statements", "open_personal_statements"),
-        ("References", "open_references"),
-        ("University Offers", "open_offers"),
+        # One entry, was six: University Progression, UCAS Applications,
+        # UCAS Workflow, Personal Statements, References and University
+        # Offers all describe one route and now share one window.
+        ("University & UCAS", "open_university_ucas"),
         ("University Visits", "open_university_visits"),
         ("Apprenticeships", "open_apprenticeships"),
         ("Careers Guidance", "open_careers"),
@@ -167,6 +167,8 @@ NAV_CATEGORIES: list[tuple[str, list[tuple[str, str]]]] = [
     ]),
     ("Cross-System", [
         ("Student Journey", "open_student_journey"),
+        ("Refer to FE College", "open_fe_pathway_referral"),
+        ("Incoming FE Applications", "open_incoming_fe_applications"),
         ("Analytics Dashboard", "open_cross_analytics"),
         ("Cross-System Calendar", "open_cross_calendar"),
         ("Central Admin Portal", "open_central_admin"),
@@ -902,243 +904,236 @@ class SixthFormMainGUI:
 
     # ── Student CRUD (delegates to student_views) ────────────────────
     def open_student_directory(self) -> None:
-        from education_system.systems.sixth_form.domain.learners.students import student_views
+        from education_system.systems.sixth_form.interfaces.gui.learners.students import student_views
         student_views.open_directory(self)
 
     def open_add_student(self) -> None:
-        from education_system.systems.sixth_form.domain.learners.students import student_views
+        from education_system.systems.sixth_form.interfaces.gui.learners.students import student_views
         student_views.open_add_student(self)
 
     def open_search_students(self) -> None:
-        from education_system.systems.sixth_form.domain.learners.students import student_views
+        from education_system.systems.sixth_form.interfaces.gui.learners.students import student_views
         student_views.open_search(self)
 
     def open_student_profile(self) -> None:
-        from education_system.systems.sixth_form.domain.learners.students import student_views
+        from education_system.systems.sixth_form.interfaces.gui.learners.students import student_views
         student_views.open_profile(self)
 
     def open_enrolment(self) -> None:
-        from education_system.systems.sixth_form.domain.admissions.enrolments import enrolment_views
+        from education_system.systems.sixth_form.interfaces.gui.admissions.enrolments import enrolment_views
         enrolment_views.open_directory(self)
 
     def open_courses(self) -> None:
-        from education_system.systems.sixth_form.domain.academics.courses import course_views
+        from education_system.systems.sixth_form.interfaces.gui.academics.courses import course_views
         course_views.open_directory(self)
 
     def open_subjects(self) -> None:
-        from education_system.systems.sixth_form.domain.academics.subjects import subject_views
+        from education_system.systems.sixth_form.interfaces.gui.academics.subjects import subject_views
         subject_views.open_directory(self)
 
     def open_class_groups(self) -> None:
-        from education_system.systems.sixth_form.domain.academics.class_groups import class_group_views
+        from education_system.systems.sixth_form.interfaces.gui.academics.class_groups import class_group_views
         class_group_views.open_directory(self)
 
     def open_timetable(self) -> None:
-        from education_system.systems.sixth_form.domain.academics.timetable import timetable_views
+        from education_system.systems.sixth_form.interfaces.gui.academics.timetable import timetable_views
         timetable_views.open_directory(self)
 
     def open_timetable_optimiser(self) -> None:
-        from education_system.systems.sixth_form.domain.academics.timetable_optimiser import timetable_optimiser_views
+        from education_system.systems.sixth_form.interfaces.gui.academics.timetable_optimiser import timetable_optimiser_views
         timetable_optimiser_views.open_directory(self)
 
     def open_attendance(self) -> None:
-        from education_system.systems.sixth_form.domain.academics.attendance import attendance_views
+        from education_system.systems.sixth_form.interfaces.gui.academics.attendance import attendance_views
         attendance_views.open_directory(self)
 
     def open_homework(self) -> None:
-        from education_system.systems.sixth_form.domain.academics.homework import homework_views
+        from education_system.systems.sixth_form.interfaces.gui.academics.homework import homework_views
         homework_views.open_directory(self)
 
     def open_gradebook(self) -> None:
-        from education_system.systems.sixth_form.domain.assessment.gradebook import gradebook_views
+        from education_system.systems.sixth_form.interfaces.gui.assessment.gradebook import gradebook_views
         gradebook_views.open_directory(self)
 
     def open_predicted_grades(self) -> None:
-        from education_system.systems.sixth_form.domain.assessment.predicted_grades import predicted_grades_views
+        from education_system.systems.sixth_form.interfaces.gui.assessment.predicted_grades import predicted_grades_views
         predicted_grades_views.open_directory(self)
 
     def open_mock_exams(self) -> None:
-        from education_system.systems.sixth_form.domain.assessment.mock_exams import mock_exam_views
+        from education_system.systems.sixth_form.interfaces.gui.assessment.mock_exams import mock_exam_views
         mock_exam_views.open_directory(self)
 
     def open_exam_entries(self) -> None:
-        from education_system.systems.sixth_form.domain.assessment.exam_entries import exam_entry_views
+        from education_system.systems.sixth_form.interfaces.gui.assessment.exam_entries import exam_entry_views
         exam_entry_views.open_directory(self)
 
     def open_results_day(self) -> None:
-        from education_system.systems.sixth_form.domain.assessment.exam_results import exam_result_views
+        from education_system.systems.sixth_form.interfaces.gui.assessment.exam_results import exam_result_views
         exam_result_views.open_directory(self)
 
-    def open_ucas(self) -> None:
-        from education_system.systems.sixth_form.domain.progression.ucas import ucas_views
-        ucas_views.open_directory(self)
+    def open_university_ucas(self) -> None:
+        """The whole route to university in one window.
 
-    def open_ucas_workflow(self) -> None:
-        from education_system.systems.sixth_form.domain.progression.ucas_workflow import ucas_workflow_views
-        ucas_workflow_views.open_directory(self)
-
-    def open_personal_statements(self) -> None:
-        from education_system.systems.sixth_form.domain.progression.personal_statements import personal_statement_views
-        personal_statement_views.open_directory(self)
-
-    def open_references(self) -> None:
-        from education_system.systems.sixth_form.domain.progression.references import reference_views
-        reference_views.open_directory(self)
-
-    def open_offers(self) -> None:
-        from education_system.systems.sixth_form.domain.progression.offers import offer_views
-        offer_views.open_directory(self)
+        Replaces the six handlers that were here — progression, UCAS
+        applications, workflow, personal statements, references and
+        offers. They opened six screens over one set of records; this
+        opens one window with those as tabs.
+        """
+        from education_system.systems.sixth_form.domain.progression.university.views import (
+            window as university_window,
+        )
+        university_window.open_window(self)
 
     def open_apprenticeships(self) -> None:
-        from education_system.systems.sixth_form.domain.progression.apprenticeships import apprenticeship_views
+        from education_system.systems.sixth_form.interfaces.gui.progression.apprenticeships import apprenticeship_views
         apprenticeship_views.open_directory(self)
 
     def open_university_visits(self) -> None:
-        from education_system.systems.sixth_form.domain.progression.university_visits import university_visits_views
+        from education_system.systems.sixth_form.interfaces.gui.progression.university_visits import university_visits_views
         university_visits_views.open_directory(self)
 
     def open_careers(self) -> None:
-        from education_system.systems.sixth_form.domain.progression.careers import careers_views
+        from education_system.systems.sixth_form.interfaces.gui.progression.careers import careers_views
         careers_views.open_directory(self)
 
     def open_destinations(self) -> None:
-        from education_system.systems.sixth_form.domain.progression.destinations import destinations_views
+        from education_system.systems.sixth_form.interfaces.gui.progression.destinations import destinations_views
         destinations_views.open_directory(self)
 
     def open_epq(self) -> None:
-        from education_system.systems.sixth_form.domain.academics.epq import epq_views
+        from education_system.systems.sixth_form.interfaces.gui.academics.epq import epq_views
         epq_views.open_directory(self)
 
     def open_work_experience(self) -> None:
-        from education_system.systems.sixth_form.domain.progression.work_experience import work_experience_views
+        from education_system.systems.sixth_form.interfaces.gui.progression.work_experience import work_experience_views
         work_experience_views.open_directory(self)
 
     def open_room_booking(self) -> None:
-        from education_system.systems.sixth_form.domain.academics.room_booking import room_booking_views
+        from education_system.systems.sixth_form.interfaces.gui.academics.room_booking import room_booking_views
         room_booking_views.open_directory(self)
 
     def open_medical_records(self) -> None:
-        from education_system.systems.sixth_form.domain.pastoral.health.medical_records import medical_records_views
+        from education_system.systems.sixth_form.interfaces.gui.pastoral.health.medical_records import medical_records_views
         medical_records_views.open_directory(self)
 
     def open_tutor_groups(self) -> None:
-        from education_system.systems.sixth_form.domain.pastoral.tutor_groups import tutor_group_views
+        from education_system.systems.sixth_form.interfaces.gui.pastoral.tutor_groups import tutor_group_views
         tutor_group_views.open_directory(self)
 
     def open_behaviour(self) -> None:
-        from education_system.systems.sixth_form.domain.pastoral.behaviour import behaviour_views
+        from education_system.systems.sixth_form.interfaces.gui.pastoral.behaviour import behaviour_views
         behaviour_views.open_directory(self)
 
     def open_safeguarding(self) -> None:
-        from education_system.systems.sixth_form.domain.safeguarding import safeguarding_views
+        from education_system.systems.sixth_form.interfaces.gui.safeguarding import safeguarding_views
         safeguarding_views.open_directory(self)
 
     def open_wellbeing(self) -> None:
-        from education_system.systems.sixth_form.domain.pastoral.wellbeing import wellbeing_views
+        from education_system.systems.sixth_form.interfaces.gui.pastoral.wellbeing import wellbeing_views
         wellbeing_views.open_wellbeing_window(self)
 
     def open_student_wellbeing(self) -> None:
-        from education_system.systems.sixth_form.domain.pastoral.student_wellbeing import student_wellbeing_views
+        from education_system.systems.sixth_form.interfaces.gui.pastoral.student_wellbeing import student_wellbeing_views
         student_wellbeing_views.open_student_wellbeing_window(self)
 
     def open_prevent_duty(self) -> None:
-        from education_system.systems.sixth_form.domain.safeguarding.prevent_duty import prevent_duty_views
+        from education_system.systems.sixth_form.interfaces.gui.safeguarding.prevent_duty import prevent_duty_views
         prevent_duty_views.open_prevent_duty_window(self)
 
     def open_attendance_concerns(self) -> None:
-        from education_system.systems.sixth_form.domain.pastoral.attendance_concerns import attendance_concerns_views
+        from education_system.systems.sixth_form.interfaces.gui.pastoral.attendance_concerns import attendance_concerns_views
         attendance_concerns_views.open_attendance_concerns_window(self)
 
     def open_staff(self) -> None:
-        from education_system.systems.sixth_form.domain.staff import staff_views
+        from education_system.systems.sixth_form.interfaces.gui.staff import staff_views
         staff_views.open_directory(self)
 
     def open_parents(self) -> None:
-        from education_system.systems.sixth_form.domain.operations.communications.parent_contacts import parent_contacts_views
+        from education_system.systems.sixth_form.interfaces.gui.operations.communications.parent_contacts import parent_contacts_views
         parent_contacts_views.open_directory(self)
 
     def open_parents_evenings(self) -> None:
-        from education_system.systems.sixth_form.domain.operations.communications.parents_evenings import parents_evenings_views
+        from education_system.systems.sixth_form.interfaces.gui.operations.communications.parents_evenings import parents_evenings_views
         parents_evenings_views.open_parents_evenings_window(self)
 
     def open_notices(self) -> None:
-        from education_system.systems.sixth_form.domain.operations.communications.notices import notices_views
+        from education_system.systems.sixth_form.interfaces.gui.operations.communications.notices import notices_views
         notices_views.open_notices_window(self)
 
     def open_messaging(self) -> None:
-        from education_system.systems.sixth_form.domain.operations.communications.messages import messages_views
+        from education_system.systems.sixth_form.interfaces.gui.operations.communications.messages import messages_views
         messages_views.open_messages_window(self)
 
     def open_finance_hub(self) -> None:
-        from education_system.systems.sixth_form.domain.finance.finance_hub import finance_hub_views
+        from education_system.systems.sixth_form.interfaces.gui.finance.finance_hub import finance_hub_views
         finance_hub_views.open_finance_hub(self)
 
     def open_fees(self) -> None:
-        from education_system.systems.sixth_form.domain.finance.fees import fees_views
+        from education_system.systems.sixth_form.interfaces.gui.finance.fees import fees_views
         fees_views.open_fees_window(self)
 
     def open_bursaries(self) -> None:
-        from education_system.systems.sixth_form.domain.finance.bursaries import bursaries_views
+        from education_system.systems.sixth_form.interfaces.gui.finance.bursaries import bursaries_views
         bursaries_views.open_bursaries_window(self)
 
     def open_trips_payments(self) -> None:
-        from education_system.systems.sixth_form.domain.finance.trips import trips_views
+        from education_system.systems.sixth_form.interfaces.gui.finance.trips import trips_views
         trips_views.open_trips_window(self)
 
     def open_receipts(self) -> None:
-        from education_system.systems.sixth_form.domain.finance.receipts import receipts_views
+        from education_system.systems.sixth_form.interfaces.gui.finance.receipts import receipts_views
         receipts_views.open_receipts_window(self)
 
     def open_report_attendance(self) -> None:
-        from education_system.systems.sixth_form.domain.operations.reporting.attendance_report import attendance_report_views
+        from education_system.systems.sixth_form.interfaces.gui.operations.reporting.attendance_report import attendance_report_views
         attendance_report_views.open_attendance_report_window(self)
 
     def open_report_grades(self) -> None:
-        from education_system.systems.sixth_form.domain.operations.reporting.grades_report import grades_report_views
+        from education_system.systems.sixth_form.interfaces.gui.operations.reporting.grades_report import grades_report_views
         grades_report_views.open_grades_report_window(self)
 
     def open_progress(self) -> None:
-        from education_system.systems.sixth_form.domain.operations.reporting.progress import progress_views
+        from education_system.systems.sixth_form.interfaces.gui.operations.reporting.progress import progress_views
         progress_views.open_progress_window(self)
 
     def open_kpi_dashboard(self) -> None:
-        from education_system.systems.sixth_form.domain.operations.reporting.kpi_dashboard import kpi_dashboard_views
+        from education_system.systems.sixth_form.interfaces.gui.operations.reporting.kpi_dashboard import kpi_dashboard_views
         kpi_dashboard_views.open_kpi_dashboard_window(self)
 
     def open_data_dashboard(self) -> None:
-        from education_system.systems.sixth_form.domain.operations.reporting.data_dashboard import data_dashboard_views
+        from education_system.systems.sixth_form.interfaces.gui.operations.reporting.data_dashboard import data_dashboard_views
         data_dashboard_views.open_data_dashboard_window(self)
 
     def open_progress_dashboard(self) -> None:
-        from education_system.systems.sixth_form.domain.operations.reporting.progress_dashboard import progress_dashboard_views
+        from education_system.systems.sixth_form.interfaces.gui.operations.reporting.progress_dashboard import progress_dashboard_views
         progress_dashboard_views.open_progress_dashboard_window(self)
 
     def open_mobile_dashboard(self) -> None:
-        from education_system.systems.sixth_form.domain.operations.reporting.mobile_dashboard import mobile_dashboard_views
+        from education_system.systems.sixth_form.interfaces.gui.operations.reporting.mobile_dashboard import mobile_dashboard_views
         mobile_dashboard_views.open_mobile_dashboard_window(self)
 
     def open_export(self) -> None:
-        from education_system.systems.sixth_form.domain.operations.reporting.custom_export import custom_export_views
+        from education_system.systems.sixth_form.interfaces.gui.operations.reporting.custom_export import custom_export_views
         custom_export_views.open_custom_export_window(self)
 
     def open_audit_reports(self) -> None:
-        from education_system.systems.sixth_form.domain.governance.audit.audit_reports import audit_reports_views
+        from education_system.systems.sixth_form.interfaces.gui.governance.audit.audit_reports import audit_reports_views
         audit_reports_views.open_audit_reports_window(self)
 
     def open_data_export(self) -> None:
-        from education_system.systems.sixth_form.domain.operations.reporting.data_export import data_export_views
+        from education_system.systems.sixth_form.interfaces.gui.operations.reporting.data_export import data_export_views
         data_export_views.open_data_export_window(self)
 
     def open_gdpr(self) -> None:
-        from education_system.systems.sixth_form.domain.governance.gdpr import gdpr_views
+        from education_system.systems.sixth_form.interfaces.gui.governance.gdpr import gdpr_views
         gdpr_views.open_gdpr_window(self)
 
     def open_risk_management(self) -> None:
-        from education_system.systems.sixth_form.domain.governance.risk_management import risk_management_views
+        from education_system.systems.sixth_form.interfaces.gui.governance.risk_management import risk_management_views
         risk_management_views.open_risk_management_window(self)
 
     def open_automation_rules(self) -> None:
-        from education_system.systems.sixth_form.domain.governance.automation_rules import automation_rules_views
+        from education_system.systems.sixth_form.interfaces.gui.governance.automation_rules import automation_rules_views
         automation_rules_views.open_directory(self)
 
     def open_change_password(self) -> None:
@@ -1160,259 +1155,259 @@ class SixthFormMainGUI:
         settings_views.open_settings_window(self, auth=self.auth)
 
     def open_user_management(self) -> None:
-        from education_system.systems.sixth_form.domain.governance.user_management import user_management_views
+        from education_system.systems.sixth_form.interfaces.gui.governance.user_management import user_management_views
         user_management_views.open_user_management_window(self)
 
     def open_compliance(self) -> None:
-        from education_system.systems.sixth_form.domain.governance.compliance import compliance_views
+        from education_system.systems.sixth_form.interfaces.gui.governance.compliance import compliance_views
         compliance_views.open_compliance_window(self)
 
     def open_governance(self) -> None:
-        from education_system.systems.sixth_form.domain.governance import governance_views
+        from education_system.systems.sixth_form.interfaces.gui.governance import governance_views
         governance_views.open_governance_window(self)
 
     def open_policies(self) -> None:
-        from education_system.systems.sixth_form.domain.governance.policies import policies_views
+        from education_system.systems.sixth_form.interfaces.gui.governance.policies import policies_views
         policies_views.open_policies_window(self)
 
     def open_absence_requests(self) -> None:
-        from education_system.systems.sixth_form.domain.pastoral.absence_requests import absence_requests_views
+        from education_system.systems.sixth_form.interfaces.gui.pastoral.absence_requests import absence_requests_views
         absence_requests_views.open_absence_requests_window(self)
 
     def open_academic_year(self) -> None:
-        from education_system.systems.sixth_form.domain.academics.academic_year import academic_year_views
+        from education_system.systems.sixth_form.interfaces.gui.academics.academic_year import academic_year_views
         academic_year_views.open_academic_year_window(self)
 
     def open_accessibility(self) -> None:
-        from education_system.systems.sixth_form.domain.pastoral.accessibility import accessibility_views
+        from education_system.systems.sixth_form.interfaces.gui.pastoral.accessibility import accessibility_views
         accessibility_views.open_accessibility_window(self)
 
     def open_activity_feed(self) -> None:
-        from education_system.systems.sixth_form.domain.operations.communications.activity_feed import activity_feed_views
+        from education_system.systems.sixth_form.interfaces.gui.operations.communications.activity_feed import activity_feed_views
         activity_feed_views.open_activity_feed_window(self)
 
     def open_advanced_search(self) -> None:
-        from education_system.systems.sixth_form.domain.learners.advanced_search import advanced_search_views
+        from education_system.systems.sixth_form.interfaces.gui.learners.advanced_search import advanced_search_views
         advanced_search_views.open_advanced_search_window(self)
 
     def open_admissions(self) -> None:
-        from education_system.systems.sixth_form.domain.admissions import admissions_views
+        from education_system.systems.sixth_form.interfaces.gui.admissions import admissions_views
         admissions_views.open_admissions_window(self)
 
     def open_onboarding(self) -> None:
-        from education_system.systems.sixth_form.domain.admissions.onboarding import onboarding_views
+        from education_system.systems.sixth_form.interfaces.gui.admissions.onboarding import onboarding_views
         onboarding_views.open_onboarding_window(self)
 
     def open_bulk_operations(self) -> None:
-        from education_system.systems.sixth_form.domain.learners.bulk_operations import bulk_operations_views
+        from education_system.systems.sixth_form.interfaces.gui.learners.bulk_operations import bulk_operations_views
         bulk_operations_views.open_bulk_operations_window(self)
 
     def open_alumni(self) -> None:
-        from education_system.systems.sixth_form.domain.learners.alumni import alumni_views
+        from education_system.systems.sixth_form.interfaces.gui.learners.alumni import alumni_views
         alumni_views.open_alumni_window(self)
 
     def open_parent_portal(self) -> None:
-        from education_system.systems.sixth_form.domain.operations.communications.parent_portal import parent_portal_views
+        from education_system.systems.sixth_form.interfaces.gui.operations.communications.parent_portal import parent_portal_views
         parent_portal_views.open_directory(self)
 
     def open_calendar(self) -> None:
-        from education_system.systems.sixth_form.domain.academics.calendar import calendar_views
+        from education_system.systems.sixth_form.interfaces.gui.academics.calendar import calendar_views
         calendar_views.open_calendar_window(self)
 
     def open_lesson_plans(self) -> None:
-        from education_system.systems.sixth_form.domain.academics.lesson_plans import lesson_plans_views
+        from education_system.systems.sixth_form.interfaces.gui.academics.lesson_plans import lesson_plans_views
         lesson_plans_views.open_lesson_plans_window(self)
 
     def open_cover(self) -> None:
-        from education_system.systems.sixth_form.domain.academics.cover import cover_views
+        from education_system.systems.sixth_form.interfaces.gui.academics.cover import cover_views
         cover_views.open_cover_window(self)
 
     def open_cover_agency(self) -> None:
-        from education_system.systems.sixth_form.domain.academics.cover_agency import cover_agency_views
+        from education_system.systems.sixth_form.interfaces.gui.academics.cover_agency import cover_agency_views
         cover_agency_views.open_cover_agency_window(self)
 
     def open_assignments(self) -> None:
-        from education_system.systems.sixth_form.domain.academics.assignments import assignments_views
+        from education_system.systems.sixth_form.interfaces.gui.academics.assignments import assignments_views
         assignments_views.open_assignments_window(self)
 
     def open_enrichment(self) -> None:
-        from education_system.systems.sixth_form.domain.academics.enrichment import enrichment_views
+        from education_system.systems.sixth_form.interfaces.gui.academics.enrichment import enrichment_views
         enrichment_views.open_enrichment_window(self)
 
     def open_library(self) -> None:
-        from education_system.systems.sixth_form.domain.academics.library import library_views
+        from education_system.systems.sixth_form.interfaces.gui.academics.library import library_views
         library_views.open_library_window(self)
 
     def open_study_planner(self) -> None:
-        from education_system.systems.sixth_form.domain.academics.study_planner import study_planner_views
+        from education_system.systems.sixth_form.interfaces.gui.academics.study_planner import study_planner_views
         study_planner_views.open_study_planner_window(self)
 
     def open_baseline_assessment(self) -> None:
-        from education_system.systems.sixth_form.domain.assessment.baseline_assessment import baseline_assessment_views
+        from education_system.systems.sixth_form.interfaces.gui.assessment.baseline_assessment import baseline_assessment_views
         baseline_assessment_views.open_baseline_assessment_window(self)
 
     def open_target_setting(self) -> None:
-        from education_system.systems.sixth_form.domain.assessment.target_setting import target_setting_views
+        from education_system.systems.sixth_form.interfaces.gui.assessment.target_setting import target_setting_views
         target_setting_views.open_target_setting_window(self)
 
     def open_ilp(self) -> None:
-        from education_system.systems.sixth_form.domain.assessment.ilp import ilp_views
+        from education_system.systems.sixth_form.interfaces.gui.assessment.ilp import ilp_views
         ilp_views.open_ilp_window(self)
 
     def open_intervention_tracking(self) -> None:
-        from education_system.systems.sixth_form.domain.assessment.intervention_tracking import intervention_tracking_views
+        from education_system.systems.sixth_form.interfaces.gui.assessment.intervention_tracking import intervention_tracking_views
         intervention_tracking_views.open_intervention_tracking_window(self)
 
     def open_value_added(self) -> None:
-        from education_system.systems.sixth_form.domain.assessment.value_added import value_added_views
+        from education_system.systems.sixth_form.interfaces.gui.assessment.value_added import value_added_views
         value_added_views.open_value_added_window(self)
 
     def open_early_warning(self) -> None:
-        from education_system.systems.sixth_form.domain.assessment.early_warning import early_warning_views
+        from education_system.systems.sixth_form.interfaces.gui.assessment.early_warning import early_warning_views
         early_warning_views.open_early_warning_window(self)
 
     def open_risk_analytics(self) -> None:
-        from education_system.systems.sixth_form.domain.assessment.risk_analytics import risk_analytics_views
+        from education_system.systems.sixth_form.interfaces.gui.assessment.risk_analytics import risk_analytics_views
         risk_analytics_views.open_directory(self)
 
     def open_observations(self) -> None:
-        from education_system.systems.sixth_form.domain.assessment.observations import observations_views
+        from education_system.systems.sixth_form.interfaces.gui.assessment.observations import observations_views
         observations_views.open_observations_window(self)
 
     def open_self_assessment(self) -> None:
-        from education_system.systems.sixth_form.domain.assessment.self_assessment import self_assessment_views
+        from education_system.systems.sixth_form.interfaces.gui.assessment.self_assessment import self_assessment_views
         self_assessment_views.open_self_assessment_window(self)
 
     def open_quality_assurance(self) -> None:
-        from education_system.systems.sixth_form.domain.assessment.quality_assurance import quality_assurance_views
+        from education_system.systems.sixth_form.interfaces.gui.assessment.quality_assurance import quality_assurance_views
         quality_assurance_views.open_quality_assurance_window(self)
 
     def open_sef_builder(self) -> None:
-        from education_system.systems.sixth_form.domain.assessment.sef_builder import sef_builder_views
+        from education_system.systems.sixth_form.interfaces.gui.assessment.sef_builder import sef_builder_views
         sef_builder_views.open_sef_builder_window(self)
 
     def open_send(self) -> None:
-        from education_system.systems.sixth_form.domain.pastoral.send import send_views
+        from education_system.systems.sixth_form.interfaces.gui.pastoral.send import send_views
         send_views.open_send_window(self)
 
     def open_disciplinary(self) -> None:
-        from education_system.systems.sixth_form.domain.pastoral.disciplinary import disciplinary_views
+        from education_system.systems.sixth_form.interfaces.gui.pastoral.disciplinary import disciplinary_views
         disciplinary_views.open_disciplinary_window(self)
 
     def open_student_support(self) -> None:
-        from education_system.systems.sixth_form.domain.pastoral.student_support import student_support_views
+        from education_system.systems.sixth_form.interfaces.gui.pastoral.student_support import student_support_views
         student_support_views.open_student_support_window(self)
 
     def open_peer_mentoring(self) -> None:
-        from education_system.systems.sixth_form.domain.pastoral.peer_mentoring import peer_mentoring_views
+        from education_system.systems.sixth_form.interfaces.gui.pastoral.peer_mentoring import peer_mentoring_views
         peer_mentoring_views.open_peer_mentoring_window(self)
 
     def open_first_aid(self) -> None:
-        from education_system.systems.sixth_form.domain.pastoral.health.first_aid import first_aid_views
+        from education_system.systems.sixth_form.interfaces.gui.pastoral.health.first_aid import first_aid_views
         first_aid_views.open_first_aid_window(self)
 
     def open_emergency(self) -> None:
-        from education_system.systems.sixth_form.domain.pastoral.emergency import emergency_views
+        from education_system.systems.sixth_form.interfaces.gui.pastoral.emergency import emergency_views
         emergency_views.open_emergency_window(self)
 
     def open_health_safety(self) -> None:
-        from education_system.systems.sixth_form.domain.governance.health_safety import health_safety_views
+        from education_system.systems.sixth_form.interfaces.gui.governance.health_safety import health_safety_views
         health_safety_views.open_health_safety_window(self)
 
     def open_assets(self) -> None:
-        from education_system.systems.sixth_form.domain.governance.assets import assets_views
+        from education_system.systems.sixth_form.interfaces.gui.governance.assets import assets_views
         assets_views.open_assets_window(self)
 
     def open_equality_diversity(self) -> None:
-        from education_system.systems.sixth_form.domain.pastoral.equality_diversity import equality_diversity_views
+        from education_system.systems.sixth_form.interfaces.gui.pastoral.equality_diversity import equality_diversity_views
         equality_diversity_views.open_equality_diversity_window(self)
 
     def open_complaints(self) -> None:
-        from education_system.systems.sixth_form.domain.pastoral.complaints import complaints_views
+        from education_system.systems.sixth_form.interfaces.gui.pastoral.complaints import complaints_views
         complaints_views.open_complaints_window(self)
 
     def open_feedback(self) -> None:
-        from education_system.systems.sixth_form.domain.pastoral.feedback import feedback_views
+        from education_system.systems.sixth_form.interfaces.gui.pastoral.feedback import feedback_views
         feedback_views.open_feedback_window(self)
 
     def open_surveys(self) -> None:
-        from education_system.systems.sixth_form.domain.pastoral.surveys import surveys_views
+        from education_system.systems.sixth_form.interfaces.gui.pastoral.surveys import surveys_views
         surveys_views.open_surveys_window(self)
 
     def open_student_council(self) -> None:
-        from education_system.systems.sixth_form.domain.pastoral.student_council import student_council_views
+        from education_system.systems.sixth_form.interfaces.gui.pastoral.student_council import student_council_views
         student_council_views.open_student_council_window(self)
 
     def open_transport(self) -> None:
-        from education_system.systems.sixth_form.domain.pastoral.transport import transport_views
+        from education_system.systems.sixth_form.interfaces.gui.pastoral.transport import transport_views
         transport_views.open_transport_window(self)
 
     def open_staff_hr(self) -> None:
-        from education_system.systems.sixth_form.domain.staff.staff_hr import staff_hr_views
+        from education_system.systems.sixth_form.interfaces.gui.staff.staff_hr import staff_hr_views
         staff_hr_views.open_staff_hr_window(self)
 
     def open_departments(self) -> None:
-        from education_system.systems.sixth_form.domain.staff.departments import departments_views
+        from education_system.systems.sixth_form.interfaces.gui.staff.departments import departments_views
         departments_views.open_departments_window(self)
 
     def open_staff_absence(self) -> None:
-        from education_system.systems.sixth_form.domain.staff.staff_absence import staff_absence_views
+        from education_system.systems.sixth_form.interfaces.gui.staff.staff_absence import staff_absence_views
         staff_absence_views.open_staff_absence_window(self)
 
     def open_staff_wellbeing(self) -> None:
-        from education_system.systems.sixth_form.domain.staff.staff_wellbeing import staff_wellbeing_views
+        from education_system.systems.sixth_form.interfaces.gui.staff.staff_wellbeing import staff_wellbeing_views
         staff_wellbeing_views.open_staff_wellbeing_window(self)
 
     def open_recruitment(self) -> None:
-        from education_system.systems.sixth_form.domain.staff.recruitment import recruitment_views
+        from education_system.systems.sixth_form.interfaces.gui.staff.recruitment import recruitment_views
         recruitment_views.open_recruitment_window(self)
 
     def open_appraisals(self) -> None:
-        from education_system.systems.sixth_form.domain.staff.appraisals import appraisals_views
+        from education_system.systems.sixth_form.interfaces.gui.staff.appraisals import appraisals_views
         appraisals_views.open_appraisals_window(self)
 
     def open_cpd(self) -> None:
-        from education_system.systems.sixth_form.domain.staff.cpd import cpd_views
+        from education_system.systems.sixth_form.interfaces.gui.staff.cpd import cpd_views
         cpd_views.open_cpd_window(self)
 
     def open_dbs_checks(self) -> None:
-        from education_system.systems.sixth_form.domain.staff.dbs_checks import dbs_checks_views
+        from education_system.systems.sixth_form.interfaces.gui.staff.dbs_checks import dbs_checks_views
         dbs_checks_views.open_dbs_checks_window(self)
 
     def open_visitors(self) -> None:
-        from education_system.systems.sixth_form.domain.operations.visitors import visitors_views
+        from education_system.systems.sixth_form.interfaces.gui.operations.visitors import visitors_views
         visitors_views.open_visitors_window(self)
 
     def open_announcements(self) -> None:
-        from education_system.systems.sixth_form.domain.operations.communications.announcements import announcements_views
+        from education_system.systems.sixth_form.interfaces.gui.operations.communications.announcements import announcements_views
         announcements_views.open_announcements_window(self)
 
     def open_notifications(self) -> None:
-        from education_system.systems.sixth_form.domain.operations.communications.notifications import notifications_views
+        from education_system.systems.sixth_form.interfaces.gui.operations.communications.notifications import notifications_views
         notifications_views.open_notifications_window(self)
 
     def open_letter_templates(self) -> None:
-        from education_system.systems.sixth_form.domain.operations.communications.letter_templates import letter_templates_views
+        from education_system.systems.sixth_form.interfaces.gui.operations.communications.letter_templates import letter_templates_views
         letter_templates_views.open_letter_templates_window(self)
 
     def open_document_hub(self) -> None:
-        from education_system.systems.sixth_form.domain.operations.document_hub import document_hub_views
+        from education_system.systems.sixth_form.interfaces.gui.operations.document_hub import document_hub_views
         document_hub_views.open_document_hub_window(self)
 
     def open_attachments(self) -> None:
-        from education_system.systems.sixth_form.domain.operations.attachments import attachments_views
+        from education_system.systems.sixth_form.interfaces.gui.operations.attachments import attachments_views
         attachments_views.open_attachments_window(self)
 
     def open_census_ilr(self) -> None:
-        from education_system.systems.sixth_form.domain.governance.compliance.census_ilr import census_ilr_views
+        from education_system.systems.sixth_form.interfaces.gui.governance.compliance.census_ilr import census_ilr_views
         census_ilr_views.open_census_ilr_window(self)
 
     def open_expense_claims(self) -> None:
-        from education_system.systems.sixth_form.domain.finance.expense_claims import expense_claims_views
+        from education_system.systems.sixth_form.interfaces.gui.finance.expense_claims import expense_claims_views
         expense_claims_views.open_expense_claims_window(self)
 
     def open_funding(self) -> None:
-        from education_system.systems.sixth_form.domain.finance.funding import funding_views
+        from education_system.systems.sixth_form.interfaces.gui.finance.funding import funding_views
         funding_views.open_funding_window(self)
 
     def open_about(self) -> None:
@@ -1437,6 +1432,14 @@ class SixthFormMainGUI:
     def open_student_journey(self) -> None:
         from education_system.platform.cross_system.journey_gui import StudentJourneyFrame
         self._open_cross_frame(StudentJourneyFrame, "Student Journey")
+
+    def open_fe_pathway_referral(self) -> None:
+        from education_system.systems.sixth_form.interfaces.gui.progression import post16_pathway_views
+        post16_pathway_views.open_window(self)
+
+    def open_incoming_fe_applications(self) -> None:
+        from education_system.systems.sixth_form.interfaces.gui.progression import fe_transfer_views
+        fe_transfer_views.open_window(self)
 
     def open_cross_analytics(self) -> None:
         from education_system.platform.features.analytics.analytics_gui import AnalyticsDashboardFrame
@@ -1481,32 +1484,76 @@ class SixthFormMainGUI:
         show_language_selector(self)
 
     def open_todo(self) -> None:
-        from education_system.systems.sixth_form.domain.governance.todo import todo_views
+        from education_system.systems.sixth_form.interfaces.gui.governance.todo import todo_views
         todo_views.open_todo_window(self)
 
 
 def run(user_info=None, role=None, shared_auth=None) -> int:
     """Launch the GUI for an already-authenticated session.
 
-    The unified launcher (`run.py`) calls this after the universal login
+    The unified launcher (`python -m education_system`) calls this after the universal login
     succeeds, passing the shared `UserAuth` instance whose `current_user`
     is already populated. No per-system login is shown.
     """
     if shared_auth is None or not getattr(shared_auth, "current_user", None):
         logger.error("sixthform GUI invoked without a shared_auth session")
         raise RuntimeError(
-            "sixthform_system GUI must be launched via run.py — "
+            "sixthform_system GUI must be launched via python -m education_system — "
             "no standalone login is available."
         )
     cu = shared_auth.current_user or {}
     logger.info("Sixth-form GUI starting for user=%s role=%s",
                 cu.get("username"), role)
+
+    # This window is the whole college — every student, safeguarding,
+    # finance, staff records. Parents get their own read-only portal
+    # showing only the children they are linked to.
+    if str(role or "").lower() == "parent":
+        return _run_parent_portal(shared_auth, cu)
+
     app = SixthFormMainGUI(shared_auth)
     app.root.mainloop()
     logger.info("Sixth-form GUI exited for user=%s", cu.get("username"))
     return 0
 
 
+def _run_parent_portal(shared_auth, current_user: dict) -> int:
+    """Open the parent-facing window, or explain why it can't open."""
+    from education_system.systems.sixth_form.domain.operations.communications.parent_portal import (
+        parent_home_gui, parent_portal,
+    )
+
+    username = current_user.get("username", "")
+    account = parent_portal.account_for_username(username)
+    if account is None:
+        # The shared-auth account carries the parent role but there is no
+        # portal record behind it — e.g. a demo account, or one whose
+        # portal side was disabled. Say so rather than falling through to
+        # the staff GUI.
+        logger.warning("No parent-portal account for signed-in user '%s'", username)
+        _show_no_portal_account(username)
+        return 0
+
+    logger.info("Parent portal starting for %s (account %s)",
+                username, account.account_id)
+    result = parent_home_gui.run(shared_auth, account)
+    logger.info("Parent portal exited for %s", username)
+    return result
+
+
+def _show_no_portal_account(username: str) -> None:
+    root = tk.Tk()
+    root.withdraw()
+    messagebox.showinfo(
+        f"{SYSTEM_NAME} — Parent Portal",
+        f"There is no parent portal record for '{username}' yet.\n\n"
+        "Please contact the college office so they can set up your "
+        "account and link your child's record.",
+        parent=root,
+    )
+    root.destroy()
+
+
 if __name__ == "__main__":
-    print("Launch via: python run.py --gui  (then choose Sixth Form)")
+    print("Launch via: python -m education_system --gui  (then choose Sixth Form)")
     raise SystemExit(2)

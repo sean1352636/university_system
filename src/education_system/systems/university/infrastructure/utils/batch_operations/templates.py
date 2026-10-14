@@ -68,13 +68,13 @@ class TemplatesMixin:
 
         try:
             self.create_template_file(fields, output_path, file_format, template_type)
-            print(_t("shared.utils.batch_operations.template_created", path=output_path))
+            print(_t("shared.utils.batch_operations.template_created", path=output_path, default="Template Created {path}"))
 
             # Show usage instructions
             self.show_template_instructions(template_type)
 
         except Exception as e:
-            print(_t("shared.utils.batch_operations.error_creating_template", error=str(e)))
+            print(_t("shared.utils.batch_operations.error_creating_template", error=str(e), default="Error Creating Template. {error}"))
 
     def create_template_file(self, fields: List[str], filename: str, file_format: str, template_type: str):
         """Create template file with example data"""

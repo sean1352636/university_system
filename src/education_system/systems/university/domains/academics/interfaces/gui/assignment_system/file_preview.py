@@ -4,7 +4,10 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
+from education_system.platform.delivery.gui.window_sizing import center as _center_window
 import os
 import shutil
 import threading
@@ -648,9 +651,11 @@ class FilePreviewManager:
         try:
             from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar.main_gui import CalendarGUI
             # Launch in a Toplevel so "Return to Main Menu" just closes it
-            calendar_window = tk.Toplevel(self.root)
+            calendar_window = make_toplevel(self.root)
             calendar_window.title(_t('gui.academics.assignment_system.file_preview.windows.academic_calendar', default="Academic Calendar"))
-            calendar_window.geometry("1400x900")
+            # See show_plagiarism_checker: size-only geometry lands the window
+            # off the bottom-right corner.
+            _center_window(calendar_window, 1400, 900)
             CalendarGUI(auth_manager=self.auth, parent_window=calendar_window)
         except Exception as e:
             messagebox.showerror(_t('gui.academics.assignment_system.file_preview.dialogs.error', default="Error"), f"Failed to launch Academic Calendar: {e}")
@@ -666,7 +671,7 @@ class FilePreviewManager:
             file_ext = os.path.splitext(file_path)[1].lower()
 
             # Create preview dialog with larger size
-            dialog = tk.Toplevel(self.root)
+            dialog = make_toplevel(self.root)
             dialog.title(f"File Preview - {file_name}")
             dialog.geometry("1200x800")  # Increased from 800x600 for better visibility
             dialog.transient(self.root)

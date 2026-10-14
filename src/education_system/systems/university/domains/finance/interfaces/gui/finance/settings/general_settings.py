@@ -1,4 +1,5 @@
 """General settings tab and persistence."""
+from education_system.systems.university.shell.gui import report_view as _rv
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -133,21 +134,6 @@ class GeneralSettingsMixin:
 
     def create_notification_settings(self, parent):
         """Create notification settings interface"""
-        # Email settings
-        email_frame = tk.LabelFrame(parent, text=_("finance_gui.settings.email_settings_frame"), font=('Arial', 10, 'bold'))
-        email_frame.pack(fill='x', padx=10, pady=10)
-
-        tk.Label(email_frame, text=_("finance_gui.settings.smtp_server_label")).grid(row=0, column=0, sticky='w', padx=5, pady=2)
-        self.smtp_server_var = tk.StringVar()
-        tk.Entry(email_frame, textvariable=self.smtp_server_var, width=30).grid(row=0, column=1, padx=5, pady=2)
-
-        tk.Label(email_frame, text=_("finance_gui.settings.smtp_port_label")).grid(row=1, column=0, sticky='w', padx=5, pady=2)
-        self.smtp_port_var = tk.StringVar(value="587")
-        tk.Entry(email_frame, textvariable=self.smtp_port_var, width=10).grid(row=1, column=1, padx=5, pady=2)
-
-        tk.Button(email_frame, text=_("finance_gui.settings.btn_test_email"), command=self.gui_test_email_service,
-                 bg=self.gui.layout.colors['warning'], fg='white').grid(row=2, column=0, columnspan=2, pady=5)
-
         # Notification templates
         templates_frame = tk.LabelFrame(parent, text=_("finance_gui.settings.notification_templates_frame"), font=('Arial', 10, 'bold'))
         templates_frame.pack(fill='both', expand=True, padx=10, pady=10)
@@ -179,7 +165,7 @@ class GeneralSettingsMixin:
         info_frame = tk.LabelFrame(parent, text=_("finance_gui.settings.system_info_frame"), font=('Arial', 10, 'bold'))
         info_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        self.system_info_text = ScrolledText(info_frame, height=10, font=('Courier', 9))
+        self.system_info_text = _rv.TextReportView(info_frame, height=10, font=('Courier', 9))
         self.system_info_text.pack(fill='both', expand=True, padx=5, pady=5)
 
         # Load system info

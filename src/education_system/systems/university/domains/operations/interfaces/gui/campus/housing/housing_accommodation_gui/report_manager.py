@@ -271,7 +271,7 @@ def send_report_to_admin(self, title, content, parent_window):
             from education_system.systems.university.infrastructure.email.email_service import send_email
 
             # Format email using template
-            email_subject, email_body = render_template('housing_report_admin', {
+            email_subject, email_body = render_template('campus_services/housing/housing_report_admin', {
                 'admin_name': admin_name,
                 'title': title,
                 'sender_name': sender_name,

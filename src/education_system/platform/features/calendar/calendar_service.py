@@ -11,7 +11,16 @@ from education_system.paths import PLATFORM_AUTH_DB_FILE
 from education_system.platform.identity.auth.db import connect as auth_connect
 from education_system.platform.kernel.database.sql_safety import validate_identifier  # nosec B608
 
-EVENT_TYPES = ("open_day", "transition", "training", "holiday", "meeting", "other")
+EVENT_TYPES = ("open_day", "transition", "training", "holiday", "meeting",
+               "reminder", "other")
+
+# Entries the platform writes on a schedule it does not control (a transfer
+# date, a reminder) carry a ``source_ref`` naming what they mirror, so a
+# re-sync updates the entry instead of adding a second one.
+_SOURCE_REF_INDEX_SQL = """
+CREATE UNIQUE INDEX IF NOT EXISTS idx_cse_calendar_source_ref
+    ON cross_system_events(source_ref) WHERE source_ref IS NOT NULL;
+"""
 
 _CREATE_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS cross_system_events (
@@ -49,7 +58,86 @@ class CrossSystemCalendarService:
         conn = self._conn()
         try:
             conn.executescript(_CREATE_TABLE_SQL)
+            cols = {r["name"] for r in conn.execute(
+                "PRAGMA table_info(cross_system_events)").fetchall()}
+            if "source_ref" not in cols:
+                conn.execute(
+                    "ALTER TABLE cross_system_events ADD COLUMN source_ref TEXT")
+            conn.executescript(_SOURCE_REF_INDEX_SQL)
             conn.commit()
+        finally:
+            conn.close()
+
+    # ------------------------------------------------------------------
+    # platform-sourced entries
+    # ------------------------------------------------------------------
+
+    def upsert_sourced_event(self, source_ref, *, title, date,
+                             description="", time="", end_date="",
+                             systems="all", event_type="other",
+                             created_by="platform", created_system="platform"):
+        """Create or update the entry that mirrors *source_ref*.
+
+        Returns the entry dict. Idempotent: syncing the same transition
+        twice leaves one entry with the latest date.
+        """
+        if not source_ref:
+            raise ValueError("source_ref is required")
+        conn = self._conn()
+        try:
+            conn.execute(
+                """INSERT INTO cross_system_events
+                       (title, description, event_date, event_time, end_date,
+                        systems, event_type, created_by, created_system,
+                        source_ref)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                   ON CONFLICT (source_ref) WHERE source_ref IS NOT NULL
+                   DO UPDATE SET title = excluded.title,
+                                 description = excluded.description,
+                                 event_date = excluded.event_date,
+                                 event_time = excluded.event_time,
+                                 end_date = excluded.end_date,
+                                 systems = excluded.systems,
+                                 event_type = excluded.event_type""",
+                (title, description or "", date, time or "", end_date or "",
+                 systems or "all", event_type or "other", created_by or "",
+                 created_system or "", source_ref),
+            )
+            conn.commit()
+            row = conn.execute(
+                "SELECT * FROM cross_system_events WHERE source_ref = ?",
+                (source_ref,)).fetchone()
+            return dict(row) if row else None
+        finally:
+            conn.close()
+
+    def remove_sourced_events(self, source_ref=None, *, prefix=None):
+        """Delete entries by exact ``source_ref`` or by ref prefix."""
+        if not source_ref and not prefix:
+            raise ValueError("source_ref or prefix is required")
+        conn = self._conn()
+        try:
+            if source_ref:
+                cur = conn.execute(
+                    "DELETE FROM cross_system_events WHERE source_ref = ?",
+                    (source_ref,))
+            else:
+                cur = conn.execute(
+                    "DELETE FROM cross_system_events WHERE source_ref LIKE ?",
+                    (f"{prefix}%",))
+            conn.commit()
+            return cur.rowcount
+        finally:
+            conn.close()
+
+    def get_sourced_events(self, prefix):
+        """Entries whose ``source_ref`` starts with *prefix*, by date."""
+        conn = self._conn()
+        try:
+            rows = conn.execute(
+                "SELECT * FROM cross_system_events WHERE source_ref LIKE ? "
+                "ORDER BY event_date, event_time", (f"{prefix}%",)).fetchall()
+            return [dict(r) for r in rows]
         finally:
             conn.close()
 

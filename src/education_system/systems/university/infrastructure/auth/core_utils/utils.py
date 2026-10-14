@@ -22,6 +22,7 @@ from education_system.systems.university.infrastructure.sql_safety import (
     validate_column_definition,
     SQLIdentifierError,
 )
+from education_system.systems.university.infrastructure.database.schemas.students_table import ensure_students_table
 
 __all__ = [
     'derive_name_from_username',
@@ -192,23 +193,7 @@ def ensure_students_table(cursor: sqlite3.Cursor) -> None:
     missing columns and won't modify existing data.
     """
     try:
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS students (
-            student_id TEXT PRIMARY KEY,
-            email_address TEXT,
-            title TEXT,
-            first_name TEXT,
-            middle_name TEXT,
-            last_name TEXT,
-            gender TEXT,
-            dob TEXT,
-            age INTEGER,
-            course TEXT,
-            registration_datetime TEXT,
-            status TEXT DEFAULT 'Active',
-            enrollment_date TEXT
-        )
-        ''')
+        ensure_students_table(cursor)
 
         cursor.execute("PRAGMA table_info(students)")
         existing_columns = {column[1] for column in cursor.fetchall()}

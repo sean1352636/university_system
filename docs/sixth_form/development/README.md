@@ -82,24 +82,25 @@ education_system/college_system/
 
 ## Running the Application
 
-The unified launcher at the project root (`run.py`) can start any system/interface combination.
+The package-native unified launcher (`python -m education_system`) can start
+any system/interface combination.
 
 ### CLI
 
 ```bash
-python run.py --college --cli
+python -m education_system --college --cli
 ```
 
 ### GUI
 
 ```bash
-python run.py --college --gui
+python -m education_system --college --gui
 ```
 
 ### REST API Server
 
 ```bash
-python run.py --college --api
+python -m education_system --college --api
 ```
 
 The API starts on `http://127.0.0.1:5000` by default (configurable via `core/defaults.py`).
@@ -107,7 +108,7 @@ The API starts on `http://127.0.0.1:5000` by default (configurable via `core/def
 ### Tests
 
 ```bash
-python run.py --college --test
+python -m education_system --college --test
 ```
 
 Or run pytest directly:

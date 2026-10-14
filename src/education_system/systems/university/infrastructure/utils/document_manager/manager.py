@@ -4,6 +4,10 @@ DocumentManager - Core class that composes all mixin functionality.
 This was originally a single 6800-line file. It has been split into
 feature-specific mixins, all composed here via multiple inheritance.
 """
+import logging
+
+logger = logging.getLogger(__name__)
+
 import sys
 import getpass
 
@@ -85,7 +89,7 @@ class DocumentManager(
                 self.user_role = current_user.get('role', 'admin')
                 return True
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         return self.current_user is not None
 
@@ -252,7 +256,7 @@ def main():
                 try:
                     getattr(auth, method)()
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
                 if getattr(auth, "current_user", None):
                     set_auth_instance(auth)
                     return auth

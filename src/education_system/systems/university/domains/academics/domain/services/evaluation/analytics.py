@@ -79,6 +79,7 @@ def _trend_by(column: str, value: str) -> list[dict]:
     if column not in ("instructor_id", "module_code"):
         raise ValueError("Unsupported column")
     with get_connection() as conn:
+        # db-audit: ignore[DBW001] - parameter checked against an allow-list before use
         rows = conn.execute(
             f"""SELECT e.evaluation_id, e.module_code, e.academic_year, e.semester,
                        e.instructor_id, AVG(a.numeric_value) AS avg_score,
@@ -97,6 +98,10 @@ def _trend_by(column: str, value: str) -> list[dict]:
 # ---------- Benchmarks (22) ----------
 
 def _scope_avg(scope_filter: str, args: tuple) -> float | None:
+    # scope_filter is a literal fragment supplied by this module - every value
+    # inside it is a bound ? parameter. Reject anything that is not.
+    if ";" in scope_filter or "--" in scope_filter:
+        raise ValueError("scope_filter must be a literal predicate fragment")
     with get_connection() as conn:
         row = conn.execute(
             f"""SELECT AVG(a.numeric_value)
@@ -155,7 +160,7 @@ _STOP = {
     "that", "these", "those", "i", "we", "you", "he", "she", "they", "them",
     "my", "our", "your", "his", "her", "their", "as", "if", "so", "do", "did",
     "have", "has", "had", "not", "no", "yes", "very", "too", "more", "than",
-    "also", "just", "only", "any", "all", "some", "all", "would", "could",
+    "also", "just", "only", "any", "all", "some", "would", "could",
     "should", "about", "into", "out", "up", "down", "over", "under", "much",
     "many", "lot", "really", "good", "bad",  # leave these to sentiment
 }

@@ -25,7 +25,7 @@ from unittest.mock import Mock, patch, MagicMock, call
 from education_system.systems.university.infrastructure.security.init_security_tables import init_security_tables
 
 # Common patch prefix for the security dashboard GUI module
-_SD_MOD = 'education_system.systems.university.interfaces.gui.shell.security.security_dashboard_gui'
+_SD_MOD = 'education_system.systems.university.shell.gui.security.security_dashboard_gui'
 # Also the backward-compat shim location
 _SD_INFRA = 'education_system.systems.university.infrastructure.security.security_dashboard_gui'
 
@@ -71,7 +71,7 @@ class TestGUIDashboardInitialization:
 
     def test_init_dashboard_success(self, root_window, test_db):
         """Test successful GUI dashboard initialization"""
-        from education_system.systems.university.interfaces.gui.shell.security.security_dashboard_gui import SecurityDashboard
+        from education_system.systems.university.shell.gui.security.security_dashboard_gui import SecurityDashboard
 
         with patch(f'{_SD_MOD}.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
@@ -83,7 +83,7 @@ class TestGUIDashboardInitialization:
 
     def test_init_creates_managers(self, root_window, test_db):
         """Test initialization creates all security managers"""
-        from education_system.systems.university.interfaces.gui.shell.security.security_dashboard_gui import SecurityDashboard
+        from education_system.systems.university.shell.gui.security.security_dashboard_gui import SecurityDashboard
 
         with patch(f'{_SD_MOD}.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
@@ -104,7 +104,7 @@ class TestGUIDashboardInitialization:
 
     def test_init_sets_window_title(self, root_window, test_db):
         """Test window title is set"""
-        from education_system.systems.university.interfaces.gui.shell.security.security_dashboard_gui import SecurityDashboard
+        from education_system.systems.university.shell.gui.security.security_dashboard_gui import SecurityDashboard
 
         with patch(f'{_SD_MOD}.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
@@ -118,7 +118,7 @@ class TestGUIDashboardInitialization:
 
     def test_init_sets_window_geometry(self, root_window, test_db):
         """Test window geometry is set"""
-        from education_system.systems.university.interfaces.gui.shell.security.security_dashboard_gui import SecurityDashboard
+        from education_system.systems.university.shell.gui.security.security_dashboard_gui import SecurityDashboard
 
         with patch(f'{_SD_MOD}.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
@@ -139,7 +139,7 @@ class TestGUIManagerAccess:
 
     def test_access_all_managers(self, root_window, test_db):
         """Test all managers are accessible"""
-        from education_system.systems.university.interfaces.gui.shell.security.security_dashboard_gui import SecurityDashboard
+        from education_system.systems.university.shell.gui.security.security_dashboard_gui import SecurityDashboard
 
         with patch(f'{_SD_MOD}.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
@@ -167,7 +167,7 @@ class TestGUIWidgetCreation:
 
     def test_create_widgets_called(self, root_window, test_db):
         """Test _create_widgets is called during init"""
-        from education_system.systems.university.interfaces.gui.shell.security.security_dashboard_gui import SecurityDashboard
+        from education_system.systems.university.shell.gui.security.security_dashboard_gui import SecurityDashboard
 
         with patch(f'{_SD_MOD}.init_security_tables'):
             with patch.object(SecurityDashboard, '_load_data'):
@@ -179,7 +179,7 @@ class TestGUIWidgetCreation:
 
     def test_load_data_called(self, root_window, test_db):
         """Test _load_data is called during init"""
-        from education_system.systems.university.interfaces.gui.shell.security.security_dashboard_gui import SecurityDashboard
+        from education_system.systems.university.shell.gui.security.security_dashboard_gui import SecurityDashboard
 
         with patch(f'{_SD_MOD}.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
@@ -200,14 +200,14 @@ class TestMFAIntegration:
 
     def test_mfa_admin_panel_availability(self):
         """Test MFA admin panel import handling"""
-        from education_system.systems.university.interfaces.gui.shell.security.security_dashboard_gui import MFA_ADMIN_AVAILABLE
+        from education_system.systems.university.shell.gui.security.security_dashboard_gui import MFA_ADMIN_AVAILABLE
 
         # Should be boolean
         assert isinstance(MFA_ADMIN_AVAILABLE, bool)
 
     def test_mfa_setup_wizard_availability(self):
         """Test MFA setup wizard import handling"""
-        from education_system.systems.university.interfaces.gui.shell.security.security_dashboard_gui import MFA_SETUP_AVAILABLE
+        from education_system.systems.university.shell.gui.security.security_dashboard_gui import MFA_SETUP_AVAILABLE
 
         # Should be boolean
         assert isinstance(MFA_SETUP_AVAILABLE, bool)
@@ -221,7 +221,7 @@ class TestGUIModuleImports:
 
     def test_all_security_modules_imported(self):
         """Test all required security modules are imported"""
-        from education_system.systems.university.interfaces.gui.shell.security import security_dashboard_gui
+        from education_system.systems.university.shell.gui.security import security_dashboard_gui
 
         # Check classes are available
         assert hasattr(security_dashboard_gui, 'SessionManager')
@@ -235,7 +235,7 @@ class TestGUIModuleImports:
 
     def test_security_dashboard_class_exists(self):
         """Test SecurityDashboard class is defined"""
-        from education_system.systems.university.interfaces.gui.shell.security.security_dashboard_gui import SecurityDashboard
+        from education_system.systems.university.shell.gui.security.security_dashboard_gui import SecurityDashboard
 
         assert SecurityDashboard is not None
 
@@ -248,7 +248,7 @@ class TestGUIIntegration:
 
     def test_managers_use_correct_database(self, root_window, test_db):
         """Test all managers are initialized and accessible"""
-        from education_system.systems.university.interfaces.gui.shell.security.security_dashboard_gui import SecurityDashboard
+        from education_system.systems.university.shell.gui.security.security_dashboard_gui import SecurityDashboard
 
         with patch.object(SecurityDashboard, '_create_widgets'):
             with patch.object(SecurityDashboard, '_load_data'):
@@ -271,7 +271,7 @@ class TestGUIErrorHandling:
 
     def test_init_with_invalid_admin_id(self, root_window, test_db):
         """Test initialization with invalid admin ID"""
-        from education_system.systems.university.interfaces.gui.shell.security.security_dashboard_gui import SecurityDashboard
+        from education_system.systems.university.shell.gui.security.security_dashboard_gui import SecurityDashboard
 
         with patch(f'{_SD_MOD}.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
@@ -284,7 +284,7 @@ class TestGUIErrorHandling:
 
     def test_init_without_parent(self, root_window):
         """Test initialization without parent window"""
-        from education_system.systems.university.interfaces.gui.shell.security.security_dashboard_gui import SecurityDashboard
+        from education_system.systems.university.shell.gui.security.security_dashboard_gui import SecurityDashboard
 
         with patch(f'{_SD_MOD}.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
@@ -304,7 +304,7 @@ class TestGUIWindowManagement:
 
     def test_window_centering(self, root_window, test_db):
         """Test window is centered on screen"""
-        from education_system.systems.university.interfaces.gui.shell.security.security_dashboard_gui import SecurityDashboard
+        from education_system.systems.university.shell.gui.security.security_dashboard_gui import SecurityDashboard
 
         with patch(f'{_SD_MOD}.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
@@ -326,7 +326,7 @@ class TestGUIFunctionality:
 
     def test_dashboard_has_refresh_capability(self, root_window, test_db):
         """Test dashboard can refresh data"""
-        from education_system.systems.university.interfaces.gui.shell.security.security_dashboard_gui import SecurityDashboard
+        from education_system.systems.university.shell.gui.security.security_dashboard_gui import SecurityDashboard
 
         with patch(f'{_SD_MOD}.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
@@ -352,7 +352,7 @@ class TestComprehensiveGUIIntegration:
 
     def test_complete_dashboard_workflow(self, root_window, test_db):
         """Test complete dashboard workflow"""
-        from education_system.systems.university.interfaces.gui.shell.security.security_dashboard_gui import SecurityDashboard
+        from education_system.systems.university.shell.gui.security.security_dashboard_gui import SecurityDashboard
 
         with patch.object(SecurityDashboard, '_create_widgets'):
             with patch.object(SecurityDashboard, '_load_data'):

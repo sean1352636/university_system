@@ -9,6 +9,9 @@ Provides visual interface for event discovery with:
 - RSVP and attendance management
 - Social features and ratings
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -39,7 +42,7 @@ class EventsGUI:
                     _t('gui.pastoral.student_life.events.events.dialogs.you_must_be_logged_in_via_the_main_gui_to_use_events', default="You must be logged in via the main GUI to use Events."),
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             raise PermissionError("Events GUI requires an authenticated user")
 
         # Color scheme
@@ -1557,7 +1560,7 @@ class EventsGUI:
 def main(parent=None):
     """Entry point for the Events GUI"""
     if parent is None:
-        from education_system.systems.university.interfaces.gui.shell.auth.launch_guard import (
+        from education_system.systems.university.shell.gui.auth.launch_guard import (
             require_launcher_auth,
         )
         if require_launcher_auth("Events GUI") is None:

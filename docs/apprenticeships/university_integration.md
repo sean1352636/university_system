@@ -8,7 +8,8 @@ Two distinct things share this page because they are easy to confuse:
 | | Status |
 |---|---|
 | **Cross-system transitions** — a learner *moving* between systems | Built |
-| **Degree apprenticeships** — a learner on a degree *and* an apprenticeship at once | Not built |
+| **Degree apprenticeship identity and enrolment link** | Built |
+| **Degree-pathway gateway and outcome rules** | Not built |
 
 ---
 
@@ -16,7 +17,7 @@ Two distinct things share this page because they are easy to confuse:
 
 Secondary, sixth form, FE college and university all feed
 apprenticeships, and a completed higher apprentice can go on to a
-degree. `integrations/cross_system_adapter.py` is this system's side of
+degree. `infrastructure/integrations/cross_system_adapter.py` is this system's side of
 the platform's four-method transition contract
 (`platform.cross_system.adapters.base.PhaseAdapter`).
 
@@ -50,35 +51,60 @@ existing databases too.
 
 ---
 
-## Degree apprenticeships — not built
+## Degree apprenticeships — linked foundations built
 
 A degree apprenticeship is a Level 6 or 7 apprenticeship where the
 apprentice is simultaneously a registered university student: the degree
 is embedded in the standard, and the two records have to agree about
 credits, assessment and completion.
 
-The scaffolding is there and empty:
+The shared-record foundation is implemented. One canonical ``journey_id``
+links the apprenticeship learner and university student, while two concurrent
+``learner_enrolment`` rows record that both registrations are active. Neither
+system changes ownership of its domain data:
 
-```
-pathways/
-├── intermediate/rules.py                          (Level 2)
-├── advanced/rules.py                              (Level 3)
-├── higher/rules.py, higher_education_qualifications.py   (Levels 4–5)
-└── degree/rules.py, academic_requirements.py,
-        credit_tracking.py, degree_outcomes.py     (Levels 6–7)
+| Owner | Authoritative data |
+|---|---|
+| Apprenticeships | employer, KSBs, portfolio, off-the-job hours, reviews, funding, gateway and EPA |
+| University | registration, modules, credits, academic results, classification and degree completion |
+| Platform | person identity and enrolment history |
 
-integrations/
-├── university_gateway.py     empty
-├── employer_gateway.py       empty
-├── epao_gateway.py           empty
-└── funding_gateway.py        empty
-```
+``services/degree_apprenticeship_service.py`` maps Level 6/7 standards to a
+university degree and links a learner. The operation is idempotent. Because the
+three records live in separate SQLite databases, a local link is written as
+``Pending`` first and becomes ``Active`` after both shared enrolments exist; a
+failed attempt is visible and can safely be retried.
 
-Every one of those is a single docstring. Nothing imports them.
+Normal operation is event-driven. University publishes registration, credit and
+award snapshots over the durable cross-system bus; apprenticeships consumes
+them into ``degree_academic_progress_projection`` for its dashboard. The
+projection is replaceable and never becomes the source used to award a degree.
+``infrastructure/integrations/university_gateway.py`` remains an explicit read-only verifier for
+imports, diagnostics and tests, not the normal runtime connection.
 
-`config.pathway_for_level(level)` already routes a level to a pathway
-name — `intermediate`, `advanced`, `higher`, `degree` — so the contract
-exists and the packages that would answer it do not.
+The apprenticeship database owns two association tables:
+
+* ``degree_apprenticeship_programmes`` maps a local apprenticeship programme to
+  a logical ``university_degree_program_id`` and records its credit requirement,
+  integration type and active state.
+* ``degree_apprenticeship_links`` joins the local apprentice, canonical
+  ``journey_id`` and logical university student/programme identifiers, with
+  link status, linked/synchronised timestamps and reconciliation state.
+
+Only the apprenticeship-side identifiers have local foreign keys. University
+student and degree programme identifiers are deliberately logical references:
+SQLite cannot enforce a foreign key into the separately owned university
+database.
+
+The link itself is modelled in `domain/degree_apprenticeships/links.py`.
+
+There are no level-band rules yet. `config.pathway_for_level(level)`
+names a level's band — `intermediate`, `advanced`, `higher`, `degree` —
+but nothing answers it: the empty `pathways/` packages that once stood
+in for those rules were removed in September 2026. When band rules are
+written (academic requirements, credit tracking, degree outcomes for
+Levels 6–7) they belong in `domain/programmes/`, and they are not yet
+part of gateway or completion decisions.
 
 ### What is missing, concretely
 
@@ -87,9 +113,9 @@ a qualification is embedded, and what the EPA plan must contain differ
 by band. Today `config.MINIMUM_PRACTICAL_PERIOD_DAYS` (365) is applied
 flat to every level, and gateway checks it directly.
 
-**Credit tracking.** A degree apprentice accrues HE credits alongside
-KSB coverage. The portfolio roll-up knows nothing about credits, and the
-university's record of them is in a different database.
+**Credit rules.** Current university credit progress can now be read through
+the gateway. Programme-specific rules that decide whether an academic credit
+position blocks gateway or completion are not yet defined.
 
 **Degree outcomes.** The apprenticeship's overall grade is the lowest of
 the per-method EPA grades (`domain/end_point_assessment/results.overall_grade`).
@@ -97,21 +123,31 @@ A degree classification is a different calculation over different
 inputs. Which one a degree apprentice finishes with — and how the two
 reconcile — is a policy decision nobody has made here.
 
-**The university gateway itself.** Whether it reads the university
-system in-process, over the unified API, or through the cross-system
-bus is undecided. Note that apprenticeships is not currently on the
-unified API at all (see
-[`../reference/college_and_apprenticeships/api.md`](../reference/college_and_apprenticeships/api.md)),
-so the second option needs that first.
+**Event-driven synchronisation.** The durable bus carries
+``degree_apprenticeship.linked``, university registration/credit/award changes,
+apprenticeship gateway/completion changes and reconciliation warnings. Delivery
+is idempotent by event/handler identity. The university consumer creates or
+matches its student when the link event arrives, then publishes the initial
+academic snapshot.
+
+The shared platform account is granted ``apprentice`` access in apprenticeships
+and ``student`` access in university during linking. Integrated programmes also
+require an explicit ``university_gateway_confirmed`` academic snapshot before
+the apprenticeship gateway can be requested.
+
+Degree award and apprenticeship completion are independent. When only one is
+complete the link is flagged ``Degree Complete; Apprenticeship Incomplete`` or
+``Apprenticeship Complete; Degree Incomplete`` and a reconciliation event is
+published for staff; neither outcome overwrites the other.
 
 ### What already works for a Level 6 apprentice
 
 Nothing above blocks running one today. `config.PROGRAMME_LEVELS`
 includes 6 and 7, `LEVEL_LABELS` names them as degree apprenticeships,
 funding bands go to £27,000, and the whole gateway and EPA machinery is
-level-agnostic. What is missing is the *university side* of the record —
-the credits, the classification, and the link between the two systems'
-views of one person.
+level-agnostic. The university registration and link can now be resolved, but
+classification, award reconciliation and Level 6/7 gateway policy remain to
+be built.
 
 ## See also
 

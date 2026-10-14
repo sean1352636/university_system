@@ -7,6 +7,9 @@ Provides graphical interface for:
 - Tracking submission status and responses
 - Viewing impact metrics
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -33,7 +36,7 @@ class FeedbackGUI:
                     _t('gui.operations.communications.feedback.feedback.dialogs.you_must_be_logged_in_via_the_main_gui_to_use_feedback', default="You must be logged in via the main GUI to use Feedback."),
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             raise PermissionError("Feedback GUI requires an authenticated user")
 
         # When ``parent`` is a workspace tab Frame (passed by
@@ -1125,7 +1128,7 @@ SUBMISSIONS BY STATUS
 
 def main():
     """Main entry point"""
-    from education_system.systems.university.interfaces.gui.shell.auth.launch_guard import (
+    from education_system.systems.university.shell.gui.auth.launch_guard import (
         require_launcher_auth,
     )
     if require_launcher_auth("Feedback GUI") is None:

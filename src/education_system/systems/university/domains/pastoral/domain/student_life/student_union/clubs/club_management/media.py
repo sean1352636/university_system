@@ -2,6 +2,9 @@ from education_system.systems.university.domains.pastoral.domain.student_life.st
     datetime, sqlite3, get_connection,
 )
 import education_system.systems.university.domains.pastoral.domain.student_life.student_union.clubs.club_management._imports as _state
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.identity import (
+    current_student_id as _current_student_id,
+)
 
 
 def manage_club_media():
@@ -17,15 +20,13 @@ def manage_club_media():
         cursor = conn.cursor()
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, auth)
 
-        if not result:
+        if not student_id:
             print("No student record is associated with your account.")
             conn.close()
             return
 
-        student_id = result[0]
 
         # Get clubs the student is a member of
         cursor.execute('''
@@ -74,7 +75,7 @@ def manage_club_media():
                        s.first_name, s.last_name, m.upload_date, e.event_name
                 FROM club_media m
                 JOIN students s ON m.uploader_id = s.student_id
-                LEFT JOIN union_events e ON m.event_id = e.event_id
+                LEFT JOIN (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e ON m.event_id = e.event_id
                 WHERE m.club_id = ?
                 ORDER BY m.upload_date DESC
                 LIMIT 20
@@ -114,7 +115,7 @@ def manage_club_media():
                 # Link to event (optional)
                 cursor.execute('''
                 SELECT e.event_id, e.event_name
-                FROM union_events e
+                FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e
                 WHERE e.organizer_id = ? AND e.event_date >= date('now', '-30 days')
                 ORDER BY e.event_date DESC
                 LIMIT 10
@@ -148,7 +149,7 @@ def manage_club_media():
                 # View event galleries
                 cursor.execute('''
                 SELECT e.event_id, e.event_name, COUNT(m.media_id) as media_count
-                FROM union_events e
+                FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e
                 LEFT JOIN club_media m ON e.event_id = m.event_id
                 WHERE e.organizer_id = ?
                 GROUP BY e.event_id, e.event_name

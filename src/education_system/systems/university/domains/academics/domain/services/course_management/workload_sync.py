@@ -160,7 +160,7 @@ def record_teaching_workload(instructor_id: Optional[int],
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
 
 def clear_teaching_workload(instructor_id: Optional[int],
@@ -199,4 +199,4 @@ def clear_teaching_workload(instructor_id: Optional[int],
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)

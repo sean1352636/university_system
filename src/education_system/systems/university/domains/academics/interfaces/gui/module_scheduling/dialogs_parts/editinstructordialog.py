@@ -145,8 +145,9 @@ class EditInstructorDialog:
                 conn.commit()
 
             self.result = True
-            self.dialog.destroy()
+            # Confirm first, then close — see addholidaydialog.save_holiday.
             messagebox.showinfo(_t('gui.academics.module_scheduling.dialogs_parts.editinstructordialog.dialogs.success', default="Success"), _t('gui.academics.module_scheduling.dialogs_parts.editinstructordialog.dialogs.instructor_updated_successfully', default="Instructor updated successfully."), parent=self.dialog)
+            self.dialog.destroy()
 
         except ValueError:
             messagebox.showerror(_t('gui.academics.module_scheduling.dialogs_parts.editinstructordialog.dialogs.error', default="Error"), _t('gui.academics.module_scheduling.dialogs_parts.editinstructordialog.dialogs.max_hours_must_be_a_number', default="Max hours must be a number."), parent=self.dialog)

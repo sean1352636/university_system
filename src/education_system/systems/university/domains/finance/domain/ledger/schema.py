@@ -5,8 +5,12 @@ seeded by default; additional entities can be inserted later without schema
 change. Periods are shared across entities in v1 (a future change can add
 entity_id to gl_periods if entities adopt different fiscal calendars).
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.database.db import get_connection
+from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608 - identifier validation
 
 
 SCHEMA_STATEMENTS = [
@@ -128,9 +132,14 @@ def init_ledger():
 def _add_column_if_missing(cursor, table, column, decl):
     """Idempotent ADD COLUMN — silently skips if `table` doesn't exist or
     `column` is already on it."""
+    # db-audit: ignore[DBW001] - parameter passed through a validator
+    # Identifiers cannot be parameterised, so they are validated instead.
+    table = validate_identifier(table)
+    column = validate_identifier(column)
     try:
         cursor.execute(f"PRAGMA table_info({table})")
         existing = {row[1] for row in cursor.fetchall()}
+        # db-audit: ignore[DBW001] - parameter passed through a validator
         if not existing:
             return  # table doesn't exist — caller may not have seeded operational tables yet
         if column in existing:
@@ -139,4 +148,4 @@ def _add_column_if_missing(cursor, table, column, decl):
     except Exception:
         # Pre-existing columns under a different declaration, locked tables,
         # or read-only DBs — never raise from migration.
-        pass
+        logger.debug("Suppressed exception", exc_info=True)

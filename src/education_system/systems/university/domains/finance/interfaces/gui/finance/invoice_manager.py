@@ -1,4 +1,5 @@
 """Invoice generation and management"""
+from education_system.systems.university.shell.gui import report_view as _rv
 
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 from education_system.systems.university.infrastructure.i18n import get_text as _
@@ -58,41 +59,29 @@ except ImportError:
         from education_system import paths
         return str(paths.UNIVERSITY_LOG_DIR / name)
 
-try:
-    from education_system.systems.university.domains.finance.domain.core.financial_core import (
-        assign_to_collection_agency, track_collection_progress,
-        update_collection_case_status, create_payment_arrangement,
-        send_arrangement_confirmation, setup_collection_workflows,
-        check_required_packages, ensure_database_exists, verify_fix
-    )
-except ImportError:
-    # Stub implementations for missing functions
-    def assign_to_collection_agency(*args, **kwargs):
-        print("assign_to_collection_agency function not implemented")
-
-    def track_collection_progress(*args, **kwargs):
-        print("track_collection_progress function not implemented")
-
-    def update_collection_case_status(*args, **kwargs):
-        print("update_collection_case_status function not implemented")
-
-    def create_payment_arrangement(*args, **kwargs):
-        print("create_payment_arrangement function not implemented")
-
-    def send_arrangement_confirmation(*args, **kwargs):
-        print("send_arrangement_confirmation function not implemented")
-
-    def setup_collection_workflows(*args, **kwargs):
-        print("setup_collection_workflows function not implemented")
-
-    def check_required_packages(*args, **kwargs):
-        print("check_required_packages function not implemented")
-
-    def ensure_database_exists(*args, **kwargs):
-        print("ensure_database_exists function not implemented")
-
-    def verify_fix(*args, **kwargs):
-        print("verify_fix function not implemented")
+# Collections, payment arrangements and DB utilities, imported from the modules
+# that own them. These are the CLI menu wrappers: several prompt on stdin, so
+# GUI code must call the non-interactive API in
+# domain.reporting.revenue_analytics.collections instead of these.
+from education_system.systems.university.domains.finance.domain.reporting.revenue_analytics.collections import (
+    assign_to_collection_agency,
+    track_collection_progress,
+    update_collection_case_status,
+)
+from education_system.systems.university.domains.finance.domain.reporting.revenue_analytics.agencies import (
+    setup_collection_workflows,
+)
+from education_system.systems.university.domains.finance.domain.core.aid import (
+    create_payment_arrangement,
+)
+from education_system.systems.university.domains.finance.domain.core.communications import (
+    send_arrangement_confirmation,
+)
+from education_system.systems.university.domains.finance.domain.core.finance_db_operations import (
+    check_required_packages,
+    ensure_database_exists,
+    verify_fix,
+)
 
 # Add these import stubs for the missing functions if they don't exist
 try:
@@ -286,7 +275,7 @@ class InvoiceManager:
         preview_frame = ttk.LabelFrame(body, text=_("finance_gui.invoice_manager.invoice_preview_frame"), padding=15)
         preview_frame.pack(fill='both', expand=True, padx=20, pady=10)
 
-        invoice_text = ScrolledText(preview_frame, height=18, width=100, font=('Courier', 10))
+        invoice_text = _rv.TextReportView(preview_frame, height=18, width=100, font=('Courier', 10))
         invoice_text.pack(fill='both', expand=True)
 
         def generate_invoice():

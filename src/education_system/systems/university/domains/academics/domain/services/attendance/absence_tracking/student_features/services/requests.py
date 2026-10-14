@@ -55,6 +55,7 @@ class RequestService:
             return set()
         try:
             placeholders = ",".join("?" * len(iso_dates))
+            # db-audit: ignore[DBW001] - join of placeholders
             rows = self.ctx.db.cur.execute(
                 f"""SELECT date FROM absence_requests
                     WHERE student_id=? AND module_code=?

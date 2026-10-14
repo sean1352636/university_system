@@ -12,6 +12,7 @@ Usage::
 
 from __future__ import annotations
 
+import gc
 import tkinter as tk
 from tkinter import font as tkfont
 from typing import Optional
@@ -177,6 +178,12 @@ def show_language_selector(parent: Optional[tk.Misc] = None) -> str:
     root.protocol("WM_DELETE_WINDOW", on_cancel)
     listbox = _build_language_ui(root, languages, selected, on_ok, on_cancel)
     root.mainloop()
+    # Collect the destroyed standalone interpreter and its callback cycles on
+    # the GUI thread.  Otherwise a service thread started after login may be
+    # the first thread to collect them, which is unsafe for Tcl/Tk objects.
+    del listbox
+    del root
+    gc.collect()
     return selected
 
 

@@ -22,6 +22,7 @@ from education_system.systems.university.infrastructure.database.db import (
     get_connection,
     sqlite3,
 )
+from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608 - identifier validation
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,10 @@ _ensured_paths: set[str] = set()
 
 def _add_column(cursor, table: str, column: str, decl: str) -> None:
     """ALTER TABLE ... ADD COLUMN, ignoring 'duplicate column' errors."""
+    # db-audit: ignore[DBW001] - parameter passed through a validator
+    # Identifiers cannot be parameterised, so they are validated instead.
+    table = validate_identifier(table)
+    column = validate_identifier(column)
     try:
         cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {decl}")
     except sqlite3.OperationalError:

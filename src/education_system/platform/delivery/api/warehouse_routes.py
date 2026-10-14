@@ -1,75 +1,15 @@
-"""Read-only cross-system reporting warehouse API.
+"""Compatibility shim — this module moved to :mod:`education_system.platform.delivery.api.routes.warehouse_routes`.
 
-Surfaces :class:`education_system.platform.features.analytics.warehouse.Warehouse` over
-HTTP — org-wide questions no single system can answer (headcounts across
-all phases, the nursery→university retention funnel, phase-to-phase
-progression rates).
-
-Routes (registered under ``/api/v1/warehouse``), all staff-gated and
-read-only:
-
-* ``GET /summary``      — everything in one call
-* ``GET /headcount``    — live local headcount per system
-* ``GET /retention``    — how many journeys reached each phase
-* ``GET /progression``  — phase-to-phase conversion rates
+Kept because existing imports across the codebase and tests still point
+here. Import from the new location in new code; this file can be deleted
+once nothing references ``education_system.platform.delivery.api.warehouse_routes``.
 """
 
-from __future__ import annotations
+from education_system.platform.delivery.api.routes.warehouse_routes import *  # noqa: F401,F403
+from education_system.platform.delivery.api.routes.warehouse_routes import __dict__ as _moved  # noqa: E402
 
-import logging
-
-from flask import Blueprint, jsonify
-
-from education_system.platform.delivery.api.auth import role_required
-
-logger = logging.getLogger(__name__)
-
-warehouse_bp = Blueprint("warehouse", __name__, url_prefix="/api/warehouse")
-
-# Org-wide stats are staff-level; parents/students are refused.
-_STAFF_ROLES = ("admin", "staff", "teacher")
-
-
-def init_warehouse_routes() -> None:
-    """Hook for app-startup symmetry with the other route modules."""
-    logger.info("Warehouse (cross-system reporting) routes initialised.")
-
-
-def _warehouse():
-    from education_system.platform.features.analytics.warehouse import Warehouse
-    return Warehouse()
-
-
-def _safe(fn, label):
-    try:
-        return jsonify(fn()), 200
-    except Exception:
-        logger.exception("Warehouse %s failed", label)
-        return jsonify({"error": f"Failed to build {label}"}), 500
-
-
-@warehouse_bp.route("/summary", methods=["GET"])
-@role_required(*_STAFF_ROLES)
-def summary():
-    return _safe(lambda: _warehouse().summary(), "summary")
-
-
-@warehouse_bp.route("/headcount", methods=["GET"])
-@role_required(*_STAFF_ROLES)
-def headcount():
-    return _safe(lambda: {"headcount": _warehouse().headcount_by_system()},
-                 "headcount")
-
-
-@warehouse_bp.route("/retention", methods=["GET"])
-@role_required(*_STAFF_ROLES)
-def retention():
-    return _safe(lambda: {"retention_funnel": _warehouse().retention_funnel()},
-                 "retention funnel")
-
-
-@warehouse_bp.route("/progression", methods=["GET"])
-@role_required(*_STAFF_ROLES)
-def progression():
-    return _safe(lambda: {"progression_rates": _warehouse().progression_rates()},
-                 "progression rates")
+# ``import *`` skips names starting with an underscore, and several of
+# these modules keep their state and helpers private (``_rate_limiter``,
+# ``_extract_subdomain``, ``_JWT_SECRET``). Callers and tests reach for
+# those, so re-export everything the target defines.
+globals().update({k: v for k, v in _moved.items() if not k.startswith("__")})

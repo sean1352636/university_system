@@ -16,6 +16,21 @@ from education_system.systems.university.infrastructure.validation.validators im
 logger = logging.getLogger(__name__)
 
 
+#: ``APP_ENV`` values in which a mock OTP provider may run. An unset
+#: ``APP_ENV`` reads as production, so refusing is the default.
+_MOCK_PROVIDER_ENVIRONMENTS = frozenset({"development", "dev", "local", "test", "testing"})
+
+
+def _mock_delivery_allowed() -> bool:
+    """True when logging an OTP locally instead of sending it is safe.
+
+    Read at call time so a process that sets ``APP_ENV`` after import still
+    gets the right answer.
+    """
+    return os.getenv("APP_ENV", "production").strip().lower() in _MOCK_PROVIDER_ENVIRONMENTS
+
+
+
 class SMSProvider(ABC):
     """Abstract base class for SMS providers"""
 
@@ -352,7 +367,23 @@ class MockSMSProvider(SMSProvider):
         self.log_file = log_file or str(paths.UNIVERSITY_TEMP_DIR / 'sms_otp_log.txt')
 
     def send_otp(self, phone_number: str, code: str) -> Dict:
-        """Mock send - logs to file instead of sending SMS"""
+        """Mock send - logs to file instead of sending SMS.
+
+        Refused outside development and test: reporting success for an SMS
+        nobody received leaves the account holder unable to log in while the
+        code sits in a local log, which is a disclosure with none of the
+        delivery. Failing here makes the MFA service fail closed instead.
+        """
+        if not _mock_delivery_allowed():
+            logger.error(
+                "SMS OTP fell back to the mock provider outside development; "
+                "refusing to log a verification code. Configure an SMS provider."
+            )
+            return {
+                'success': False,
+                'provider': 'mock',
+                'error': 'SMS OTP delivery is not configured',
+            }
         try:
             # Redact sensitive data in logs — only show last 2 digits of code
             redacted_code = '****' + code[-2:] if len(code) > 2 else '******'

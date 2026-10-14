@@ -22,7 +22,9 @@ import logging
 import threading
 import tkinter as tk
 from datetime import datetime
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 from typing import Callable, Optional
 
 from education_system.systems.university.infrastructure.database.db import (
@@ -80,7 +82,7 @@ class GradeSubmissionDialog:
         self.on_save = on_save
         self.max_marks = float(max_marks) if max_marks else 100.0
 
-        self.dialog = tk.Toplevel(parent)
+        self.dialog = make_toplevel(parent)
         self.dialog.title(title)
         self.dialog.geometry("500x440")
         self.dialog.transient(parent)

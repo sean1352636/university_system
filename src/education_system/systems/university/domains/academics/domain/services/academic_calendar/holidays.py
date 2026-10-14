@@ -57,9 +57,9 @@ class HolidayManager:
                 # Create holiday calendar definition (single canonical table,
                 # discriminated by event_type='holiday_calendar').
                 self.db_manager.execute_update(
-                    """INSERT INTO academic_calendar_events
-                           (id, name, country_code, region, is_active, event_type, date_added)
-                       VALUES (?, ?, ?, ?, ?, 'holiday_calendar', ?)""",
+                    """INSERT INTO unified_events (
+                    source_event_id, title, country_code, region, is_active, event_type, created_at, source_type
+                ) VALUES (?, ?, ?, ?, ?, 'holiday_calendar', ?, 'academic_calendar')""",
                     (calendar_id,
                      f"{country_code} {region or 'National'} Holidays {year}",
                      country_code, region, True, current_time)
@@ -71,14 +71,15 @@ class HolidayManager:
 
                     # Check if holiday already exists
                     existing = self.db_manager.execute_query(
-                        "SELECT id FROM academic_calendar_events WHERE date = ? AND name = ? AND event_type = 'Holiday'",
+                        "SELECT id FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') WHERE date = ? AND name = ? AND event_type = 'Holiday'",
                         (date.strftime("%Y-%m-%d"), str(name))
                     )
 
                     if not existing:
                         self.db_manager.execute_update(
-                            """INSERT INTO academic_calendar_events (id, name, date, description, event_type,
-                               date_added, last_modified, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                            """INSERT INTO unified_events (
+                    source_event_id, title, event_date, description, event_type, created_at, updated_at, created_by, source_type
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'academic_calendar')""",
                             (event_id, str(name)[:255], date.strftime("%Y-%m-%d"),
                              f"National holiday - {country_code}",
                              'Holiday', current_time, current_time, user_id)

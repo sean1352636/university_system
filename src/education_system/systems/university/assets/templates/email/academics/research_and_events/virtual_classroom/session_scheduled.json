@@ -1,0 +1,4 @@
+{
+    "subject": "📅 Session scheduled — $class_name on $session_date",
+    "body": "Dear $participant_name,\n\nA session has been scheduled for $module_name ($module_code).\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nSESSION\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nClass:            $class_name\nType:             $session_type\nDate:             $session_date\nStart time:       $start_time\nEnd time:         $end_time\nDuration:         $duration_minutes minutes\nLecturer:         $host_name\n\nJoin link:        $join_url\nMeeting ID:       $meeting_id\nAccess code:      $passcode\n\n$session_notes\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nKind regards,\n$sender_name"
+}

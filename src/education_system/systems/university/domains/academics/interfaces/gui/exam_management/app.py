@@ -1,4 +1,7 @@
 """Main application class for the Exam Scheduling System."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -8,6 +11,7 @@ from tkinter import ttk, messagebox, filedialog
 from education_system.systems.university.domains.academics.interfaces.gui.exam_management.data_manager import DataManager
 from education_system.systems.university.domains.academics.interfaces.gui.exam_management.tabs import ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin, CalendarTabMixin, DeferredExamTabMixin, AtRiskTabMixin, ExamEligibilityTabMixin, ResultsTabMixin, SeatingTabMixin
 from education_system.systems.university.domains.academics.interfaces.gui.exam_management.dialogs import DialogsMixin
+from education_system.platform.delivery.gui.portal_dismiss import forget_tab
 
 # i18n import
 try:
@@ -23,13 +27,21 @@ class ExamSchedulerApp(ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin,
                        ResultsTabMixin, SeatingTabMixin, DialogsMixin):
     """Main application class for the Exam Scheduling System."""
 
-    def __init__(self, root, auth_instance=None):
+    def __init__(self, root, auth_instance=None, notebook=None):
         self.root = root
         # Optional — some launchers (e.g. accessibility_tools_gui) pass the
         # auth instance through so the app can scope by current user. Others
         # pass only `root`; both must keep working.
         self.auth = auth_instance
-        self._is_embedded = not isinstance(root, (tk.Tk, tk.Toplevel))
+        # When *notebook* is given, this app adds its tabs to that notebook
+        # instead of building its own. Exam Management uses it to present the
+        # scheduler's views in the same list as its own, rather than as a
+        # notebook nested inside a notebook. Supplying one always means
+        # embedded, whatever `root` is — root will be the host's window, and
+        # retitling or resizing it would be the host's window, not ours.
+        self._external_notebook = notebook
+        self._is_embedded = (notebook is not None
+                             or not isinstance(root, (tk.Tk, tk.Toplevel)))
 
         if not self._is_embedded:
             self.root.title(_("exam_scheduler.title"))
@@ -100,11 +112,11 @@ class ExamSchedulerApp(ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin,
                         if target_module and target_module in vals:
                             tree.selection_set(iid); tree.see(iid); break
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
             subscribe_tk(EVENT_SELECTION_CHANGED, self.root, _on_selection)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def setup_styles(self):
         """Configure ttk styles for the application."""
@@ -206,29 +218,38 @@ class ExamSchedulerApp(ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin,
         help_menu.add_command(label=_("exam_scheduler.menu.about"), command=self.show_about)
 
     def create_main_layout(self):
-        """Create the main application layout with tabs."""
-        # Main container
-        main_frame = ttk.Frame(self.root, padding="10")
-        main_frame.pack(fill=tk.BOTH, expand=True)
+        """Create the main application layout with tabs.
 
-        # Title
-        title_label = ttk.Label(main_frame, text=_("exam_scheduler.title"),
-                               style='Title.TLabel')
-        title_label.pack(pady=(0, 10))
+        With an external notebook the chrome is the host's: no container
+        frame, no title label and no period strip, because the host already
+        provides them. Only the tabs are contributed.
+        """
+        if self._external_notebook is not None:
+            self.notebook = self._external_notebook
+        else:
+            # Main container
+            main_frame = ttk.Frame(self.root, padding="10")
+            main_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Notebook for tabs
-        # Embedded period strip (#11) — always shows term + exam window
-        # status above the tabs.
-        try:
-            from education_system.systems.university.domains.academics.interfaces.gui._cross_dialogs import (
-                AcademicPeriodPanel,
-            )
-            AcademicPeriodPanel(main_frame).pack(fill=tk.X, padx=10, pady=(0, 4))
-        except Exception:
-            pass
+            # Title
+            title_label = ttk.Label(main_frame, text=_("exam_scheduler.title"),
+                                    style='Title.TLabel')
+            title_label.pack(pady=(0, 10))
 
-        self.notebook = ttk.Notebook(main_frame)
-        self.notebook.pack(fill=tk.BOTH, expand=True)
+            # Notebook for tabs
+            # Embedded period strip (#11) — always shows term + exam window
+            # status above the tabs.
+            try:
+                from education_system.systems.university.domains.academics.interfaces.gui._cross_dialogs import (
+                    AcademicPeriodPanel,
+                )
+                AcademicPeriodPanel(main_frame).pack(fill=tk.X, padx=10, pady=(0, 4))
+            except Exception:
+                logger.debug("Suppressed exception", exc_info=True)
+
+            self.notebook = ttk.Notebook(main_frame)
+            self.notebook.pack(fill=tk.BOTH, expand=True)
+
 
         # Lazy tabs: only the initially-visible Schedule tab builds now;
         # the rest stay as empty placeholder frames until the user selects
@@ -252,7 +273,14 @@ class ExamSchedulerApp(ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin,
         _register("Results", self.create_results_tab)
         _register("Seating", self.create_seating_tab)
 
-        self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
+        # add="+" on a shared notebook: the host has its own handler for its
+        # own lazy tabs, and a plain bind() would replace it. Each handler
+        # only pops from its own builder map, so both can run.
+        if self._external_notebook is not None:
+            self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed,
+                               add="+")
+        else:
+            self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
 
     def _on_tab_changed(self, _event=None):
         try:
@@ -268,7 +296,9 @@ class ExamSchedulerApp(ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin,
             tab_label = self.notebook.tab(placeholder, "text")
         except tk.TclError:
             return
-        self.notebook.forget(placeholder)
+        # Destroy as well as detach: index and label are captured above and
+        # the entry is already popped, so the placeholder is finished with.
+        forget_tab(self.notebook, placeholder)
         # The mixin builders all call self.notebook.add(...) themselves, so
         # the new tab lands at the end. Move it back to the original slot
         # and re-select it so the user sees their click take effect.

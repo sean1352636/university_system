@@ -59,7 +59,7 @@ class FileUploadValidator:
         'exe', 'bat', 'cmd', 'com', 'pif', 'scr', 'vbs', 'js', 'jar',
         'ps1', 'msi', 'app', 'deb', 'rpm', 'dmg', 'pkg', 'sh', 'bash',
         'dll', 'sys', 'drv', 'ocx', 'cpl', 'inf', 'reg', 'lnk',
-        'wsf', 'wsh', 'hta', 'job', 'vb', 'vbe', 'jse', 'ws', 'wsf'
+        'wsf', 'wsh', 'hta', 'job', 'vb', 'vbe', 'jse', 'ws', 'wsc'
     }
 
     # Common document extensions

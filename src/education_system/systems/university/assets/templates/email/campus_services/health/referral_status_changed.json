@@ -1,0 +1,12 @@
+{
+    "subject": "$status_emoji Referral $status_headline - $specialty (Ref #$referral_id)",
+    "body": "Dear $student_name,\n\nThe status of your specialist referral has changed.\n\n=== STATUS CHANGE ===\nPrevious Status: $previous_status\nNew Status: $status\nChanged By: $updated_by\nChanged On: $updated_at\n\n$status_message\n\n=== YOUR REFERRAL ===\nReference Number: $referral_id\nSpecialty: $specialty\nSpecialist: $specialist_provider\nReferring Provider: $referring_provider\nUrgency: $urgency\nDate Referred: $referral_date\nAppointment Date: $appointment_date\n\nNotes:\n$notes\n\n=== WHAT HAPPENS NEXT ===\n$next_steps\n\n=== CONTACT INFORMATION ===\nHealth Centre: health@university.edu\nPhone: (555) 123-4567\nOffice Hours: Monday-Friday, 9:00 AM - 5:00 PM\nOut of hours emergencies: call 999\n\nBest regards,\nUniversity Health Centre\n\n$signature",
+    "variables": {
+        "notes": {"default": "None recorded."},
+        "appointment_date": {"default": "Not yet scheduled"},
+        "status_emoji": {"default": "🔄"},
+        "status_headline": {"default": "updated"},
+        "status_message": {"default": ""},
+        "next_steps": {"default": "If you have any questions about this referral, contact the Health Centre quoting the reference number above."}
+    }
+}

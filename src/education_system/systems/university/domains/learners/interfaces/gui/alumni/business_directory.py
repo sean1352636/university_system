@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 import tkinter as tk
@@ -717,7 +721,7 @@ class BusinessDirectoryMixin:
                 try:
                     self.load_business_listings()
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
         def update_business_listing(self):
             """Edit an existing business listing"""

@@ -56,7 +56,7 @@ def add_parking_lot():
         return
 
     if not auth.check_permission('manage_parking_lots'):
-        print(_t("parking.auth.no_permission"))
+        print(_t("parking.auth.no_permission", default="No Permission."))
         return
 
     # Backup before making changes
@@ -76,13 +76,13 @@ def add_parking_lot():
         # Get lot details
         lot_name = input("Enter lot name: ")
         if not lot_name:
-            print(_t("parking.error.lot_name_required"))
+            print(_t("parking.error.lot_name_required", default="Lot Name Required"))
             conn.close()
             return
 
         location = input("Enter location: ")
         if not location:
-            print(_t("parking.error.location_required"))
+            print(_t("parking.error.location_required", default="Location Required"))
             conn.close()
             return
 
@@ -92,10 +92,10 @@ def add_parking_lot():
             try:
                 total_spaces = int(input("Enter total number of spaces: "))
                 if total_spaces <= 0:
-                    print(_t("parking.error.total_spaces_positive"))
+                    print(_t("parking.error.total_spaces_positive", default="Total Spaces Positive"))
                     total_spaces = None
             except ValueError:
-                print(_t("parking.error.enter_valid_number"))
+                print(_t("parking.error.enter_valid_number", default="Enter Valid Number: "))
 
         # Initialize available spaces to total spaces
         available_spaces = total_spaces
@@ -118,7 +118,7 @@ def add_parking_lot():
 
         # Insert new lot
         cursor.execute(
-            'INSERT INTO parking_lots VALUES (?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO parking_lots (lot_id, lot_name, location, total_spaces, available_spaces, zone, hours_of_operation) VALUES (?, ?, ?, ?, ?, ?, ?)',
             (lot_id, lot_name, location, total_spaces, available_spaces, zone, hours)
         )
 
@@ -154,7 +154,7 @@ def update_parking_lot():
         return
 
     if not auth.check_permission('manage_parking_lots'):
-        print(_t("parking.auth.no_permission"))
+        print(_t("parking.auth.no_permission", default="No Permission."))
         return
 
     # Backup before making changes
@@ -203,7 +203,7 @@ def update_parking_lot():
             if option < 1 or option > 5:
                 raise ValueError
         except ValueError:
-            print(_t("common.invalid_option"))
+            print(_t("common.invalid_option", default="Invalid Option."))
             conn.close()
             return
 
@@ -212,7 +212,7 @@ def update_parking_lot():
             # Update lot name
             new_name = input("Enter new lot name: ")
             if not new_name:
-                print(_t("parking.error.lot_name_empty"))
+                print(_t("parking.error.lot_name_empty", default="Lot Name Empty"))
                 conn.close()
                 return
 
@@ -227,7 +227,7 @@ def update_parking_lot():
             # Update location
             new_location = input("Enter new location: ")
             if not new_location:
-                print(_t("parking.error.location_empty"))
+                print(_t("parking.error.location_empty", default="Location Empty"))
                 conn.close()
                 return
 
@@ -243,7 +243,7 @@ def update_parking_lot():
             try:
                 new_total = int(input("Enter new total spaces: "))
                 if new_total <= 0:
-                    print(_t("parking.error.total_spaces_positive"))
+                    print(_t("parking.error.total_spaces_positive", default="Total Spaces Positive"))
                     conn.close()
                     return
 
@@ -267,7 +267,7 @@ def update_parking_lot():
                 print(f"Available spaces adjusted to: {new_available}")
 
             except ValueError:
-                print(_t("parking.error.enter_valid_number"))
+                print(_t("parking.error.enter_valid_number", default="Enter Valid Number: "))
                 conn.close()
                 return
 
@@ -294,7 +294,7 @@ def update_parking_lot():
             # Update hours
             new_hours = input("Enter new hours of operation: ")
             if not new_hours:
-                print(_t("parking.error.hours_empty"))
+                print(_t("parking.error.hours_empty", default="Hours Empty"))
                 conn.close()
                 return
 
@@ -330,7 +330,7 @@ def delete_parking_lot():
         return
 
     if not auth.check_permission('manage_parking_lots'):
-        print(_t("parking.auth.no_permission"))
+        print(_t("parking.auth.no_permission", default="No Permission."))
         return
 
     # Backup before making changes
@@ -369,7 +369,7 @@ def delete_parking_lot():
         confirm = input(f"\nAre you sure you want to delete parking lot {lot_id} ({lot[1]})? (y/n): ")
 
         if confirm.lower() != 'y':
-            print(_t("common.deletion_cancelled"))
+            print(_t("common.deletion_cancelled", default="Deletion Cancelled"))
             conn.close()
             return
 
@@ -400,7 +400,7 @@ def update_available_spaces():
         return
 
     if not auth.check_permission('manage_parking_lots'):
-        print(_t("parking.auth.no_permission"))
+        print(_t("parking.auth.no_permission", default="No Permission."))
         return
 
     try:
@@ -430,7 +430,7 @@ def update_available_spaces():
         try:
             new_available = int(input("Enter new available spaces count: "))
             if new_available < 0:
-                print(_t("parking.error.available_spaces_negative"))
+                print(_t("parking.error.available_spaces_negative", default="Available Spaces Negative"))
                 conn.close()
                 return
 
@@ -450,7 +450,7 @@ def update_available_spaces():
             logging.info(f"Available spaces for lot {lot_id} updated to {new_available} by {auth.current_user['username']}")
 
         except ValueError:
-            print(_t("parking.error.enter_valid_number"))
+            print(_t("parking.error.enter_valid_number", default="Enter Valid Number: "))
 
         conn.close()
 

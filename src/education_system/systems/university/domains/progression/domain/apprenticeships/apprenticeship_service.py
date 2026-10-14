@@ -1,5 +1,12 @@
 """
-Tkinter-free data/service layer for the Apprenticeship module.
+Legacy careers listings and applications for university students.
+
+This is not the authoritative apprenticeship learner system and must not be
+used for degree-apprenticeship enrolment, KSB, gateway, EPA or funding data.
+Those records live under ``systems.apprenticeships`` and are joined to the
+university through the shared journey and durable degree events.
+
+Tkinter-free data/service layer for the Apprenticeship listings module.
 
 The canonical `Database` wrapper (schema bootstrap + thin execute/fetch
 helpers over the shared `student_records.db`) lives here so both the
@@ -104,6 +111,18 @@ class Database:
                 UNIQUE(student_id, apprenticeship_id)
             );
         """)
+        # An application is made to a *programme at an employer*, both owned
+        # by the apprenticeships system. Without the employer on the row,
+        # the record can't say who the application was routed to.
+        existing_application_cols = {
+            r[1] for r in self.conn.execute("PRAGMA table_info(applications)")
+        }
+        if existing_application_cols and "employer_id" not in existing_application_cols:
+            try:
+                self.conn.execute("ALTER TABLE applications ADD COLUMN employer_id INTEGER")
+            except sqlite3.OperationalError:
+                logger.debug("applications.employer_id already present")
+
         existing_student_cols = {r[1] for r in self.conn.execute("PRAGMA table_info(students)")}
         if "gpa" not in existing_student_cols:
             self.conn.execute("ALTER TABLE students ADD COLUMN gpa REAL")
@@ -118,13 +137,16 @@ class Database:
         for tbl in ("apprenticeship_applications", "apprenticeship_listings",
                     "apprenticeship_employers", "apprenticeship_students"):
             try:
+                # db-audit: ignore[DBW001] - literal collection
                 row = self.conn.execute(
                     f"SELECT name FROM sqlite_master WHERE type='table' AND name='{tbl}'"
                 ).fetchone()
                 if not row:
                     continue
+                # db-audit: ignore[DBW001] - literal collection
                 count = self.conn.execute(f"SELECT COUNT(*) FROM {tbl}").fetchone()[0]
                 if count == 0:
+                    # db-audit: ignore[DBW001] - literal collection
                     self.conn.execute(f"DROP TABLE {tbl}")
                     logger.info("Dropped empty legacy table %s", tbl)
                 else:
@@ -156,7 +178,7 @@ class Database:
         try:
             self.conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
 
 class ApprenticeshipService:
@@ -173,7 +195,10 @@ class ApprenticeshipService:
     def close(self):
         self.db.close()
 
-    # ---------------- Students ----------------
+    # ---------------- Students (read-only) ----------------
+    # The canonical ``students`` table is owned by Student Records.
+    # Apprenticeships reads it; creating, renaming or deleting a
+    # person from here used to also wipe their applications.
     _STUDENT_COLS = ["student_id", "first_name", "last_name", "email_address",
                      "course", "year_of_study", "gpa"]
 
@@ -193,32 +218,6 @@ class ApprenticeshipService:
                           course, year_of_study, gpa
                    FROM students ORDER BY last_name""")
         return [dict(zip(self._STUDENT_COLS, r)) for r in rows]
-
-    def add_student(self, student_id, first_name, last_name, email, course,
-                    year_of_study=0, gpa=None) -> str:
-        self.db.execute(
-            """INSERT INTO students
-                   (student_id, first_name, last_name, email_address,
-                    course, year_of_study, gpa)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (student_id, first_name, last_name, email, course, year_of_study, gpa))
-        return student_id
-
-    def update_student(self, old_student_id, student_id, first_name, last_name,
-                       email, course, year_of_study=0, gpa=None) -> None:
-        # Cascade-clear the student's applications first (the canonical
-        # schema doesn't enforce ON DELETE CASCADE for the TEXT key).
-        self.db.execute("DELETE FROM applications WHERE student_id=?", (old_student_id,))
-        self.db.execute(
-            """UPDATE students SET student_id=?, first_name=?, last_name=?,
-                   email_address=?, course=?, year_of_study=?, gpa=?
-               WHERE student_id=?""",
-            (student_id, first_name, last_name, email, course,
-             year_of_study, gpa, old_student_id))
-
-    def delete_student(self, student_id) -> None:
-        self.db.execute("DELETE FROM applications WHERE student_id=?", (student_id,))
-        self.db.execute("DELETE FROM students WHERE student_id=?", (student_id,))
 
     # ---------------- Employers ----------------
     _EMPLOYER_COLS = ["employer_id", "company_name", "contact_person",
@@ -325,11 +324,19 @@ class ApprenticeshipService:
         return [dict(zip(self._APPLICATION_COLS, r)) for r in rows]
 
     def submit_application(self, student_id, apprenticeship_id,
-                           status="Pending", notes="") -> int:
+                           status="Pending", notes="", employer_id=None) -> int:
+        """Record an application.
+
+        ``apprenticeship_id`` is the apprenticeships system's ``programme_id``
+        and ``employer_id`` its ``employer_id`` — both read through the
+        read-only gateway, so this table references them rather than holding
+        a second copy of the programme and employer.
+        """
         cur = self.db.execute(
-            """INSERT INTO applications (student_id, apprenticeship_id, status, notes)
-               VALUES (?, ?, ?, ?)""",
-            (student_id, apprenticeship_id, status, notes))
+            """INSERT INTO applications
+                   (student_id, apprenticeship_id, status, notes, employer_id)
+               VALUES (?, ?, ?, ?, ?)""",
+            (student_id, apprenticeship_id, status, notes, employer_id))
         return cur.lastrowid
 
     def update_application_status(self, app_id, status, notes=None) -> None:

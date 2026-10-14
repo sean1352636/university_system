@@ -1,9 +1,14 @@
 """Grade management and rubric grading"""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 import os
 import shutil
 import threading
@@ -40,7 +45,7 @@ def _publish_grade_change(submission_id, *, student_id=None, module_code=None,
         publish(EVENT_GRADE_CHANGED, **payload)
         publish(EVENT_ASSIGNMENT_CHANGED, **payload)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
 
 
@@ -164,11 +169,21 @@ class GradingManager:
 
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            # Rows come back keyed by column name. Every field below used to
+            # be read by position against an ``s.*`` that was assumed to have
+            # 11 columns; assignment_submissions has 24, so each one was off
+            # by thirteen. "Max Marks" was reading ``late_days`` — 0 for an
+            # on-time submission — which divided by zero on every keystroke
+            # and made the form refuse any grade with "Grade must be between
+            # 0 and 0".
+            conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
 
             # Get submission details
             cursor.execute('''
-            SELECT s.*, a.title, a.max_marks, st.first_name, st.last_name, a.module_code
+            SELECT s.*, a.title AS assignment_title, a.max_marks AS assignment_max_marks,
+                   st.first_name AS student_first_name, st.last_name AS student_last_name,
+                   a.module_code AS assignment_module_code
             FROM assignment_submissions s
             JOIN assignments a ON s.assignment_id = a.id
             JOIN students st ON s.student_id = st.student_id
@@ -179,17 +194,33 @@ class GradingManager:
             if not submission:
                 return
 
+            # A max_marks of 0 or NULL cannot be graded against; fall back to
+            # the usual 100 so the form stays usable and say so.
+            max_marks = submission["assignment_max_marks"]
+            try:
+                max_marks = float(max_marks or 0)
+            except (TypeError, ValueError):
+                max_marks = 0.0
+            marks_note = ""
+            if max_marks <= 0:
+                max_marks = 100.0
+                marks_note = "  (assignment has no mark total set — assuming 100)"
+
+            file_path = submission["file_path"]
+            submitted = submission["submission_date"] or submission["submitted_at"] or "—"
+
             # Cache identifiers used by the attendance integration
-            student_id_for_attendance = submission[1]
-            module_code_for_attendance = submission[16]
+            student_id_for_attendance = submission["student_id"]
+            module_code_for_attendance = submission["assignment_module_code"]
 
             # Display submission details
-            details_text = f"Student: {submission[14]} {submission[15]}\n"
-            details_text += f"Assignment: {submission[11]}\n"
+            details_text = (f"Student: {submission['student_first_name']} "
+                            f"{submission['student_last_name']}\n")
+            details_text += f"Assignment: {submission['assignment_title']}\n"
             details_text += f"Module: {module_code_for_attendance}\n"
-            details_text += f"File: {submission[6]}\n"
-            details_text += f"Submitted: {submission[4]}\n"
-            details_text += f"Max Marks: {submission[12]}"
+            details_text += f"File: {submission['file_name'] or '—'}\n"
+            details_text += f"Submitted: {submitted}\n"
+            details_text += f"Max Marks: {max_marks:g}{marks_note}"
 
             ttk.Label(self.grading_details_frame, text=details_text, justify='left').pack(anchor='w', pady=(0, 10))
 
@@ -215,9 +246,9 @@ class GradingManager:
             file_frame.pack(fill='x', pady=(0, 20))
 
             ttk.Button(file_frame, text=_t('gui.academics.assignment_system.grading_manager.buttons.open_file', default="Open File"),
-                      command=lambda: self.open_submission_file(submission[5])).pack(side='left', padx=(0, 10))
+                      command=lambda: self.open_submission_file(file_path)).pack(side='left', padx=(0, 10))
             ttk.Button(file_frame, text=_t('gui.academics.assignment_system.grading_manager.buttons.download_file', default="Download File"),
-                      command=lambda: self.download_file(submission[5])).pack(side='left', padx=(0, 10))
+                      command=lambda: self.download_file(file_path)).pack(side='left', padx=(0, 10))
             ttk.Button(
                 file_frame, text=_t('gui.academics.assignment_system.grading_manager.buttons.attendance', default="Attendance"),
                 command=lambda: self.gui.show_student_attendance(
@@ -236,7 +267,7 @@ class GradingManager:
             grading_form.pack(fill='x', pady=(0, 20))
 
             # Grade input
-            ttk.Label(grading_form, text=f"Grade (0-{submission[12]}):").grid(row=0, column=0, sticky='w', pady=5)
+            ttk.Label(grading_form, text=f"Grade (0-{max_marks:g}):").grid(row=0, column=0, sticky='w', pady=5)
             self.grade_var = tk.StringVar()
             grade_entry = ttk.Entry(grading_form, textvariable=self.grade_var, width=10)
             grade_entry.grid(row=0, column=1, sticky='w', pady=5, padx=(10, 0))
@@ -247,7 +278,7 @@ class GradingManager:
             percentage_label.grid(row=0, column=2, sticky='w', pady=5, padx=(10, 0))
 
             # Update percentage when grade changes
-            grade_entry.bind('<KeyRelease>', lambda e: self.update_percentage(submission[12]))
+            grade_entry.bind('<KeyRelease>', lambda e: self.update_percentage(max_marks))
 
             # Feedback
             ttk.Label(grading_form, text=_t('gui.academics.assignment_system.grading_manager.labels.feedback', default="Feedback:")).grid(row=1, column=0, sticky='nw', pady=5)
@@ -258,7 +289,7 @@ class GradingManager:
 
             # Submit grade button
             submit_grade_btn = ttk.Button(grading_form, text=_t('gui.academics.assignment_system.grading_manager.buttons.submit_grade', default="Submit Grade"),
-                                        command=lambda: self.submit_grade(submission_id, submission[12]))
+                                        command=lambda: self.submit_grade(submission_id, max_marks))
             submit_grade_btn.grid(row=2, column=1, sticky='e', pady=(20, 0))
 
             conn.close()
@@ -268,28 +299,54 @@ class GradingManager:
 
 
     def update_percentage(self, max_marks):
-        """Update percentage display"""
+        """Update the live percentage next to the grade box.
+
+        Guarded against a zero mark total: this fires on every keystroke, so
+        an assignment with no max_marks produced a ZeroDivisionError traceback
+        per character typed.
+        """
         try:
             grade = float(self.grade_var.get()) if self.grade_var.get() else 0
-            percentage = (grade / max_marks) * 100
-            self.percentage_var.set(f"({percentage:.1f}%)")
         except ValueError:
             self.percentage_var.set("(0.0%)")
+            return
+        try:
+            total = float(max_marks or 0)
+        except (TypeError, ValueError):
+            total = 0.0
+        if total <= 0:
+            self.percentage_var.set("(n/a)")
+            return
+        self.percentage_var.set(f"({(grade / total) * 100:.1f}%)")
 
 
     def submit_grade(self, submission_id, max_marks):
         """Submit grade for submission"""
         try:
+            total = float(max_marks or 0)
+        except (TypeError, ValueError):
+            total = 0.0
+        if total <= 0:
+            # Refusing every grade with "between 0 and 0" told the marker
+            # nothing about what was actually wrong.
+            messagebox.showerror(
+                _t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"),
+                "This assignment has no mark total set, so a grade cannot be "
+                "recorded against it.\n\nSet its maximum marks in Manage "
+                "Assignments first.")
+            return
+
+        try:
             grade = float(self.grade_var.get())
-            if not (0 <= grade <= max_marks):
-                messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), f"Grade must be between 0 and {max_marks}")
+            if not (0 <= grade <= total):
+                messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), f"Grade must be between 0 and {total:g}")
                 return
         except ValueError:
             messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.grading_manager.dialogs.please_enter_a_valid_grade', default="Please enter a valid grade"))
             return
 
         feedback = self.feedback_text.get(1.0, tk.END).strip()
-        percentage = (grade / max_marks) * 100
+        percentage = (grade / total) * 100
 
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
@@ -478,8 +535,12 @@ class GradingManager:
             cursor = conn.cursor()
 
             # Get submission and rubric details
+            # By name, not position — see load_submission_for_grading.
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
             cursor.execute('''
-            SELECT s.*, a.title, a.rubric_id, st.first_name, st.last_name
+            SELECT s.*, a.title AS assignment_title, a.rubric_id AS assignment_rubric_id,
+                   st.first_name AS student_first_name, st.last_name AS student_last_name
             FROM assignment_submissions s
             JOIN assignments a ON s.assignment_id = a.id
             JOIN students st ON s.student_id = st.student_id
@@ -490,10 +551,13 @@ class GradingManager:
             if not submission:
                 return
 
-            rubric_id = submission[12]  # rubric_id from assignments table
+            rubric_id = submission["assignment_rubric_id"]
 
             # Display submission info
-            info_text = f"Student: {submission[13]} {submission[14]}\nAssignment: {submission[11]}\nFile: {submission[6]}"
+            info_text = (f"Student: {submission['student_first_name']} "
+                         f"{submission['student_last_name']}\n"
+                         f"Assignment: {submission['assignment_title']}\n"
+                         f"File: {submission['file_name'] or '—'}")
             ttk.Label(self.rubric_grading_frame, text=info_text, justify='left').pack(anchor='w', pady=(0, 20))
 
             # Get rubric criteria
@@ -810,8 +874,12 @@ class GradingManager:
             cursor = conn.cursor()
 
             # Get submission details
+            # By name, not position — see load_submission_for_grading.
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
             cursor.execute('''
-            SELECT s.*, a.title, a.max_marks, st.first_name, st.last_name
+            SELECT s.*, a.title AS assignment_title, a.max_marks AS assignment_max_marks,
+                   st.first_name AS student_first_name, st.last_name AS student_last_name
             FROM assignment_submissions s
             JOIN assignments a ON s.assignment_id = a.id
             JOIN students st ON s.student_id = st.student_id
@@ -826,8 +894,20 @@ class GradingManager:
                 return
 
             # Create simple grading dialog
-            dialog = tk.Toplevel(self.root)
-            dialog.title(f"Grade Submission - {submission[11]}")
+            dialog = make_toplevel(self.root)
+            try:
+                dialog_max_marks = float(submission["assignment_max_marks"] or 0)
+            except (TypeError, ValueError):
+                dialog_max_marks = 0.0
+            marks_known = dialog_max_marks > 0
+            if not marks_known:
+                dialog_max_marks = 100.0
+
+            # The Open/Download buttons below close over this; it was never
+            # assigned here, so both raised NameError when clicked.
+            file_path = submission["file_path"]
+
+            dialog.title(f"Grade Submission - {submission['assignment_title']}")
             dialog.geometry("500x400")
             dialog.transient(self.root)
             dialog.grab_set()
@@ -836,11 +916,14 @@ class GradingManager:
             info_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.assignment_system.grading_manager.labels.submission_details', default="Submission Details"), padding=10)
             info_frame.pack(fill='x', padx=10, pady=10)
 
-            info_text = f"Student: {submission[14]} {submission[15]}\n"
-            info_text += f"Assignment: {submission[11]}\n"
-            info_text += f"File: {submission[6]}\n"
-            info_text += f"Submitted: {submission[4]}\n"
-            info_text += f"Max Marks: {submission[12]}"
+            info_text = (f"Student: {submission['student_first_name']} "
+                         f"{submission['student_last_name']}\n")
+            info_text += f"Assignment: {submission['assignment_title']}\n"
+            info_text += f"File: {submission['file_name'] or '—'}\n"
+            info_text += (f"Submitted: {submission['submission_date'] or submission['submitted_at'] or '—'}\n")
+            info_text += f"Max Marks: {dialog_max_marks:g}"
+            if not marks_known:
+                info_text += "  (not set — assuming 100)"
 
             ttk.Label(info_frame, text=info_text, justify='left').pack(anchor='w')
 
@@ -849,22 +932,22 @@ class GradingManager:
             file_frame.pack(fill='x', pady=(10, 0))
 
             ttk.Button(file_frame, text=_t('gui.academics.assignment_system.grading_manager.buttons.open_file', default="Open File"),
-                      command=lambda: self.open_submission_file(submission[5])).pack(side='left', padx=(0, 10))
+                      command=lambda: self.open_submission_file(file_path)).pack(side='left', padx=(0, 10))
             ttk.Button(file_frame, text=_t('gui.academics.assignment_system.grading_manager.buttons.download_file', default="Download File"),
-                      command=lambda: self.download_file(submission[5])).pack(side='left')
+                      command=lambda: self.download_file(file_path)).pack(side='left')
 
             # Grading section
             grade_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.assignment_system.grading_manager.labels.grade', default="Grade"), padding=10)
             grade_frame.pack(fill='both', expand=True, padx=10, pady=(0, 10))
 
-            ttk.Label(grade_frame, text=f"Score (out of {submission[12]}):").pack(anchor='w', pady=(0, 5))
+            ttk.Label(grade_frame, text=f"Score (out of {dialog_max_marks:g}):").pack(anchor='w', pady=(0, 5))
 
             score_frame = ttk.Frame(grade_frame)
             score_frame.pack(fill='x', pady=(0, 10))
 
             score_var = tk.StringVar()
             ttk.Entry(score_frame, textvariable=score_var, width=10).pack(side='left')
-            ttk.Label(score_frame, text=f" / {submission[12]}").pack(side='left', padx=(5, 0))
+            ttk.Label(score_frame, text=f" / {dialog_max_marks:g}").pack(side='left', padx=(5, 0))
 
             # Percentage display
             percentage_var = tk.StringVar()
@@ -874,10 +957,13 @@ class GradingManager:
             def update_percentage(*args):
                 try:
                     score = float(score_var.get()) if score_var.get() else 0
-                    percentage = (score / submission[12]) * 100
-                    percentage_var.set(f"({percentage:.1f}%)")
                 except ValueError:
                     percentage_var.set("(0.0%)")
+                    return
+                if dialog_max_marks <= 0:
+                    percentage_var.set("(n/a)")
+                    return
+                percentage_var.set(f"({(score / dialog_max_marks) * 100:.1f}%)")
 
             score_var.trace('w', update_percentage)
 
@@ -890,10 +976,10 @@ class GradingManager:
             def submit_simple_grade():
                 try:
                     score = float(score_var.get())
-                    max_marks = submission[12]
+                    max_marks = dialog_max_marks
 
                     if not (0 <= score <= max_marks):
-                        messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), f"Score must be between 0 and {max_marks}", parent=dialog)
+                        messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), f"Score must be between 0 and {max_marks:g}", parent=dialog)
                         return
 
                     feedback = feedback_text.get(1.0, tk.END).strip()

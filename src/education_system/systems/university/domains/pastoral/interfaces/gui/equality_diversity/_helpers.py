@@ -1,5 +1,8 @@
 """Module-level helpers extracted from gui.py."""
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 import tkinter as tk
 from tkinter import Toplevel, Label, Entry, Button, Frame, StringVar, ttk
@@ -94,7 +97,7 @@ def _embed_chart(parent, field, theme):
         canvas.draw()
         canvas.get_tk_widget().pack(fill="both", expand=True, pady=8)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
 
 # ----------------------------------------------------------------------------

@@ -521,6 +521,7 @@ class StudentManagementMixin:
             # Build query
             if student_ids:
                 placeholders = ','.join(['?' for _ in student_ids])
+                # db-audit: ignore[DBW001] - string literal
                 cursor.execute(f'''
                 SELECT DISTINCT student_id FROM ai_detector_submissions
                 WHERE student_id IN ({placeholders})

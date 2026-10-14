@@ -1,22 +1,13 @@
-"""Phone Shop Module"""
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.domain.phoneshop`` (campus commerce plugin).
 
-__all__ = ['PhoneShopGUI', 'launch_phoneshop_gui']
+A mirror, not an alias: an aliased package would resolve this package's
+submodules through the new ``__path__`` and load each one a second time.
+Submodules are aliased individually; this copies the package's names.
+"""
+# layout-shim: education_system.systems.university.plugins.campus_commerce.domain.phoneshop
+import importlib as _importlib
 
-# The GUI classes live in the interfaces layer, which imports back into this
-# domain package, so an eager re-export here is a circular import. PEP 562
-# lazy lookup keeps these names on the package's public surface without the
-# cycle: the interfaces module is only imported on first attribute access.
-_LAZY_GUI_EXPORTS = {
-    "PhoneShopGUI": "education_system.systems.university.domains.operations.interfaces.gui.commerce.phoneshop.phoneshop_gui",
-    "launch_phoneshop_gui": "education_system.systems.university.domains.operations.interfaces.gui.commerce.phoneshop.phoneshop_gui",
-}
-
-
-def __getattr__(name: str):
-    module_path = _LAZY_GUI_EXPORTS.get(name)
-    if module_path is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    value = getattr(importlib.import_module(module_path), name)
-    globals()[name] = value  # cache so subsequent access skips __getattr__
-    return value
+_new = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.domain.phoneshop")
+globals().update({k: v for k, v in vars(_new).items()
+                  if not (k.startswith("__") and k.endswith("__"))})
+del _importlib, _new

@@ -65,13 +65,6 @@ class ResearchGrantsGUI:
             font=('Arial', 18, 'bold')
         ).pack(side=tk.LEFT)
 
-        # Language change button
-        ttk.Button(
-            header_frame,
-            text=_("research_grants.buttons.change_language").format(lang=get_current_language_name()),
-            command=self._on_language_change
-        ).pack(side=tk.RIGHT, padx=5)
-
         user_label = ttk.Label(
             header_frame,
             text=_("research_grants.labels.user").format(username=self.auth.current_user.get('username', 'Unknown')),
@@ -91,7 +84,6 @@ class ResearchGrantsGUI:
         self._create_equipment_tab()
         self._create_irb_tab()
 
-        # Close button — only shown in standalone (Toplevel) mode; when
         # embedded inside the Finance GUI, the parent owns navigation.
         if not self._is_embedded:
             ttk.Button(

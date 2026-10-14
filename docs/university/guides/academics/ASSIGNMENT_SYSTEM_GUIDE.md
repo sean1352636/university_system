@@ -88,7 +88,7 @@ The Assignment System is a comprehensive module with 19 specialized managers pro
 
 **CLI:**
 ```bash
-python run.py --cli
+python -m education_system --cli
 # Select: Academic Management → Assignment System
 ```
 
@@ -103,7 +103,7 @@ python run.py --cli
 
 **CLI:**
 ```bash
-python run.py --cli
+python -m education_system --cli
 # Select: Student Portal → My Assignments
 ```
 

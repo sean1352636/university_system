@@ -1,5 +1,9 @@
 # refactored/students/grade_common.py
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
+
 from typing import Any, Dict, List, Optional, Tuple
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from education_system.systems.university.infrastructure.database.db import get_connection
@@ -113,4 +117,4 @@ def select_assessment(
             try:
                 conn.close()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)

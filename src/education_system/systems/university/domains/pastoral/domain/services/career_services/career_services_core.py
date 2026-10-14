@@ -76,9 +76,6 @@ from education_system.systems.university.infrastructure.i18n import (
     get_text,
     get_current_language,
 )
-from education_system.systems.university.infrastructure.utils.language_selector import (
-    display_language_menu_option,
-)
 
 class JobManager:
     """Manages job postings and applications"""
@@ -115,7 +112,7 @@ class JobManager:
                     deadline=application_deadline,
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             return job_id
         except sqlite3.Error as e:
@@ -126,11 +123,16 @@ class JobManager:
                      cover_letter: str = "") -> int:
         try:
             with transaction() as conn:
+                # Both id columns are populated: writes went to applicant_id
+                # while _lookup_application_context (and so every applicant
+                # email) reads student_id, which left the emails unaddressed.
+                # resume_id was accepted and then dropped on the floor.
                 cursor = conn.execute('''
-                    INSERT INTO job_applications (job_id, applicant_id, cover_letter,
+                    INSERT INTO job_applications (job_id, applicant_id, student_id,
+                                                  resume_id, cover_letter,
                                                   application_date, status)
-                    VALUES (?, ?, ?, date('now'), 'pending')
-                ''', (job_id, student_id, cover_letter))
+                    VALUES (?, ?, ?, ?, ?, date('now'), 'pending')
+                ''', (job_id, student_id, student_id, resume_id, cover_letter))
                 application_id = cursor.lastrowid
                 return application_id
         except sqlite3.Error as e:
@@ -207,6 +209,45 @@ class JobManager:
             query += " ORDER BY post_date DESC"
             cursor = conn.execute(query, params)
             return [dict(row) for row in cursor.fetchall()]
+
+    @staticmethod
+    def get_job(job_id: int) -> Optional[Dict[str, Any]]:
+        with get_connection() as conn:
+            row = conn.execute(
+                "SELECT * FROM job_postings WHERE job_id = ?", (job_id,)
+            ).fetchone()
+            return dict(row) if row else None
+
+    @staticmethod
+    def get_student_applications(student_id: str) -> List[Dict[str, Any]]:
+        """Every application this student has made, newest first, with the
+        job it was for and any interview that has been scheduled."""
+        with get_connection() as conn:
+            cursor = conn.execute('''
+                SELECT a.application_id, a.status, a.application_date,
+                       a.cover_letter, a.resume_id,
+                       j.job_id, j.job_title, j.company_name, j.location,
+                       j.job_type,
+                       i.interview_date, i.interview_time, i.interview_type,
+                       i.location AS interview_location, i.meeting_link
+                  FROM job_applications a
+                  JOIN job_postings j ON j.job_id = a.job_id
+             LEFT JOIN interview_schedules i ON i.application_id = a.application_id
+                 WHERE COALESCE(a.student_id, a.applicant_id) = ?
+              ORDER BY a.application_date DESC, a.application_id DESC
+            ''', (student_id,))
+            return [dict(row) for row in cursor.fetchall()]
+
+    @staticmethod
+    def has_applied(job_id: int, student_id: str) -> bool:
+        with get_connection() as conn:
+            row = conn.execute(
+                "SELECT 1 FROM job_applications "
+                "WHERE job_id = ? AND COALESCE(student_id, applicant_id) = ? "
+                "LIMIT 1",
+                (job_id, student_id),
+            ).fetchone()
+            return row is not None
 
 class ResumeManager:
     """Manages student resumes and CVs"""
@@ -312,14 +353,56 @@ class CareerEventManager:
     def register_for_event(event_id: int, student_id: str, num_guests: int = 0) -> int:
         try:
             with transaction() as conn:
+                # The table keys registrations by user_id/user_type and stores
+                # the timestamp in registration_date — the previous columns
+                # (student_id, registered_at) do not exist, so every career
+                # event registration failed outright.
                 cursor = conn.execute('''
-                    INSERT INTO unified_event_registrations (event_id, student_id, registered_at)
-                    VALUES (?, ?, datetime('now'))
-                ''', (event_id, student_id))
+                    INSERT INTO unified_event_registrations (
+                        event_id, user_id, user_type, registration_date, num_guests
+                    ) VALUES (?, ?, 'student', datetime('now'), ?)
+                ''', (event_id, student_id, num_guests))
                 registration_id = cursor.lastrowid
                 return registration_id
         except sqlite3.Error as e:
             raise DatabaseError(f"Error registering for event: {e}") from e
+
+    @staticmethod
+    def get_upcoming_events(include_past: bool = False) -> List[Dict[str, Any]]:
+        """Career events, soonest first."""
+        with get_connection() as conn:
+            query = (
+                "SELECT event_id, title, event_type, start_datetime, location, "
+                "       description, max_capacity "
+                "FROM unified_events WHERE source_type = 'career' "
+            )
+            if not include_past:
+                query += "AND (start_datetime IS NULL OR date(start_datetime) >= date('now')) "
+            query += "ORDER BY start_datetime"
+            return [dict(row) for row in conn.execute(query).fetchall()]
+
+    @staticmethod
+    def get_registrations_for(student_id: str) -> List[Dict[str, Any]]:
+        with get_connection() as conn:
+            cursor = conn.execute('''
+                SELECT r.registration_id, r.registration_date, r.num_guests,
+                       e.event_id, e.title, e.start_datetime, e.location
+                  FROM unified_event_registrations r
+                  JOIN unified_events e ON e.event_id = r.event_id
+                 WHERE r.user_id = ? AND e.source_type = 'career'
+              ORDER BY e.start_datetime
+            ''', (student_id,))
+            return [dict(row) for row in cursor.fetchall()]
+
+    @staticmethod
+    def is_registered(event_id: int, student_id: str) -> bool:
+        with get_connection() as conn:
+            row = conn.execute(
+                "SELECT 1 FROM unified_event_registrations "
+                "WHERE event_id = ? AND user_id = ? LIMIT 1",
+                (event_id, student_id),
+            ).fetchone()
+            return row is not None
 
 class MentorshipManager:
     """Manages alumni mentorship program"""
@@ -356,6 +439,45 @@ class MentorshipManager:
                 return match_id
         except sqlite3.Error as e:
             raise DatabaseError(f"Error creating mentorship match: {e}") from e
+
+    @staticmethod
+    def get_available_mentors(industry: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Active mentors who still have room for another mentee."""
+        with get_connection() as conn:
+            query = '''
+                SELECT m.mentor_id, m.alumni_student_id, m.job_title, m.company,
+                       m.industry, m.expertise_areas, m.max_mentees, m.bio,
+                       COUNT(mm.match_id) AS current_mentees
+                  FROM alumni_mentors m
+             LEFT JOIN mentorship_matches mm
+                    ON mm.mentor_id = m.mentor_id
+                   AND LOWER(COALESCE(mm.status, 'active')) = 'active'
+                 WHERE COALESCE(m.is_active, 1) = 1
+            '''
+            params: List[Any] = []
+            if industry:
+                query += " AND LOWER(m.industry) LIKE ?"
+                params.append(f"%{escape_like(industry.lower())}%")
+            query += '''
+              GROUP BY m.mentor_id
+                HAVING COUNT(mm.match_id) < COALESCE(m.max_mentees, 3)
+              ORDER BY m.company, m.job_title
+            '''
+            return [dict(row) for row in conn.execute(query, params).fetchall()]
+
+    @staticmethod
+    def get_matches_for(mentee_student_id: str) -> List[Dict[str, Any]]:
+        with get_connection() as conn:
+            cursor = conn.execute('''
+                SELECT mm.match_id, mm.match_date, mm.status, mm.meeting_frequency,
+                       mm.notes, m.job_title, m.company, m.industry,
+                       m.alumni_student_id
+                  FROM mentorship_matches mm
+                  JOIN alumni_mentors m ON m.mentor_id = mm.mentor_id
+                 WHERE mm.mentee_student_id = ?
+              ORDER BY mm.match_date DESC
+            ''', (mentee_student_id,))
+            return [dict(row) for row in cursor.fetchall()]
 
 class SkillsManager:
     """Manages student skills tracking"""
@@ -397,19 +519,35 @@ def display_career_services_menu(auth):
     print(f"5. {get_text('career.menu.mentorship', default='Alumni Mentorship Program')}")
     print(f"6. {get_text('career.menu.skills', default='Skills Assessment')}")
     print(f"7. {get_text('career.menu.tracking', default='Job Application Tracking')}")
-    print(f"8. {get_text('career.menu.language', default='Language')}")
-    print(f"9. {get_text('career.menu.return_main', default='Return to Main Menu')}")
+    print(f"8. {get_text('career.menu.return_main', default='Return to Main Menu')}")
     print("="*50)
+
+    from education_system.systems.university.domains.pastoral.domain.services.career_services import (
+        career_services_cli as screens,
+    )
+
+    student_id = screens._resolve_student_id(auth)
+    if student_id is None:
+        print(get_text('career.login_required',
+                       default='You must be logged in to use Career Services.'))
+        return
+
+    actions = {
+        '1': screens.browse_job_postings,
+        '2': screens.submit_resume,
+        '3': screens.schedule_mock_interview,
+        '4': screens.view_career_events,
+        '5': screens.alumni_mentorship_program,
+        '6': screens.skills_assessment,
+        '7': screens.job_application_tracking,
+    }
 
     while True:
         try:
-            choice = input(f"\n{get_text('career.prompt.choice', default='Enter your choice (1-9)')}: ").strip()
-            if choice in ['1', '2', '3', '4', '5', '6', '7']:
-                print(f"\n{get_text('career.feature_available', default='Feature available via Career Services managers')}")
-                print("Use: from education_system.systems.university.domains.pastoral.domain.services.career_services import JobManager")
+            choice = input(f"\n{get_text('career.prompt.choice', default='Enter your choice (1-8)')}: ").strip()
+            if choice in actions:
+                actions[choice](student_id)
             elif choice == '8':
-                display_language_menu_option()
-            elif choice == '9':
                 print(get_text('career.returning', default='Returning to main menu...'))
                 break
             else:

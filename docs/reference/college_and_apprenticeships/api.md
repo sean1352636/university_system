@@ -10,7 +10,7 @@ rediscover that 24 modules are empty by importing them.
 ## What exists
 
 ```
-education_system/systems/apprenticeships/interfaces/api/
+education_system/api/apprenticeships/
 ├── routes/    apprentices  compliance  employers  end_point_assessment
 │              funding  gateway  off_the_job_hours  portfolios
 │              programmes  reports  reviews  training  router

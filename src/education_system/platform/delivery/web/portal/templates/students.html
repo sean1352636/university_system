@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Students · Education System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/portal/static/css/portal.css">
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("edu.theme");
+        if (t === "dark" || t === "light") {
+          document.documentElement.setAttribute("data-theme", t);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
+
+</head>
+<body>
+  <div id="topbar"></div>
+
+  <main class="container">
+    <section class="page-header">
+      <div>
+        <h1 id="title">Students</h1>
+        <p id="subtitle" class="muted">Loading…</p>
+      </div>
+      <div class="row">
+        <input id="search" class="field" placeholder="Filter rows…"
+               style="padding:.5rem .7rem; min-width:240px;">
+        <label for="system-select" class="muted" style="font-size:.85rem;">System:</label>
+        <select id="system-select" class="field" style="width:auto; padding:.45rem .6rem;"></select>
+      </div>
+    </section>
+
+    <!-- Management actions. Hidden unless the signed-in user is staff on a
+         system that exposes the student lifecycle API (university today). -->
+    <section id="actions-bar" class="row hidden" style="margin-bottom:.75rem; gap:.5rem;">
+      <button type="button" class="btn" id="btn-new">+ New student</button>
+      <span class="muted" style="font-size:.85rem; align-self:center;">
+        Create, edit and withdraw go through the same lifecycle service as the
+        desktop app, so the rules match.
+      </span>
+    </section>
+
+    <section>
+      <div id="table-host">
+        <div class="card empty-state">
+          <div class="spinner" style="margin: 0 auto .5rem;"></div>
+          Loading students…
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Single dialog reused for view / create / edit / withdraw. -->
+  <div id="modal" class="modal-backdrop hidden">
+    <div class="card modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <h2 id="modal-title">Student</h2>
+      <div id="modal-alert" class="alert alert-error hidden"></div>
+      <div id="modal-body"></div>
+      <div class="row" style="justify-content:flex-end; gap:.5rem; margin-top:1rem;">
+        <button type="button" class="btn btn-ghost" id="modal-cancel">Cancel</button>
+        <button type="button" class="btn" id="modal-confirm">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">Education System · Students</footer>
+
+  <script src="/portal/static/js/portal.js"></script>
+  <script>
+    (function () {
+      if (!EduPortal.requireAuth()) return;
+
+      const user = EduPortal.getUser();
+      const accessible = (user.systems || []).map(s => s.system_key);
+
+      let currentSystem = EduPortal.qs("system") || EduPortal.getActiveSystem();
+      if (!currentSystem || !accessible.includes(currentSystem)) {
+        currentSystem = accessible[0];
+      }
+
+      if (!currentSystem) {
+        document.querySelector("main").innerHTML = `
+          <div class="card empty-state">
+            <div class="emoji">\uD83D\uDEAB</div>
+            <h2>No system access</h2>
+            <p class="muted">Your account has no system access yet.</p>
+          </div>`;
+        EduPortal.initTheme();
+      EduPortal.renderTopbar("students");
+        return;
+      }
+
+      EduPortal.setActiveSystem(currentSystem);
+      EduPortal.renderTopbar("students");
+
+      // System selector
+      const select = document.getElementById("system-select");
+      select.innerHTML = accessible.map(k => {
+        const meta = EduPortal.getSystemMeta(k);
+        return `<option value="${k}" ${k === currentSystem ? "selected" : ""}>${meta.label}</option>`;
+      }).join("");
+      select.addEventListener("change", () => {
+        const v = select.value;
+        EduPortal.setActiveSystem(v);
+        location.href = "/portal/students.html?system=" + v;
+      });
+
+      const meta = EduPortal.getSystemMeta(currentSystem);
+      document.getElementById("title").innerHTML = `${meta.emoji} ${meta.label} · Students`;
+      document.getElementById("subtitle").textContent = "Most recent 200 records (requires staff role).";
+
+      const host = document.getElementById("table-host");
+
+      // The student lifecycle API exists for university only; other systems
+      // stay read-only rather than showing buttons that would 404.
+      const LIFECYCLE_SYSTEMS = ["university"];
+      const STAFF_ROLES = ["admin", "staff", "teacher", "instructor", "superadmin"];
+      const myRole = ((user.systems || [])
+        .find(sys => sys.system_key === currentSystem) || {}).role || "student";
+      const canManage = LIFECYCLE_SYSTEMS.includes(currentSystem)
+        && STAFF_ROLES.includes(myRole);
+      const API = "/university/students";
+      let courses = [];
+
+      if (canManage) {
+        document.getElementById("actions-bar").classList.remove("hidden");
+        // Course codes must come from the active catalogue - the API rejects
+        // anything else - so the form offers a list rather than a free text box.
+        EduPortal.apiFetch("/web/courses/" + currentSystem)
+          .then(d => { courses = d.courses || []; })
+          .catch(() => { courses = []; });
+      }
+
+      // Read through the versioned API where the system exposes one, so the
+      // page reads and writes the same surface. /web/students/<system> is a
+      // portal-only endpoint that queries SQLite directly; it stays the path
+      // for systems whose API is not mounted yet.
+      function readPath() {
+        return canManage ? API + "?per_page=200" : "/web/students/" + currentSystem;
+      }
+      function rowsFrom(data) {
+        return data.items || data.students || [];
+      }
+
+      EduPortal.apiFetch(readPath())
+        .then(data => renderTable(rowsFrom(data)))
+        .catch(err => {
+          let msg = err.message || "Could not load students";
+          if (err.status === 403) msg = "Staff or admin role required for this system.";
+          host.innerHTML = `
+            <div class="card empty-state">
+              <div class="emoji">\u26A0\uFE0F</div>
+              <h2>Unable to load students</h2>
+              <p class="muted">${EduPortal.escapeHtml(msg)}</p>
+            </div>`;
+        });
+
+      let allRows = [];
+      let displayedKeys = [];
+
+      function renderTable(rows) {
+        allRows = rows;
+        if (!rows.length) {
+          host.innerHTML = `
+            <div class="card empty-state">
+              <div class="emoji">\uD83D\uDC65</div>
+              <p>No student records in this system yet.</p>
+            </div>`;
+          return;
+        }
+        // Prefer a friendly set of columns if present
+        const first = rows[0];
+        const preferred = ["id", "student_id", "pupil_id", "first_name", "last_name", "name",
+                           "email", "year_group", "course", "programme", "status"];
+        const present = preferred.filter(k => k in first);
+        displayedKeys = present.length ? present : Object.keys(first).slice(0, 8);
+        paint(rows);
+      }
+
+      function rowId(r) {
+        return String(r.student_id ?? r.pupil_id ?? r.id ?? "");
+      }
+
+      function actionCell(r) {
+        if (!canManage) return "";
+        const id = EduPortal.escapeHtml(rowId(r));
+        // data-act + delegation: the table is repainted on every filter
+        // keystroke, so per-button listeners would not survive. Inline
+        // onclick is not an option either - the page CSP forbids it.
+        return `<td class="row-actions">
+            <button type="button" class="btn-link" data-act="view" data-id="${id}">View</button>
+            <button type="button" class="btn-link" data-act="edit" data-id="${id}">Edit</button>
+            <button type="button" class="btn-link" data-act="withdraw" data-id="${id}">Withdraw</button>
+          </td>`;
+      }
+
+      function paint(rows) {
+        const actionsHead = canManage ? "<th>Actions</th>" : "";
+        host.innerHTML = `
+          <div class="table-wrap">
+            <table>
+              <thead><tr>${displayedKeys.map(k => `<th>${EduPortal.escapeHtml(k)}</th>`).join("")}${actionsHead}</tr></thead>
+              <tbody>
+                ${rows.map(r => `
+                  <tr>${displayedKeys.map(k => `<td>${EduPortal.escapeHtml(String(r[k] ?? ""))}</td>`).join("")}${actionCell(r)}</tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+          <p class="muted" style="margin-top:.5rem; font-size:.85rem;">
+            Showing ${rows.length} of ${allRows.length} record${allRows.length === 1 ? "" : "s"}.
+          </p>`;
+      }
+
+      // ── Dialog plumbing ──────────────────────────────────────────
+      const modal      = document.getElementById("modal");
+      const modalTitle = document.getElementById("modal-title");
+      const modalBody  = document.getElementById("modal-body");
+      const modalAlert = document.getElementById("modal-alert");
+      const modalOk    = document.getElementById("modal-confirm");
+      let onConfirm    = null;
+
+      function closeModal() {
+        modal.classList.add("hidden");
+        modalAlert.classList.add("hidden");
+        onConfirm = null;
+      }
+      function modalError(msg) {
+        modalAlert.textContent = msg;
+        modalAlert.classList.remove("hidden");
+      }
+      function openModal(title, bodyHtml, confirmLabel, handler) {
+        modalTitle.textContent = title;
+        modalBody.innerHTML = bodyHtml;
+        modalAlert.classList.add("hidden");
+        modalOk.textContent = confirmLabel || "Save";
+        modalOk.classList.toggle("hidden", !handler);
+        onConfirm = handler;
+        modal.classList.remove("hidden");
+      }
+      document.getElementById("modal-cancel").addEventListener("click", closeModal);
+      modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && !modal.classList.contains("hidden")) closeModal();
+      });
+      modalOk.addEventListener("click", async () => {
+        if (!onConfirm) return;
+        modalOk.disabled = true;
+        try {
+          await onConfirm();
+          closeModal();
+          reload();
+        } catch (err) {
+          // The API returns {errors:{field:msg}} for validation failures;
+          // show those rather than a bare "HTTP 400".
+          const fields = err.body && err.body.errors;
+          modalError(fields
+            ? Object.entries(fields).map(([k, v]) => k + " " + v).join("; ")
+            : (err.message || "Request failed"));
+        } finally {
+          modalOk.disabled = false;
+        }
+      });
+
+      function field(name, label, value, type) {
+        return `<div class="field">
+            <label for="f-${name}">${EduPortal.escapeHtml(label)}</label>
+            <input id="f-${name}" name="${name}" type="${type || "text"}"
+                   value="${EduPortal.escapeHtml(String(value ?? ""))}">
+          </div>`;
+      }
+      function courseField(selected) {
+        if (!courses.length) return field("course", "Course code", selected);
+        const opts = courses.map(c => {
+          const code = c.course_code ?? c.code ?? "";
+          const name = c.course_name ?? c.name ?? "";
+          const sel = String(code) === String(selected ?? "") ? " selected" : "";
+          return `<option value="${EduPortal.escapeHtml(String(code))}"${sel}>
+                    ${EduPortal.escapeHtml(String(code))} — ${EduPortal.escapeHtml(String(name))}
+                  </option>`;
+        }).join("");
+        return `<div class="field">
+            <label for="f-course">Course</label>
+            <select id="f-course" name="course"><option value="">Choose…</option>${opts}</select>
+          </div>`;
+      }
+      const val = (id) => (document.getElementById(id) || {}).value || "";
+
+      function findRow(id) {
+        return allRows.find(r => rowId(r) === String(id)) || {};
+      }
+
+      function reload() {
+        EduPortal.apiFetch(readPath())
+          .then(data => renderTable(rowsFrom(data)))
+          .catch(() => {});
+      }
+
+      // ── Actions ──────────────────────────────────────────────────
+      function doView(id) {
+        const r = findRow(id);
+        const rows = Object.entries(r).map(([k, v]) =>
+          `<tr><th style="text-align:left; padding-right:1rem;">${EduPortal.escapeHtml(k)}</th>
+               <td>${EduPortal.escapeHtml(String(v ?? ""))}</td></tr>`).join("");
+        openModal("Student " + id, `<div class="table-wrap"><table>${rows}</table></div>`,
+                  null, null);
+      }
+
+      function doCreate() {
+        openModal("New student",
+          field("first_name", "First name", "") +
+          field("middle_name", "Middle name", "") +
+          field("last_name", "Last name", "") +
+          field("dob", "Date of birth", "", "date") +
+          courseField("") +
+          field("entry_qualifications", "Entry qualifications", "") +
+          field("ucas_tariff", "UCAS tariff", "", "number"),
+          "Create student",
+          async () => {
+            const body = {
+              first_name: val("f-first_name"),
+              middle_name: val("f-middle_name"),
+              last_name: val("f-last_name"),
+              dob: val("f-dob"),
+              course: val("f-course"),
+              entry_qualifications: val("f-entry_qualifications"),
+            };
+            const tariff = val("f-ucas_tariff");
+            if (tariff) body.ucas_tariff = Number(tariff);
+            const res = await EduPortal.apiFetch(API, { method: "POST", body });
+            alertAfter(res.message || ("Created " + res.student_id));
+          });
+      }
+
+      function doEdit(id) {
+        const r = findRow(id);
+        openModal("Edit student " + id,
+          field("first_name", "First name", r.first_name) +
+          field("middle_name", "Middle name", r.middle_name) +
+          field("last_name", "Last name", r.last_name) +
+          field("dob", "Date of birth", r.dob, "date") +
+          courseField(r.course) +
+          field("reason", "Reason for change (required)", ""),
+          "Save changes",
+          async () => {
+            // Only send what actually changed: the API records every update
+            // against the reason, so a no-op edit should not be logged.
+            const body = { reason: val("f-reason") };
+            const candidates = {
+              first_name: val("f-first_name"), middle_name: val("f-middle_name"),
+              last_name: val("f-last_name"), dob: val("f-dob"), course: val("f-course"),
+            };
+            Object.entries(candidates).forEach(([k, v]) => {
+              if (String(r[k] ?? "") !== String(v)) body[k] = v;
+            });
+            const res = await EduPortal.apiFetch(API + "/" + encodeURIComponent(id),
+                                                 { method: "PUT", body });
+            alertAfter("Updated " + res.student_id);
+          });
+      }
+
+      function doWithdraw(id) {
+        openModal("Withdraw student " + id,
+          `<p>This withdraws the student and preserves their academic record.
+              It is the same action as the desktop app's delete, and can be
+              reversed by restoring the record.</p>` +
+          field("reason", "Reason (required)", ""),
+          "Withdraw",
+          async () => {
+            const res = await EduPortal.apiFetch(API + "/" + encodeURIComponent(id),
+              { method: "DELETE", body: { reason: val("f-reason") } });
+            alertAfter(res.message || ("Withdrew " + res.student_id));
+          });
+      }
+
+      function alertAfter(msg) {
+        const note = document.getElementById("subtitle");
+        note.textContent = msg;
+      }
+
+      document.getElementById("btn-new").addEventListener("click", doCreate);
+
+      // Delegated: the table is rebuilt on every filter keystroke.
+      host.addEventListener("click", (e) => {
+        const t = e.target;
+        if (!t || typeof t.closest !== "function") return;
+        const btn = t.closest("[data-act]");
+        if (!btn) return;
+        const id = btn.dataset.id;
+        if (btn.dataset.act === "view") doView(id);
+        else if (btn.dataset.act === "edit") doEdit(id);
+        else if (btn.dataset.act === "withdraw") doWithdraw(id);
+      });
+
+      // Client-side filter
+      document.getElementById("search").addEventListener("input", (e) => {
+        const q = e.target.value.trim().toLowerCase();
+        if (!q) return paint(allRows);
+        const filtered = allRows.filter(r =>
+          displayedKeys.some(k => String(r[k] ?? "").toLowerCase().includes(q))
+        );
+        paint(filtered);
+      });
+    })();
+  </script>
+</body>
+</html>

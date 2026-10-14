@@ -115,11 +115,4 @@ def get_new_features_tables():
                 qr_data TEXT DEFAULT ''
             )
         """,
-        "lms_modules": """CREATE TABLE IF NOT EXISTS lms_modules (id INTEGER PRIMARY KEY AUTOINCREMENT, course_id TEXT, title TEXT NOT NULL, description TEXT, order_index INTEGER DEFAULT 0, published INTEGER DEFAULT 0, created_by TEXT, created_at TEXT DEFAULT (datetime('now')))""",
-        "lms_lessons": """CREATE TABLE IF NOT EXISTS lms_lessons (id INTEGER PRIMARY KEY AUTOINCREMENT, module_id INTEGER NOT NULL, title TEXT NOT NULL, content_type TEXT DEFAULT 'text', content TEXT, order_index INTEGER DEFAULT 0, duration_mins INTEGER, created_at TEXT DEFAULT (datetime('now')))""",
-        "lms_progress": """CREATE TABLE IF NOT EXISTS lms_progress (id INTEGER PRIMARY KEY AUTOINCREMENT, student_id TEXT NOT NULL, lesson_id INTEGER NOT NULL, completed INTEGER DEFAULT 0, completed_at TEXT)""",
-        "lms_quizzes": """CREATE TABLE IF NOT EXISTS lms_quizzes (id INTEGER PRIMARY KEY AUTOINCREMENT, lesson_id INTEGER NOT NULL, title TEXT NOT NULL, pass_mark INTEGER DEFAULT 50, time_limit_mins INTEGER, created_at TEXT DEFAULT (datetime('now')))""",
-        "lms_questions": """CREATE TABLE IF NOT EXISTS lms_questions (id INTEGER PRIMARY KEY AUTOINCREMENT, quiz_id INTEGER NOT NULL, question_text TEXT NOT NULL, question_type TEXT DEFAULT 'multiple_choice', options_json TEXT, correct_answer TEXT NOT NULL, marks INTEGER DEFAULT 1, order_index INTEGER DEFAULT 0)""",
-        "lms_quiz_attempts": """CREATE TABLE IF NOT EXISTS lms_quiz_attempts (id INTEGER PRIMARY KEY AUTOINCREMENT, quiz_id INTEGER NOT NULL, student_id TEXT NOT NULL, answers_json TEXT, score INTEGER, passed INTEGER DEFAULT 0, attempted_at TEXT DEFAULT (datetime('now')))""",
-        "lms_resources": """CREATE TABLE IF NOT EXISTS lms_resources (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, description TEXT, file_path TEXT, resource_type TEXT DEFAULT 'document', course_id TEXT, uploaded_by TEXT, download_count INTEGER DEFAULT 0, created_at TEXT DEFAULT (datetime('now')))""",
     }

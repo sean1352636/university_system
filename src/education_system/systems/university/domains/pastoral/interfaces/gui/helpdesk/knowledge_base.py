@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext, simpledialog
@@ -787,7 +791,7 @@ def update_article_views(self, article_id):
         conn.close()
 
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.update_article_views = update_article_views
@@ -1649,7 +1653,7 @@ def extract_keywords_gui(self, text):
                   'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should',
                   'may', 'might', 'can', 'cant', 'cannot', 'i', 'you', 'he', 'she', 'it',
                   'we', 'they', 'me', 'him', 'her', 'us', 'them', 'my', 'your', 'his',
-                  'her', 'its', 'our', 'their'}
+                  'its', 'our', 'their'}
 
     # Simple word extraction
     import re

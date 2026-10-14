@@ -71,6 +71,7 @@ def purge_due_records(actor="system", dry_run=False):
         conn.close()
         return len(ids), ids
     placeholders = ",".join("?" for _ in ids)
+    # db-audit: ignore[DBW001] - string literal
     cur.execute(
         f"UPDATE safeguarding_submissions "
         f"SET content='', content_blob=NULL, content_encrypted=0, "
@@ -81,6 +82,7 @@ def purge_due_records(actor="system", dry_run=False):
         ids,
     )
     # Also drop case notes which are free-text by nature.
+    # db-audit: ignore[DBW001] - string literal
     cur.execute(
         f"DELETE FROM safeguarding_case_notes WHERE case_id IN ({placeholders})",
         ids,

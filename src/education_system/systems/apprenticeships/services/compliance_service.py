@@ -296,6 +296,8 @@ def audit_trail(
     actor_username: str | None = None,
     action: str | None = None,
     since: str | None = None,
+    until: str | None = None,
+    changes_only: bool = False,
     limit: int = 200,
 ) -> list[AuditEntry]:
     """The audit log. Administrators only.
@@ -303,12 +305,34 @@ def audit_trail(
     Deliberately not scoped-and-shared: the log records what every user
     did, so letting a tutor read their own slice would also show them who
     else touched those records. It is an administrator's tool.
+
+    Each entry is an ``AuditRecord`` — an ``AuditEntry`` that also
+    carries the ``field: before → after`` changes an edit recorded.
+    *since* and *until* are inclusive ``YYYY-MM-DD`` dates.
     """
     _require_admin(actor, "the audit trail")
     return repo.list_audit(
-        entity=entity, entity_id=entity_id, actor=actor_username,
-        action=action, since=since, limit=limit,
+        entity=entity or None, entity_id=entity_id, actor=actor_username or None,
+        action=action or None,
+        since=_validate_date(since, "From date"), until=_validate_date(until, "To date"),
+        changes_only=changes_only, limit=_validate_limit(limit),
     )
+
+
+def audit_filter_options(actor: Actor) -> dict[str, list[str]]:
+    """Entities, actors and actions to offer as audit-log filters."""
+    _require_admin(actor, "the audit trail")
+    values = repo.audit_filter_values()
+    return {**values, "actions": list(config.AUDIT_ACTIONS)}
+
+
+def _validate_limit(value: Any) -> int:
+    """At least one row, at most a few thousand — the screen is not an export."""
+    try:
+        limit = int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValidationError("The row limit must be a whole number") from exc
+    return max(1, min(limit, 5000))
 
 
 def retention_report(actor: Actor) -> list[dict[str, Any]]:

@@ -43,6 +43,8 @@ def menu(actor: Actor) -> None:
     ]
     if actor.can("admission.decide"):
         entries += [
+            ("Make an offer", partial(_offer, actor)),
+            ("Record an enrolment", partial(_enrol, actor)),
             ("Accept an applicant", partial(_accept, actor)),
             ("Decline an applicant", partial(_decline, actor)),
         ]
@@ -63,12 +65,12 @@ def _label(application: admissions_service.Application) -> str:
 
 def _table(applications: list[admissions_service.Application]) -> None:
     prompts.table(
-        (("Name", 22), ("ULN", 11), ("Origin", 22), ("Applied", 12),
-         ("Programme", 22), ("Employer", 18)),
+        (("Name", 22), ("ULN", 11), ("Origin", 20), ("Applied", 11), ("Stage", 12),
+         ("Programme", 20), ("Employer", 16)),
         applications,
         lambda a: (
             a.full_name, a.summary.apprentice.uln, a.origin_label,
-            (a.applied_at or "")[:10], a.summary.programme_title,
+            (a.applied_at or "")[:10], a.stage_label, a.summary.programme_title,
             a.summary.employer_name,
         ),
         noun="application",
@@ -103,6 +105,11 @@ def _show(application: admissions_service.Application) -> None:
         ("Transfer stage", application.transition_status),
         ("Programme", application.summary.programme_title),
         ("Employer", application.summary.employer_name),
+        ("Admission stage", application.stage_label),
+        ("Offer date", application.stage.offer_date if application.stage else None),
+        ("Offer conditions",
+         application.stage.offer_conditions if application.stage else None),
+        ("Enrolment date", application.stage.enrolment_date if application.stage else None),
         ("Prior learning", record.prior_learning),
         ("Support needs", record.support_needs),
         ("Notes", record.notes),
@@ -134,6 +141,42 @@ def _view(actor: Actor) -> None:
     if application is None:
         return
     _show(application)
+    prompts.pause()
+
+
+def _offer(actor: Actor) -> None:
+    application = _pick(actor, "Applicant to offer a place")
+    if application is None:
+        return
+    _show(application)
+    stage = application.stage
+    offer_date = prompts.ask(
+        "Offer date (YYYY-MM-DD)",
+        default=(stage.offer_date if stage and stage.offer_date else date.today().isoformat()),
+    )
+    conditions = prompts.ask(
+        "Conditions (blank for unconditional)",
+        default=(stage.offer_conditions or "") if stage else "",
+    )
+    saved = admissions_service.make_offer(
+        actor, application.apprentice_id, offer_date=offer_date, conditions=conditions or None,
+    )
+    prompts.ok(f"{application.full_name} has an offer dated {saved.offer_date}"
+               + (" (conditional)." if saved.offer_conditions else "."))
+    prompts.pause()
+
+
+def _enrol(actor: Actor) -> None:
+    application = _pick(actor, "Applicant who has enrolled")
+    if application is None:
+        return
+    _show(application)
+    when = prompts.ask("Enrolment date (YYYY-MM-DD)", default=date.today().isoformat())
+    saved = admissions_service.record_enrolment(
+        actor, application.apprentice_id, enrolment_date=when,
+    )
+    prompts.ok(f"Enrolment recorded for {application.full_name} on {saved.enrolment_date}.")
+    prompts.note("Accept them onto programme when they start.")
     prompts.pause()
 
 

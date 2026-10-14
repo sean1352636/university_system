@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+from education_system.systems.apprenticeships.domain.reviews.action_plans import (  # noqa: F401
+    ActionNote,
+    may_move,
+    require_action_status_move,
+    validate_owner,
+    validate_priority,
+)
 from education_system.systems.apprenticeships.domain.reviews.progress_reviews import (  # noqa: F401
     EmployerFeedback,
     Review,

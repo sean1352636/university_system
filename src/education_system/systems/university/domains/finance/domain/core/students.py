@@ -60,9 +60,10 @@ def create_sample_students():
             ('STU005', 'James', 'Wilson', 'james.wilson@university.ac.uk', '07123456793', 'Mathematics', '2024-09-01', 'active')
         ]
 
+        # The column is ``phone``, not ``phone_number``.
         cursor.executemany('''
         INSERT INTO students
-        (student_id, first_name, last_name, email_address, phone_number, course, enrollment_date, status)
+        (student_id, first_name, last_name, email_address, phone, course, enrollment_date, status)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ''', sample_students)
 
@@ -283,7 +284,7 @@ def get_student_phone(student_id):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT phone_number FROM students WHERE student_id = ?', (student_id,))
+        cursor.execute('SELECT phone FROM students WHERE student_id = ?', (student_id,))
         result = cursor.fetchone()
         conn.close()
         return result[0] if result else "07000000000"

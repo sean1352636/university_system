@@ -44,6 +44,7 @@ except ImportError:
 
 
 from education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base import ParentPortalGUI
+from education_system.systems.university.infrastructure.email.sign_off import office_name
 
 def show_transport_interface(self):
     """Show transportation information interface"""
@@ -445,7 +446,7 @@ def request_transportation(self, student_id):
                 # Fallback if template not found
                 if not email_subject or not email_body:
                     email_subject = f"New Transportation Request - {student_name}"
-                    email_body = f"Dear Transportation Administrator,\n\nA new transportation request has been submitted through the Guardian Portal.\n\nStudent: {student_name} (ID: {student_id})\nService Type: {fields['service_type'].get()}\nRoute Preference: {fields['route_preference'].get() or 'Not specified'}\nSpecial Needs: {fields['special_needs'].get('1.0', tk.END).strip() or 'None'}\nRequested Start Date: {fields['start_date'].get()}\n\nSubmitted by: {sender_name}\nDate: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}\n\nBest regards,\nUniversity Guardian Portal"
+                    email_body = f"Dear Transportation Administrator,\n\nA new transportation request has been submitted through the Guardian Portal.\n\nStudent: {student_name} (ID: {student_id})\nService Type: {fields['service_type'].get()}\nRoute Preference: {fields['route_preference'].get() or 'Not specified'}\nSpecial Needs: {fields['special_needs'].get('1.0', tk.END).strip() or 'None'}\nRequested Start Date: {fields['start_date'].get()}\n\nSubmitted by: {sender_name}\nDate: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}\n\nBest regards,\n{office_name('Guardian Portal')}"
 
                 try:
                     send_email(admin_email, email_subject, email_body)

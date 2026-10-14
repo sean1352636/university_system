@@ -1,4 +1,5 @@
 """Admin tab, system initialization, database wrappers, and system status."""
+from education_system.systems.university.shell.gui import report_view as _rv
 
 import threading
 import tkinter as tk
@@ -38,10 +39,6 @@ class AdminMixin:
             (_("finance_gui.settings.database_verification_btn"), self.gui_verify_fix),
             (_("finance_gui.settings.check_packages_btn"), self.gui_check_required_packages),
             (_("finance_gui.settings.setup_workflows_btn"), self.gui_setup_collection_workflows),
-            (_("finance_gui.settings.email_config_btn"), self.gui_setup_email_config),
-            (_("finance_gui.settings.sms_config_btn"), self.gui_setup_sms_config),
-            (_("finance_gui.settings.test_email_btn"), self.gui_test_email_service),
-            (_("finance_gui.settings.test_sms_btn"), self.gui_test_sms_service),
             (_("finance_gui.settings.analyze_admin_menu_btn"), self.update_admin_menu_with_missing_functions),
             (_("finance_gui.settings.analyze_reports_menu_btn"), self.update_reports_menu_with_missing_functions),
         ]
@@ -52,7 +49,7 @@ class AdminMixin:
         status_frame = ttk.LabelFrame(main_frame, text=_("finance_gui.settings.system_status_frame"), padding=15)
         status_frame.pack(fill='both', expand=True)
 
-        self.status_text = ScrolledText(status_frame, height=15, width=80, font=('Courier', 10))
+        self.status_text = _rv.TextReportView(status_frame, height=15, width=80, font=('Courier', 10))
         self.status_text.pack(fill='both', expand=True)
 
         # Update system status

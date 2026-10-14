@@ -1,10 +1,15 @@
 """Notification management"""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 import os
 import shutil
 import threading
@@ -71,7 +76,7 @@ def _show_toast_notification(root: tk.Tk, title: str, message: str, timeout: int
     """Show an in-app toast notification popup"""
     try:
         # Create toast window
-        toast = tk.Toplevel(root)
+        toast = make_toplevel(root)
         toast.overrideredirect(True)
         toast.attributes('-topmost', True)
 
@@ -148,7 +153,15 @@ class NotificationManager:
             from education_system.systems.university.domains.operations.interfaces.gui.communications.notifications.notifications_gui import (
                 NotificationsGUI,
             )
-            NotificationsGUI(parent=self.root)
+            # Pass this GUI's live session through: the Hub cannot recover it
+            # from shared_context (never populated by the GUI login path), and
+            # without it the inbox refuses with "Must be logged in to view
+            # inbox" even though the badge count above is non-zero.
+            NotificationsGUI(
+                parent=self.root,
+                auth=self.auth,
+                on_unread_change=self.update_notifications,
+            )
         except Exception as e:
             messagebox.showerror(_t('gui.academics.assignment_system.notifications.dialogs.notifications', default="Notifications"), f"Unable to open notifications: {e}")
 
@@ -156,7 +169,7 @@ class NotificationManager:
         try:
             self.update_notifications()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
 
     def mark_notifications_read(self, tree):
@@ -396,7 +409,7 @@ class NotificationManager:
             conn.close()
 
             # Create detail window
-            detail_window = tk.Toplevel(self.root)
+            detail_window = make_toplevel(self.root)
             detail_window.title(_t('gui.academics.assignment_system.notifications.windows.notification_details', default="Notification Details"))
             detail_window.geometry("700x500")
             detail_window.configure(bg='#f0f0f0')
@@ -595,7 +608,7 @@ class NotificationManager:
         """
         try:
             # Create notifications window
-            notif_window = tk.Toplevel(self.root)
+            notif_window = make_toplevel(self.root)
             notif_window.title(_t('gui.academics.assignment_system.notifications.windows.notification_management', default="Notification Management"))
             notif_window.geometry("1000x700")
             notif_window.configure(bg='#f0f0f0')
@@ -729,7 +742,7 @@ class NotificationManager:
     def _configure_notification_type(self, notification_type):
         """Configure specific notification type settings"""
         try:
-            dialog = tk.Toplevel(self.root)
+            dialog = make_toplevel(self.root)
             dialog.title(f"Configure {notification_type.replace('_', ' ').title()} Notifications")
             dialog.geometry("500x400")
             dialog.transient(self.root)

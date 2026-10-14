@@ -492,6 +492,7 @@ def list_messages(
     student_id: str | None = None,
     staff_id: str | None = None,
     alumni_id: int | None = None,
+    to_address: str | None = None,
     thread_id: str | None = None,
     drafts_only: bool = False,
     unsent_only: bool = False,
@@ -539,6 +540,11 @@ def list_messages(
     if alumni_id is not None:
         clauses.append("alumni_id = ?")
         args.append(int(alumni_id))
+    if to_address:
+        # Case-insensitive: addresses are stored as typed, and the same
+        # recipient is reached as both "A.Smith@..." and "a.smith@...".
+        clauses.append("LOWER(to_address) = ?")
+        args.append(to_address.strip().lower())
     if thread_id:
         clauses.append("thread_id = ?")
         args.append(thread_id.strip())

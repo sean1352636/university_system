@@ -8,6 +8,9 @@ Provides functionality for:
 - Template management
 - Schedule reporting
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 from datetime import datetime
 from typing import Any, Dict, List, Optional
@@ -130,7 +133,7 @@ class FacultyScheduleManager:
                     semester=existing.get('semester'),
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
     @staticmethod
     def delete_block(block_id) -> None:
@@ -231,6 +234,7 @@ class FacultyScheduleManager:
                 rows = None
                 for id_column in ('instructor_id', 'user_id'):
                     try:
+                        # db-audit: ignore[DBW001] - literal collection
                         rows = conn.execute(
                             f'SELECT * FROM module_schedule WHERE {id_column} = ?',
                             (user_id,)

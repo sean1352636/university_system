@@ -3,6 +3,9 @@ Enhanced Library Management System - GUI Version
 Maintains all original CLI functions while adding a modern GUI interface
 Backwards compatible with existing database and auth systems
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -93,15 +96,11 @@ except ImportError:
     FINANCE_ACCOUNT_AVAILABLE = False
     print("Warning: Student finance account integration not available")
 
-# Import matplotlib for library finance charts
-try:
-    import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-    from matplotlib.figure import Figure
-    MATPLOTLIB_AVAILABLE = True
-except ImportError:
-    MATPLOTLIB_AVAILABLE = False
-    print("Warning: Matplotlib not available for library finance charts")
+# Matplotlib is imported lazily by finance_shared, the one module in this
+# package whose names are actually read (by the two chart dialogs under
+# finance_parts/). This module carried an identical eager copy of that import
+# and never used any of it — importing matplotlib.pyplot costs ~1.3s and was
+# paid by anything that touched the library package at all.
 
 # Import email service for library finance notifications
 try:
@@ -243,7 +242,7 @@ def new_reservation_dialog(self):
                 book_map[display] = bid
             book_combo['values'] = book_list
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
     # User ID — auto-fill from current user
     ttk.Label(main_frame, text=_t('gui.academics.library.reservations.labels.user_id', default="User ID:")).pack(anchor='w', pady=5)

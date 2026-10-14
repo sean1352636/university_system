@@ -77,7 +77,7 @@ This report documents all database tables referenced in the codebase, identifies
 
 **To initialize database:**
 ```bash
-python run.py --cli
+python -m education_system --cli
 # Or initialize via code:
 from university_system.infrastructure.database.schemas import *
 # Call init functions for each module

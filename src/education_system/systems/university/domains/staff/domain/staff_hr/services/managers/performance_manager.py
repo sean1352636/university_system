@@ -165,7 +165,7 @@ class PerformanceManager:
                 rating=float(data.get('final_rating', manager_rating)),
             )
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return True
 
     @staticmethod

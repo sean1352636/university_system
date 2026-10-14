@@ -177,7 +177,14 @@ def complete(enrolment_id: int, final_grade: str = "", on: date | None = None) -
         enrolment.status = "completed"
         enrolment.final_grade = final_grade
         enrolment.end_date = on or date.today()
-        return repo.update_enrolment(enrolment)
+        saved = repo.update_enrolment(enrolment)
+    # After the transaction: the platform side (programme.completed, the
+    # award, closing the platform enrolment) is best-effort and must not
+    # run inside, or roll back, the college's own write.
+    from education_system.systems.fe_college.domain.students.grades import is_pass
+    student_service.record_completion(
+        saved, course, passed=bool(final_grade) and is_pass(final_grade))
+    return saved
 
 
 def retention(course_id: str | None = None,

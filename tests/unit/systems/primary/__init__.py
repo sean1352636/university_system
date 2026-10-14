@@ -1,1 +1,0 @@
-"""Primary-school `tests` package."""

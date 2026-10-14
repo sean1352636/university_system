@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 # gui_course_management.py
 import tkinter as tk
@@ -36,7 +40,7 @@ def _patched_sqlite_connect(database, *args, **kwargs):
         if not database or db_name in (str(DEFAULT_DB_PATH), "courses.db"):
             return _original_sqlite_connect(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return _original_sqlite_connect(database, *args, **kwargs)
 
 sqlite3.connect = _patched_sqlite_connect
@@ -48,23 +52,12 @@ from typing import List, Dict, Optional, Tuple
 import threading
 import logging
 
-# Import chart generation utility
-try:
-    import matplotlib
-    matplotlib.use('TkAgg')
-    import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-    from matplotlib.figure import Figure
-    import seaborn as sns
-    import numpy as np
-    CHARTS_AVAILABLE = True
-except ImportError:
-    CHARTS_AVAILABLE = False
-    plt = None
-    Figure = None
-    FigureCanvasTkAgg = None
-    sns = None
-    np = None
+# Chart generation utilities — deferred, see _lazy_charts. Importing seaborn
+# here pulled matplotlib, pandas and scipy (~4.7s) into every Course Management
+# open, for charts only the analytics dialogs draw.
+from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui._lazy_charts import (
+    CHARTS_AVAILABLE, plt, Figure, FigureCanvasTkAgg, sns, np,
+)
 
 # Import email service
 try:
@@ -160,19 +153,6 @@ def create_academic_systems_tab(self):
     canvas.bind_all('<Button-4>', lambda e: canvas.yview_scroll(-1, 'units'))
     canvas.bind_all('<Button-5>', lambda e: canvas.yview_scroll(1, 'units'))
 
-    # LMS System
-    lms_frame = ttk.LabelFrame(container, text=_("course_management.labels.lms"), padding=20)
-    lms_frame.pack(fill=tk.X, pady=10)
-
-    lms_desc = ttk.Label(lms_frame,
-                        text=_("course_management.labels.lms_description"),
-                        wraplength=500)
-    lms_desc.pack(pady=5)
-
-    ttk.Button(lms_frame, text=_("course_management.buttons.launch_lms"),
-              command=self.show_lms_gui,
-              width=30).pack(pady=10)
-
     # Degree Audit System
     audit_frame = ttk.LabelFrame(container, text=_("course_management.labels.degree_audit"), padding=20)
     audit_frame.pack(fill=tk.X, pady=10)
@@ -205,18 +185,6 @@ def create_academic_systems_tab(self):
                                 text=_("course_management.messages.systems_not_available"),
                                 foreground="orange")
         warning_label.pack(pady=10)
-
-
-def show_lms_gui(self):
-    """Switch to the LMS tab in the course management notebook."""
-    try:
-        for i in range(self.notebook.index("end")):
-            if self.notebook.tab(i, "text") == _("lms.title"):
-                self.notebook.select(i)
-                return
-        messagebox.showinfo(_t('gui.academics.course_management_gui.academic_systems.integrations.dialogs.lms', default="LMS"), _t('gui.academics.course_management_gui.academic_systems.integrations.dialogs.lms_tab_is_available_in_the_course_management_tabs_above', default="LMS tab is available in the Course Management tabs above."))
-    except Exception as e:
-        messagebox.showerror(_("common.error"), f"Failed to open LMS tab: {e}")
 
 
 def show_degree_audit_gui(self):

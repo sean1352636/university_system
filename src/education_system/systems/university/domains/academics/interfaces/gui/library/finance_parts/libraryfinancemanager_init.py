@@ -342,9 +342,12 @@ University Library System
                   padx=15, pady=5).pack(side='left', padx=5)
 
         stats_frame = tk.LabelFrame(parent, text=_t('gui.academics.library.finance_parts.libraryfinancemanager_init.labels.revenue_statistics', default="Revenue Statistics"), bg='white', font=('Arial', 12, 'bold'))
-        stats_frame.pack(fill='x', padx=10, pady=10)
-        self.revenue_stats_text = tk.Text(stats_frame, height=12, bg='#f8f9fa', font=('Courier', 10))
-        self.revenue_stats_text.pack(fill='x', padx=10, pady=10)
+        stats_frame.pack(fill='both', expand=True, padx=10, pady=10)
+        # Headline figures as cards and the monthly breakdown as a table.
+        # It was a fixed-width block in a Courier Text widget, whose column
+        # padding only lined up while every amount stayed under five digits.
+        self.revenue_stats_host = tk.Frame(stats_frame, bg='white', height=260)
+        self.revenue_stats_host.pack(fill='both', expand=True, padx=10, pady=10)
 
         self.revenue_chart_frame = tk.Frame(parent, bg='white')
         self.revenue_chart_frame.pack(fill='both', expand=True, padx=10, pady=10)

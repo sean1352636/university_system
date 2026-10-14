@@ -38,6 +38,9 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any
 
+from education_system.systems.apprenticeships import config
+from education_system.systems.apprenticeships.domain.admissions import stages as stage_rules
+from education_system.systems.apprenticeships.domain.admissions.stages import AdmissionStage
 from education_system.systems.apprenticeships.domain.apprentices.models import (
     ApprenticeSummary,
     ValidationError,
@@ -46,7 +49,9 @@ from education_system.systems.apprenticeships.infrastructure.persistence.reposit
     apprentice_repository as repo,
 )
 from education_system.systems.apprenticeships.infrastructure.persistence.repositories import (
+    admission_repository,
     compliance_repository,
+    programme_repository,
 )
 from education_system.systems.apprenticeships.services import apprentice_service
 from education_system.systems.apprenticeships.services.access import Actor, require
@@ -78,10 +83,20 @@ class Application:
     transition_id: str | None = None
     transition_status: str | None = None
     applied_at: str | None = None
+    # Where they are inside admissions; None means Application.
+    stage: AdmissionStage | None = None
 
     @property
     def apprentice_id(self) -> int:
         return self.summary.apprentice.apprentice_id
+
+    @property
+    def stage_name(self) -> str:
+        return self.stage.stage if self.stage else stage_rules.APPLICATION
+
+    @property
+    def stage_label(self) -> str:
+        return self.stage.label if self.stage else stage_rules.APPLICATION
 
     @property
     def full_name(self) -> str:
@@ -216,6 +231,7 @@ def list_applications(actor: Actor) -> list[Application]:
     ids = [s.apprentice.apprentice_id for s in summaries]
     journeys = _journey_ids(ids)
     open_transitions = _open_transitions() if journeys else {}
+    stages = admission_repository.stages_for(ids)
 
     applications = []
     for summary in summaries:
@@ -229,6 +245,7 @@ def list_applications(actor: Actor) -> list[Application]:
             transition_status=(transition or {}).get("status"),
             applied_at=(transition or {}).get("initiated_at")
             or summary.apprentice.created_at,
+            stage=stages.get(summary.apprentice.apprentice_id),
         ))
     applications.sort(key=lambda a: a.applied_at or "")
     return applications
@@ -251,7 +268,15 @@ def get_application(actor: Actor, apprentice_id: int) -> Application:
         transition_status=(transition or {}).get("status"),
         applied_at=(transition or {}).get("initiated_at")
         or summary.apprentice.created_at,
+        stage=admission_repository.get(apprentice_id),
     )
+
+
+def get_stage(actor: Actor, apprentice_id: int) -> AdmissionStage:
+    """Where one applicant is inside admissions (Application if never moved)."""
+    require(actor, "admission.view")
+    apprentice_service.get_apprentice(actor, apprentice_id)
+    return admission_repository.get(apprentice_id) or AdmissionStage(apprentice_id=apprentice_id)
 
 
 def pending_count(actor: Actor) -> int:
@@ -261,6 +286,143 @@ def pending_count(actor: Actor) -> int:
     except Exception:
         logger.debug("pending_count failed", exc_info=True)
         return 0
+
+
+# ═════════════════════════════════════════════════════════════════════
+# Stages: offer and enrolment
+# ═════════════════════════════════════════════════════════════════════
+
+def make_offer(
+    actor: Actor,
+    apprentice_id: int,
+    *,
+    offer_date: str | None = None,
+    conditions: str | None = None,
+) -> AdmissionStage:
+    """Offer an applicant a place, with any conditions attached.
+
+    May be repeated while the offer stands, to amend its date or
+    conditions. The apprentice stays 'Applicant' — this is a stage of
+    admissions, not of the apprenticeship.
+    """
+    require(actor, "admission.decide")
+    _require_applicant(actor, apprentice_id)
+    current = admission_repository.get(apprentice_id) or AdmissionStage(apprentice_id)
+    stage_rules.require_move(current.stage, stage_rules.OFFER)
+
+    when = _validate_date(offer_date, "Offer date") or date.today().isoformat()
+    text = (conditions or "").strip() or None
+    if text and len(text) > config.OFFER_CONDITIONS_MAX_LENGTH:
+        raise ValidationError(
+            f"Offer conditions must be {config.OFFER_CONDITIONS_MAX_LENGTH} characters or fewer"
+        )
+
+    admission_repository.save(apprentice_id, {
+        "stage": stage_rules.OFFER,
+        "offer_date": when,
+        "offer_conditions": text,
+        "updated_by": actor.username,
+    })
+    compliance_repository.record(
+        action="update", entity="admission_stage", entity_id=apprentice_id,
+        actor=actor.username, actor_role=actor.role,
+        detail=f"Stage {current.stage} -> Offer; offer date {current.offer_date or '—'} -> "
+               f"{when}; conditions {current.offer_conditions or '—'} -> {text or '—'}",
+    )
+    logger.info("Offer made to applicant %s by %s", apprentice_id, actor.username)
+    saved = admission_repository.get(apprentice_id)
+    assert saved is not None
+    return saved
+
+
+def record_enrolment(
+    actor: Actor, apprentice_id: int, *, enrolment_date: str | None = None
+) -> AdmissionStage:
+    """Record that an applicant with an offer has enrolled.
+
+    They are still an applicant until accepted onto programme, which is
+    when the start date — and the funding clock — begins.
+    """
+    require(actor, "admission.decide")
+    _require_applicant(actor, apprentice_id)
+    current = admission_repository.get(apprentice_id) or AdmissionStage(apprentice_id)
+    stage_rules.require_move(current.stage, stage_rules.ENROLMENT)
+
+    when = _validate_date(enrolment_date, "Enrolment date") or date.today().isoformat()
+    if current.offer_date and when < current.offer_date:
+        raise ValidationError("Enrolment cannot be dated before the offer")
+
+    admission_repository.save(apprentice_id, {
+        "stage": stage_rules.ENROLMENT,
+        "enrolment_date": when,
+        "updated_by": actor.username,
+    })
+    compliance_repository.record(
+        action="update", entity="admission_stage", entity_id=apprentice_id,
+        actor=actor.username, actor_role=actor.role,
+        detail=f"Stage {current.stage} -> Enrolment on {when}",
+    )
+    logger.info("Enrolment recorded for applicant %s by %s", apprentice_id, actor.username)
+    saved = admission_repository.get(apprentice_id)
+    assert saved is not None
+    return saved
+
+
+def _require_applicant(actor: Actor, apprentice_id: int) -> None:
+    summary = apprentice_service.get_apprentice(actor, apprentice_id)
+    if summary.apprentice.status != APPLICANT_STATUS:
+        raise ValidationError(
+            f"{summary.full_name} is {summary.apprentice.status}, not an applicant")
+
+
+def _require_enrollable(programme_id: int | None) -> None:
+    """New starts go onto an Active programme only.
+
+    A superseded version is still delivered to the people already on it,
+    but nobody new starts on it: they go onto the version that replaced it.
+    """
+    if programme_id is None:
+        return  # start_programme explains that a programme is needed
+    programme = programme_repository.get(programme_id)
+    if programme is None or programme.status == "Active":
+        return
+    current = programme_repository.get_by_reference(programme.reference)
+    hint = (
+        f" Choose v{current.version}, which is active."
+        if current is not None and current.status == "Active" else ""
+    )
+    raise ValidationError(
+        f"{programme.reference} v{programme.version} is {programme.status}, so nobody new "
+        f"can start on it.{hint}"
+    )
+
+
+def _settle_enrolment(actor: Actor, apprentice_id: int, start_date: str) -> None:
+    """Accepting someone enrols them, if that was not already recorded."""
+    current = admission_repository.get(apprentice_id)
+    if current is not None and current.stage == stage_rules.ENROLMENT:
+        return
+    admission_repository.save(apprentice_id, {
+        "stage": stage_rules.ENROLMENT,
+        "enrolment_date": start_date,
+        "updated_by": actor.username,
+    })
+    compliance_repository.record(
+        action="update", entity="admission_stage", entity_id=apprentice_id,
+        actor=actor.username, actor_role=actor.role,
+        detail=f"Stage {current.stage if current else stage_rules.APPLICATION} -> Enrolment "
+               f"on acceptance ({start_date})",
+    )
+
+
+def _validate_date(value: str | None, label: str) -> str | None:
+    text = (value or "").strip()
+    if not text:
+        return None
+    try:
+        return date.fromisoformat(text).isoformat()
+    except ValueError as exc:
+        raise ValidationError(f"{label} must be a date in YYYY-MM-DD format") from exc
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -301,6 +463,7 @@ def accept(
         raise ValidationError(
             "An employer is required to accept an apprentice — they are a "
             "signatory to the training plan")
+    _require_enrollable(programme_id if programme_id is not None else existing.programme_id)
 
     patch: dict[str, Any] = {}
     for field, value in (("employer_id", employer_id),
@@ -316,10 +479,15 @@ def accept(
     # Captured before the status moves, because completing the transition
     # below needs to know where they came from.
     transition = _transition_for(apprentice_id)
+    if transition is not None and transition.get("status") != "handover_approved":
+        raise ValidationError(
+            "The learner must accept the offer and the sending college must "
+            "approve the consent-filtered handover before they can start")
 
     updated = apprentice_service.start_programme(
         actor, apprentice_id, start_date=start_date, programme_id=programme_id,
     )
+    _settle_enrolment(actor, apprentice_id, updated.start_date or start_date)
 
     decision = Decision(
         apprentice_id=apprentice_id,
@@ -330,6 +498,7 @@ def accept(
         decision.source_closed = _closes_source(transition.get("source_system"))
         _complete_transition(transition, str(apprentice_id), start_date,
                              decision)
+        _sync_secondary_post16(transition, "Enrolled / On Programme")
 
     compliance_repository.record(
         action="admit", entity="apprentice", entity_id=apprentice_id,
@@ -384,6 +553,7 @@ def decline(
     )
     if transition is not None:
         _cancel_transition(transition, reason, decision)
+        _sync_secondary_post16(transition, "Declined", reason)
 
     compliance_repository.record(
         action="update", entity="apprentice", entity_id=apprentice_id,
@@ -449,6 +619,21 @@ def _cancel_transition(transition: dict, reason: str,
         logger.exception("Could not cancel transition %s", transition_id)
 
 
+def _sync_secondary_post16(transition: dict, stage: str,
+                           details: str = "") -> None:
+    """Reflect provider decisions in Secondary's read model and event stream."""
+    if transition.get("source_system") != "secondary":
+        return
+    try:
+        from education_system.platform.cross_system import secondary_post16
+        secondary_post16.update_status(
+            transition["transition_id"], stage, details=details)
+    except Exception:
+        logger.exception(
+            "Could not publish post-16 status %s for transition %s",
+            stage, transition.get("transition_id"))
+
+
 __all__ = [
     "APPLICANT_STATUS",
     "DECLINED_STATUS",
@@ -456,7 +641,10 @@ __all__ = [
     "Decision",
     "list_applications",
     "get_application",
+    "get_stage",
     "pending_count",
+    "make_offer",
+    "record_enrolment",
     "accept",
     "decline",
 ]

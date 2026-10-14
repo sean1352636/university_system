@@ -207,25 +207,25 @@ def configure_email_settings():
     """Configure email settings interactively"""
     global config
 
-    print("\n" + get_text("config.email_configuration"))
+    print("\n" + get_text("config.email_configuration", default="Email Configuration"))
     print("===================")
 
     # NEW: Database-only mode setting
-    print("\n" + get_text("config.email_mode"))
-    current_mode = get_text("config.mode_database_only") if config.get('database_only_mode', True) else get_text("config.mode_smtp_sending")
-    print(get_text("config.current_mode", mode=current_mode))
+    print("\n" + get_text("config.email_mode", default="Email Mode"))
+    current_mode = get_text("config.mode_database_only", default="Mode Database Only") if config.get('database_only_mode', True) else get_text("config.mode_smtp_sending", default="Mode SMTP Sending")
+    print(get_text("config.current_mode", mode=current_mode, default="Current Mode {mode}"))
 
     mode_choice = input("Choose mode:\n1. Database Only (emails stored in database)\n2. SMTP Sending (emails actually sent)\nEnter choice (1-2): ")
 
     if mode_choice == '1':
         config['database_only_mode'] = True
-        print(get_text("config.set_database_only_mode"))
+        print(get_text("config.set_database_only_mode", default="Set Database Only Mode"))
     elif mode_choice == '2':
         config['database_only_mode'] = False
-        print(get_text("config.set_smtp_sending_mode"))
+        print(get_text("config.set_smtp_sending_mode", default="Set SMTP Sending Mode"))
 
         # Only configure SMTP settings if not in database-only mode
-        print("\n" + get_text("config.smtp_settings"))
+        print("\n" + get_text("config.smtp_settings", default="SMTP Settings"))
         config['smtp_server'] = input(f"SMTP Server [{config['smtp_server']}]: ") or config['smtp_server']
 
         try:
@@ -233,14 +233,14 @@ def configure_email_settings():
             if 0 < port < 65536:
                 config['smtp_port'] = port
             else:
-                print(get_text("config.invalid_port_using_previous"))
+                print(get_text("config.invalid_port_using_previous", default="Invalid Port Using Previous."))
         except ValueError:
-            print(get_text("config.invalid_port_using_previous"))
+            print(get_text("config.invalid_port_using_previous", default="Invalid Port Using Previous."))
 
         use_tls = input(f"Use TLS (y/n) [{('y' if config['use_tls'] else 'n')}]: ") or ('y' if config['use_tls'] else 'n')
         config['use_tls'] = use_tls.lower() == 'y'
 
-        print("\n" + get_text("config.authentication_settings"))
+        print("\n" + get_text("config.authentication_settings", default="Authentication Settings"))
         use_auth = input(f"Use Authentication (y/n) [{('y' if config['use_authentication'] else 'n')}]: ") or ('y' if config['use_authentication'] else 'n')
         config['use_authentication'] = use_auth.lower() == 'y'
 

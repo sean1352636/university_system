@@ -21,6 +21,29 @@ except ImportError:
     print("Warning: Email service not available")
 
 
+# The application-lifecycle emails (submitted / overwritten / outcome) and
+# the relocation notice are rendered and sent by the housing domain package,
+# so the CLI and this GUI produce byte-identical mail. They are exposed here
+# too, because this module is the housing GUI's single email entry point.
+from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common import (  # noqa: E402
+    send_application_outcome_email,
+    send_application_overwritten_email,
+    send_application_submitted_email,
+    send_relocation_email,
+    format_assignment_details,
+    send_assignment_created_emails,
+    send_maintenance_student_email,
+    send_maintenance_admin_emails,
+    send_payment_receipt_email,
+    send_inspection_scheduled_email,
+    send_inspection_completed_email,
+    send_inspection_follow_up_email,
+    send_report_to_admins,
+    get_admin_recipients,
+    room_occupants,
+)
+
+
 def send_housing_email(email_type, student_id, application_data, additional_vars=None):
     """
     Send housing-related emails to students
@@ -57,11 +80,13 @@ def send_housing_email(email_type, student_id, application_data, additional_vars
         student_email = student_info[0]
         student_name = f"{student_info[1] or ''} {student_info[2] or ''}".strip() or "Student"
 
-        # Map email types to template names
+        # Map email types to template names. These are path-qualified: a bare
+        # basename resolves through a mapping file / directory-order fallback
+        # that has served the wrong template before.
         template_map = {
-            'receipt': 'accommodation_application_receipt',
-            'approved': 'accommodation_approved',
-            'rejected': 'accommodation_rejected'
+            'receipt': 'campus_services/housing/accommodation_application_receipt',
+            'approved': 'campus_services/housing/accommodation_approved',
+            'rejected': 'campus_services/housing/accommodation_rejected',
         }
 
         template_name = template_map.get(email_type)

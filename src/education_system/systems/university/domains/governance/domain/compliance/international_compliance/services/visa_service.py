@@ -248,7 +248,7 @@ def _current_actor_id() -> Optional[str]:
                 return str(u.get("id") or u.get("user_id") or "")
             return str(getattr(u, "id", "") or "")
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return None
 
 
@@ -975,6 +975,7 @@ def _student_email_lookup(student_ids: list[str]) -> dict[str, tuple[str, str]]:
         return {}
     placeholders = ",".join("?" for _ in student_ids)
     with get_connection() as conn:
+        # db-audit: ignore[DBW001] - string literal
         rows = conn.execute(
             f"SELECT student_id, email_address, first_name "
             f"FROM students WHERE student_id IN ({placeholders})",

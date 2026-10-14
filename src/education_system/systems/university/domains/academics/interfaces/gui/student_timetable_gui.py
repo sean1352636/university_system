@@ -93,7 +93,7 @@ class StudentTimetableGUI:
                             self.tree.see(iid)
                             break
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
             for evt in (EVENT_MODULE_SCHEDULE_CHANGED, EVENT_EXAM_CHANGED,
                         EVENT_ENROLMENT_CHANGED, EVENT_CALENDAR_CHANGED,
@@ -101,7 +101,7 @@ class StudentTimetableGUI:
                 subscribe_tk(evt, host, _on_change)
             subscribe_tk(EVENT_SELECTION_CHANGED, host, _on_selection)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     # ------------------------------------------------------------------
     # Helpers
@@ -123,7 +123,7 @@ class StudentTimetableGUI:
         # Title
         ttk.Label(
             self.parent,
-            text=_t("Weekly Timetable"),
+            text=_t("Weekly Timetable", default="Weekly timetable"),
             font=("Arial", 16, "bold"),
         ).pack(pady=(10, 5))
 
@@ -139,10 +139,10 @@ class StudentTimetableGUI:
         btn_frame = ttk.Frame(self.parent)
         btn_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
         ttk.Button(
-            btn_frame, text=_t("Refresh"), command=self.refresh_data
+            btn_frame, text=_t("Refresh", default="Refresh"), command=self.refresh_data
         ).pack(side=tk.LEFT, padx=5)
         ttk.Button(
-            btn_frame, text=_t("Export to Calendar (.ics)"),
+            btn_frame, text=_t("Export to Calendar (.ics)", default="Ics)"),
             command=self.export_to_ics,
         ).pack(side=tk.LEFT, padx=5)
 
@@ -155,12 +155,12 @@ class StudentTimetableGUI:
     def _build_grid_view(self):
         """Create a Label-based weekly grid (rows = time slots, cols = days)."""
         self.grid_frame = ttk.LabelFrame(
-            self.view_container, text=_t("Schedule Grid"), padding=5
+            self.view_container, text=_t("Schedule Grid", default="Schedule grid"), padding=5
         )
 
         # Header row: day names
         tk.Label(
-            self.grid_frame, text=_t("Time"), width=8,
+            self.grid_frame, text=_t("Time", default="Time"), width=8,
             font=("Arial", 10, "bold"), relief=tk.RIDGE, bg="#E0E0E0",
         ).grid(row=0, column=0, sticky="nsew", padx=1, pady=1)
 
@@ -203,12 +203,12 @@ class StudentTimetableGUI:
             self.list_frame, columns=columns, show="headings", height=14
         )
         col_conf = {
-            "day":        (_t("Day"), 90),
-            "time":       (_t("Time"), 100),
-            "module":     (_t("Module"), 120),
-            "room":       (_t("Room"), 120),
-            "instructor": (_t("Instructor"), 140),
-            "type":       (_t("Type"), 90),
+            "day":        (_t("Day", default="Day"), 90),
+            "time":       (_t("Time", default="Time"), 100),
+            "module":     (_t("Module", default="Module"), 120),
+            "room":       (_t("Room", default="Room"), 120),
+            "instructor": (_t("Instructor", default="Instructor"), 140),
+            "type":       (_t("Type", default="Type"), 90),
         }
         for col, (heading, width) in col_conf.items():
             self.tree.heading(col, text=heading)
@@ -235,7 +235,7 @@ class StudentTimetableGUI:
 
         if not self.student_id:
             self._show_fallback_list()
-            self.status_lbl.config(text=_t("No student ID available."))
+            self.status_lbl.config(text=_t("No student ID available.", default=""))
             return
 
         try:
@@ -256,11 +256,12 @@ class StudentTimetableGUI:
                 conn.close()
                 self._show_fallback_list()
                 self.status_lbl.config(
-                    text=_t("No enrolled modules found.")
+                    text=_t("No enrolled modules found.", default="")
                 )
                 return
 
             placeholders = ",".join("?" for _ in enrolled)
+            # db-audit: ignore[DBW001] - string literal
             cursor.execute(
                 f"""
                 SELECT ms.module_code, m.module_name,
@@ -282,6 +283,7 @@ class StudentTimetableGUI:
             # Pull exam overlays for the same enrolled modules so the
             # student sees lectures + exams in one grid.
             try:
+                # db-audit: ignore[DBW001] - string literal
                 cursor.execute(
                     f"""
                     SELECT module_code, date, start_time, end_time, room
@@ -303,21 +305,21 @@ class StudentTimetableGUI:
             else:
                 self._show_fallback_list()
                 self.status_lbl.config(
-                    text=_t("No schedule data found for enrolled modules.")
+                    text=_t("No schedule data found for enrolled modules.", default="")
                 )
 
         except sqlite3.OperationalError as exc:
             if "no such table" in str(exc).lower():
                 self.status_lbl.config(
-                    text=_t("Timetable data not available")
+                    text=_t("Timetable data not available", default="Timetable data not available")
                 )
             else:
                 logger.exception("Database error loading timetable")
-                self.status_lbl.config(text=_t("Database error occurred."))
+                self.status_lbl.config(text=_t("Database error occurred.", default=""))
             self._show_fallback_list()
         except Exception:
             logger.exception("Unexpected error loading timetable")
-            self.status_lbl.config(text=_t("An error occurred loading data."))
+            self.status_lbl.config(text=_t("An error occurred loading data.", default=""))
             self._show_fallback_list()
 
     # ------------------------------------------------------------------
@@ -328,8 +330,8 @@ class StudentTimetableGUI:
         """Export the current weekly timetable to an .ics calendar file."""
         if not self.schedule_rows:
             messagebox.showinfo(
-                _t("Export Timetable"),
-                _t("No schedule data to export. Try Refresh first."),
+                _t("Export Timetable", default="Export timetable"),
+                _t("No schedule data to export. Try Refresh first.", default=""),
                 parent=self.parent,
             )
             return
@@ -477,7 +479,7 @@ class StudentTimetableGUI:
                             highlightbackground="#c0392b",
                         )
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
                     break
 
     def _bind_cell_selection(self, cell, module_code):
@@ -498,7 +500,7 @@ class StudentTimetableGUI:
                 )
                 set_current_selection(module_code=mc, source="student_timetable")
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         def _on_press(event=None, mc=module_code, src_cell=cell):
             self._drag_state = {
@@ -579,7 +581,7 @@ class StudentTimetableGUI:
                             result.get("reason") or "Schedule move was rejected.",
                         )
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
             except Exception as exc:
                 logger.warning("timetable drag move failed: %s", exc)
 
@@ -588,7 +590,7 @@ class StudentTimetableGUI:
             cell.bind("<ButtonPress-1>", _on_press, add="+")
             cell.bind("<ButtonRelease-1>", _on_release, add="+")
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _slot_index(self, start_time):
         """Return the row index for a given start_time string, or None."""

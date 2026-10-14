@@ -28,6 +28,7 @@ from typing import Any
 
 from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.domain.apprentices.models import ValidationError
+from education_system.systems.apprenticeships.domain.records import audit
 from education_system.systems.apprenticeships.infrastructure.persistence.repositories import (
     apprentice_repository,
     compliance_repository,
@@ -329,8 +330,15 @@ def grant_role(actor: Actor, username: str, role: str) -> dict[str, Any]:
     compliance_repository.record(
         action="update" if existing else "create", entity="user_access", entity_id=name,
         actor=actor.username, actor_role=actor.role, detail=detail,
+        changes=audit.change("role", existing["role"] if existing else None, granted),
     )
     logger.info("Apprenticeships access for %s: %s (by %s)", name, detail, actor.username)
+    if granted == config.APPRENTICE:
+        # The account may already match an apprentice record; link it to
+        # that learner now rather than at its first sign-in.
+        from education_system.systems.apprenticeships.services import login_links
+
+        login_links.try_sync_username(name)
     return {"username": name, "role": granted, "detail": detail,
             "needs_link": granted in LINK_TARGETS}
 
@@ -356,6 +364,11 @@ def revoke_access(actor: Actor, username: str) -> None:
         user = conn.execute("SELECT id FROM users WHERE username = ?", (name,)).fetchone()
         if user is None:
             raise ValidationError(f"No platform account named {name!r}")
+        # Read first, only so the audit entry can say which role went.
+        held = conn.execute(
+            "SELECT role FROM user_systems WHERE user_id = ? AND system_key = ?",
+            (user["id"], SYSTEM_KEY),
+        ).fetchone()
         cursor = conn.execute(
             "DELETE FROM user_systems WHERE user_id = ? AND system_key = ?",
             (user["id"], SYSTEM_KEY),
@@ -367,6 +380,7 @@ def revoke_access(actor: Actor, username: str) -> None:
     compliance_repository.record(
         action="delete", entity="user_access", entity_id=name,
         actor=actor.username, actor_role=actor.role, detail="Apprenticeships access revoked",
+        changes=audit.change("role", held["role"] if held else None, None),
     )
     logger.warning("Apprenticeships access revoked for %s by %s", name, actor.username)
 
@@ -429,26 +443,35 @@ def link_to_record(actor: Actor, username: str, role: str, record_id: int) -> st
         if record is None:
             raise ValidationError(f"No apprentice with id {record_id}")
         apprentice_repository.update(record_id, {"username": name})
-        label = record.full_name
+        label, previous = record.full_name, record.username
     elif kind == config.STAFF:
         member = staff_repository.get(record_id)
         if member is None:
             raise ValidationError(f"No staff record with id {record_id}")
         staff_repository.update(record_id, {"username": name})
-        label = member.full_name
+        label, previous = member.full_name, member.username
     else:
         manager = employer_repository.get_manager(record_id)
         if manager is None:
             raise ValidationError(f"No employer contact with id {record_id}")
         employer_repository.update_manager(record_id, {"username": name})
-        label = manager.full_name
+        label, previous = manager.full_name, manager.username
 
     compliance_repository.record(
         action="update", entity="user_access", entity_id=name,
         actor=actor.username, actor_role=actor.role,
         detail=f"Linked to {LINK_TARGETS[kind]} {record_id} ({label})",
+        # Relinking a record moves it from one login to another; the
+        # previous holder is what an auditor needs to see.
+        changes=audit.change(f"{LINK_TARGETS[kind]} {record_id} login", previous, name),
     )
     logger.info("Login %s linked to %s %s by %s", name, kind, record_id, actor.username)
+    if kind == config.APPRENTICE:
+        # The learner-record link follows the login: onto this record's
+        # learner, and off the previous login if nothing else holds it.
+        from education_system.systems.apprenticeships.services import login_links
+
+        login_links.try_sync_apprentice(record_id, previous_username=previous)
     return f"{name} is now linked to {label}."
 
 

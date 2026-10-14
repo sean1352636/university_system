@@ -10,7 +10,9 @@ from __future__ import annotations
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 
 from education_system.systems.university.domains.academics.interfaces.gui.assignment_system.integrations import (
     fetch_child_assignments,
@@ -45,7 +47,7 @@ class IntegrationsManager:
             return
 
         data = fetch_module_resources(module_code, student_id=student_id)
-        win = tk.Toplevel(self.root)
+        win = make_toplevel(self.root)
         win.title(f"Resources — {module_code}")
         win.geometry("700x500")
 
@@ -136,7 +138,7 @@ class IntegrationsManager:
             return
 
         summary = fetch_module_attendance(student_id, module_code)
-        win = tk.Toplevel(self.root)
+        win = make_toplevel(self.root)
         win.title(f"Attendance — {student_id} / {module_code}")
         win.geometry("420x220")
 
@@ -201,7 +203,7 @@ class IntegrationsManager:
             return
 
         children = fetch_parent_children(user.get("id"))
-        win = tk.Toplevel(self.root)
+        win = make_toplevel(self.root)
         win.title(_t('gui.academics.assignment_system.integrations_manager.windows.my_children_assignments', default="My Children — Assignments"))
         win.geometry("760x520")
 
@@ -313,7 +315,7 @@ class IntegrationsManager:
 
     def show_integrations_activity(self):
         """Open a window showing recent rows produced by each integration."""
-        win = tk.Toplevel(self.root)
+        win = make_toplevel(self.root)
         win.title(_t('gui.academics.assignment_system.integrations_manager.windows.cross_domain_activity_assignments', default="Cross-Domain Activity — Assignments"))
         win.geometry("960x560")
 

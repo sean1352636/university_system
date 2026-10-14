@@ -1,4 +1,7 @@
 """Predictive analytics for attendance risk assessment."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 import datetime
 import json
@@ -233,7 +236,7 @@ class AttendancePredictiveAnalytics:
                         opened_by="predictive_analytics",
                     )
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
             return {
                 'risk_level': risk_labels[risk_level],

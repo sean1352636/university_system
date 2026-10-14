@@ -25,21 +25,13 @@ from education_system.systems.university.domains.academics.interfaces.gui.course
 logger = logging.getLogger(__name__)
 
 
+from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui import report_widgets as _report
+
+
 class DialogsMixin:
     """Miscellaneous dialogs, launchers, and utility methods."""
 
     # --- Academic system launchers ---
-
-    def show_lms_gui(self):
-        """Switch to the LMS tab in the course management notebook."""
-        try:
-            for i in range(self.notebook.index("end")):
-                if self.notebook.tab(i, "text") == _("lms.title"):
-                    self.notebook.select(i)
-                    return
-            messagebox.showinfo(_t('gui.academics.course_management_gui.core.dialogs.dialogs.lms', default="LMS"), _t('gui.academics.course_management_gui.core.dialogs.dialogs.lms_tab_is_available_in_the_course_management_tabs_above', default="LMS tab is available in the Course Management tabs above."))
-        except Exception as e:
-            messagebox.showerror(_("common.error"), f"Failed to open LMS tab: {e}")
 
     def show_degree_audit_gui(self):
         """Launch the Degree Audit GUI"""
@@ -301,59 +293,152 @@ class DialogsMixin:
             self.course_tree.move(item[1], '', ix)
 
     def show_about(self):
-        """Show about dialog"""
-        about_text = """Enhanced Course Management System v2.0
+        """About window — what this GUI actually contains today.
 
-A comprehensive GUI-based course management system with:
-\u2022 Course creation and management
-\u2022 Advanced search and filtering
-\u2022 Analytics and reporting
-\u2022 Instructor management
-\u2022 Prerequisites handling
-\u2022 Import/Export capabilities
-\u2022 System maintenance tools
+        The old text claimed "Enhanced Course Management System v2.0 …
+        backwards compatible with original CLI version" and listed seven
+        features, most of a much smaller program. It named none of the tabs
+        that exist and was several major versions out of date.
+        """
+        # The package exposes no __version__ attribute; the installed
+        # distribution metadata is the authoritative source.
+        try:
+            from importlib.metadata import version as _dist_version
+            version = _dist_version("education-system")
+        except Exception:
+            version = "unknown"
 
-Developed with Python and Tkinter
-Backwards compatible with original CLI version"""
+        window, surface = _report.report_window(
+            self.root, _("course_management.dialogs.about_system"), "720x620")
 
-        messagebox.showinfo(_("course_management.dialogs.about_system"), about_text, parent=self.root)
+        _report.banner(surface, "Course Management",
+                       f"Part of the University System · version {version}")
+
+        _report.stat_strip(surface, [
+            (len(self.notebook.tabs()) if hasattr(self, "notebook") else "—", "Tabs"),
+            (self._about_course_count(), "Courses"),
+            (self._about_module_count(), "Modules"),
+        ])
+
+        body = _report.card(surface, "What this window does", accent="#3498db")
+        tk.Label(body,
+                 text="Creates and maintains the course catalogue and the "
+                      "curriculum built on it — sections, prerequisites, "
+                      "materials, learning outcomes, approvals, timetabling "
+                      "and rollover — and reports on enrolment across it.",
+                 bg=_report.CARD, fg=_report.VALUE, font=(_report.FONT, 9),
+                 wraplength=620, justify="left").pack(anchor="w")
+
+        body = _report.card(surface, "Tabs", accent="#9b59b6")
+        _report.kv_grid(body, [
+            ("Course List", "Search, filter, create, edit and delete courses"),
+            ("Course Details", "One course in full, with its modules"),
+            ("Analytics", "Enrolment, department and capacity reporting"),
+            ("Instructors", "Instructor records and course assignment"),
+            ("Academic Systems", "Degree Audit and Course Evaluation"),
+            ("Curriculum", "Sections, requisites, materials, outcomes, "
+                           "approvals, timetable, rollover, cross-listing, "
+                           "grading, waitlist rules, course-module links"),
+            ("Course Planning", "Multi-year planning tools"),
+        ], cols=1)
+
+        body = _report.card(surface, "Related screens", accent="#16a34a")
+        _report.kv_grid(body, [
+            ("Assignments", "Assignment System (quizzes live here too)"),
+            ("Marks", "Grade Tracking"),
+            ("Discussion", "Module Discussion Forums"),
+            ("Reading lists", "Library — textbooks added here appear there"),
+        ], cols=1)
+
+        tk.Label(surface, text="Python · Tkinter · SQLite",
+                 bg=_report.BG, fg=_report.MUTED,
+                 font=(_report.FONT, 8)).pack(anchor="w", padx=12, pady=(4, 10))
+        window.lift()
+
+    def _about_course_count(self):
+        try:
+            with self._ext_db() as conn:
+                return conn.execute("SELECT COUNT(*) FROM courses").fetchone()[0]
+        except Exception:
+            return "—"
+
+    def _about_module_count(self):
+        try:
+            with self._ext_db() as conn:
+                return conn.execute("SELECT COUNT(*) FROM modules").fetchone()[0]
+        except Exception:
+            return "—"
+
+    #: The user guide, as (section, accent, [(action, what it does), ...]).
+    #: Held as data so it renders as cards rather than one block of text.
+    _USER_GUIDE = [
+        ("Courses", "#3498db", [
+            ("Find a course", "Course List — type in Search, or narrow by "
+                              "department and status."),
+            ("See one course", "Double-click its row. Double-click the Name "
+                               "column instead for enrolled students and modules."),
+            ("Create or change", "Create Course, or select a row and use Edit / Delete."),
+            ("Enrolment figures", "Counted live from student records, so they "
+                                  "match the students popup."),
+        ]),
+        ("Curriculum", "#9b59b6", [
+            ("Sections & requisites", "Set up teaching sections and prerequisite chains."),
+            ("Materials", "Add reading and equipment. A Textbook, Reading or "
+                          "Article is added to the Library and this course's "
+                          "reading list automatically when you save it."),
+            ("Learning outcomes", "Pick a CLO code and a Bloom's level, then "
+                                  "map outcomes to programme standards."),
+            ("Approvals & rollover", "Move a course through approval, then roll "
+                                     "it into the next academic year."),
+        ]),
+        ("Analytics", "#16a34a", [
+            ("Overview", "Headline counts and the status distribution."),
+            ("Department analysis", "Pick a department for its totals, its "
+                                    "most popular courses and anything under "
+                                    "30% full."),
+            ("Trends", "Most popular courses and where seats remain."),
+            ("Reports", "Enrolment and department reports, savable as PDF, "
+                        "CSV or TXT, or emailed to an administrator."),
+        ]),
+        ("Instructors", "#d97706", [
+            ("Records", "Add and edit instructors on the Instructors tab."),
+            ("Assign to a course", "Choose the instructor from the list. "
+                                   "Assigning the same person to the same "
+                                   "course and term twice is refused; taking "
+                                   "over someone else's slot asks first."),
+        ]),
+        ("Academic systems", "#8e44ad", [
+            ("Degree Audit", "Progress, prerequisites, what-if scenarios, "
+                             "advising appointments and graduation audits."),
+            ("Course Evaluation", "Build evaluations and read the results — "
+                                  "double-click a question for its full "
+                                  "answer distribution."),
+        ]),
+        ("Data", "#7f8c8d", [
+            ("Import / Export", "CSV import and export from the File menu."),
+            ("Backups", "Database backups and integrity checks under Maintenance."),
+            ("Recalculate enrolment", "Maintenance — rewrites stored enrolment "
+                                      "counters from the student records."),
+        ]),
+    ]
 
     def show_help(self):
-        """Show help dialog"""
-        help_text = """USER GUIDE
+        """User guide, as titled cards rather than one block of text."""
+        window, surface = _report.report_window(
+            self.root, _("course_management.dialogs.user_guide"), "780x660")
 
-COURSE MANAGEMENT:
-\u2022 Use the Course List tab to view and manage courses
-\u2022 Double-click a course to view details
-\u2022 Use search and filters to find specific courses
-\u2022 Create new courses using the Create Course button
+        _report.banner(surface, "User guide",
+                       "How to do the common jobs in this window")
 
-ANALYTICS:
-\u2022 View system-wide analytics in the Analytics tab
-\u2022 Generate various reports from the Analytics menu
-\u2022 Export data for external analysis
+        for title, accent, entries in self._USER_GUIDE:
+            body = _report.card(surface, title, accent=accent)
+            _report.kv_grid(body, entries, cols=1)
 
-INSTRUCTORS:
-\u2022 Manage instructors in the Instructors tab
-\u2022 Assign instructors to courses
-\u2022 View instructor workloads
-
-IMPORT/EXPORT:
-\u2022 Import courses from CSV files (File menu)
-\u2022 Export course data to CSV
-\u2022 Create database backups
-
-For more information, consult the documentation."""
-
-        # Create help window
-        help_window = tk.Toplevel(self.root)
-        help_window.title(_("course_management.dialogs.user_guide"))
-        help_window.geometry("600x400")
-
-        help_text_widget = ScrolledText(help_window, wrap=tk.WORD)
-        help_text_widget.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        help_text_widget.insert(1.0, help_text)
-        help_text_widget.config(state=tk.DISABLED)
+        tk.Label(surface,
+                 text="Tip: most tables open more detail on double-click.",
+                 bg=_report.BG, fg=_report.MUTED, font=(_report.FONT, 8),
+                 ).pack(anchor="w", padx=12, pady=(4, 10))
+        window.lift()
 
     def return_to_main_menu(self):
         """Return to the main menu/GUI by closing this child window"""

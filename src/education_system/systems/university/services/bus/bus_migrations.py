@@ -22,6 +22,7 @@ import logging
 from education_system.systems.university.infrastructure.database.db import (
     get_connection,
 )
+from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608 - identifier validation
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +105,10 @@ _COLUMN_ADDITIONS: tuple[tuple[str, str, str], ...] = (
 
 def _add_column_if_missing(conn, table: str,
                            column: str, ddl_type: str) -> None:
+    # db-audit: ignore[DBW001] - parameter passed through a validator
+    # Identifiers cannot be parameterised, so they are validated instead.
+    table = validate_identifier(table)
+    column = validate_identifier(column)
     try:
         cols = {r[1] for r in conn.execute(
             f"PRAGMA table_info({table})"

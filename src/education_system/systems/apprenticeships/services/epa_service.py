@@ -33,6 +33,7 @@ from education_system.systems.apprenticeships.domain.end_point_assessment.result
     validate_method,
     validate_resit_type,
 )
+from education_system.systems.apprenticeships.domain.records import audit
 from education_system.systems.apprenticeships.infrastructure.persistence.repositories import (
     apprentice_repository,
     compliance_repository,
@@ -324,10 +325,20 @@ def record_result(
         feedback=_optional_text(feedback),
         attempt=attempt,
     )
+    graded = epa_repository.get_booking(booking_id)
     compliance_repository.record(
         action="grade", entity="epa_result", entity_id=result_id,
         actor=actor.username, actor_role=actor.role,
         detail=f"{booking.method}: {cleaned} (attempt {attempt})",
+        changes=[
+            *audit.diff(None, {
+                "method": booking.method, "grade": cleaned,
+                "assessed_date": when, "attempt": attempt,
+            }),
+            *audit.change(
+                "booking_status", booking.status, graded.status if graded else booking.status
+            ),
+        ],
     )
     logger.info(
         "EPA result %s recorded for apprentice %s: %s %s (attempt %s) by %s",
@@ -376,6 +387,30 @@ def _maybe_complete(actor: Actor, apprentice_id: int) -> None:
     logger.info(
         "Apprentice %s completed with overall grade %s", apprentice_id, progress.overall
     )
+
+    try:
+        from education_system.platform.integrations.external import cross_system_bus
+        from education_system.systems.apprenticeships.infrastructure.integrations import degree_events
+        from education_system.systems.apprenticeships.infrastructure.persistence.repositories import (
+            degree_apprenticeship_repository,
+        )
+        link = degree_apprenticeship_repository.get_link(apprentice_id)
+        if link:
+            degree_events.publish(
+                cross_system_bus.EVENT_APPRENTICESHIP_COMPLETED,
+                journey_id=link.journey_id, target_system="university",
+                idempotency_key=f"apprenticeship-completed:{link.link_id}",
+                apprentice_id=apprentice_id,
+                university_student_id=link.university_student_id,
+                apprenticeship_grade=progress.overall,
+            )
+            projection = degree_apprenticeship_repository.academic_projection(apprentice_id)
+            if not projection or not projection.get("degree_outcome"):
+                degree_apprenticeship_repository.set_reconciliation(
+                    apprentice_id, "Apprenticeship Complete; Degree Incomplete"
+                )
+    except Exception:
+        logger.warning("Could not publish degree apprenticeship completion", exc_info=True)
 
     from education_system.systems.apprenticeships.services import funding_service
 

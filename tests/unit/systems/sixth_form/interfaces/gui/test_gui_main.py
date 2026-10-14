@@ -291,8 +291,10 @@ class TestSixthFormMainGUI:
             "open_timetable", "open_attendance", "open_homework",
             "open_gradebook", "open_predicted_grades",
             "open_mock_exams", "open_exam_entries", "open_results_day",
-            "open_ucas", "open_personal_statements", "open_references",
-            "open_offers", "open_apprenticeships",
+            # One handler where there were six — progression, UCAS
+            # applications, workflow, statements, references and offers
+            # now share a single window.
+            "open_university_ucas", "open_apprenticeships",
             "open_university_visits", "open_careers", "open_destinations",
             "open_epq", "open_work_experience", "open_room_booking",
             "open_medical_records", "open_tutor_groups",

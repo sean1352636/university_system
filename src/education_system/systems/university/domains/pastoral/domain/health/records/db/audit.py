@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.domains.pastoral.infrastructure.health.storage import sqlite3, get_connection
 from datetime import datetime, timedelta
 import time
@@ -64,7 +68,7 @@ def log_audit_event(user_id, action, resource_type, resource_id, details=None, c
             try:
                 conn.close()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
 
 

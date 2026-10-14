@@ -191,13 +191,13 @@ Or set up a virtual framebuffer for testing:
 
 ```bash
 sudo apt-get install xvfb
-xvfb-run python run.py --school --gui
+xvfb-run python -m education_system --school --gui
 ```
 
 3. **Check for import errors**: Run the system from a terminal to see any error output:
 
 ```bash
-python run.py --school --gui 2>&1
+python -m education_system --school --gui 2>&1
 ```
 
 ### GUI Freezes or Becomes Unresponsive
@@ -240,7 +240,7 @@ Any import errors will be printed to the console.
 
 ```bash
 # Secondary school specifically
-python run.py --school --cli
+python -m education_system --school --cli
 
 # Not --college or --primary
 ```
@@ -394,7 +394,7 @@ rm -f education_system/secondary_school/data/db_files/secondary_school.db
 rm -f education_system/secondary_school/logs/app.log
 
 # Restart the application -- database and defaults will be recreated
-python run.py --school --gui
+python -m education_system --school --gui
 ```
 
 **Note**: This does not affect the shared auth database (`shared/data/db_files/auth.db`). To reset authentication as well, an administrator must manage accounts through the shared auth system.

@@ -1,7 +1,11 @@
 """Dashboard display and statistics"""
+import logging
+
+logger = logging.getLogger(__name__)
 
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
 import os
 import shutil
 import threading
@@ -159,7 +163,7 @@ class DashboardManager:
         just a one-line orientation for users who land here from a
         cross-domain jump and aren't sure what they're looking at."""
         try:
-            from tkinter import messagebox
+            from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
         except Exception:
             return
         try:
@@ -184,7 +188,7 @@ class DashboardManager:
                 parent=self.root,
             )
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
 
     def create_dashboard_widgets(self):

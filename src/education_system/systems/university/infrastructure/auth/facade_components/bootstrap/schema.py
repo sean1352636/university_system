@@ -1,5 +1,7 @@
 """Extracted backwards-compatible UserAuth methods."""
 from ...facade_support import *
+from education_system.systems.university.infrastructure.database.schemas.students_table import ensure_students_table
+from education_system.systems.university.infrastructure.database.schemas.users_table import ensure_users_table
 
 class AuthBootstrapSchemaMixin:
     def _init_db(self):
@@ -38,20 +40,7 @@ class AuthBootstrapSchemaMixin:
             self._ensure_students_table(cursor)
 
             # Create users table for storing user profile information
-            cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                first_name TEXT NOT NULL,
-                last_name TEXT NOT NULL,
-                email TEXT UNIQUE NOT NULL,
-                role TEXT NOT NULL,
-                student_id TEXT,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL,
-                FOREIGN KEY (student_id) REFERENCES students (student_id)
-            )
-            ''')
+            ensure_users_table(cursor)
 
             # Create user_accounts table - for storing authentication data
             cursor.execute('''
@@ -276,23 +265,7 @@ class AuthBootstrapSchemaMixin:
     def _ensure_students_table(self, cursor):
         """Guarantee the student catalogue exists for auth relationships"""
         try:
-            cursor.execute('''
-            CREATE TABLE IF NOT EXISTS students (
-                student_id TEXT PRIMARY KEY,
-                email_address TEXT,
-                title TEXT,
-                first_name TEXT,
-                middle_name TEXT,
-                last_name TEXT,
-                gender TEXT,
-                dob TEXT,
-                age INTEGER,
-                course TEXT,
-                registration_datetime TEXT,
-                status TEXT DEFAULT 'Active',
-                enrollment_date TEXT
-            )
-            ''')
+            ensure_students_table(cursor)
 
             cursor.execute("PRAGMA table_info(students)")
             existing_columns = {column[1] for column in cursor.fetchall()}

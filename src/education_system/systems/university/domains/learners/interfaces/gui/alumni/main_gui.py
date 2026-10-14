@@ -353,7 +353,7 @@ class AlumniGUIApp(
     def open_email_manager_gui(self):
         """Open email manager GUI"""
         try:
-            from education_system.systems.university.interfaces.gui.shell.email.email_gui import EmailManagerGUI
+            from education_system.systems.university.shell.gui.email.email_gui import EmailManagerGUI
             email_window = tk.Toplevel(self.root)
             email_window.title(_t("alumni.nav.items.email_manager", default="Email Manager"))
             email_window.geometry("800x600")
@@ -391,7 +391,7 @@ class AlumniGUIApp(
             else:
                 # Running standalone, need to create main GUI
                 root_widget.destroy()
-                from education_system.systems.university.interfaces.gui.shell.main import UnifiedManagementGUI
+                from education_system.systems.university.shell.gui.main import UnifiedManagementGUI
                 app = UnifiedManagementGUI(self.auth)
                 app.run()
         except (tk.TclError, ImportError, RuntimeError) as e:

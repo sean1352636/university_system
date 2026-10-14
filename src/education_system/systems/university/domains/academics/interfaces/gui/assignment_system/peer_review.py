@@ -1,9 +1,14 @@
 """Peer review system"""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 import os
 import shutil
 import threading
@@ -94,7 +99,7 @@ class PeerReviewManager:
     def start_peer_review(self, review_id):
         """Start a specific peer review"""
         # Create peer review form window
-        review_window = tk.Toplevel(self.root)
+        review_window = make_toplevel(self.root)
         review_window.title(_t('gui.academics.assignment_system.peer_review.windows.peer_review', default="Peer Review"))
         review_window.geometry("600x500")
 
@@ -217,7 +222,7 @@ class PeerReviewManager:
     def configure_peer_review(self):
         """Configure peer review settings"""
         # Create configuration window
-        config_window = tk.Toplevel(self.root)
+        config_window = make_toplevel(self.root)
         config_window.title(_t('gui.academics.assignment_system.peer_review.windows.configure_peer_review', default="Configure Peer Review"))
         config_window.geometry("500x400")
 
@@ -300,7 +305,7 @@ class PeerReviewManager:
                 return
 
             # Create progress window
-            progress_window = tk.Toplevel(window)
+            progress_window = make_toplevel(window)
             progress_window.title(_t('gui.academics.assignment_system.peer_review.windows.setting_up_peer_reviews', default="Setting up Peer Reviews"))
             progress_window.geometry("600x500")
             progress_window.transient(window)
@@ -376,7 +381,7 @@ class PeerReviewManager:
                         (assignment_id,)
                     )
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
                 progress_var.set(35)
 
                 # Step 3: Assign peer reviewers (each student reviews up to 3 others)
@@ -481,13 +486,13 @@ class PeerReviewManager:
                             )
                             emails_sent += 1
                         except Exception:
-                            pass
+                            logger.debug("Suppressed exception", exc_info=True)
 
                     conn.close()
                 except ImportError:
                     pass
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 if emails_sent > 0:
                     results_text.insert(tk.END, f"\nEmail notifications sent to {emails_sent} reviewers\n")
@@ -570,7 +575,7 @@ class PeerReviewManager:
         """Configure peer review parameters for an assignment"""
         try:
             # Create configuration dialog
-            dialog = tk.Toplevel(self.root)
+            dialog = make_toplevel(self.root)
             dialog.title(_t('gui.academics.assignment_system.peer_review.windows.configure_peer_review_settings', default="Configure Peer Review Settings"))
             dialog.geometry("550x600")
             dialog.transient(self.root)

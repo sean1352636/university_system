@@ -1,9 +1,13 @@
 """Extracted GradeManager behaviour."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from .. import *
 from ..scale import GRADE_SYSTEMS, letter_to_gpa, letter_to_percentage, percentage_to_letter
 from .grade_view import safe_combo_update, safe_grab_set
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import make_toplevel
 
 class AddGradeDialogMixin:
     def add_grade_dialog(self, prefill_student_id=None,
@@ -14,7 +18,7 @@ class AddGradeDialogMixin:
         workflow) jump straight to the right student/module with a pre-filled
         comment. Pass None for any to leave it blank.
         """
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.academics.grade_tracking.grades.ui.add_dialog.windows.add_grade', default="Add Grade"))
         dialog.geometry("550x650")
         dialog.transient(self.root)
@@ -195,7 +199,7 @@ class AddGradeDialogMixin:
                         from education_system.systems.university.infrastructure.database.db import get_connection
                         with get_connection() as conn:
                             row = conn.execute(
-                                "SELECT 1 FROM academic_calendar_events "
+                                "SELECT 1 FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') "
                                 "WHERE LOWER(event_type) = 'submission_window' "
                                 "LIMIT 1"
                             ).fetchone()
@@ -205,10 +209,10 @@ class AddGradeDialogMixin:
                                 if (hasattr(self.app, 'auth') and self.app.auth
                                         and self.app.auth.current_user
                                         and self.app.auth.check_permission(
-                                            'override_submission_window')):
+                                            'manage_extensions')):
                                     override = True
                             except Exception:
-                                pass
+                                logger.debug("Suppressed exception", exc_info=True)
                             if not override:
                                 messagebox.showerror(
                                     _t('gui.academics.grade_tracking.grades.ui.add_dialog.dialogs.submission_window_closed', default="Submission window closed"),
@@ -220,7 +224,7 @@ class AddGradeDialogMixin:
                                 return
             except Exception:
                 # Never block grading on a calendar-gate failure.
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             try:
                 score_float = float(score)
@@ -280,6 +284,7 @@ class AddGradeDialogMixin:
                 if IMMUTABLE_AUDIT_AVAILABLE:
                     user_id, session_id = get_gui_context()
                     require_grade_audit(
+                        conn=cursor.connection,
                         action=AuditAction.RECORD_CREATE,
                         user_id=user_id,
                         resource_type='grade',
@@ -309,7 +314,7 @@ class AddGradeDialogMixin:
                             student_id=student_id, assessment_id=assessment_id,
                             action="create")
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 messagebox.showinfo(_t('gui.academics.grade_tracking.grades.ui.add_dialog.dialogs.success', default="Success"), _t('gui.academics.grade_tracking.grades.ui.add_dialog.dialogs.grade_added_successfully', default="Grade added successfully!"), parent=dialog)
                 dialog.destroy()
@@ -356,10 +361,10 @@ class AddGradeDialogMixin:
                             assessment_combo.set(filtered[0])
                             update_max_points()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
         if prefill_comments:
             try:
                 comments_text.delete('1.0', 'end')
                 comments_text.insert('1.0', prefill_comments)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)

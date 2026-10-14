@@ -6,11 +6,14 @@ import os
 import platform
 import threading
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext, filedialog
+from tkinter import ttk, scrolledtext, filedialog
 from datetime import datetime, timedelta
 from typing import Any, Optional, List, Dict
 from education_system.systems.university.infrastructure.i18n import get_text as _
 from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar.utils import safe_grab_set
+# Message boxes parented to the window that raised them, not the main
+# GUI — see _dialogs.
+from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar._dialogs import messagebox
 
 gui_logger = logging.getLogger(__name__)
 

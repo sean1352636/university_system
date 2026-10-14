@@ -22,20 +22,23 @@ def display_system_settings_menu(scheduler):
             scheduler.list_system_settings()
 
         elif choice == '2':
-            current = scheduler.get_system_setting('institution_name', 'University')
-            print(f"Current institution name: {current}")
-            new_name = input("Enter new institution name: ").strip()
-            if new_name:
-                scheduler.update_system_setting('institution_name', new_name)
+            # Read-only here, same as the GUI: the institution name is
+            # owned by Branding & Customization. Overriding it from the
+            # scheduler put a second value in play that then disagreed
+            # with every other screen.
+            try:
+                from education_system.systems.university.infrastructure.institution_settings import (
+                    get_institution_name,
+                )
+                print(f"Institution name: {get_institution_name()}")
+            except Exception:
+                print("Institution name: (could not be resolved)")
+            print("Change it in Branding & Customization.")
 
         elif choice == '3':
-            start_date = input("Enter semester start date (YYYY-MM-DD): ").strip()
-            end_date = input("Enter semester end date (YYYY-MM-DD): ").strip()
-
-            if start_date:
-                scheduler.update_system_setting('semester_start', start_date)
-            if end_date:
-                scheduler.update_system_setting('semester_end', end_date)
+            # Term dates come from the academic calendar's academic_terms.
+            print("Semester dates come from the academic calendar.")
+            print("Add or edit the term there; the scheduler follows it.")
 
         elif choice == '4':
             current = scheduler.get_system_setting('email_notifications', 'False')

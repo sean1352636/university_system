@@ -7,17 +7,16 @@ searching, listing, uploading, viewing, and deleting documents.
 import os
 from pathlib import Path
 
+from education_system import paths as _paths
 from education_system.platform.features.documents.document_service import (
     DocumentService, DOCUMENT_TYPES,
 )
 
-SYSTEM_KEYS = ["primary", "secondary", "sixth_form", "university"]
-SYSTEM_LABELS = {
-    "primary": "Primary School",
-    "secondary": "Secondary School",
-    "sixth_form": "Sixth Form College",
-    "university": "University",
-}
+# Read from paths rather than restated here: a local copy of this list drifts
+# silently, and every system missing from it becomes unreachable from this
+# screen rather than raising anything.
+SYSTEM_KEYS = list(_paths.SYSTEM_ORDER)
+SYSTEM_LABELS = dict(_paths.SYSTEM_LABELS)
 
 
 def _print_header(title):

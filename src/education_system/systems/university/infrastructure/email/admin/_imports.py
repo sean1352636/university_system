@@ -15,6 +15,25 @@ from education_system.systems.university.infrastructure.sql_safety import (
 
 logger = logging.getLogger("university_system.infrastructure.email.admin")
 
+
+# This package's menus are interactive CLI UI: prompts, message lists, message
+# bodies, health reports. The root logger carries only a RotatingFileHandler
+# (the console is owned by the application entry point, which the CLI never
+# configures), so writing menu text with logger.info() sent every menu straight
+# to app.log and left the operator staring at bare "Enter choice:" prompts.
+# UI goes to stdout; the log keeps a copy. Genuine diagnostics still use
+# `logger` directly.
+def _out(message):
+    """Print a line of menu UI to the console and record it in the log."""
+    print(message)
+    logger.info(message)
+
+
+def _err(message):
+    """Print a user-facing failure to the console and record it as an error."""
+    print(message)
+    logger.error(message)
+
 from education_system.systems.university.infrastructure.email.announcements import (
     _send_announcement_notifications,
     create_announcement_safe,

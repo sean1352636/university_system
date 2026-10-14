@@ -10,6 +10,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from pathlib import Path
 
+from education_system import paths as _paths
 from education_system.platform.features.documents.document_service import (
     DocumentService, DOCUMENT_TYPES,
 )
@@ -18,13 +19,11 @@ HEADER_BG = "#1a5276"
 HEADER_FG = "white"
 BG = "#ecf0f1"
 
-SYSTEM_KEYS = ["primary", "secondary", "sixth_form", "university"]
-SYSTEM_LABELS = {
-    "primary": "Primary School",
-    "secondary": "Secondary School",
-    "sixth_form": "Sixth Form College",
-    "university": "University",
-}
+# Read from paths rather than restated here: a local copy of this list drifts
+# silently, and every system missing from it becomes unreachable from this
+# screen rather than raising anything.
+SYSTEM_KEYS = list(_paths.SYSTEM_ORDER)
+SYSTEM_LABELS = dict(_paths.SYSTEM_LABELS)
 
 
 class SharedDocumentsFrame(tk.Frame):

@@ -1,4 +1,7 @@
 """Methods _issue_card through _assign_key."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -285,7 +288,7 @@ class AdminToolsGUI:
                     self.keys_tree.insert("", tk.END, values=values, tags=(status,))
 
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _on_key_select(self, event):
         """Handle key selection."""
@@ -324,7 +327,7 @@ Created: {row[10]}
                     self.key_detail_text.config(state=tk.DISABLED)
 
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _assign_key(self):
         """Assign a new key."""

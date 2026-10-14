@@ -24,7 +24,7 @@ import tkinter as tk
 logger = logging.getLogger(__name__)
 
 try:
-    from education_system.systems.university.interfaces.gui.shell.main.features.academic_link_bar import (
+    from education_system.systems.university.shell.gui.main.features.academic_link_bar import (
         request_open as _request_open,
     )
 except Exception:  # pragma: no cover
@@ -37,6 +37,120 @@ def _jump(action: str, context: dict | None = None):
         _request_open(action, context or {})
     except Exception:
         logger.exception("student records cross-jump failed: %s", action)
+
+
+# ---------------------------------------------------------------------------
+# Early-warning risk
+# ---------------------------------------------------------------------------
+
+#: Colours for the risk badge. Deliberately not red/green alone — the level
+#: word is always shown, so the colour is a hint rather than the only signal.
+RISK_COLOURS = {
+    "critical": "#b91c1c",
+    "high": "#c2410c",
+    "medium": "#a16207",
+    "moderate": "#a16207",
+    "low": "#15803d",
+}
+
+
+def student_risk(student_id):
+    """Return the student's early-warning profile, or ``None``.
+
+    Every student has one of these — scored across academic, attendance,
+    engagement and financial signals — and until now the record showed none
+    of it, while a loyalty snapshot was one click away.
+
+    Best-effort: the early-warning tables are optional, and a missing table
+    must leave the record perfectly usable.
+    """
+    try:
+        from education_system.systems.university.infrastructure.database.db import (
+            get_connection,
+        )
+        with get_connection() as conn:
+            row = conn.execute(
+                """SELECT overall_risk_score, risk_level, academic_risk_score,
+                          attendance_risk_score, engagement_risk_score,
+                          financial_risk_score, last_assessed
+                     FROM early_warning_profiles
+                    WHERE student_id = ?
+                 ORDER BY last_assessed DESC LIMIT 1""",
+                (str(student_id),),
+            ).fetchone()
+    except Exception:
+        logger.debug("early-warning profile unavailable", exc_info=True)
+        return None
+    if row is None:
+        return None
+    keys = ("overall_risk_score", "risk_level", "academic_risk_score",
+            "attendance_risk_score", "engagement_risk_score",
+            "financial_risk_score", "last_assessed")
+    try:
+        return dict(row)
+    except (TypeError, ValueError):
+        return dict(zip(keys, row))
+
+
+#: Component weights used by ``RiskAssessmentManager.calculate_risk_score``.
+#: The overall score is their weighted sum, which is why a single high
+#: component does not necessarily raise the headline level — engagement at
+#: 80/100 contributes only 80 x 0.20 = 16 to the overall.
+RISK_WEIGHTS = (
+    ("academic", "academic_risk_score", 0.40),
+    ("attendance", "attendance_risk_score", 0.30),
+    ("engagement", "engagement_risk_score", 0.20),
+    ("financial", "financial_risk_score", 0.10),
+)
+
+#: A component at or above this is worth surfacing on its own. Matches the
+#: 'high' band the overall score uses, so "high" means the same thing in both
+#: places.
+RISK_COMPONENT_ALERT = 50
+
+
+def risk_badge_text(profile) -> str:
+    """Headline line: the level and the overall score, on a stated scale.
+
+    Always ``x/100`` — a bare "(16)" invites the reader to wonder 16 of what,
+    and next to a component score of 80 it reads like a contradiction.
+    """
+    if not profile:
+        return ""
+    level = str(profile.get("risk_level") or "unknown").title()
+    score = profile.get("overall_risk_score")
+    if score is None:
+        return f"Risk: {level}"
+    return f"Risk: {level} — {score}/100"
+
+
+def risk_component_alert(profile) -> str:
+    """Second line, only when one component is high on its own.
+
+    An overall "Low" can hide a component scoring 80, because the overall is
+    a weighted sum: engagement carries 20% of it, so 80 there moves the total
+    by 16 and never reaches the 30 needed for "Medium". That student is not
+    low risk in any useful sense, so the component is named, with its weight,
+    which is what explains the apparent contradiction.
+
+    Returns "" when nothing stands out, so the caller can skip the line.
+    """
+    if not profile:
+        return ""
+    flagged = [
+        (label, int(profile.get(key) or 0), weight)
+        for label, key, weight in RISK_WEIGHTS
+        if int(profile.get(key) or 0) >= RISK_COMPONENT_ALERT
+    ]
+    if not flagged:
+        return ""
+    flagged.sort(key=lambda item: item[1], reverse=True)
+    if len(flagged) == 1:
+        label, value, weight = flagged[0]
+        return (f"\u26a0 {label.title()} risk is high: {value}/100 "
+                f"({weight:.0%} of the overall score)")
+    parts = ", ".join(f"{label} {value}/100" for label, value, _w in flagged)
+    return f"\u26a0 {len(flagged)} risk areas are high: {parts}"
 
 
 # ---------------------------------------------------------------------------
@@ -85,7 +199,9 @@ def student_menu_items(values, *, parent=None, app=None):
 
     *values* is the row's ``values`` tuple — by convention the records
     tree uses
-    ``(student_id, full_name, email_address, course, registration_date)``.
+    ``(student_id, full_name, email_address, course, status,
+    registration_date)``. Only the first four are read here, so a column
+    appended after ``course`` does not disturb this.
 
     *app* is the ``UnifiedManagementGUI`` instance. When supplied,
     permission-checked action items are appended (Edit / Manage Grades
@@ -174,9 +290,23 @@ def student_menu_items(values, *, parent=None, app=None):
                 ("✏ Edit student record",
                  lambda u=sid: app.update_student_dialog(u)),
             )
+            items.append(
+                ("🔄 Registration status…",
+                 lambda u=sid, f=first, l=last:
+                     app.manage_student_lifecycle(u, f, l)),
+            )
+        if _has('delete_any_student'):
+            items.append(
+                ("🗑 Delete student record…",
+                 lambda u=sid: app.delete_student_dialog(u)),
+            )
+        items.append(
+            ("⚠ Early warning / risk profile",
+             lambda u=sid: _jump("early_warning", {"student_id": u})),
+        )
         if _has('manage_grades'):
             items.append(
-                ("📊 Manage grades",
+                ("📊 View grades",
                  lambda u=sid, f=first, l=last: app.manage_student_grades(u, f, l)),
             )
         if _has('manage_attendance') or own_record:

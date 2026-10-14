@@ -1255,8 +1255,8 @@ class AIAssistantMixin:
             # Store recommendation
             cursor.execute('''
                 INSERT INTO late_pass_recommendations
-                (student_id, assignment_id, recommendation, confidence,
-                 on_time_rate, prior_grants, grade_trend, reasons_json, created_at)
+                (student_id, assignment_id, recommendation, confidence_score,
+                 on_time_rate, prior_grants, grade_trend, reasoning_json, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 student_id,

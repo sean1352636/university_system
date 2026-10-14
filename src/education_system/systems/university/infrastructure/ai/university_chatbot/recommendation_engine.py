@@ -24,7 +24,7 @@ def get_course_recommendations(chatbot, student_id: str, num_recommendations: in
             SELECT module_code, module_name, module_type, prerequisites, credits, difficulty_level
             FROM modules
             WHERE module_code NOT IN (
-                SELECT module_code FROM student_modules WHERE student_id = ? AND status = 'completed'
+                SELECT module_code FROM student_modules WHERE student_id = ? AND LOWER(status) = 'completed'
             )
         """, (student_id,))
 

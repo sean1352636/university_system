@@ -1,4 +1,7 @@
 """Methods save_schedule through center_window."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -9,7 +12,9 @@ globals().update({name: value for name, value in _shared.__dict__.items() if not
 class AddScheduleDialog:
     def save_schedule(self):
         try:
-            module_code = self.module_var.get()
+            # The dropdown shows "CODE - Module name" now that it is
+            # scoped by course; the schedule stores the bare code.
+            module_code = self.module_var.get().split(" - ", 1)[0].strip()
             day = self.day_var.get()
             start_time = self.start_time_var.get()
             end_time = self.end_time_var.get()
@@ -97,7 +102,7 @@ class AddScheduleDialog:
                     elif user and hasattr(user, "username"):
                         changed_by = str(user.username)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Save schedule
             success = self.scheduler.add_module_schedule(
@@ -119,7 +124,7 @@ class AddScheduleDialog:
                     publish(EVENT_MODULE_SCHEDULE_CHANGED,
                             module_code=module_code, action="create")
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 # Send notifications to instructor and students — ONLY for
                 # published rows. Drafts are silent so what-if scenarios

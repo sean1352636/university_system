@@ -10,6 +10,9 @@ Provides interface for:
 """
 
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -108,7 +111,7 @@ class GrantBudgetGUI:
                     label = f"{r.get('title', '')} (#{r.get('grant_application_id')})"
                     self.grant_map[label] = r.get('grant_application_id')
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _get_grant_combo_values(self):
         """Return the list of display labels for the grant combo."""
@@ -437,7 +440,7 @@ class GrantBudgetGUI:
             for c in categories:
                 self._expense_category_cache[c.get('category_id')] = c.get('name', '')
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _load_expenses(self):
         """Load expenses based on current filters."""
@@ -646,7 +649,7 @@ class GrantBudgetGUI:
                         allocation_id = a.get('allocation_id')
                         break
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             if not allocation_id:
                 messagebox.showerror(_t('gui.staff.staff_hr.grant_budget.dialogs.error', default="Error"),
@@ -822,7 +825,7 @@ class GrantBudgetGUI:
                 new_alerts = GrantBudgetManager.check_threshold_alerts(grant_id)
                 total_alerts += len(new_alerts)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         messagebox.showinfo(_t('gui.staff.staff_hr.grant_budget.dialogs.threshold_check', default="Threshold Check"),
                             f"Check complete. {total_alerts} new alert(s) created.")
@@ -895,7 +898,7 @@ class GrantBudgetGUI:
                 for a in allocations:
                     self._transfer_allocation_cache[a.get('allocation_id')] = a.get('category_name', '')
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
     def _load_transfers(self):
         """Load transfers based on current filter."""

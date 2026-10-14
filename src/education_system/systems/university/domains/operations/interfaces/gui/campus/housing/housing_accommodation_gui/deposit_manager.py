@@ -5,6 +5,9 @@ interactive functions can't be reused directly because they call input(). Where
 useful, this module imports the non-interactive helpers (state machine,
 interest math, TDP deadline calc) so behaviour matches across surfaces.
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -585,7 +588,7 @@ def _build_disputes_tab(gui_instance, parent):
                 try:
                     _ds.reconcile_from_deductions(cur, aid, actor=actor)
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
                 conn.commit()
             finally:
                 conn.close()
@@ -1114,7 +1117,7 @@ def prompt_move_out_deductions(parent_widget, inspection_id, auth):
             try:
                 _ds.reconcile_from_deductions(cur, assignment_id, actor=actor)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             conn.commit()
         finally:
             conn.close()
@@ -1241,7 +1244,7 @@ def show_student_deductions(gui_instance):
             try:
                 _ds.reconcile_from_deductions(cur, aid, actor=student_id)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             conn.commit()
         finally:
             conn.close()

@@ -249,6 +249,7 @@ class CustomReportWindow:
             where_clause = " AND ".join(where_parts)
 
             if report_type == "Attendance Summary":
+                # db-audit: ignore[DBW001] - join over a code-controlled list
                 cursor.execute(f"""
                     SELECT module_code,
                            COUNT(*) as total,
@@ -271,6 +272,7 @@ class CustomReportWindow:
                     lines.append("No attendance records found for the specified criteria.")
 
             elif report_type == "Detailed Records":
+                # db-audit: ignore[DBW001] - join over a code-controlled list
                 cursor.execute(f"""
                     SELECT student_id, module_code, date, status
                     FROM attendance_records
@@ -289,6 +291,7 @@ class CustomReportWindow:
                     lines.append("No records found.")
 
             elif report_type == "Statistical Analysis":
+                # db-audit: ignore[DBW001] - join over a code-controlled list
                 cursor.execute(f"""
                     SELECT student_id,
                            COUNT(*) as total,

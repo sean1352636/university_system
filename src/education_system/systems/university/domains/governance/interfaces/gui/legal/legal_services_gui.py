@@ -89,7 +89,7 @@ class LegalServicesGUI(
 
         ttk.Label(
             title_frame,
-            text=_t("legal.title", default="University Legal Aid Center"),
+            text=_t("legal.title", default="===== LEGAL ====="),
             font=('Arial', 18, 'bold')
         ).pack(side=tk.LEFT)
 

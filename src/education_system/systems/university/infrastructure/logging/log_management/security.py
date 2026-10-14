@@ -18,7 +18,7 @@ class LogSecurity:
         return LogSecurity.generate_hash(log_entry) == stored_hash
 
     @staticmethod
-    def anonymize_data(data, fields_to_anonymize=['username', 'user_id']):
+    def anonymize_data(data, fields_to_anonymize=('username', 'user_id')):
         """Anonymize sensitive data in logs"""
         anonymized = data.copy()
         for field in fields_to_anonymize:

@@ -85,6 +85,7 @@ def _ensure_risk_extras(conn: sqlite3.Connection) -> None:
     ):
         if col not in cols:
             try:
+                # db-audit: ignore[DBW001] - loop over a literal table
                 conn.execute(
                     f"ALTER TABLE risks ADD COLUMN {col} {ddl}"
                 )
@@ -242,10 +243,9 @@ def set_review_date(risk_id: int, when: str) -> bool:
         now = datetime.now().isoformat()
         with get_connection() as conn:
             conn.execute(
-                "INSERT INTO academic_calendar_events "
-                "(id, name, date, description, event_type, "
-                " date_added, last_modified, created_by) "
-                "VALUES (?, ?, ?, ?, 'risk_review', ?, ?, ?)",
+                "INSERT INTO unified_events "
+                "(source_event_id, title, event_date, description, event_type, created_at, updated_at, created_by, source_type) "
+                "VALUES (?, ?, ?, ?, 'risk_review', ?, ?, ?, 'academic_calendar')",
                 (event_id, f"Risk review: {title}", when[:10],
                  f"Periodic review for risk #{risk_id}",
                  now, now, "risk_bus"),
@@ -259,7 +259,7 @@ def set_review_date(risk_id: int, when: str) -> bool:
                     event_type="risk_review", action="created",
                     date=when[:10], name=f"Risk review: {title}")
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
     except Exception as exc:
         logger.debug("calendar publish for risk_review failed: %s", exc)
     return True

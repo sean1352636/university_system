@@ -106,7 +106,7 @@ class PlagiarismCheckerGUI:
 
         # Language menu
         language_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label=f"\U0001f310 {_t('gui.language')}", menu=language_menu)
+        menubar.add_cascade(label=f"\U0001f310 {_t('gui.language', default='Language')}", menu=language_menu)
         language_menu.add_command(label=_t("gui.change_language"), command=self.change_language)
 
         # Help menu

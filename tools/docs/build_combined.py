@@ -1102,7 +1102,7 @@ def part_three(b: Book, inv):
     b.code("export API_SECRET_KEY='<long random string>'")
     b.code("export JWT_SECRET_KEY='<a different long random string>'")
     b.code("export API_CORS_ORIGINS='https://app.example.com'")
-    b.code("python run.py --university --api")
+    b.code("python -m education_system --university --api")
     b.p()
     b.table([
         ["Address", "Purpose"],
@@ -1141,7 +1141,7 @@ def part_three(b: Book, inv):
             ["Endpoint groups", str(s.get("groups", 0))],
             ["Addresses", str(s.get("paths", 0))],
             ["Operations", str(s.get("operations", 0))],
-            ["Launch command", f"python run.py --{'sixthform' if key == 'sixth_form' else key.replace('_', '')} --api"],
+            ["Launch command", f"python -m education_system --{'sixthform' if key == 'sixth_form' else key.replace('_', '')} --api"],
         ], widths=[1.6, 4.9])
         if key == "secondary":
             b.note("The address uses “school” rather than “secondary” for "

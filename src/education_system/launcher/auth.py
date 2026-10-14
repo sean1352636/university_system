@@ -1,5 +1,6 @@
 """Shared authentication bootstrap and university MFA sync."""
 
+import gc
 import logging
 import sqlite3
 
@@ -85,9 +86,19 @@ def gui_universal_login(target_system: str | None = None):
     login = UniversalLoginWindow(target_system=target_system)
     login.mainloop()
 
+    # Snapshot the result, then release the destroyed Tk root while we are
+    # still on the main thread.  Tk widgets and command callbacks form Python
+    # reference cycles, so merely returning from this function can leave the
+    # login window's StringVar/BooleanVar instances for cyclic GC.  Sixth Form
+    # starts background services immediately after login; if one of those
+    # threads happens to run GC first, Variable.__del__ calls Tcl from that
+    # worker and can abort the process with Tcl_AsyncDelete.
+    result = None
     if login.user_info and login.system_key:
-        return login.user_info, login.system_key, login.system_role, login.auth
-    return None
+        result = (login.user_info, login.system_key, login.system_role, login.auth)
+    del login
+    gc.collect()
+    return result
 
 
 def cli_universal_login(target_system: str | None = None):

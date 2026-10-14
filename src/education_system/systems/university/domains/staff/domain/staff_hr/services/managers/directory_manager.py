@@ -48,6 +48,7 @@ class DirectoryManager:
             auth_conn = connect()
             try:
                 placeholders = ','.join('?' * len(pending))
+                # db-audit: ignore[DBW001] - join of placeholders
                 fetched = auth_conn.execute(
                     'SELECT username, display_name, email FROM users '
                     f'WHERE username IN ({placeholders})',  # nosec B608 - placeholders only

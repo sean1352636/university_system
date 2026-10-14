@@ -9,7 +9,8 @@ import json
 import csv
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from datetime import datetime
-from education_system.systems.university.interfaces.gui.shell.main._tk_callback_filter import install_clean_close as _install_clean_close
+from education_system.platform.delivery.gui.tk_callback_filter import install_clean_close as _install_clean_close
+from education_system.platform.delivery.gui.window_sizing import fit as _fit_window
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import get_db_connection, get_connection, transaction, foreign_keys_off
@@ -28,6 +29,7 @@ except ImportError:
     ACTIVITY_LOGGER_AVAILABLE = False
 
 from .widgets import _safe_set_combobox, _safe_entry_insert
+from .authorization import require_student_permission
 from .sync.auth import _purge_user_from_all_chat_rooms
 from education_system.systems.university.domains.academics.domain.services.admissions_selection import (
     purge_user_chat_on_cursor,
@@ -35,6 +37,8 @@ from education_system.systems.university.domains.academics.domain.services.admis
 
 def delete_student_dialog(self, student_id=None):
     """Comprehensive delete student dialog with safety checks"""
+    if not require_student_permission(self, "delete_any_student", "delete"):
+        return
     if not student_id:
         # Show selection dialog first
         student_id = self.select_student_for_deletion()
@@ -44,7 +48,7 @@ def delete_student_dialog(self, student_id=None):
     dialog = tk.Toplevel(self.root)
     _install_clean_close(dialog)
     dialog.title(_t("student.delete_student_title").replace("{student_id}", str(student_id)))
-    dialog.geometry("900x900")  # Made bigger
+    _fit_window(dialog, "900x900", minsize=(640, 480))
     dialog.transient(self.root)
 
     # CRITICAL FIX: Make dialog visible BEFORE grabbing
@@ -178,6 +182,9 @@ Registration Date: {student[10]}"""
                 # Start deletion process
                 status_label.config(text=_t("student.deleting_record"), foreground="blue")
                 dialog.update()
+
+                if not require_student_permission(self, "delete_any_student", "delete"):
+                    return
 
                 conn = get_db_connection()
                 if not conn:
@@ -316,7 +323,7 @@ Registration Date: {student[10]}"""
                         self.view_students()
                     self.refresh_advanced_search()
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 try:
                     if dialog.winfo_exists():
@@ -331,7 +338,7 @@ Registration Date: {student[10]}"""
                     try:
                         conn.rollback()
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
                 messagebox.showerror(_t("student.deletion_failed"), _t("student.failed_delete_student").replace("{error}", str(e)))
                 try:
                     status_label.config(text=_t("student.deletion_failed"), foreground="red")
@@ -356,53 +363,20 @@ Registration Date: {student[10]}"""
             if entered_id != str(student_id).strip():
                 status_label.config(text=_t("student.id_mismatch"))
                 return
-            conn = None
             try:
                 status_label.config(
                     text=f"Deactivating student {student_id} …",
                     foreground="blue")
                 dialog.update()
-                conn = get_db_connection()
-                if not conn:
-                    raise sqlite3.OperationalError(
-                        "Database connection failed during deactivation")
-                cur = conn.cursor()
-                cur.execute(
-                    "UPDATE students SET is_active = 0, "
-                    "status = 'Withdrawn' WHERE student_id = ?",
-                    (student_id,),
+                if not require_student_permission(self, "delete_any_student", "delete"):
+                    return
+                from education_system.systems.university.application.student_lifecycle_service import StudentLifecycleService
+                actor = str((getattr(self.auth, 'current_user', {}) or {}).get('id', 'unknown'))
+                StudentLifecycleService().deactivate(
+                    str(student_id), actor_id=actor,
+                    reason="Administrative deactivation from student records",
+                    idempotency_key=f"gui:student:{student_id}:deactivate",
                 )
-                if cur.rowcount == 0:
-                    raise Exception(
-                        f"No student with id {student_id} — already removed?")
-                # Also flip the auth-side row so the student can no
-                # longer sign in. Best-effort.
-                try:
-                    cur.execute(
-                        "UPDATE users SET is_active = 0 "
-                        "WHERE username = ?",
-                        (str(student_id),),
-                    )
-                except Exception as e:
-                    logger.debug("Auth deactivate skipped: %s", e)
-                # Drop the withdrawn student out of their module chat rooms so
-                # they no longer appear in active class chats. Keep their
-                # messages (chat history) since deactivation is reversible.
-                try:
-                    urow = cur.execute(
-                        "SELECT id FROM users WHERE username = ?",
-                        (str(student_id),)).fetchone()
-                    if urow:
-                        removed, _ = purge_user_chat_on_cursor(
-                            cur, urow[0], delete_messages=False)
-                        if removed:
-                            logger.info(
-                                "Removed withdrawn student %s from %d chat "
-                                "room(s)", student_id, removed)
-                except Exception as e:
-                    logger.debug(
-                        "Chat membership removal on deactivate skipped: %s", e)
-                conn.commit()
                 if ACTIVITY_LOGGER_AVAILABLE:
                     try:
                         log_activity(
@@ -411,7 +385,7 @@ Registration Date: {student[10]}"""
                                               'current_user', {}).get('user_id'),
                             details={'student_id': student_id})
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
                 messagebox.showinfo(
                     _t('gui.learners.students.student_crud_gui.delete.dialogs.student_deactivated', default="Student deactivated"),
                     f"Student {student_id} has been marked Withdrawn "
@@ -425,7 +399,7 @@ Registration Date: {student[10]}"""
                         self.view_students()
                     self.refresh_advanced_search()
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
                 try:
                     if dialog.winfo_exists():
                         dialog.destroy()
@@ -441,12 +415,16 @@ Registration Date: {student[10]}"""
                         foreground="red")
                 except tk.TclError:
                     pass
-            finally:
-                if conn:
-                    try:
-                        conn.close()
-                    except Exception:
-                        pass
+
+        def explain_controlled_purge():
+            messagebox.showinfo(
+                "Controlled purge required",
+                "Permanent erasure is only available through the Information "
+                "Governance purge workflow. It requires a case reference, "
+                "reauthentication, an independent approver, a legal-hold check, "
+                "and an impact preview.",
+                parent=dialog,
+            )
 
         # Buttons. Deactivate (soft-delete) is the default and
         # safest action — keeps history, reversible. Permanent
@@ -461,8 +439,8 @@ Registration Date: {student[10]}"""
                     style="Accent.TButton").pack(side=tk.LEFT,
                                                     padx=(0, 10))
         ttk.Button(button_frame,
-                    text=_t('gui.learners.students.student_crud_gui.delete.buttons.delete_permanently', default="Delete permanently"),
-                    command=perform_deletion).pack(
+                    text="Request controlled purge",
+                    command=explain_controlled_purge).pack(
             side=tk.LEFT, padx=(0, 10))
         ttk.Button(button_frame, text=_t("common.cancel"),
                     command=dialog.destroy).pack(side=tk.LEFT)
@@ -488,7 +466,7 @@ def select_student_for_deletion(self):
     selection_dialog = tk.Toplevel(self.root)
     _install_clean_close(selection_dialog)
     selection_dialog.title(_t("student.select_student_delete"))
-    selection_dialog.geometry("1000x700")  # Made bigger
+    _fit_window(selection_dialog, "1000x700", minsize=(640, 480))
     selection_dialog.transient(self.root)
     selection_dialog.grab_set()
 

@@ -3,7 +3,9 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 import os
 import shutil
 import threading
@@ -658,7 +660,7 @@ class AnalyticsManager:
                 return
 
             # Create view window
-            view_window = tk.Toplevel(self.root)
+            view_window = make_toplevel(self.root)
             view_window.title(f"{report_title} - Preview")
             view_window.geometry("1000x700")
 

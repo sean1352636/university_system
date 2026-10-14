@@ -329,6 +329,7 @@ def _migrate_drop_payments_old_fks(cursor):
     ]
     for table, create_sql, cols in targets:
         try:
+            # db-audit: ignore[DBW001] - literal collection
             fks = cursor.execute(
                 f"PRAGMA foreign_key_list({table})").fetchall()
         except Exception:
@@ -337,6 +338,7 @@ def _migrate_drop_payments_old_fks(cursor):
             continue
         cursor.execute("PRAGMA foreign_keys = OFF")
         try:
+            # db-audit: ignore[DBW001] - literal collection
             cursor.execute(f"ALTER TABLE {table} RENAME TO {table}_migr_old")
             cursor.execute(create_sql)
             col_list = ", ".join(cols)
@@ -344,6 +346,7 @@ def _migrate_drop_payments_old_fks(cursor):
                 f"INSERT INTO {table} ({col_list}) "
                 f"SELECT {col_list} FROM {table}_migr_old"
             )
+            # db-audit: ignore[DBW001] - literal collection
             cursor.execute(f"DROP TABLE {table}_migr_old")
         finally:
             cursor.execute("PRAGMA foreign_keys = ON")
@@ -1128,7 +1131,7 @@ def display_enhanced_finance_menu():
 
     while True:
         print("\n" + "=" * 100)
-        print(get_text("finance.core.title", default="ENHANCED FINANCE MANAGEMENT SYSTEM"))
+        print(get_text("finance.core.title", default="===== CORE ====="))
         print("=" * 100)
 
         # Core Finance Operations

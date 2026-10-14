@@ -1,8 +1,231 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import common as _common
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common import (
-    sqlite3, datetime, get_text, get_connection, generate_id,
+    sqlite3, datetime, get_text, housing_text, get_connection, generate_id,
     log_create, log_read, log_update,
 )
+
+
+# An application in one of these states is still "open": the student is
+# waiting on us, so a second application would compete with it rather than
+# sit alongside it. 'Approved' is deliberately absent — a student with an
+# approved application has a room and an assignment behind it, which the
+# existing active-housing check handles.
+OPEN_APPLICATION_STATUSES = ('Pending', 'Under Review', 'More Info Needed', 'Waiting List')
+
+# Typing any of these at a prompt backs out to the menu instead of answering.
+_CANCEL_TOKENS = ('q', 'quit', 'cancel', 'menu', 'back', 'exit')
+
+
+def _cancel_hint():
+    return get_text("housing.common.cancel_hint",
+                    default="or 'q' to return to the menu")
+
+
+def prompt_required(label, validate=None):
+    """Ask for a value until we get a usable one, or the user backs out.
+
+    A blank answer is never accepted silently: it prints an error and asks
+    the same question again. Returns the value, or ``None`` when the user
+    asked to go back to the menu — callers treat ``None`` as "return".
+
+    *validate* is an optional ``value -> (ok, cleaned_or_error)`` callable.
+    """
+    while True:
+        raw = input(f"{label} ({_cancel_hint()}): ").strip()
+
+        if raw.lower() in _CANCEL_TOKENS:
+            return None
+
+        if not raw:
+            print(housing_text("housing.common.error_field_blank",
+                           default="This field cannot be left blank. Please try again.",
+                           field=label))
+            continue
+
+        if validate is None:
+            return raw
+
+        ok, result = validate(raw)
+        if ok:
+            return result
+        print(result)
+
+
+def prompt_choice(label, options, allow_zero_label=None):
+    """Numbered menu prompt with the same blank/cancel handling.
+
+    *options* is a list of display strings. Returns the zero-based index,
+    ``-1`` when *allow_zero_label* is offered and chosen, or ``None`` when
+    the user backs out. The whole menu is reprinted after a bad answer, so
+    the operator can always see what the valid options were.
+    """
+    low = 0 if allow_zero_label else 1
+
+    while True:
+        print("\n" + label + ":")
+        print("=" * max(len(label) + 1, 16))
+        if allow_zero_label:
+            print(f"0. {allow_zero_label}")
+        for i, option in enumerate(options, 1):
+            print(f"{i}. {option}")
+
+        raw = input(f"{get_text('housing.common.select_prompt', default='Select: ')} ({_cancel_hint()}): ").strip()
+
+        if raw.lower() in _CANCEL_TOKENS:
+            return None
+
+        if not raw:
+            print(housing_text("housing.common.error_field_blank",
+                           default="This field cannot be left blank. Please try again.",
+                           field=label))
+            continue
+
+        try:
+            value = int(raw)
+        except ValueError:
+            print(get_text("housing.common.error_valid_number"))
+            continue
+
+        if low <= value <= len(options):
+            return value - 1
+        print(get_text("housing.common.error_range", min=low, max=len(options)))
+
+
+def _validate_date(raw):
+    try:
+        datetime.datetime.strptime(raw, '%Y-%m-%d')
+        return True, raw
+    except ValueError:
+        return False, get_text("housing.application.invalid_date_format")
+
+
+def _validate_positive_int(raw):
+    try:
+        value = int(raw)
+    except ValueError:
+        return False, get_text("housing.common.error_valid_number")
+    if value <= 0:
+        return False, get_text("housing.application.error_duration_positive")
+    return True, value
+
+
+def _student_contact(cursor, student_id):
+    """(name, email) for a student, both possibly empty."""
+    cursor.execute('''
+    SELECT first_name, last_name, email_address FROM students WHERE student_id = ?
+    ''', (student_id,))
+    row = cursor.fetchone()
+    if not row:
+        return '', ''
+    return f"{row[0] or ''} {row[1] or ''}".strip(), (row[2] or '')
+
+
+def find_open_applications(cursor, student_id):
+    """Every still-open application for *student_id*, newest first."""
+    placeholders = ','.join('?' * len(OPEN_APPLICATION_STATUSES))
+    cursor.execute('''
+    SELECT application_id, application_date, status, preferred_room_type,
+           requested_move_in_date, requested_duration_months
+    FROM housing_applications
+    WHERE student_id = ? AND status IN ({statuses})
+    ORDER BY application_date DESC
+    '''.format(statuses=placeholders), [student_id] + list(OPEN_APPLICATION_STATUSES))
+    return [
+        {
+            'application_id': row[0],
+            'application_date': row[1],
+            'status': row[2],
+            'room_type': row[3],
+            'move_in_date': row[4],
+            'duration_months': row[5],
+        }
+        for row in cursor.fetchall()
+    ]
+
+
+def send_outcome_notification(application_id):
+    """Email the student the outcome now recorded against *application_id*.
+
+    Re-reads the application on its own connection, so it is safe to call
+    only *after* the processing transaction has committed — which is the
+    point: the student must never be told about a decision that rolled
+    back. When a room was assigned, its building, number and floor are
+    included. Returns True if the email went out.
+    """
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+        SELECT a.application_id, a.student_id, s.first_name, s.last_name, s.email_address,
+               a.application_date, b.building_name, a.preferred_room_type,
+               a.requested_move_in_date, a.requested_duration_months,
+               a.special_requirements, a.status, a.notes, a.reviewed_by, a.review_date
+        FROM housing_applications a
+        JOIN students s ON a.student_id = s.student_id
+        LEFT JOIN housing_buildings b ON a.preferred_building_id = b.building_id
+        WHERE a.application_id = ?
+        ''', (application_id,))
+        row = cursor.fetchone()
+        if not row:
+            conn.close()
+            return False
+
+        payload = {
+            'application_id': row[0],
+            'student_id': row[1],
+            'student_name': f"{row[2] or ''} {row[3] or ''}".strip(),
+            'email_address': row[4],
+            'application_date': row[5],
+            'preferred_building': row[6],
+            'room_type': row[7],
+            'move_in_date': row[8],
+            'duration_months': row[9],
+            'special_requirements': row[10],
+            'status': row[11],
+            'notes': row[12],
+            'reviewed_by': row[13],
+            'review_date': row[14],
+        }
+
+        cursor.execute('''
+        SELECT b.building_name, r.room_number, r.floor_number, r.room_type,
+               a.monthly_rent, a.move_in_date, a.planned_move_out_date, a.contract_number
+        FROM housing_assignments a
+        JOIN housing_rooms r ON a.room_id = r.room_id
+        JOIN housing_buildings b ON r.building_id = b.building_id
+        WHERE a.application_id = ?
+        ORDER BY a.created_at DESC
+        ''', (application_id,))
+        assignment = cursor.fetchone()
+        if assignment:
+            payload['assignment_details'] = _common.format_assignment_details(*assignment)
+
+        conn.close()
+        return _common.send_application_outcome_email(payload)
+    except Exception as exc:
+        # The decision is already committed; failing to email must not undo
+        # it or crash the operator out of the menu.
+        print(get_text("housing.application.email_failed",
+                       default="Note: the outcome email could not be sent."))
+        return False
+
+
+def supersede_applications(cursor, applications, actor, timestamp=None):
+    """Withdraw *applications* because a replacement is being submitted."""
+    timestamp = timestamp or datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    for row in applications:
+        cursor.execute('''
+        UPDATE housing_applications
+        SET status = 'Superseded',
+            notes = COALESCE(notes || ' | ', '') || ?,
+            reviewed_by = ?, review_date = ?, updated_at = ?
+        WHERE application_id = ?
+        ''', ('Replaced by a newer application submitted by the student.',
+              actor, timestamp, timestamp, row['application_id']))
 
 
 # Housing Application Functions
@@ -62,19 +285,40 @@ def create_application():
         conn = get_connection()
         cursor = conn.cursor()
 
-        # Check if student already has an active application
-        cursor.execute('''
-        SELECT application_id FROM housing_applications
-        WHERE student_id = ? AND status IN ('Pending', 'Under Review')
-        ''', (student_id,))
+        # One open application per student. If any already exist, the operator
+        # decides: keep what is there, or replace it with what they are about
+        # to enter. Nothing is withdrawn until the new application is actually
+        # written, so answering "no" — or backing out later — leaves the
+        # existing application exactly as it was.
+        existing_applications = find_open_applications(cursor, student_id)
+        overriding = False
 
-        existing_application = cursor.fetchone()
+        if existing_applications:
+            print("\n" + housing_text(
+                "housing.application.already_open",
+                default="{count} open application(s) already exist for {student}:",
+                count=len(existing_applications), student=student_id,
+            ))
+            for row in existing_applications:
+                print(f"  - {row['application_id']} ({row['status']}), "
+                      f"submitted {row['application_date']}, "
+                      f"{row['room_type']} from {row['move_in_date']} "
+                      f"for {row['duration_months']} month(s)")
 
-        if existing_application:
-            print("\n" + get_text("housing.application.already_active", id=existing_application[0]))
-            print(get_text("housing.application.update_or_cancel"))
-            conn.close()
-            return
+            answer = input("\n" + get_text(
+                "housing.application.override_prompt",
+                default="Replace the existing application with a new one?",
+            ) + " (y/n): ").strip().lower()
+
+            if answer != 'y':
+                print(get_text(
+                    "housing.application.override_declined",
+                    default="Keeping the existing application. Nothing has been changed.",
+                ))
+                conn.close()
+                return
+
+            overriding = True
 
         # Check if student already has active housing
         cursor.execute('''
@@ -103,72 +347,63 @@ def create_application():
             conn.close()
             return
 
-        print("\n" + get_text("housing.application.select_preferred_building") + ":")
-        print("=" * 25)
-        print("0. " + get_text("housing.application.no_preference"))
+        # Every prompt below rejects a blank answer with an error and asks
+        # again; 'q' at any of them abandons the whole application and goes
+        # back to the menu without writing anything.
+        index = prompt_choice(
+            get_text("housing.application.select_preferred_building"),
+            [bname for _bid, bname in buildings],
+            allow_zero_label=get_text("housing.application.no_preference"),
+        )
+        if index is None:
+            print(housing_text("housing.common.operation_cancelled", default="Operation cancelled."))
+            conn.close()
+            return
+        preferred_building_id = None if index == -1 else buildings[index][0]
+        preferred_building_name = (get_text("housing.application.no_preference")
+                                   if index == -1 else buildings[index][1])
 
-        for i, (bid, bname) in enumerate(buildings, 1):
-            print(f"{i}. {bname}")
-
-        while True:
-            try:
-                choice = int(input("\n" + get_text("housing.common.select_prompt") + " "))
-                if choice == 0:
-                    preferred_building_id = None
-                    break
-                elif 1 <= choice <= len(buildings):
-                    preferred_building_id = buildings[choice - 1][0]
-                    break
-                else:
-                    print(get_text("housing.common.error_range", min=0, max=len(buildings)))
-            except ValueError:
-                print(get_text("housing.common.error_valid_number"))
-
-        print("\n" + get_text("housing.application.select_room_type") + ":")
-        print("=" * 16)
         room_types = ["Single", "Double", "Triple", "Suite", "Studio", "Apartment"]
+        index = prompt_choice(
+            get_text("housing.application.select_room_type"),
+            [get_text('housing.room.type_' + rt.lower()) for rt in room_types],
+        )
+        if index is None:
+            print(housing_text("housing.common.operation_cancelled", default="Operation cancelled."))
+            conn.close()
+            return
+        preferred_room_type = room_types[index]
 
-        for i, room_type in enumerate(room_types, 1):
-            print(f"{i}. {get_text('housing.room.type_' + room_type.lower())}")
+        move_in_date = prompt_required(
+            get_text("housing.application.move_in_date_prompt"), _validate_date)
+        if move_in_date is None:
+            print(housing_text("housing.common.operation_cancelled", default="Operation cancelled."))
+            conn.close()
+            return
 
-        while True:
-            try:
-                choice = int(input("\n" + get_text("housing.common.select_prompt") + " "))
-                if 1 <= choice <= len(room_types):
-                    preferred_room_type = room_types[choice - 1]
-                    break
-                else:
-                    print(get_text("housing.common.error_range", min=1, max=len(room_types)))
-            except ValueError:
-                print(get_text("housing.common.error_valid_number"))
+        duration = prompt_required(
+            get_text("housing.application.duration_prompt"), _validate_positive_int)
+        if duration is None:
+            print(housing_text("housing.common.operation_cancelled", default="Operation cancelled."))
+            conn.close()
+            return
 
-        # Get preferred move-in date
-        while True:
-            move_in_date = input(get_text("housing.application.move_in_date_prompt") + ": ")
-            try:
-                # Validate date format
-                datetime.datetime.strptime(move_in_date, '%Y-%m-%d')
-                break
-            except ValueError:
-                print(get_text("housing.application.invalid_date_format"))
-
-        # Get duration
-        while True:
-            try:
-                duration = int(input(get_text("housing.application.duration_prompt") + ": "))
-                if duration <= 0:
-                    print(get_text("housing.application.error_duration_positive"))
-                    continue
-                break
-            except ValueError:
-                print(get_text("housing.common.error_valid_number"))
-
-        # Get special requirements
-        special_requirements = input(get_text("housing.application.special_requirements_prompt") + ": ").strip() or None
+        # The only genuinely optional field, so blank is a real answer here
+        # rather than an error.
+        special_requirements = input(
+            get_text("housing.application.special_requirements_prompt")
+            + " (" + get_text("housing.common.optional", default="optional") + "): "
+        ).strip() or None
 
         # Create application
         application_id = generate_id('APP')
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        actor = auth.current_user.get('username') if auth.current_user else 'housing'
+
+        # Withdraw the old application(s) in the same transaction as the new
+        # one, so the student is never left with none at all.
+        if overriding:
+            supersede_applications(cursor, existing_applications, actor, timestamp)
 
         cursor.execute('''
         INSERT INTO housing_applications (
@@ -181,15 +416,57 @@ def create_application():
             move_in_date, duration, special_requirements, 'Pending', timestamp, timestamp
         ))
 
+        student_name, student_email = _student_contact(cursor, student_id)
+
         conn.commit()
-        print("\n" + get_text("housing.application.create_success", id=application_id))
+
+        if overriding:
+            print("\n" + housing_text(
+                "housing.application.override_success",
+                default="Application {id} submitted, replacing {count} previous application(s).",
+                id=application_id, count=len(existing_applications),
+            ))
+        else:
+            print("\n" + get_text("housing.application.create_success", id=application_id))
+
+        # Email the student through the university email system, after the
+        # commit so we never promise something that was rolled back.
+        email_payload = {
+            'application_id': application_id,
+            'student_id': student_id,
+            'student_name': student_name,
+            'email_address': student_email,
+            'submission_date': timestamp,
+            'submitted_by': actor,
+            'preferred_building': preferred_building_name,
+            'room_type': preferred_room_type,
+            'move_in_date': move_in_date,
+            'duration_months': duration,
+            'special_requirements': special_requirements,
+            'status': 'Pending',
+        }
+        if overriding:
+            emailed = _common.send_application_overwritten_email(
+                email_payload, existing_applications)
+        else:
+            emailed = _common.send_application_submitted_email(email_payload)
+
+        if emailed:
+            print(housing_text("housing.application.email_sent",
+                           default="A confirmation email has been sent to {email}.",
+                           email=student_email))
+        else:
+            print(get_text("housing.application.email_failed",
+                           default="Note: the confirmation email could not be sent."))
 
         # If staff/admin is creating, ask if they want to approve immediately
         if auth.check_permission('approve_accommodations'):
             approve_now = input("\n" + get_text("housing.application.approve_now_prompt") + " (y/n): ").lower() == 'y'
 
             if approve_now:
+                conn.close()
                 process_application(application_id)
+                return
 
         conn.close()
 
@@ -358,7 +635,7 @@ def process_application(application_id=None):
         print(f"{get_text('housing.application.room_type_label')}: {application[7]}")
         print(f"{get_text('housing.application.move_in_label')}: {application[8]}")
         print(f"{get_text('housing.application.duration_label')}: {application[9]} {get_text('housing.application.months')}")
-        print(f"{get_text('housing.application.requirements_label')}: {application[10] or get_text('housing.common.none')}")
+        print(f"{get_text('housing.application.requirements_label')}: {application[10] or get_text('housing.common.none', default='None')}")
 
         # Ask for decision
         print("\n" + get_text("housing.application.process_title") + ":")
@@ -366,17 +643,18 @@ def process_application(application_id=None):
         print("2. " + get_text("housing.application.reject_action"))
         print("3. " + get_text("housing.application.waitlist_action"))
         print("4. " + get_text("housing.application.request_info_action"))
-        print("5. " + get_text("housing.common.cancel"))
+        print("5. " + get_text("housing.common.cancel", default="Cancel"))
 
         decision = input("\n" + get_text("housing.application.enter_decision") + ": ")
 
         if decision == '5':
-            print(get_text("housing.common.operation_cancelled"))
+            print(housing_text("housing.common.operation_cancelled", default="Operation cancelled."))
             conn.close()
             return
 
         notes = input(get_text("housing.application.notes_prompt") + ": ").strip() or None
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        pending_rent_charge = None
 
         if decision == '1':
             # Approve application
@@ -433,6 +711,7 @@ def process_application(application_id=None):
                         conn.commit()
                         print(get_text("housing.application.waitlisted_success"))
                         conn.close()
+                        send_outcome_notification(application_id)
                         return
 
                     print("\n" + get_text("housing.application.available_room_types") + ":")
@@ -441,7 +720,7 @@ def process_application(application_id=None):
 
                     while True:
                         try:
-                            type_choice = int(input("\n" + get_text("housing.common.select_prompt") + " "))
+                            type_choice = int(input("\n" + get_text("housing.common.select_prompt", default="Select: ") + " "))
                             if 1 <= type_choice <= len(available_types):
                                 alt_room_type = available_types[type_choice - 1][0]
                                 break
@@ -478,6 +757,7 @@ def process_application(application_id=None):
                         conn.commit()
                         print(get_text("housing.application.waitlisted_success"))
                         conn.close()
+                        send_outcome_notification(application_id)
                         return
 
                 elif alt_choice == '2':
@@ -490,10 +770,11 @@ def process_application(application_id=None):
                     conn.commit()
                     print(get_text("housing.application.waitlisted_success"))
                     conn.close()
+                    send_outcome_notification(application_id)
                     return
 
                 else:
-                    print(get_text("housing.common.operation_cancelled"))
+                    print(housing_text("housing.common.operation_cancelled", default="Operation cancelled."))
                     conn.close()
                     return
 
@@ -506,7 +787,7 @@ def process_application(application_id=None):
                 cursor.execute('SELECT building_name FROM housing_buildings WHERE building_id = ?', (building_id,))
                 building_name = cursor.fetchone()[0]
 
-                print(f"{i}. {get_text('housing.building.name_label')}: {building_name}, {get_text('housing.room.number_label')}: {room[2]}, {get_text('housing.room.floor_label')}: {room[3]}, {get_text('housing.room.type_label')}: {room[4]}, {get_text('housing.room.rent_label')}: £{room[5]}/{get_text('housing.common.month')}")
+                print(f"{i}. {get_text('housing.building.name_label')}: {building_name}, {get_text('housing.room.number_label')}: {room[2]}, {get_text('housing.room.floor_label')}: {room[3]}, {get_text('housing.room.type_label')}: {room[4]}, {get_text('housing.room.rent_label')}: £{room[5]}/{get_text('housing.common.month', default='Month')}")
 
             while True:
                 try:
@@ -547,7 +828,7 @@ def process_application(application_id=None):
                     conn.close()
                     return
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             assignment_id = generate_id('ASG')
             contract_number = generate_id('CNT')
@@ -576,25 +857,28 @@ def process_application(application_id=None):
             WHERE building_id = ?
             ''', (timestamp, selected_room[1]))
 
-            # Cross-domain: post the first month's rent through finance_bus
-            # so the Finance GUI's account view, holds and bus events all
-            # reflect the new tenancy.
-            try:
-                from education_system.systems.university.services.bus import (
-                    housing_finance,
-                )
-                housing_finance.post_rent_charge(
-                    application[1], assignment_id, monthly_rent,
-                    period_start=move_in_date,
-                    period_end=(datetime.datetime.strptime(move_in_date,
-                                                            '%Y-%m-%d')
-                                + datetime.timedelta(days=30)
-                                ).strftime('%Y-%m-%d'),
-                    processed_by=auth.current_user.get('username')
-                                 if auth and auth.current_user else None,
-                )
-            except Exception as _hf_exc:
-                pass
+            # Cross-domain: post the first month's rent through finance_bus so
+            # the Finance GUI's account view, holds and bus events all reflect
+            # the new tenancy.
+            #
+            # This is deliberately *deferred* until after this connection has
+            # committed and closed. finance_bus opens its own connection to the
+            # same SQLite file; called from here it would try to write while
+            # the housing INSERT/UPDATEs above still hold a RESERVED lock, and
+            # the second writer would sit out its busy-timeout and fail with
+            # "database is locked" — which is exactly what
+            #   raise_charge(S12345, 770.0) failed: database is locked
+            # was. One writer at a time, so it goes after the commit.
+            pending_rent_charge = {
+                'student_id': application[1],
+                'assignment_id': assignment_id,
+                'amount': monthly_rent,
+                'period_start': move_in_date,
+                'period_end': (datetime.datetime.strptime(move_in_date, '%Y-%m-%d')
+                               + datetime.timedelta(days=30)).strftime('%Y-%m-%d'),
+                'processed_by': (auth.current_user.get('username')
+                                 if auth and auth.current_user else None),
+            }
 
         elif decision == '2':
             # Reject application
@@ -635,12 +919,36 @@ def process_application(application_id=None):
             print("=" * 17)
             print(f"{get_text('housing.assignment.id_label')}: {assignment[0]}")
             print(f"{get_text('housing.assignment.contract_label')}: {assignment[1]}")
-            print(f"{get_text('housing.room.number_label')}: {assignment[2]} {get_text('housing.common.in')} {assignment[3]}")
+            print(f"{get_text('housing.room.number_label')}: {assignment[2]} {get_text('housing.common.in', default='In')} {assignment[3]}")
             print(f"{get_text('housing.assignment.move_in_label')}: {assignment[4]}")
             print(f"{get_text('housing.assignment.move_out_label')}: {assignment[5]}")
             print(f"{get_text('housing.assignment.rent_label')}: £{assignment[6]}")
 
         conn.close()
+
+        # Everything below runs with no housing connection open, so the
+        # second writer (finance_bus) and the email system each get the
+        # database to themselves.
+        if pending_rent_charge:
+            try:
+                from education_system.systems.university.services.bus import (
+                    housing_finance,
+                )
+                housing_finance.post_rent_charge(
+                    pending_rent_charge['student_id'],
+                    pending_rent_charge['assignment_id'],
+                    pending_rent_charge['amount'],
+                    period_start=pending_rent_charge['period_start'],
+                    period_end=pending_rent_charge['period_end'],
+                    processed_by=pending_rent_charge['processed_by'],
+                )
+            except Exception:
+                logger.debug("Suppressed exception", exc_info=True)
+
+        # Tell the student the outcome, whatever it was.
+        if send_outcome_notification(application_id):
+            print(get_text("housing.application.outcome_email_sent",
+                           default="An email about this decision has been sent to the student."))
 
     except sqlite3.Error as e:
         print(get_text("housing.common.database_error", error=str(e)))
@@ -769,7 +1077,7 @@ def view_application():
                 }
 
                 if status_choice not in status_map:
-                    print(get_text("housing.common.invalid_choice"))
+                    print(get_text("housing.common.invalid_choice", default="Invalid Choice."))
                     conn.close()
                     return
 
@@ -799,7 +1107,7 @@ def view_application():
                 ''', (student_id,))
 
             else:
-                print(get_text("housing.common.invalid_choice"))
+                print(get_text("housing.common.invalid_choice", default="Invalid Choice."))
                 conn.close()
                 return
 
@@ -861,7 +1169,7 @@ def view_application():
         print(f"{get_text('housing.application.room_type_label')}: {application[8]}")
         print(f"{get_text('housing.application.move_in_label')}: {application[9]}")
         print(f"{get_text('housing.application.duration_label')}: {application[10]} {get_text('housing.application.months')}")
-        print(f"{get_text('housing.application.requirements_label')}: {application[11] or get_text('housing.common.none')}")
+        print(f"{get_text('housing.application.requirements_label')}: {application[11] or get_text('housing.common.none', default='None')}")
         print(f"{get_text('housing.application.status_label')}: {application[12]}")
         if application[13]:
             print(f"{get_text('housing.application.notes_label')}: {application[13]}")
@@ -888,7 +1196,7 @@ def view_application():
             print("=" * 28)
             print(f"{get_text('housing.assignment.id_label')}: {assignment[0]}")
             print(f"{get_text('housing.assignment.contract_label')}: {assignment[9]}")
-            print(f"{get_text('housing.room.number_label')}: {assignment[2]} {get_text('housing.common.in')} {assignment[3]}")
+            print(f"{get_text('housing.room.number_label')}: {assignment[2]} {get_text('housing.common.in', default='In')} {assignment[3]}")
             print(f"{get_text('housing.assignment.move_in_label')}: {assignment[4]}")
             print(f"{get_text('housing.assignment.move_out_label')}: {assignment[5]}")
             if assignment[6]:

@@ -1,10 +1,11 @@
-"""Small reusable Tkinter helpers for POS panels."""
-from .context import tk, ttk
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.interfaces.gui.bakery_shop.pos.widgets`` (campus commerce plugin).
 
-def clear_tree(tree):
-    tree.delete(*tree.get_children())
+The old name *is* the new module object, so ``mock.patch`` and
+``monkeypatch`` targets still act on the real code. Delete once nothing
+imports the old path.
+"""
+# layout-shim: education_system.systems.university.plugins.campus_commerce.interfaces.gui.bakery_shop.pos.widgets
+import importlib as _importlib
+import sys as _sys
 
-def button_row(parent, **kwargs):
-    frame = tk.Frame(parent, **kwargs)
-    frame.pack(fill="x")
-    return frame
+_sys.modules[__name__] = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.interfaces.gui.bakery_shop.pos.widgets")

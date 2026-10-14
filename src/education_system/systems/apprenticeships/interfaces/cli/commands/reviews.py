@@ -31,7 +31,8 @@ _REVIEW_COLUMNS = (
 )
 
 _TARGET_COLUMNS = (
-    ("Due", 12), ("Target", 46), ("KSBs", 14), ("Status", 16), ("Outcome", 26),
+    ("Due", 12), ("Target", 38), ("Owner", 10), ("Pri", 6), ("KSBs", 12), ("Status", 16),
+    ("Outcome", 22),
 )
 
 _FEEDBACK_COLUMNS = (
@@ -438,7 +439,7 @@ def _target_table(rows: list) -> None:
     prompts.table(
         _TARGET_COLUMNS,
         rows,
-        lambda t: (t.due_date, t.description, t.ksb_codes,
+        lambda t: (t.due_date, t.description, t.owner, t.priority, t.ksb_codes,
                    f"{t.status}{' (overdue)' if t.is_overdue else ''}", t.outcome_note),
         noun="target",
         empty="no targets set",
@@ -483,6 +484,14 @@ def _target_payload(target) -> dict[str, object]:
         ),
         "ksb_codes": prompts.ask(
             "KSBs it works towards", default=(target.ksb_codes if target else "") or ""
+        ),
+        "owner": prompts.choose_value(
+            "Owner (who has to do it)", config.ACTION_OWNERS,
+            default=target.owner if target else config.ACTION_DEFAULT_OWNER,
+        ),
+        "priority": prompts.choose_value(
+            "Priority", config.ACTION_PRIORITIES,
+            default=target.priority if target else config.ACTION_DEFAULT_PRIORITY,
         ),
     }
 

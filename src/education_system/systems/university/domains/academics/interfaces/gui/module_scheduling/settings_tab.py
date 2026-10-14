@@ -1,5 +1,10 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
+from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling.misc import _ms_scrollable
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection, transaction  # injected
 from education_system.systems.university.infrastructure.exceptions import (
     CourseNotFoundError,
@@ -34,7 +39,8 @@ except ImportError:
     show_gui_language_selector = lambda parent=None: "en"
 
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling._dialogs import messagebox
 from tkinter.font import Font
 import os
 import sys
@@ -65,48 +71,76 @@ except ImportError:
 
 from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling.main_gui import ModuleSchedulingGUI
 from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling.dialogs import AddHolidayDialog
+import tkinter.simpledialog  # noqa: F401 - registers tk.simpledialog
 
 def create_settings_tab(self):
     """Create the settings tab"""
-    settings_frame = ttk.Frame(self.notebook)
-    self.notebook.add(settings_frame, text=_t("scheduling.tabs.settings"))
+    _page = ttk.Frame(self.notebook)
+    self.notebook.add(_page, text=_t("scheduling.tabs.settings"))
+    # The sections below stack taller than the window, so the page
+    # scrolls; without this the bottom of the tab was cut off with
+    # no way to reach it.
+    settings_frame = _ms_scrollable(_page)
 
     # System settings
     system_frame = ttk.LabelFrame(settings_frame, text=_t("scheduling.system_settings"), padding=15)
     system_frame.pack(fill=tk.X, padx=20, pady=10)
 
     # Institution name
+    # Institution name and semester dates are shown here but owned
+    # elsewhere — Branding & Customization and the academic calendar
+    # respectively. They were editable, and saving wrote a scheduler-local
+    # override that then silently disagreed with the rest of the system.
     ttk.Label(system_frame, text=_t("scheduling.institution_name") + ":").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
     self.institution_var = tk.StringVar()
-    ttk.Entry(system_frame, textvariable=self.institution_var, width=30).grid(row=0, column=1, padx=5, pady=5)
+    ttk.Entry(system_frame, textvariable=self.institution_var, width=30,
+              state="readonly").grid(row=0, column=1, padx=5, pady=5)
+    ttk.Label(system_frame, text=_t("scheduling.set_in_branding",
+                                    default="Set in Branding & Customization"),
+              foreground="#6b7280").grid(row=0, column=2, sticky=tk.W, padx=5)
 
     # Semester dates
     ttk.Label(system_frame, text=_t("scheduling.semester_start") + ":").grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
     self.semester_start_var = tk.StringVar()
-    ttk.Entry(system_frame, textvariable=self.semester_start_var, width=30).grid(row=1, column=1, padx=5, pady=5)
+    ttk.Entry(system_frame, textvariable=self.semester_start_var, width=30,
+              state="readonly").grid(row=1, column=1, padx=5, pady=5)
+    ttk.Label(system_frame, text=_t("scheduling.set_in_calendar",
+                                    default="Set in the academic calendar"),
+              foreground="#6b7280").grid(row=1, column=2, sticky=tk.W, padx=5)
 
     ttk.Label(system_frame, text=_t("scheduling.semester_end") + ":").grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
     self.semester_end_var = tk.StringVar()
-    ttk.Entry(system_frame, textvariable=self.semester_end_var, width=30).grid(row=2, column=1, padx=5, pady=5)
+    ttk.Entry(system_frame, textvariable=self.semester_end_var, width=30,
+              state="readonly").grid(row=2, column=1, padx=5, pady=5)
+    ttk.Label(system_frame, text=_t("scheduling.set_in_calendar",
+                                    default="Set in the academic calendar"),
+              foreground="#6b7280").grid(row=2, column=2, sticky=tk.W, padx=5)
+
+    ttk.Label(system_frame,
+              text="Institution name comes from branding; semester dates from "
+                   "the academic calendar. Editing here overrides them.",
+              foreground="#7f8c8d", wraplength=520,
+              justify=tk.LEFT).grid(row=3, column=0, columnspan=2,
+                                    sticky=tk.W, padx=5, pady=(0, 6))
 
     # Default session duration
-    ttk.Label(system_frame, text=_t("scheduling.session_duration") + ":").grid(row=3, column=0, sticky=tk.W, padx=5, pady=5)
+    ttk.Label(system_frame, text=_t("scheduling.session_duration") + ":").grid(row=4, column=0, sticky=tk.W, padx=5, pady=5)
     self.session_duration_var = tk.StringVar()
-    ttk.Entry(system_frame, textvariable=self.session_duration_var, width=30).grid(row=3, column=1, padx=5, pady=5)
+    ttk.Entry(system_frame, textvariable=self.session_duration_var, width=30).grid(row=4, column=1, padx=5, pady=5)
 
     # Email notifications
     self.email_notifications_var = tk.BooleanVar()
     ttk.Checkbutton(system_frame, text=_t("scheduling.enable_email_notifications"),
-                   variable=self.email_notifications_var).grid(row=4, column=0, columnspan=2, sticky=tk.W, padx=5, pady=5)
+                   variable=self.email_notifications_var).grid(row=5, column=0, columnspan=2, sticky=tk.W, padx=5, pady=5)
 
     # Auto backup
     self.auto_backup_var = tk.BooleanVar()
     ttk.Checkbutton(system_frame, text=_t("scheduling.enable_auto_backups"),
-                   variable=self.auto_backup_var).grid(row=5, column=0, columnspan=2, sticky=tk.W, padx=5, pady=5)
+                   variable=self.auto_backup_var).grid(row=6, column=0, columnspan=2, sticky=tk.W, padx=5, pady=5)
 
     # Save settings button
     ttk.Button(system_frame, text=_t("scheduling.save_settings"),
-              command=self.save_settings).grid(row=6, column=0, columnspan=2, pady=10)
+              command=self.save_settings).grid(row=7, column=0, columnspan=2, pady=10)
 
     # Holidays management
     holidays_frame = ttk.LabelFrame(settings_frame, text=_t("scheduling.holidays_management"), padding=15)
@@ -145,13 +179,74 @@ def create_settings_tab(self):
 
 ModuleSchedulingGUI.create_settings_tab = create_settings_tab
 
-def load_settings(self):
-    """Load system settings into the interface"""
+def _branding_institution_name():
+    """The institution name, from the one place that owns it.
+
+    This used to read ``platform.branding.SYSTEM_NAME``, which is the
+    product name ("Education System"), not the institution — and fell
+    back to the literal "University" when that was unset. Meanwhile
+    Branding & Customization writes ``branding_institution_name`` into
+    ``security_settings``, which ``get_institution_name()`` resolves
+    (environment override, then that setting, then the config file).
+    So this window showed "University" while the rest of the app showed
+    "Teesside University".
+    """
     try:
-        # Load settings from backend
-        self.institution_var.set(self.scheduler.get_system_setting('institution_name', 'University'))
-        self.semester_start_var.set(self.scheduler.get_system_setting('semester_start', ''))
-        self.semester_end_var.set(self.scheduler.get_system_setting('semester_end', ''))
+        from education_system.systems.university.infrastructure.institution_settings import (
+            get_institution_name,
+        )
+        return (get_institution_name() or "").strip()
+    except Exception:
+        logger.debug("Could not resolve the institution name", exc_info=True)
+        return ""
+
+
+def _calendar_semester_dates():
+    """(start, end) for the current or next semester from academic_terms.
+
+    The calendar is where terms are actually defined, so the scheduler reads
+    them rather than keeping its own hand-typed copy. Prefers a term that is
+    running today, then the next one to start, then the most recent.
+    """
+    from datetime import date
+    today = date.today().isoformat()
+    try:
+        with get_connection(str(DEFAULT_DB_PATH), row_factory=False) as conn:
+            row = conn.execute(
+                "SELECT start_date, end_date FROM academic_terms "
+                " WHERE start_date <= ? AND end_date >= ? "
+                " ORDER BY start_date DESC LIMIT 1", (today, today)).fetchone()
+            if not row:
+                row = conn.execute(
+                    "SELECT start_date, end_date FROM academic_terms "
+                    " WHERE start_date > ? ORDER BY start_date LIMIT 1",
+                    (today,)).fetchone()
+            if not row:
+                row = conn.execute(
+                    "SELECT start_date, end_date FROM academic_terms "
+                    " ORDER BY start_date DESC LIMIT 1").fetchone()
+    except Exception:
+        logger.debug("could not read academic_terms", exc_info=True)
+        return "", ""
+    return (row[0] or "", row[1] or "") if row else ("", "")
+
+
+def load_settings(self):
+    """Load system settings into the interface.
+
+    The institution name comes from Branding & Customization and the
+    semester dates from the academic calendar's ``academic_terms``. Both
+    are displayed read-only: a scheduler-local override used to take
+    precedence here, so this window could show one institution or term
+    while every other screen showed another.
+    """
+    try:
+        self.institution_var.set(_branding_institution_name()
+                                 or "(not set in Branding & Customization)")
+
+        cal_start, cal_end = _calendar_semester_dates()
+        self.semester_start_var.set(cal_start or "(no term in the calendar)")
+        self.semester_end_var.set(cal_end or "(no term in the calendar)")
         self.session_duration_var.set(self.scheduler.get_system_setting('default_session_duration', '60'))
 
         email_notifications = self.scheduler.get_system_setting('email_notifications', 'False') == 'True'
@@ -168,10 +263,10 @@ ModuleSchedulingGUI.load_settings = load_settings
 def save_settings(self):
     """Save system settings"""
     try:
-        # Save all settings
-        self.scheduler.update_system_setting('institution_name', self.institution_var.get())
-        self.scheduler.update_system_setting('semester_start', self.semester_start_var.get())
-        self.scheduler.update_system_setting('semester_end', self.semester_end_var.get())
+        # institution_name, semester_start and semester_end are deliberately
+        # not written. They are owned by Branding & Customization and the
+        # academic calendar; writing them here created a scheduler-local
+        # copy that then took precedence over the real value and drifted.
         self.scheduler.update_system_setting('default_session_duration', self.session_duration_var.get())
         self.scheduler.update_system_setting('email_notifications', str(self.email_notifications_var.get()))
         self.scheduler.update_system_setting('auto_backup', str(self.auto_backup_var.get()))
@@ -230,9 +325,9 @@ def _sync_holiday_to_academic_calendar(self):
                     cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='academic_calendar_events'")
                     if cursor.fetchone():
                         cursor.execute('''
-                            INSERT OR IGNORE INTO academic_calendar_events
-                                (id, name, description, date_start, date_end, event_type, date_added)
-                            VALUES (?, ?, ?, ?, ?, 'holiday', ?)
+                            INSERT OR IGNORE INTO unified_events (
+                    source_event_id, title, description, start_datetime, end_datetime, event_type, created_at, source_type
+                ) VALUES (?, ?, ?, ?, ?, 'holiday', ?, 'academic_calendar')
                         ''', (f"HOL-{uuid.uuid4()}", event_title, description or '',
                               start_date, end_date or start_date, datetime.now().isoformat()))
                         conn.commit()

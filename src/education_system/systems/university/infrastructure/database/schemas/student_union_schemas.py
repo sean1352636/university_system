@@ -47,24 +47,9 @@ def init_student_union_db():
         )
         ''')
 
-        # Create events table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS union_events (
-            event_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            event_name TEXT,
-            description TEXT,
-            event_date TEXT,
-            start_time TEXT,
-            end_time TEXT,
-            location TEXT,
-            organizer_id INTEGER,
-            category TEXT,
-            max_attendees INTEGER,
-            current_attendees INTEGER DEFAULT 0,
-            status TEXT DEFAULT 'upcoming',
-            FOREIGN KEY (organizer_id) REFERENCES student_clubs (club_id)
-        )
-        ''')
+        # Student union events are rows in ``unified_events`` tagged
+        # ``source_type = 'union'``; the union no longer owns a table of its
+        # own. Callers filter by source at the point of query.
 
         # Create facility bookings table
         cursor.execute('''
@@ -223,7 +208,7 @@ def init_student_affairs_tables():
                     upload_date TEXT,
                     FOREIGN KEY (club_id) REFERENCES student_clubs (club_id),
                     FOREIGN KEY (uploader_id) REFERENCES students (student_id),
-                    FOREIGN KEY (event_id) REFERENCES union_events (event_id)
+                    FOREIGN KEY (event_id) REFERENCES unified_events (event_id)
                 )
         ''')
 
@@ -307,7 +292,7 @@ def init_student_affairs_tables():
                     date_recorded TEXT,
                     receipt_path TEXT,
                     revenue_type TEXT,
-                    FOREIGN KEY (event_id) REFERENCES union_events (event_id)
+                    FOREIGN KEY (event_id) REFERENCES unified_events (event_id)
                 )
         ''')
 
@@ -359,7 +344,7 @@ def init_student_affairs_tables():
                     student_id TEXT,
                     purchase_date TEXT,
                     payment_status TEXT DEFAULT 'pending',
-                    FOREIGN KEY (event_id) REFERENCES union_events (event_id),
+                    FOREIGN KEY (event_id) REFERENCES unified_events (event_id),
                     FOREIGN KEY (student_id) REFERENCES students (student_id)
                 )
         ''')

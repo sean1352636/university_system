@@ -48,7 +48,7 @@ def render(gui) -> None:
         return
     rows = rows or []
 
-    table = widgets.DataTable(frame)
+    table = widgets.DataTable(frame, _COLUMNS)
     table.populate(
         rows,
         lambda r: (r["username"], r["display_name"], r["role_label"],

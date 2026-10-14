@@ -1,5 +1,9 @@
 from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management import _common
 from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management._common import sqlite3, get_text, logging, datetime, log_create, log_read, log_update, log_delete
+from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management.calendar_integration import (
+    sync_trip_calendar_event,
+    remove_trip_calendar_event,
+)
 logger = logging.getLogger(__name__)
 
 
@@ -33,7 +37,7 @@ def view_trips_with_calendar():
                    e.id as calendar_event_id
             FROM trips t
             LEFT JOIN trip_participants tp ON t.id = tp.trip_id AND tp.status = 'registered'
-            LEFT JOIN academic_calendar_events e ON t.id = e.trip_id
+            LEFT JOIN (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') e ON t.id = e.trip_id
             GROUP BY t.id
             ORDER BY t.start_date ASC
             ''')
@@ -109,7 +113,7 @@ def create_trip():
                 from education_system.systems.university.domains.operations.domain.campus.mobility.services import trip_management as _tm
                 _tm.log_activity('create', 'trip')
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             return result
     except Exception:
         logger.warning("Trip creation failed", exc_info=True)
@@ -119,7 +123,7 @@ def create_trip():
         if 'pytest' in sys.modules:
             auth = auth or _common.get_auth()
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
     if not auth or not auth.current_user:
         print(get_text("mobility.trip_management.auth.must_login_create", "You must be logged in to create trips."))
@@ -144,9 +148,28 @@ def create_trip():
 
         description = input(get_text("mobility.trip_management.create.description_prompt", "Description (optional): ")).strip()
 
-        # Date validation
+        # Single-day trips end on the day they start, so the end date is
+        # derived rather than prompted for.
+        print("\n" + get_text("mobility.trip_management.create.duration_label", "Trip Duration:"))
+        print("1. " + get_text("mobility.trip_management.create.duration_single_day", "Single day trip"))
+        print("2. " + get_text("mobility.trip_management.create.duration_multi_day", "Multiple day trip"))
+
+        single_day = True
         while True:
-            start_date_str = input(get_text("mobility.trip_management.create.start_date_prompt", "Start Date (YYYY-MM-DD): ")).strip()
+            duration_choice = input(get_text("mobility.trip_management.create.select_duration_prompt", "Select duration (1-2): ")).strip()
+            if duration_choice in ('1', '2'):
+                single_day = duration_choice == '1'
+                break
+            print(get_text("mobility.trip_management.validation.invalid_choice", "Invalid choice."))
+
+        # Date validation
+        start_prompt = (
+            get_text("mobility.trip_management.create.trip_date_prompt", "Trip Date (YYYY-MM-DD): ")
+            if single_day else
+            get_text("mobility.trip_management.create.start_date_prompt", "Start Date (YYYY-MM-DD): ")
+        )
+        while True:
+            start_date_str = input(start_prompt).strip()
             try:
                 start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
                 break
@@ -159,16 +182,19 @@ def create_trip():
                 break
             print(get_text("mobility.trip_management.validation.destination_min_length", "Destination must be at least 3 characters long."))
 
-        while True:
-            end_date_str = input(get_text("mobility.trip_management.create.end_date_prompt", "End Date (YYYY-MM-DD): ")).strip()
-            try:
-                end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
-                if end_date.date() <= start_date.date():
-                    print(get_text("mobility.trip_management.validation.end_date_after_start", "End date must be after start date."))
-                    continue
-                break
-            except ValueError:
-                print(get_text("mobility.trip_management.validation.invalid_date_format", "Invalid date format. Please use YYYY-MM-DD."))
+        if single_day:
+            end_date_str = start_date_str
+        else:
+            while True:
+                end_date_str = input(get_text("mobility.trip_management.create.end_date_prompt", "End Date (YYYY-MM-DD): ")).strip()
+                try:
+                    end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
+                    if end_date.date() <= start_date.date():
+                        print(get_text("mobility.trip_management.validation.end_date_after_start", "End date must be after start date."))
+                        continue
+                    break
+                except ValueError:
+                    print(get_text("mobility.trip_management.validation.invalid_date_format", "Invalid date format. Please use YYYY-MM-DD."))
 
         # Max participants validation
         while True:
@@ -210,7 +236,7 @@ def create_trip():
                     except ValueError:
                         print(get_text("mobility.trip_management.validation.enter_number", "Please enter a number."))
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Insert trip
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -228,10 +254,17 @@ def create_trip():
 
         trip_id = cursor.lastrowid
 
-        # Cross-domain: publish through trip_bus so the academic
-        # calendar, finance hold gates, and chatbot subscribers all
-        # see the new trip. The bus also writes a calendar row via
-        # EVENT_TRIP_CREATED.
+        # Every trip goes on the academic calendar automatically, written on
+        # this connection so it commits with the trip or not at all.
+        event_id = sync_trip_calendar_event(
+            conn, trip_id,
+            trip_name=trip_name, destination=destination,
+            start_date=start_date_str, end_date=end_date_str,
+            cost=cost, created_by=auth.current_user.get('username'),
+        )
+
+        # Cross-domain: publish through trip_bus so finance hold gates and
+        # chatbot subscribers see the new trip.
         try:
             from education_system.systems.university.services.bus import (
                 trip_bus,
@@ -245,26 +278,50 @@ def create_trip():
                 kind="university",
             )
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
-        print(get_text("mobility.trip_management.create.success", "\nTrip '{trip_name}' created successfully!").format(trip_name=trip_name))
-        print(get_text("mobility.trip_management.create.trip_id_label", "Trip ID: {trip_id}").format(trip_id=trip_id))
-        print(get_text("mobility.trip_management.create.destination_label", "Destination: {destination}").format(destination=destination))
-        print(get_text("mobility.trip_management.create.dates_label", "Dates: {start_date} to {end_date}").format(start_date=start_date_str, end_date=end_date_str))
-        print(get_text("mobility.trip_management.create.max_participants_label", "Max Participants: {max_participants}").format(max_participants=max_participants))
-        print(get_text("mobility.trip_management.create.cost_label", "Cost: £{cost:.2f}").format(cost=cost or 0))
-        print(get_text("mobility.trip_management.create.status_label", "Status: {status}").format(status=status.title()))
-
-        return True
+        # Report the outcome to the caller rather than printing here: a
+        # display error (a bad translation placeholder, an encoding issue)
+        # inside the operation rolls the whole transaction back, which is
+        # how created trips previously vanished.
+        return {
+            'trip_id': trip_id,
+            'trip_name': trip_name,
+            'destination': destination,
+            'start_date': start_date_str,
+            'end_date': end_date_str,
+            'max_participants': max_participants,
+            'cost': cost,
+            'status': status,
+            'single_day': single_day,
+            'calendar_event_id': event_id,
+        }
 
     result = _run_db_operation(create_trip_operation)
     if result:
+        _print_created_trip(result)
         try:
             from education_system.systems.university.domains.operations.domain.campus.mobility.services import trip_management as _tm
             _tm.log_activity('create', 'trip')
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
     return result
+
+
+def _print_created_trip(trip):
+    """Print the confirmation summary for a freshly created trip."""
+    print(get_text("mobility.trip_management.create.success", "\nTrip '{trip_name}' created successfully!").format(trip_name=trip['trip_name']))
+    print(get_text("mobility.trip_management.create.trip_id_label", "Trip ID: {trip_id}").format(trip_id=trip['trip_id']))
+    print(get_text("mobility.trip_management.create.destination_label", "Destination: {destination}").format(destination=trip['destination']))
+    if trip['single_day']:
+        print(get_text("mobility.trip_management.create.date_label", "Date: {start_date} (single day)").format(start_date=trip['start_date']))
+    else:
+        print(get_text("mobility.trip_management.create.dates_label", "Dates: {start_date} to {end_date}").format(start_date=trip['start_date'], end_date=trip['end_date']))
+    print(get_text("mobility.trip_management.create.max_participants_label", "Max Participants: {max_participants}").format(max_participants=trip['max_participants']))
+    print(get_text("mobility.trip_management.create.cost_label", "Cost: £{cost:.2f}").format(cost=trip['cost'] or 0))
+    print(get_text("mobility.trip_management.create.status_label", "Status: {status}").format(status=trip['status'].title()))
+    if trip.get('calendar_event_id'):
+        print(get_text("mobility.trip_management.create.calendar_added", "Added to the academic calendar."))
 
 @log_read(module="trips", description="Viewing trips")
 def view_trips():
@@ -390,9 +447,12 @@ def view_trip_details(trip_id):
         print(get_text("mobility.trip_management.details.max_participants", "Max Participants: {max_participants}").format(max_participants=trip[6]))
         print(get_text("mobility.trip_management.details.cost", "Cost: £{cost:.2f}").format(cost=trip[7] or 0))
         print(get_text("mobility.trip_management.details.status", "Status: {status}").format(status=trip[8].title()))
-        print(get_text("mobility.trip_management.details.created_by", "Created By: {created_by}").format(created_by=trip[11] if trip[11] else get_text("mobility.trip_management.common.unknown", "Unknown")))
-        print(get_text("mobility.trip_management.details.created", "Created: {created}").format(created=trip[9]))
-        print(get_text("mobility.trip_management.details.updated", "Updated: {updated}").format(updated=trip[10]))
+        # t.* is id, trip_name, description, destination, start_date, end_date,
+        # max_participants, cost, status, created_by, created_at, updated_at —
+        # so created_by_name is trip[12], not trip[11].
+        print(get_text("mobility.trip_management.details.created_by", "Created By: {created_by}").format(created_by=trip[12] if trip[12] else get_text("mobility.trip_management.common.unknown", "Unknown")))
+        print(get_text("mobility.trip_management.details.created", "Created: {created}").format(created=trip[10]))
+        print(get_text("mobility.trip_management.details.updated", "Updated: {updated}").format(updated=trip[11]))
 
         # Display participants
         print(get_text("mobility.trip_management.details.participants_count", "\nParticipants ({current}/{max}):").format(current=len(participants), max=trip[6]))
@@ -591,6 +651,19 @@ def update_trip():
                 " WHERE id = ?",
                 values)
 
+            # Keep the auto-created calendar entry in step with the trip.
+            cursor.execute(
+                "SELECT trip_name, destination, start_date, end_date, cost "
+                "FROM trips WHERE id = ?", (trip_id,))
+            updated = cursor.fetchone()
+            if updated:
+                sync_trip_calendar_event(
+                    conn, trip_id,
+                    trip_name=updated[0], destination=updated[1],
+                    start_date=updated[2], end_date=updated[3], cost=updated[4],
+                    created_by=auth.current_user.get('username'),
+                )
+
             print(get_text("mobility.trip_management.update.success", "Trip updated successfully!"))
             return True
 
@@ -614,7 +687,7 @@ def delete_trip():
         if 'pytest' in sys.modules:
             auth = auth or _common.get_auth()
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
     if not auth or not auth.current_user:
         print(get_text("mobility.trip_management.auth.must_login_delete", "You must be logged in to delete trips."))
@@ -697,6 +770,10 @@ def delete_trip():
                     print(get_text("mobility.trip_management.delete.cancelled", "Trip deletion cancelled."))
                     return True
 
+            # Drop the trip's calendar entry first — academic_calendar_events
+            # has no FK to trips, so nothing else would clean it up.
+            remove_trip_calendar_event(conn, trip_id)
+
             # Delete trip (cascade will handle participants due to foreign keys)
             cursor.execute('DELETE FROM trips WHERE id = ?', (trip_id,))
 
@@ -719,5 +796,5 @@ def delete_trip():
         from education_system.systems.university.domains.operations.domain.campus.mobility.services import trip_management as _tm
         _tm.log_activity('delete', 'trip')
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return result

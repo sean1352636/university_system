@@ -1,3 +1,4 @@
+from education_system.systems.university.shell.gui import report_view as _rv
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
@@ -57,6 +58,7 @@ from education_system.systems.university.domains.finance.interfaces.gui.finance_
     advanced_export_system,
     real_time_financial_dashboard,
 )
+from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608 - identifier validation
 
 
 # This module defines mixin functions for FinancialManagementGUI
@@ -1281,6 +1283,9 @@ def run_scholarship_analysis(self):
 
             # Awards can live in either scholarship_awards or student_scholarships.
             def _awarded(table, amt_col):
+                # Identifiers cannot be parameterised, so they are validated instead.
+                table = validate_identifier(table)
+                amt_col = validate_identifier(amt_col)
                 cursor.execute(
                     "SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,))
                 if cursor.fetchone() is None:
@@ -1643,7 +1648,7 @@ def run_regulatory_reporting(self):
 
             ttk.Label(win, text=_t('gui.finance.finance_reporting.advanced_features.labels.regulatory_vat_summary_report', default="Regulatory / VAT Summary Report"),
                       font=('Arial', 13, 'bold')).pack(pady=8)
-            text = ScrolledText(win, wrap=tk.WORD, font=('Courier New', 10),
+            text = _rv.TextReportView(win, wrap=tk.WORD, font=('Courier New', 10),
                                 fg="#000000", bg="#FFFFFF")
             text.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 8))
             text.insert("1.0", report_text)

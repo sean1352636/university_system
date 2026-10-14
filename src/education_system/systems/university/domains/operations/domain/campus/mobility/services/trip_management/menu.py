@@ -5,13 +5,9 @@ from education_system.systems.university.domains.operations.domain.campus.mobili
 from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management.trips import view_trips, view_trips_with_calendar, create_trip, update_trip, delete_trip
 from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management.registrations import (
     register_for_trip, view_my_trip_registrations, manage_trip_participants,
+    cancel_trip_registration,
 )
 from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management.reports import generate_trip_report
-from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management.calendar_integration import create_trip_calendar_event, view_trip_events_in_calendar
-
-# Conditional calendar imports
-if CALENDAR_AVAILABLE:
-    from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management._common import AcademicCalendarManager, CalendarConfig
 
 
 @log_menu_navigation(description="Displaying trip management menu")
@@ -22,15 +18,6 @@ def display_trip_management_menu():
     if not auth or not auth.current_user:
         print(get_text("mobility.trip_management.auth.must_login_access", "You must be logged in to access trip management."))
         return
-
-    # Initialize calendar system if available
-    calendar_manager = None
-    if CALENDAR_AVAILABLE:
-        try:
-            config = CalendarConfig()
-            calendar_manager = AcademicCalendarManager(config=config, auth_manager=auth)
-        except Exception as e:
-            logging.warning(f"Could not initialize calendar system: {e}")
 
     while True:
         print(get_text("mobility.trip_management.menu.title", "\nIntegrated Trip Management & Calendar System"))
@@ -79,6 +66,11 @@ def display_trip_management_menu():
             options.append(('view_registrations', view_my_trip_registrations))
             option_num += 1
 
+        if auth.check_permission('cancel_trip_registration'):
+            print(f"{option_num}. " + get_text("mobility.trip_management.menu.cancel_registration", "Cancel My Registration"))
+            options.append(('cancel_registration', cancel_trip_registration))
+            option_num += 1
+
         if auth.check_permission('manage_trip_participants'):
             print(f"{option_num}. " + get_text("mobility.trip_management.menu.manage_participants", "Manage Participants"))
             options.append(('manage_participants', manage_trip_participants))
@@ -89,18 +81,10 @@ def display_trip_management_menu():
             options.append(('generate_report', generate_trip_report))
             option_num += 1
 
-        # Calendar integration options
-        if CALENDAR_AVAILABLE and calendar_manager:
-            print("\n" + get_text("mobility.trip_management.menu.calendar_integration_section", "CALENDAR INTEGRATION:"))
-            if auth.check_permission('manage_schedules'):
-                print(f"{option_num}. " + get_text("mobility.trip_management.menu.create_calendar_event", "Create Calendar Event for Trip"))
-                options.append(('create_trip_calendar_event', lambda: create_trip_calendar_event(calendar_manager)))
-                option_num += 1
-
-            if auth.check_permission('view_own_timetable'):
-                print(f"{option_num}. " + get_text("mobility.trip_management.menu.view_trip_events", "View Trip Events in Calendar"))
-                options.append(('view_trip_events', lambda: view_trip_events_in_calendar(calendar_manager)))
-                option_num += 1
+        # Calendar integration is automatic: creating, updating or deleting a
+        # trip writes through to the academic calendar (see
+        # calendar_integration.sync_trip_calendar_event), so the manual
+        # "Create Calendar Event" / "View Trip Events" options were removed.
 
         print(f"\n{option_num}. " + get_text("mobility.trip_management.menu.return_to_main", "Return to Main Menu"))
 

@@ -8,6 +8,12 @@ from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
 from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import union_context as ctx
 from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.union_context import auto_award_points
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.calendar_bridge import (
+    mirror as _mirror_to_calendar,
+)
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.identity import (
+    current_student_id as _current_student_id,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -27,15 +33,13 @@ def manage_peer_support_system():
         cursor = conn.cursor()
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (ctx.auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, ctx.auth)
 
-        if not result:
+        if not student_id:
             print("No student record is associated with your account.")
             conn.close()
             return
 
-        student_id = result[0]
 
         while True:
             print("\nPeer Support System")
@@ -591,15 +595,13 @@ def manage_academic_support():
         cursor = conn.cursor()
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (ctx.auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, ctx.auth)
 
-        if not result:
+        if not student_id:
             print("No student record is associated with your account.")
             conn.close()
             return
 
-        student_id = result[0]
 
         while True:
             print("\nAcademic Support System")
@@ -621,7 +623,7 @@ def manage_academic_support():
             elif choice == '4':
                 exam_preparation_groups(student_id, cursor, conn)
             elif choice == '5':
-                view_academic_workshops(cursor)
+                manage_academic_workshops(student_id, cursor, conn)
             elif choice == '6':
                 break
             else:
@@ -710,6 +712,17 @@ def manage_study_groups(student_id, cursor, conn):
                 group_id = cursor.lastrowid
 
                 print(f"Study group created successfully! Group ID: {group_id}")
+
+                if _mirror_to_calendar(
+                    name=f"SU Study Group: {subject} — {topic}",
+                    kind="study_group", location=location or None,
+                    description=(f"Meets {meeting_time}" if meeting_time
+                                 else "Student Union study group"),
+                    created_by=student_id,
+                    source_table="study_groups", source_id=group_id,
+                    conn=conn,
+                ):
+                    print("Added to the university academic calendar.")
 
                 # Award points for organizing
                 auto_award_points(student_id, "Academic Support", 25,
@@ -1303,6 +1316,17 @@ def exam_preparation_groups(student_id, cursor, conn):
 
                 print(f"Exam preparation group created! Group ID: {group_id}")
 
+                if _mirror_to_calendar(
+                    name=f"SU {group_name}", kind="study_group",
+                    date=exam_date, location=location or None,
+                    description=(f"Meets {meeting_schedule}. "
+                                 f"Focus: {focus_areas or 'general revision'}"),
+                    created_by=student_id,
+                    source_table="study_groups", source_id=group_id,
+                    conn=conn,
+                ):
+                    print("Added to the university academic calendar.")
+
                 auto_award_points(student_id, "Academic Support", 25,
                                 f"Created exam prep group: {subject}", cursor, conn)
 
@@ -1521,6 +1545,17 @@ def _book_revision_room(student_id, cursor, conn):
         print(f"Room {room[0]} booked for {booking_date} {start_time}-{end_time}.")
         print(f"Booking ID: {booking_id}")
 
+        if _mirror_to_calendar(
+            name=f"SU Revision Room: {room[0]}", kind="room_booking",
+            date=booking_date, start_time=start_time, end_time=end_time,
+            location=str(room[0]),
+            description=notes or "Exam revision room booking",
+            created_by=student_id,
+            source_table="study_room_bookings", source_id=booking_id,
+            conn=conn,
+        ):
+            print("Added to the university academic calendar.")
+
         auto_award_points(student_id, "Academic Support", 10,
                         f"Booked revision room {room[0]}", cursor, conn)
 
@@ -1530,6 +1565,402 @@ def _book_revision_room(student_id, cursor, conn):
     except Exception as e:
         logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
+
+# ---------------------------------------------------------------------------
+# Academic workshops
+# ---------------------------------------------------------------------------
+
+_WORKSHOP_SCHEMA = (
+    """
+    CREATE TABLE IF NOT EXISTS su_workshops (
+        workshop_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+        title          TEXT NOT NULL,
+        description    TEXT,
+        facilitator_id TEXT NOT NULL,
+        workshop_date  TEXT,
+        start_time     TEXT,
+        end_time       TEXT,
+        location       TEXT,
+        capacity       INTEGER,
+        status         TEXT NOT NULL DEFAULT 'scheduled',
+        created_at     TEXT NOT NULL
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS su_workshop_registrations (
+        registration_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        workshop_id     INTEGER NOT NULL,
+        student_id      TEXT NOT NULL,
+        registered_at   TEXT NOT NULL,
+        status          TEXT NOT NULL DEFAULT 'registered',
+        UNIQUE(workshop_id, student_id)
+    )
+    """,
+)
+
+
+def _ensure_workshop_tables(cursor, conn):
+    """Create the workshop tables on first use. Idempotent."""
+    for statement in _WORKSHOP_SCHEMA:
+        cursor.execute(statement)
+    conn.commit()
+
+
+def _workshop_places_left(cursor, workshop_id, capacity):
+    """Remaining places, or ``None`` when a workshop is uncapped."""
+    if not capacity:
+        return None
+    cursor.execute(
+        "SELECT COUNT(*) FROM su_workshop_registrations "
+        "WHERE workshop_id = ? AND status = 'registered'",
+        (workshop_id,),
+    )
+    return max(0, int(capacity) - int(cursor.fetchone()[0]))
+
+
+def _list_workshops(cursor, *, facilitator_id=None, upcoming_only=False):
+    sql = (
+        "SELECT workshop_id, title, description, facilitator_id, workshop_date, "
+        "       start_time, end_time, location, capacity, status "
+        "FROM su_workshops WHERE 1 = 1 "
+    )
+    params = []
+    if facilitator_id:
+        sql += "AND facilitator_id = ? "
+        params.append(facilitator_id)
+    if upcoming_only:
+        sql += ("AND status = 'scheduled' "
+                "AND (workshop_date IS NULL OR workshop_date >= date('now')) ")
+    sql += "ORDER BY COALESCE(workshop_date, '9999-12-31'), title"
+    cursor.execute(sql, tuple(params))
+    return cursor.fetchall()
+
+
+def _print_workshops(cursor, workshops, *, heading):
+    if not workshops:
+        return False
+    print(f"\n{heading}")
+    print(f"{'ID':<6} {'Workshop':<28} {'Date':<12} {'Time':<12} {'Location':<16} {'Places':<10}")
+    print("-" * 88)
+    for w in workshops:
+        times = "-".join(t for t in (w[5], w[6]) if t) or "TBC"
+        left = _workshop_places_left(cursor, w[0], w[8])
+        places = "unlimited" if left is None else f"{left} left"
+        print(f"{w[0]:<6} {(w[1] or '')[:28]:<28} {(w[4] or 'TBC'):<12} "
+              f"{times[:12]:<12} {(w[7] or 'TBC')[:16]:<16} {places:<10}")
+    return True
+
+
+def _pick_workshop(cursor, workshops, prompt):
+    if not workshops:
+        return None
+    raw = input(f"\n{prompt} (ID, blank to cancel): ").strip()
+    if not raw.isdigit():
+        print("Cancelled.")
+        return None
+    for w in workshops:
+        if w[0] == int(raw):
+            return w
+    print("That is not one of the workshops listed.")
+    return None
+
+
+def create_workshop(student_id, cursor, conn):
+    """Run a new academic workshop."""
+    title = input("Workshop title: ").strip()
+    if not title:
+        print("A title is required.")
+        return
+
+    description = input("Description: ").strip()
+
+    workshop_date = None
+    raw = input("Date (YYYY-MM-DD, blank to cancel): ").strip()
+    if not raw:
+        print("Workshop creation cancelled.")
+        return
+    try:
+        datetime.strptime(raw, '%Y-%m-%d')
+        workshop_date = raw
+    except ValueError:
+        print("Invalid date format. Please use YYYY-MM-DD.")
+        return
+
+    start_time = input("Start time (HH:MM, optional): ").strip() or None
+    end_time = input("End time (HH:MM, optional): ").strip() or None
+    location = input("Location: ").strip() or None
+
+    capacity = None
+    raw = input("Capacity (blank for unlimited): ").strip()
+    if raw:
+        if raw.isdigit() and int(raw) > 0:
+            capacity = int(raw)
+        else:
+            print("Capacity must be a whole number above 0 — leaving it unlimited.")
+
+    cursor.execute('''
+    INSERT INTO su_workshops (
+        title, description, facilitator_id, workshop_date, start_time,
+        end_time, location, capacity, status, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'scheduled', ?)
+    ''', (title, description or None, student_id, workshop_date, start_time,
+          end_time, location, capacity,
+          datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+    conn.commit()
+    workshop_id = cursor.lastrowid
+
+    # The facilitator is attending their own workshop.
+    cursor.execute('''
+    INSERT OR IGNORE INTO su_workshop_registrations
+        (workshop_id, student_id, registered_at, status)
+    VALUES (?, ?, ?, 'registered')
+    ''', (workshop_id, student_id, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+    conn.commit()
+
+    print(f"Workshop '{title}' created (ID {workshop_id}).")
+
+    if _mirror_to_calendar(
+        name=f"SU Workshop: {title}", kind="workshop",
+        date=workshop_date, start_time=start_time, end_time=end_time,
+        location=location, description=description or "Student Union academic workshop",
+        created_by=student_id,
+        source_table="su_workshops", source_id=workshop_id, conn=conn,
+    ):
+        print("Added to the university academic calendar.")
+
+    auto_award_points(student_id, "Academic Support", 30,
+                      f"Ran academic workshop: {title}", cursor, conn)
+
+
+def update_workshop(student_id, cursor, conn):
+    """Edit a workshop you facilitate. Blank keeps the current value."""
+    mine = _list_workshops(cursor, facilitator_id=student_id)
+    if not _print_workshops(cursor, mine, heading="Workshops you facilitate:"):
+        print("You do not facilitate any workshops.")
+        return
+
+    workshop = _pick_workshop(cursor, mine, "Select the workshop to update")
+    if not workshop:
+        return
+
+    (workshop_id, title, description, _facilitator, workshop_date, start_time,
+     end_time, location, capacity, status) = workshop
+
+    print("\nLeave a field blank to keep its current value.")
+    title = input(f"Title [{title}]: ").strip() or title
+    description = input(f"Description [{description or 'none'}]: ").strip() or description
+
+    raw = input(f"Date [{workshop_date or 'TBC'}]: ").strip()
+    if raw:
+        try:
+            datetime.strptime(raw, '%Y-%m-%d')
+            workshop_date = raw
+        except ValueError:
+            print("Invalid date format — keeping the current date.")
+
+    start_time = input(f"Start time [{start_time or 'TBC'}]: ").strip() or start_time
+    end_time = input(f"End time [{end_time or 'TBC'}]: ").strip() or end_time
+    location = input(f"Location [{location or 'TBC'}]: ").strip() or location
+
+    raw = input(f"Capacity [{capacity if capacity else 'unlimited'}]: ").strip()
+    if raw:
+        if raw.isdigit() and int(raw) > 0:
+            capacity = int(raw)
+        else:
+            print("Capacity must be a whole number above 0 — keeping the current value.")
+
+    statuses = ['scheduled', 'full', 'cancelled', 'completed']
+    print(f"Status options: {', '.join(statuses)}")
+    raw = input(f"Status [{status}]: ").strip().lower()
+    if raw in statuses:
+        status = raw
+
+    cursor.execute('''
+    UPDATE su_workshops
+    SET title = ?, description = ?, workshop_date = ?, start_time = ?,
+        end_time = ?, location = ?, capacity = ?, status = ?
+    WHERE workshop_id = ? AND facilitator_id = ?
+    ''', (title, description, workshop_date, start_time, end_time, location,
+          capacity, status, workshop_id, student_id))
+    conn.commit()
+
+    if not cursor.rowcount:
+        print("Nothing was updated — the workshop may no longer be yours.")
+        return
+
+    print(f"Workshop '{title}' updated.")
+    _mirror_to_calendar(
+        name=f"SU Workshop: {title}", kind="workshop",
+        date=workshop_date, start_time=start_time, end_time=end_time,
+        location=location, description=description or "Student Union academic workshop",
+        created_by=student_id,
+        source_table="su_workshops", source_id=workshop_id, conn=conn,
+    )
+
+
+def join_workshop(student_id, cursor, conn):
+    """Take a place on an upcoming workshop."""
+    workshops = _list_workshops(cursor, upcoming_only=True)
+    if not _print_workshops(cursor, workshops, heading="Upcoming workshops:"):
+        print("There are no upcoming workshops to join.")
+        return
+
+    workshop = _pick_workshop(cursor, workshops, "Select the workshop to join")
+    if not workshop:
+        return
+
+    workshop_id, title, capacity = workshop[0], workshop[1], workshop[8]
+
+    cursor.execute(
+        "SELECT status FROM su_workshop_registrations "
+        "WHERE workshop_id = ? AND student_id = ?",
+        (workshop_id, student_id),
+    )
+    existing = cursor.fetchone()
+    if existing and existing[0] == 'registered':
+        print(f"You already have a place on '{title}'.")
+        return
+
+    places_left = _workshop_places_left(cursor, workshop_id, capacity)
+    if places_left == 0:
+        print(f"'{title}' is full.")
+        return
+
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    if existing:
+        cursor.execute(
+            "UPDATE su_workshop_registrations "
+            "SET status = 'registered', registered_at = ? "
+            "WHERE workshop_id = ? AND student_id = ?",
+            (now, workshop_id, student_id),
+        )
+    else:
+        cursor.execute(
+            "INSERT INTO su_workshop_registrations "
+            "(workshop_id, student_id, registered_at, status) "
+            "VALUES (?, ?, ?, 'registered')",
+            (workshop_id, student_id, now),
+        )
+    conn.commit()
+    print(f"You are booked onto '{title}'.")
+    auto_award_points(student_id, "Academic Support", 5,
+                      f"Joined workshop: {title}", cursor, conn)
+
+
+def leave_workshop(student_id, cursor, conn):
+    """Give up your place on a workshop."""
+    cursor.execute('''
+    SELECT w.workshop_id, w.title, w.description, w.facilitator_id, w.workshop_date,
+           w.start_time, w.end_time, w.location, w.capacity, w.status
+    FROM su_workshops w
+    JOIN su_workshop_registrations r ON r.workshop_id = w.workshop_id
+    WHERE r.student_id = ? AND r.status = 'registered'
+    ORDER BY COALESCE(w.workshop_date, '9999-12-31')
+    ''', (student_id,))
+    booked = cursor.fetchall()
+
+    if not _print_workshops(cursor, booked, heading="Workshops you are booked onto:"):
+        print("You are not booked onto any workshops.")
+        return
+
+    workshop = _pick_workshop(cursor, booked, "Select the workshop to leave")
+    if not workshop:
+        return
+
+    cursor.execute(
+        "UPDATE su_workshop_registrations SET status = 'cancelled' "
+        "WHERE workshop_id = ? AND student_id = ?",
+        (workshop[0], student_id),
+    )
+    conn.commit()
+    print(f"You have given up your place on '{workshop[1]}'.")
+
+
+def delete_workshop(student_id, cursor, conn):
+    """Delete a workshop you facilitate, along with its registrations."""
+    mine = _list_workshops(cursor, facilitator_id=student_id)
+    if not _print_workshops(cursor, mine, heading="Workshops you facilitate:"):
+        print("You do not facilitate any workshops.")
+        return
+
+    workshop = _pick_workshop(cursor, mine, "Select the workshop to delete")
+    if not workshop:
+        return
+
+    workshop_id, title = workshop[0], workshop[1]
+    booked = _workshop_places_left(cursor, workshop_id, workshop[8])
+    if input(f"Delete '{title}'? This cannot be undone (y/n): ").strip().lower() != 'y':
+        print("Deletion cancelled.")
+        return
+
+    cursor.execute("DELETE FROM su_workshop_registrations WHERE workshop_id = ?",
+                   (workshop_id,))
+    cursor.execute("DELETE FROM su_workshops WHERE workshop_id = ? AND facilitator_id = ?",
+                   (workshop_id, student_id))
+    conn.commit()
+
+    if not cursor.rowcount:
+        print("Nothing was deleted — the workshop may no longer be yours.")
+        return
+
+    print(f"Workshop '{title}' deleted.")
+    if booked is not None and booked == 0:
+        print("Everyone who had a place has been unbooked.")
+    try:
+        cursor.execute("DELETE FROM unified_events WHERE source_type = 'academic_calendar' AND (source_event_id = ?)",
+                       (f"SU-su_workshops-{workshop_id}",))
+        conn.commit()
+    except sqlite3.Error:
+        pass
+
+
+def manage_academic_workshops(student_id, cursor, conn):
+    """Academic workshops: browse, run, join, leave, edit and delete."""
+    try:
+        _ensure_workshop_tables(cursor, conn)
+
+        while True:
+            print("\nAcademic Workshops")
+            print("1. View workshops")
+            print("2. Create workshop")
+            print("3. Join workshop")
+            print("4. Leave workshop")
+            print("5. Update my workshop")
+            print("6. Delete my workshop")
+            print("7. Return to academic support")
+
+            choice = input("Choose an option: ").strip()
+
+            if choice == '1':
+                upcoming = _list_workshops(cursor, upcoming_only=True)
+                if not _print_workshops(cursor, upcoming, heading="Upcoming workshops:"):
+                    print("No upcoming Student Union workshops are scheduled.")
+                mine = _list_workshops(cursor, facilitator_id=student_id)
+                _print_workshops(cursor, mine, heading="Workshops you facilitate:")
+                # Workshops run elsewhere in the university still show here.
+                view_academic_workshops(cursor)
+            elif choice == '2':
+                create_workshop(student_id, cursor, conn)
+            elif choice == '3':
+                join_workshop(student_id, cursor, conn)
+            elif choice == '4':
+                leave_workshop(student_id, cursor, conn)
+            elif choice == '5':
+                update_workshop(student_id, cursor, conn)
+            elif choice == '6':
+                delete_workshop(student_id, cursor, conn)
+            elif choice == '7':
+                break
+            else:
+                print("Invalid choice.")
+
+    except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
+        print(f"Database error: {e}")
+    except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
+        print(f"An error occurred: {e}")
+
 
 def view_academic_workshops(cursor):
     """View upcoming academic workshops from the events system"""
@@ -1544,7 +1975,7 @@ def view_academic_workshops(cursor):
             cursor.execute('''
             SELECT event_name, COALESCE(description, ''), COALESCE(event_date, 'TBD'),
                    COALESCE(location, 'TBD')
-            FROM union_events
+            FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union')
             WHERE status IN ('upcoming', 'scheduled', 'open')
               AND (LOWER(category) LIKE '%workshop%'
                    OR LOWER(category) LIKE '%academic%'
@@ -1560,7 +1991,7 @@ def view_academic_workshops(cursor):
             cursor.execute('''
             SELECT name, COALESCE(description, ''),
                    COALESCE(date, date_start, 'TBD'), COALESCE(location, 'TBD')
-            FROM academic_calendar_events
+            FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar')
             WHERE is_active = 1
               AND (LOWER(event_type) LIKE '%workshop%'
                    OR LOWER(name) LIKE '%workshop%')

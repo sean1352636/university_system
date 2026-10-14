@@ -33,17 +33,70 @@ class InAppNotificationService:
         self.base_service = get_base_notification_service()
         self._ensure_extended_tables()
 
+    # The notifications table exists in two shapes across deployments: the
+    # university communication schema keys it on ``notification_id``, while
+    # the DB this service actually runs against keys it on ``id`` (see the
+    # ``SELECT id FROM notifications`` queries below). A hardcoded FK target
+    # is wrong in one of the two, and SQLite only reports it lazily, as
+    # "foreign key mismatch" on the first DELETE / integrity check.
+    _NOTIFICATION_PK_COLUMNS = ("id", "notification_id")
+
+    def _notifications_pk_column(self, conn) -> Optional[str]:
+        """Return the actual primary-key column of the notifications table.
+
+        None if the table is absent or its PK is not one of the two known
+        spellings — in which case we create notification_actions without an
+        FK rather than with a broken one.
+        """
+        try:
+            cols = list(conn.execute("PRAGMA table_info(notifications)"))
+        except Exception:
+            return None
+        # row layout: (cid, name, type, notnull, dflt_value, pk)
+        pk = [c[1] for c in cols if c[5]]
+        if len(pk) == 1 and pk[0] in self._NOTIFICATION_PK_COLUMNS:
+            return validate_identifier(pk[0])
+        return None
+
+    def _notification_actions_ddl(self, pk_col: Optional[str], if_not_exists: bool = True) -> str:
+        """CREATE statement for notification_actions, FK'd to the real PK.
+
+        ``pk_col`` of None means the notifications table is missing or has an
+        unrecognised PK: emit the table without an FK, which is inert rather
+        than corrupting (a mismatched FK breaks unrelated DELETEs).
+        """
+        exists_clause = "IF NOT EXISTS " if if_not_exists else ""
+        fk_clause = ""
+        if pk_col is not None:
+            fk_clause = (
+                ",\n                        FOREIGN KEY (notification_id)\n"
+                f"                            REFERENCES notifications({validate_identifier(pk_col)})\n"
+                "                            ON DELETE CASCADE"
+            )
+        return f'''
+                    CREATE TABLE {exists_clause}notification_actions (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        notification_id INTEGER NOT NULL,
+                        action_text TEXT NOT NULL,
+                        action_url TEXT NOT NULL,
+                        action_type TEXT DEFAULT 'link',
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP{fk_clause}
+                    )
+                '''  # nosec B608 - identifier validated against a fixed allow-list
+
     def _heal_notification_actions_schema(self, conn) -> None:
         """Repair the notification_actions FK on older DBs.
 
-        Pre-fix deployments shipped ``FOREIGN KEY (notification_id)
-        REFERENCES notifications(id)`` — but the notifications PK is
-        ``notification_id``, not ``id``. Any DELETE on the
-        notifications table then fails with "foreign key mismatch".
+        Deployments have shipped this FK pointing at whichever of
+        ``notifications(id)`` / ``notifications(notification_id)`` the
+        author assumed. Whenever it names the column this DB's
+        notifications table does *not* have, SQLite fails any DELETE on
+        notifications — and any integrity check — with
+        "foreign key mismatch".
 
-        We detect the broken FK with PRAGMA foreign_key_list and, if
-        present, rebuild the table with the correct FK target,
-        carrying the existing rows over.
+        We compare the recorded FK target against the table's real PK with
+        PRAGMA and, on a mismatch, rebuild notification_actions against the
+        real one, carrying the existing rows over.
         """
         try:
             row = conn.execute(
@@ -52,17 +105,20 @@ class InAppNotificationService:
             ).fetchone()
             if not row:
                 return
+            pk_col = self._notifications_pk_column(conn)
+            if pk_col is None:
+                return
             fks = list(conn.execute("PRAGMA foreign_key_list(notification_actions)"))
             # row layout: (id, seq, table, from, to, on_update, on_delete, match)
             broken = any(
-                r[2] == "notifications" and r[4] != "notification_id"
+                r[2] == "notifications" and r[4] != pk_col
                 for r in fks
             )
             if not broken:
                 return
             logger.warning(
-                "Repairing notification_actions FK (was REFERENCES "
-                "notifications(id), should be notifications(notification_id))"
+                "Repairing notification_actions FK (should REFERENCE "
+                "notifications(%s))", pk_col
             )
             # The 12-step ALTER TABLE recipe — must run with FK
             # enforcement off so the rename doesn't trigger the
@@ -74,19 +130,7 @@ class InAppNotificationService:
             conn.execute("BEGIN")
             try:
                 conn.execute("ALTER TABLE notification_actions RENAME TO _notification_actions_old")
-                conn.execute('''
-                    CREATE TABLE notification_actions (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        notification_id INTEGER NOT NULL,
-                        action_text TEXT NOT NULL,
-                        action_url TEXT NOT NULL,
-                        action_type TEXT DEFAULT 'link',
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (notification_id)
-                            REFERENCES notifications(notification_id)
-                            ON DELETE CASCADE
-                    )
-                ''')
+                conn.execute(self._notification_actions_ddl(pk_col, if_not_exists=False))
                 conn.execute('''
                     INSERT INTO notification_actions
                         (id, notification_id, action_text, action_url,
@@ -110,25 +154,13 @@ class InAppNotificationService:
         try:
             with transaction() as conn:
                 # Notification actions table (e.g., "View Grade", "Reply")
-                # FK targets notifications(notification_id) — that's the
-                # actual PK of the notifications table. Earlier deployments
-                # shipped this FK pointing at a non-existent `id` column,
-                # which caused SQLite to refuse DELETE FROM notifications
-                # with "foreign key mismatch". The migration block in
-                # _heal_notification_actions_schema repairs older DBs.
-                conn.execute('''
-                    CREATE TABLE IF NOT EXISTS notification_actions (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        notification_id INTEGER NOT NULL,
-                        action_text TEXT NOT NULL,
-                        action_url TEXT NOT NULL,
-                        action_type TEXT DEFAULT 'link',
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (notification_id)
-                            REFERENCES notifications(notification_id)
-                            ON DELETE CASCADE
-                    )
-                ''')
+                # The FK targets whichever column the notifications table in
+                # *this* DB actually keys on — naming the wrong one makes
+                # SQLite refuse DELETE FROM notifications, and fail integrity
+                # checks, with "foreign key mismatch".
+                # _heal_notification_actions_schema repairs DBs already built
+                # with the wrong target.
+                conn.execute(self._notification_actions_ddl(self._notifications_pk_column(conn)))
                 self._heal_notification_actions_schema(conn)
 
                 # Notification preferences table
@@ -440,6 +472,7 @@ class InAppNotificationService:
                         params.append(datetime.utcnow())
                         params.append(user_id)
 
+                        # db-audit: ignore[DBW001] - join over a code-controlled list
                         conn.execute(f'''
                             UPDATE notification_preferences
                             SET {", ".join(updates)}

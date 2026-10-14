@@ -13,6 +13,7 @@ from tkinter import ttk, messagebox, filedialog, simpledialog
 
 from education_system.systems.university.infrastructure.database.db import get_connection
 from education_system.systems.university.domains.academics.domain.services.exam_management import seating as _seating
+from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608 - identifier validation
 
 logger = logging.getLogger(__name__)
 
@@ -453,6 +454,8 @@ class SeatingTabMixin:
             self._seating_refresh()
 
         def toggle_attr(column, label):
+            # Identifiers cannot be parameterised, so they are validated instead.
+            column = validate_identifier(column)
             new_val = 0 if seat[column.replace('is_', '')
                               if False else  # just use raw name
                               column.split('_', 1)[1]] else 1

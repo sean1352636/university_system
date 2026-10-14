@@ -34,33 +34,8 @@ class SchemaMixin:
 
             # Create the most basic tables needed for calendar functionality
             minimal_tables = [
-                '''CREATE TABLE IF NOT EXISTS academic_calendar_events (
-                    id TEXT PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    date TEXT,
-                    date_start TEXT,
-                    date_end TEXT,
-                    description TEXT,
-                    event_type TEXT DEFAULT 'Academic',
-                    date_added TEXT NOT NULL,
-                    last_modified TEXT,
-                    created_by TEXT,
-                    start_time TEXT,
-                    end_time TEXT,
-                    location TEXT,
-                    audience TEXT,
-                    assignment_id INTEGER,
-                    trip_id INTEGER,
-                    organizer TEXT,
-                    participants TEXT,
-                    status TEXT,
-                    country_code TEXT,
-                    region TEXT,
-                    is_active BOOLEAN DEFAULT 1,
-                    CONSTRAINT valid_event_dates CHECK (
-                        date_start IS NULL OR date_end IS NULL OR date_start <= date_end
-                    )
-                )''',
+                '''SELECT 1  -- academic_calendar_events is retired: calendar events are
+                    -- rows in unified_events, tagged with the academic_calendar source''',
 
                 '''CREATE TABLE IF NOT EXISTS academic_years (
                     id TEXT PRIMARY KEY,
@@ -128,33 +103,8 @@ class SchemaMixin:
                     )
                 ''',
                 'events': '''
-                    CREATE TABLE IF NOT EXISTS academic_calendar_events (
-                        id TEXT PRIMARY KEY,
-                        name TEXT NOT NULL,
-                        date TEXT,
-                        date_start TEXT,
-                        date_end TEXT,
-                        description TEXT,
-                        event_type TEXT DEFAULT 'Academic',
-                        date_added TEXT NOT NULL,
-                        last_modified TEXT,
-                        created_by TEXT,
-                        start_time TEXT,
-                        end_time TEXT,
-                        location TEXT,
-                        audience TEXT,
-                        assignment_id INTEGER,
-                        trip_id INTEGER,
-                        organizer TEXT,
-                        participants TEXT,
-                        status TEXT,
-                        country_code TEXT,
-                        region TEXT,
-                        is_active BOOLEAN DEFAULT 1,
-                        CONSTRAINT valid_event_dates CHECK (
-                            date_start IS NULL OR date_end IS NULL OR date_start <= date_end
-                        )
-                    )
+                    SELECT 1  -- academic_calendar_events is retired: calendar events are
+                    -- rows in unified_events, tagged with the academic_calendar source
                 ''',
                 'event_categories': '''
                     CREATE TABLE IF NOT EXISTS event_categories (
@@ -215,33 +165,8 @@ class SchemaMixin:
                     CONSTRAINT valid_semester_dates CHECK (start_date < end_date)
                 )''',
 
-                '''CREATE TABLE IF NOT EXISTS academic_calendar_events (
-                    id TEXT PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    date TEXT,
-                    date_start TEXT,
-                    date_end TEXT,
-                    description TEXT,
-                    event_type TEXT DEFAULT 'Academic',
-                    date_added TEXT NOT NULL,
-                    last_modified TEXT,
-                    created_by TEXT,
-                    start_time TEXT,
-                    end_time TEXT,
-                    location TEXT,
-                    audience TEXT,
-                    assignment_id INTEGER,
-                    trip_id INTEGER,
-                    organizer TEXT,
-                    participants TEXT,
-                    status TEXT,
-                    country_code TEXT,
-                    region TEXT,
-                    is_active BOOLEAN DEFAULT 1,
-                    CONSTRAINT valid_event_dates CHECK (
-                        date_start IS NULL OR date_end IS NULL OR date_start <= date_end
-                    )
-                )'''
+                '''SELECT 1  -- academic_calendar_events is retired: calendar events are
+                    -- rows in unified_events, tagged with the academic_calendar source'''
             ]
 
             for table_sql in tables:
@@ -267,7 +192,7 @@ class SchemaMixin:
                     event_id TEXT NOT NULL,
                     tag_id INTEGER NOT NULL,
                     date_added TEXT NOT NULL,
-                    FOREIGN KEY (event_id) REFERENCES academic_calendar_events (id) ON DELETE CASCADE,
+                    FOREIGN KEY (event_id) REFERENCES unified_events (source_event_id) ON DELETE CASCADE,
                     FOREIGN KEY (tag_id) REFERENCES event_tags (id) ON DELETE CASCADE,
                     UNIQUE(event_id, tag_id)
                 )''',
@@ -293,7 +218,7 @@ class SchemaMixin:
                     course_id TEXT NOT NULL,
                     event_sub_type TEXT,
                     date_added TEXT NOT NULL,
-                    FOREIGN KEY (event_id) REFERENCES academic_calendar_events (id) ON DELETE CASCADE,
+                    FOREIGN KEY (event_id) REFERENCES unified_events (source_event_id) ON DELETE CASCADE,
                     FOREIGN KEY (course_id) REFERENCES courses (id) ON DELETE CASCADE,
                     UNIQUE(event_id, course_id)
                 )''',
@@ -319,7 +244,7 @@ class SchemaMixin:
                     notes TEXT,
                     date_added TEXT NOT NULL,
                     FOREIGN KEY (resource_id) REFERENCES resources (id) ON DELETE CASCADE,
-                    FOREIGN KEY (event_id) REFERENCES academic_calendar_events (id) ON DELETE CASCADE
+                    FOREIGN KEY (event_id) REFERENCES unified_events (source_event_id) ON DELETE CASCADE
                 )''',
 
                 '''CREATE TABLE IF NOT EXISTS notification_preferences (
@@ -343,7 +268,7 @@ class SchemaMixin:
                     message TEXT,
                     date_added TEXT NOT NULL,
                     sent_at TEXT,
-                    FOREIGN KEY (event_id) REFERENCES academic_calendar_events (id) ON DELETE CASCADE
+                    FOREIGN KEY (event_id) REFERENCES unified_events (source_event_id) ON DELETE CASCADE
                 )''',
 
                 '''CREATE TABLE IF NOT EXISTS search_presets (
@@ -371,7 +296,7 @@ class SchemaMixin:
                     timezone TEXT DEFAULT 'UTC',
                     exceptions TEXT,
                     date_added TEXT NOT NULL,
-                    FOREIGN KEY (base_event_id) REFERENCES academic_calendar_events (id) ON DELETE CASCADE
+                    FOREIGN KEY (base_event_id) REFERENCES unified_events (source_event_id) ON DELETE CASCADE
                 )''',
 
                 '''CREATE TABLE IF NOT EXISTS backup_history (
@@ -402,7 +327,7 @@ class SchemaMixin:
                     feedback_comment TEXT,
                     qr_code TEXT,
                     cpd_credits REAL DEFAULT 0.0,
-                    FOREIGN KEY (event_id) REFERENCES academic_calendar_events (id) ON DELETE CASCADE
+                    FOREIGN KEY (event_id) REFERENCES unified_events (source_event_id) ON DELETE CASCADE
                 )''',
 
                 # trip_calendar_events folded into academic_calendar_events

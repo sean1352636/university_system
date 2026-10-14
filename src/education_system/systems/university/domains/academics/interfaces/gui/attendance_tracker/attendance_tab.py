@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, scrolledtext
@@ -119,7 +123,7 @@ def create_absence_tracker_tab(self):
     try:
         self.root.after(400, self._maybe_build_absence_tab)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     # Re-check on tab selection — this is the cheap path that catches a
     # sign-out / sign-in (identity change) without polling.
     self.notebook.bind("<<NotebookTabChanged>>",

@@ -1,5 +1,11 @@
-from .payments import process_student_payment, record_revenue
+"""Moved to ``education_system.systems.university.plugins.community_services.interfaces.gui.church_management.services.donations`` (community services plugin).
 
-def record_donation_payment(student_id, amount, description, transaction_ref, payment_method):
-    process_student_payment(student_id, amount, description, transaction_ref)
-    return record_revenue(student_id, amount, "Church Donation", transaction_ref, payment_method)
+The old name *is* the new module object, so ``mock.patch`` and
+``monkeypatch`` targets still act on the real code. Delete once nothing
+imports the old path.
+"""
+# layout-shim: education_system.systems.university.plugins.community_services.interfaces.gui.church_management.services.donations
+import importlib as _importlib
+import sys as _sys
+
+_sys.modules[__name__] = _importlib.import_module("education_system.systems.university.plugins.community_services.interfaces.gui.church_management.services.donations")

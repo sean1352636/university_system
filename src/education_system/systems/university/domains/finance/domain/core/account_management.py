@@ -705,7 +705,7 @@ def process_refund():
         refund_id = cursor.lastrowid
 
         # If user has approval permissions, can approve immediately
-        if auth.check_permission('approve_refunds'):
+        if auth.check_permission('manage_finances'):
             approve_now = input("\nApprove this refund now? (y/n): ").strip().lower()
             if approve_now == 'y':
                 cursor.execute('''
@@ -738,7 +738,7 @@ def process_refund():
         print(f"\nRefund request created successfully! Refund ID: {refund_id}")
         print(f"Amount: £{refund_amount:.2f}")
         print(f"Method: {refund_method.replace('_', ' ').title()}")
-        print(f"Status: {'Approved' if auth.check_permission('approve_refunds') and approve_now == 'y' else 'Pending Approval'}")
+        print(f"Status: {'Approved' if auth.check_permission('manage_finances') and approve_now == 'y' else 'Pending Approval'}")
 
         # Log the action
         log_audit_action('create_refund', 'unified_refunds', str(refund_id),

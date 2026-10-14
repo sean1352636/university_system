@@ -24,7 +24,7 @@ class BackupMixin:
             shutil.copy2(self.db_path, backup_path)
 
             if not auto:
-                print(_t("shared.utils.batch_operations.backup_created", path=backup_path))
+                print(_t("shared.utils.batch_operations.backup_created", path=backup_path, default="Backup Created {path}"))
 
             # Keep only last 10 backups
             self.cleanup_old_backups()
@@ -34,7 +34,7 @@ class BackupMixin:
         except Exception as e:
             logger.error(f"Error creating backup: {e}")
             if not auto:
-                print(_t("shared.utils.batch_operations.error_creating_backup", error=str(e)))
+                print(_t("shared.utils.batch_operations.error_creating_backup", error=str(e), default="Error Creating Backup. {error}"))
             return ""
 
     def cleanup_old_backups(self, keep_count: int = 10):
@@ -71,10 +71,10 @@ class BackupMixin:
         last_import = self.import_history[-1]
 
         print(_t("shared.utils.batch_operations.last_import_operation"))
-        print(f"{_t('shared.utils.batch_operations.date')}: {last_import['timestamp']}")
-        print(f"{_t('shared.utils.batch_operations.operation')}: {last_import['operation_type']}")
-        print(f"{_t('shared.utils.batch_operations.records_imported')}: {last_import['successful_imports']}")
-        print(f"{_t('shared.utils.batch_operations.file')}: {last_import['file_path']}")
+        print(f"{_t('shared.utils.batch_operations.date', default='Date')}: {last_import['timestamp']}")
+        print(f"{_t('shared.utils.batch_operations.operation', default='Operation')}: {last_import['operation_type']}")
+        print(f"{_t('shared.utils.batch_operations.records_imported', default='Records Imported')}: {last_import['successful_imports']}")
+        print(f"{_t('shared.utils.batch_operations.file', default='File')}: {last_import['file_path']}")
 
         confirm = input("\n" + _t("shared.utils.batch_operations.confirm_undo"))
         if confirm.lower() != 'y':
@@ -104,7 +104,7 @@ class BackupMixin:
                 print(_t("shared.utils.batch_operations.no_records_to_undo"))
                 return
 
-            print(_t("shared.utils.batch_operations.found_records_to_delete", count=len(student_ids_to_delete)))
+            print(_t("shared.utils.batch_operations.found_records_to_delete", count=len(student_ids_to_delete), default="Found Records To Delete {count}"))
 
             final_confirm = input(_t("shared.utils.batch_operations.prompt_proceed_deletion"))
             if final_confirm.lower() == 'y':
@@ -125,6 +125,6 @@ class BackupMixin:
 
         except sqlite3.Error as e:
             conn.rollback()
-            print(_t("shared.utils.batch_operations.database_error_undo", error=str(e)))
+            print(_t("shared.utils.batch_operations.database_error_undo", error=str(e), default="Database Error Undo {error}"))
         finally:
             conn.close()

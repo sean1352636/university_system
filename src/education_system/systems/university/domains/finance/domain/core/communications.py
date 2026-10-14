@@ -60,14 +60,14 @@ def send_email_smtp(to_email, subject, body):
         )
 
         if success:
-            print(get_text("finance.communications.email_sent_success", to_email=to_email))
+            print(get_text("finance.communications.email_sent_success", to_email=to_email, default="Email Sent Success {to_email}"))
         else:
-            print(get_text("finance.communications.email_send_failed", to_email=to_email))
+            print(get_text("finance.communications.email_send_failed", to_email=to_email, default="Email Send Failed {to_email}"))
 
         return success
 
     except Exception as e:
-        print(get_text("finance.communications.smtp_email_failed", error=e))
+        print(get_text("finance.communications.smtp_email_failed", error=e, default="Smtp Email Failed {error}"))
         return False
 
 def send_email_sendgrid(to_email, subject, body):
@@ -77,7 +77,7 @@ def send_email_sendgrid(to_email, subject, body):
     DEPRECATED: This function now uses central email infrastructure.
     Use university_system.modules.shared.utils.communication_integration.send_email_unified() directly.
     """
-    print(get_text("finance.communications.deprecated_sendgrid"))
+    print(get_text("finance.communications.deprecated_sendgrid", default="Deprecated Sendgrid"))
 
     try:
         from education_system.systems.university.infrastructure.utils.communication_integration import send_email_unified
@@ -91,14 +91,14 @@ def send_email_sendgrid(to_email, subject, body):
         )
 
         if success:
-            print(get_text("finance.communications.email_sent_via_central", to_email=to_email))
+            print(get_text("finance.communications.email_sent_via_central", to_email=to_email, default="Email Sent Via Central {to_email}"))
         else:
-            print(get_text("finance.communications.email_send_failed", to_email=to_email))
+            print(get_text("finance.communications.email_send_failed", to_email=to_email, default="Email Send Failed {to_email}"))
 
         return success
 
     except Exception as e:
-        print(get_text("finance.communications.email_failed", error=e))
+        print(get_text("finance.communications.email_failed", error=e, default="Email Failed {error}"))
         return False
 
 def send_email_aws_ses(to_email, subject, body):
@@ -108,7 +108,7 @@ def send_email_aws_ses(to_email, subject, body):
     DEPRECATED: This function now uses central email infrastructure.
     Use university_system.modules.shared.utils.communication_integration.send_email_unified() directly.
     """
-    print(get_text("finance.communications.deprecated_aws_ses"))
+    print(get_text("finance.communications.deprecated_aws_ses", default="Deprecated AWS SES"))
 
     try:
         from education_system.systems.university.infrastructure.utils.communication_integration import send_email_unified
@@ -122,25 +122,25 @@ def send_email_aws_ses(to_email, subject, body):
         )
 
         if success:
-            print(get_text("finance.communications.email_sent_via_central", to_email=to_email))
+            print(get_text("finance.communications.email_sent_via_central", to_email=to_email, default="Email Sent Via Central {to_email}"))
         else:
-            print(get_text("finance.communications.email_send_failed", to_email=to_email))
+            print(get_text("finance.communications.email_send_failed", to_email=to_email, default="Email Send Failed {to_email}"))
 
         return success
 
     except Exception as e:
-        print(get_text("finance.communications.email_failed", error=e))
+        print(get_text("finance.communications.email_failed", error=e, default="Email Failed {error}"))
         return False
 
 def setup_email_config():
     """Interactive setup for email configuration"""
-    print("\n" + get_text("finance.communications.email_config_setup_title"))
+    print("\n" + get_text("finance.communications.email_config_setup_title", default="===== EMAIL CONFIG SETUP ====="))
     print("=" * 40)
 
-    print(get_text("finance.communications.choose_email_service"))
-    print(get_text("finance.communications.option_gmail_smtp"))
-    print(get_text("finance.communications.option_sendgrid"))
-    print(get_text("finance.communications.option_aws_ses"))
+    print(get_text("finance.communications.choose_email_service", default="Choose Email Service"))
+    print(get_text("finance.communications.option_gmail_smtp", default="1. Gmail Smtp"))
+    print(get_text("finance.communications.option_sendgrid", default="2. Sendgrid"))
+    print(get_text("finance.communications.option_aws_ses", default="3. Aws Ses"))
 
     choice = input("Select service (1-3): ").strip()
 
@@ -160,16 +160,16 @@ def setup_email_config():
         AWS_SNS_CONFIG['aws_secret_access_key'] = input("Enter AWS Secret Access Key: ").strip()
         AWS_SNS_CONFIG['region_name'] = input(f"Enter AWS region ({AWS_SNS_CONFIG['region_name']}): ").strip() or AWS_SNS_CONFIG['region_name']
 
-    print(get_text("finance.communications.email_config_updated"))
+    print(get_text("finance.communications.email_config_updated", default="Email Config Updated"))
 
 def setup_sms_config():
     """Interactive setup for SMS configuration"""
-    print("\n" + get_text("finance.communications.sms_config_setup_title"))
+    print("\n" + get_text("finance.communications.sms_config_setup_title", default="===== SMS CONFIG SETUP ====="))
     print("=" * 40)
 
-    print(get_text("finance.communications.choose_sms_service"))
-    print(get_text("finance.communications.option_twilio"))
-    print(get_text("finance.communications.option_aws_sns"))
+    print(get_text("finance.communications.choose_sms_service", default="Choose SMS Service"))
+    print(get_text("finance.communications.option_twilio", default="1. Twilio"))
+    print(get_text("finance.communications.option_aws_sns", default="2. Aws Sns"))
 
     choice = input("Select service (1-2): ").strip()
 
@@ -183,7 +183,7 @@ def setup_sms_config():
         AWS_SNS_CONFIG['aws_secret_access_key'] = input("Enter AWS Secret Access Key: ").strip()
         AWS_SNS_CONFIG['region_name'] = input(f"Enter AWS region ({AWS_SNS_CONFIG['region_name']}): ").strip() or AWS_SNS_CONFIG['region_name']
 
-    print(get_text("finance.communications.sms_config_updated"))
+    print(get_text("finance.communications.sms_config_updated", default="SMS Config Updated"))
 
 def send_sms_twilio(phone_number, message):
     """
@@ -192,7 +192,7 @@ def send_sms_twilio(phone_number, message):
     DEPRECATED: This function now uses central SMS infrastructure.
     Use university_system.modules.shared.utils.communication_integration.send_sms_unified() directly.
     """
-    print(get_text("finance.communications.deprecated_twilio"))
+    print(get_text("finance.communications.deprecated_twilio", default="Deprecated Twilio"))
 
     try:
         from education_system.systems.university.infrastructure.utils.communication_integration import send_sms_unified
@@ -205,14 +205,14 @@ def send_sms_twilio(phone_number, message):
         )
 
         if success:
-            print(get_text("finance.communications.sms_sent_via_central", phone_number=phone_number))
+            print(get_text("finance.communications.sms_sent_via_central", phone_number=phone_number, default="SMS Sent Via Central {phone_number}"))
         else:
-            print(get_text("finance.communications.sms_send_failed", phone_number=phone_number))
+            print(get_text("finance.communications.sms_send_failed", phone_number=phone_number, default="SMS Send Failed {phone_number}"))
 
         return success
 
     except Exception as e:
-        print(get_text("finance.communications.sms_failed", error=e))
+        print(get_text("finance.communications.sms_failed", error=e, default="SMS Failed {error}"))
         return False
 
 def send_sms_aws_sns(phone_number, message):

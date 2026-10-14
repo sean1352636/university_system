@@ -202,9 +202,9 @@ class PlacementTrackerApp:
         # Buttons
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill="x", pady=(6, 0))
-        ttk.Button(btn_frame, text="➕ Add", command=self.open_student_dialog).pack(side="left", padx=2)
-        ttk.Button(btn_frame, text="✏️ Edit", command=self.edit_selected_student).pack(side="left", padx=2)
-        ttk.Button(btn_frame, text="🗑 Delete", command=self.delete_selected_student).pack(side="left", padx=2)
+        ttk.Button(btn_frame, text="➕ Enrol", command=self.open_student_dialog).pack(side="left", padx=2)
+        ttk.Button(btn_frame, text="✏️ Edit placement", command=self.edit_selected_student).pack(side="left", padx=2)
+        ttk.Button(btn_frame, text="🗑 Remove", command=self.delete_selected_student).pack(side="left", padx=2)
         ttk.Button(btn_frame, text="📤 Export", command=self.export_csv).pack(side="right", padx=2)
 
     # ---------- Right panel: details ----------
@@ -505,98 +505,153 @@ class PlacementTrackerApp:
 
 
 class StudentDialog(tk.Toplevel):
-    """Modal dialog for adding/editing a student."""
+    """Enrol a student on a placement, or edit their placement details.
+
+    Deliberately *not* a student editor. ``students`` is the canonical person
+    record shared across the whole system: this dialog used to upsert into it,
+    so saving here could silently overwrite a real student\'s name, course and
+    email — and editing could rename their student_id across three tables.
+    Names and courses are shown read-only; only placement fields are editable,
+    and the student must already exist.
+    """
+
+    PLACEMENT_FIELDS = [
+        ("Cohort", "cohort"),
+        ("Employer", "employer"),
+        ("Supervisor", "supervisor"),
+        ("Start Date (YYYY-MM-DD)", "start_date"),
+        ("End Date (YYYY-MM-DD)", "end_date"),
+    ]
 
     def __init__(self, parent, db, existing=None, on_save=None):
         super().__init__(parent)
         self.db = db
         self.existing = existing
         self.on_save = on_save
+        self.selected_student_id = existing[1] if existing else None
 
-        self.title("Edit Student" if existing else "Add Student")
-        self.geometry("420x460")
+        self.title("Edit Placement" if existing else "Enrol Student on Placement")
+        self.geometry("460x420")
         self.resizable(False, False)
         self.transient(parent)
         self.grab_set()
 
         self._build()
-
         if existing:
             self._populate(existing)
 
     def _build(self):
         frame = ttk.Frame(self, padding=14)
         frame.pack(fill="both", expand=True)
+        row = 0
+
+        if self.existing:
+            # Editing: the person is fixed, shown for context only.
+            name = f"{self.existing[2] or ''} {self.existing[3] or ''}".strip()
+            ttk.Label(frame, text="Student", style="SubHeader.TLabel").grid(
+                row=row, column=0, sticky="w", pady=3)
+            ttk.Label(frame, text=f"{name} ({self.existing[1]})").grid(
+                row=row, column=1, sticky="w", pady=3, padx=(8, 0))
+            row += 1
+            ttk.Label(frame, text="Course").grid(row=row, column=0, sticky="w", pady=3)
+            ttk.Label(frame, text=self.existing[4] or "-").grid(
+                row=row, column=1, sticky="w", pady=3, padx=(8, 0))
+            row += 1
+        else:
+            # Enrolling: pick from students who exist and are not already on
+            # a placement, so no new person can be created from here.
+            ttk.Label(frame, text="Student *").grid(row=row, column=0, sticky="w", pady=3)
+            self.student_choices = self.db.list_enrollable_students()
+            labels = [
+                f"{r[0]} — {(r[1] or '')} {(r[2] or '')}".strip() + f" ({r[3] or 'no course'})"
+                for r in self.student_choices
+            ]
+            self.student_var = tk.StringVar()
+            self.student_combo = ttk.Combobox(
+                frame, textvariable=self.student_var, values=labels,
+                state="readonly", width=34)
+            self.student_combo.grid(row=row, column=1, sticky="ew", pady=3, padx=(8, 0))
+            row += 1
+            if not labels:
+                ttk.Label(
+                    frame,
+                    text="Every student is already on a placement.",
+                    foreground="#a33",
+                ).grid(row=row, column=0, columnspan=2, sticky="w", pady=(0, 6))
+                row += 1
+
+        ttk.Separator(frame, orient="horizontal").grid(
+            row=row, column=0, columnspan=2, sticky="ew", pady=8)
+        row += 1
 
         self.vars = {}
-        fields = [
-            ("Student ID *", "student_id"),
-            ("First Name *", "first_name"),
-            ("Last Name *", "last_name"),
-            ("Course *", "course"),
-            ("Cohort", "cohort"),
-            ("Email", "email"),
-            ("Employer", "employer"),
-            ("Supervisor", "supervisor"),
-            ("Start Date (YYYY-MM-DD)", "start_date"),
-            ("End Date (YYYY-MM-DD)", "end_date"),
-        ]
-        for i, (label, key) in enumerate(fields):
-            ttk.Label(frame, text=label).grid(row=i, column=0, sticky="w", pady=3)
+        for label, key in self.PLACEMENT_FIELDS:
+            ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", pady=3)
             var = tk.StringVar()
             self.vars[key] = var
             ttk.Entry(frame, textvariable=var, width=32).grid(
-                row=i, column=1, sticky="ew", pady=3, padx=(8, 0))
+                row=row, column=1, sticky="ew", pady=3, padx=(8, 0))
+            row += 1
+
+        ttk.Label(
+            frame,
+            text="Student names and courses are managed in Student Records.",
+            foreground="#666", wraplength=420, justify="left",
+        ).grid(row=row, column=0, columnspan=2, sticky="w", pady=(10, 0))
+        row += 1
+
         frame.columnconfigure(1, weight=1)
 
         btns = ttk.Frame(frame)
-        btns.grid(row=len(fields), column=0, columnspan=2, pady=(14, 0), sticky="e")
+        btns.grid(row=row, column=0, columnspan=2, pady=(14, 0), sticky="e")
         ttk.Button(btns, text="Cancel", command=self.destroy).pack(side="right", padx=4)
         ttk.Button(btns, text="Save", command=self._save).pack(side="right")
 
     def _populate(self, s):
-        # s = (id, student_id, first, last, course, cohort, email, employer, sup, start, end)
-        keys = ["student_id", "first_name", "last_name", "course", "cohort",
-                "email", "employer", "supervisor", "start_date", "end_date"]
-        for i, key in enumerate(keys):
-            self.vars[key].set(s[i + 1] or "")
+        # s = (id, student_id, first, last, course, cohort, email, employer,
+        #      supervisor, start, end)
+        for key, index in (("cohort", 5), ("employer", 7), ("supervisor", 8),
+                           ("start_date", 9), ("end_date", 10)):
+            self.vars[key].set(s[index] or "")
+
+    def _resolve_student_id(self):
+        if self.existing:
+            return self.existing[1]
+        raw = self.student_var.get().strip()
+        if not raw:
+            return None
+        return raw.split(" — ", 1)[0].strip()
 
     def _save(self):
-        # Required field validation
-        required = ["student_id", "first_name", "last_name", "course"]
-        for key in required:
-            if not self.vars[key].get().strip():
-                messagebox.showwarning("Missing field", f"'{key.replace('_', ' ').title()}' is required.")
-                return
+        student_id = self._resolve_student_id()
+        if not student_id:
+            messagebox.showwarning("No student selected",
+                                   "Choose the student to enrol on a placement.")
+            return
 
-        # Date validation (optional fields, but if set, must be valid)
         for key in ("start_date", "end_date"):
             val = self.vars[key].get().strip()
             if val:
                 try:
                     datetime.strptime(val, "%Y-%m-%d")
                 except ValueError:
-                    messagebox.showwarning("Invalid date",
-                                           f"'{key.replace('_', ' ').title()}' must be YYYY-MM-DD.")
+                    messagebox.showwarning(
+                        "Invalid date",
+                        f"'{key.replace('_', ' ').title()}' must be YYYY-MM-DD.")
                     return
 
-        data = tuple(self.vars[k].get().strip() or None for k in
-                     ["student_id", "first_name", "last_name", "course", "cohort",
-                      "email", "employer", "supervisor", "start_date", "end_date"])
+        values = {k: (self.vars[k].get().strip() or None)
+                  for _label, k in self.PLACEMENT_FIELDS}
 
         try:
-            if self.existing:
-                self.db.update_student(self.existing[0], data)
-                logger.info("Placement student updated student_id=%s", data[0])
-            else:
-                self.db.add_student(data)
-                logger.info("Placement student added student_id=%s employer=%r",
-                            data[0], data[6])
-        except sqlite3.IntegrityError:
-            messagebox.showerror("Duplicate ID", "A student with that Student ID already exists.")
+            self.db.save_placement(student_id, **values)
+            logger.info("Placement saved student_id=%s employer=%r",
+                        student_id, values.get("employer"))
+        except ValueError as e:
+            messagebox.showwarning("Cannot save placement", str(e))
             return
         except Exception as e:
-            logger.exception("Placement student save failed")
+            logger.exception("Placement save failed")
             messagebox.showerror("Database error", str(e))
             return
 

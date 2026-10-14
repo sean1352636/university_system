@@ -362,6 +362,7 @@ def monitoring_completeness() -> dict:
         fields = ("gender", "ethnicity", "age_group", "disability",
                   "religion", "sexual_orientation", "nationality")
         for f in fields:
+            # db-audit: ignore[DBW001] - literal collection
             filled = conn.execute(
                 f"SELECT COUNT(*) FROM ed_people "
                 f"WHERE deleted_at IS NULL AND {f} IS NOT NULL AND {f}!='' "

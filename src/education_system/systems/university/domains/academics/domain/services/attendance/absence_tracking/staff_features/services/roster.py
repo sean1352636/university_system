@@ -79,6 +79,7 @@ class RosterService:
         like = f"%{q}%"
         placeholders = ",".join("?" * len(mine))
         try:
+            # db-audit: ignore[DBW001] - join of placeholders
             rows = self.ctx.db.cur.execute(
                 f"""SELECT DISTINCT s.student_id,
                            TRIM(COALESCE(s.first_name,'')||' '||COALESCE(s.last_name,'')),
@@ -110,6 +111,7 @@ class RosterService:
             return
         ph = ",".join("?" * len(mine))
         try:
+            # db-audit: ignore[DBW001] - join of placeholders
             rows = self.ctx.db.cur.execute(
                 f"""SELECT DISTINCT s.student_id,
                            TRIM(COALESCE(s.first_name,'')||' '||COALESCE(s.last_name,'')),

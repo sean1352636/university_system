@@ -3,6 +3,22 @@
 import sqlite3
 from education_system.platform.identity.auth.db import AUTH_DB_FILE
 
+# Which bus event produced which notification, one row per recipient and
+# channel. The bus guarantees a handler runs once per (event, consumer
+# system), but a broadcast event is dispatched once in *every* running
+# system, so without this the same "place offered" notice would arrive once
+# per open drainer.
+_EVENT_LOG_SQL = """
+CREATE TABLE IF NOT EXISTS notification_event_log (
+    event_id          TEXT    NOT NULL,
+    recipient_user_id INTEGER NOT NULL,
+    channel           TEXT    NOT NULL,
+    notification_id   INTEGER,
+    created_at        TEXT    NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (event_id, recipient_user_id, channel)
+);
+"""
+
 
 class CrossSystemNotificationService:
     """Send and receive notifications between education system instances."""
@@ -14,6 +30,52 @@ class CrossSystemNotificationService:
         conn = sqlite3.connect(self._db_path)
         conn.row_factory = sqlite3.Row
         return conn
+
+    def send_for_event(self, event_id, sender_user_id, sender_system,
+                       recipient_user_id, recipient_system, title,
+                       message=None, priority="normal", channel="in_app"):
+        """Record that *event_id* notified a recipient, at most once.
+
+        Returns the new notification dict, ``{"channel": channel}`` for a
+        non-in-app channel claimed for the first time (the caller sends it),
+        or ``None`` if this event already reached this recipient on this
+        channel. The claim and the in-app row commit together, so a crash
+        between them cannot leave a claimed event with no notification.
+        """
+        conn = self._conn()
+        try:
+            conn.executescript(_EVENT_LOG_SQL)
+            cur = conn.execute(
+                "INSERT OR IGNORE INTO notification_event_log "
+                "(event_id, recipient_user_id, channel) VALUES (?, ?, ?)",
+                (event_id, recipient_user_id, channel))
+            if cur.rowcount == 0:
+                conn.rollback()
+                return None
+            if channel != "in_app":
+                conn.commit()
+                return {"channel": channel}
+            conn.execute(
+                """INSERT INTO cross_system_notifications
+                   (sender_user_id, sender_system, recipient_user_id,
+                    recipient_system, title, message, priority)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (sender_user_id, sender_system, recipient_user_id,
+                 recipient_system, title, message, priority),
+            )
+            notification_id = conn.execute(
+                "SELECT last_insert_rowid()").fetchone()[0]
+            conn.execute(
+                "UPDATE notification_event_log SET notification_id = ? "
+                "WHERE event_id = ? AND recipient_user_id = ? AND channel = ?",
+                (notification_id, event_id, recipient_user_id, channel))
+            conn.commit()
+            row = conn.execute(
+                "SELECT * FROM cross_system_notifications WHERE id = ?",
+                (notification_id,)).fetchone()
+            return dict(row)
+        finally:
+            conn.close()
 
     def send(self, sender_user_id, sender_system, recipient_user_id,
              recipient_system, title, message=None, priority="normal"):

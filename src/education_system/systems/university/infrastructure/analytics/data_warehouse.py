@@ -367,6 +367,7 @@ class DataWarehouse:
                 # Only sync recent enrollments unless full_sync
                 where_clause = "" if full_sync else "WHERE e.created_at >= date('now', '-30 days')"
 
+                # db-audit: ignore[DBW001] - conditional between literals
                 cursor = conn.execute(f'''
                     SELECT
                         e.enrollment_id,
@@ -412,6 +413,7 @@ class DataWarehouse:
             with get_connection() as conn:
                 where_clause = "" if full_sync else "WHERE g.created_at >= date('now', '-30 days')"
 
+                # db-audit: ignore[DBW001] - conditional between literals
                 cursor = conn.execute(f'''
                     SELECT
                         CAST(strftime('%Y%m%d', g.created_at) AS INTEGER) as time_key,

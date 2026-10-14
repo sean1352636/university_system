@@ -2,19 +2,69 @@
   "version": 1,
   "description": "Ordered rules; first match owns every university Python module.",
   "rules": [
-    {"glob": "domains/admissions/**", "classification": "core"},
-    {"glob": "domains/learners/**", "classification": "core"},
-    {"glob": "domains/academics/**", "classification": "core"},
-    {"glob": "domains/assessment/**", "classification": "core"},
-    {"glob": "domains/finance/**", "classification": "core"},
-    {"glob": "domains/safeguarding/**", "classification": "core"},
-    {"glob": "domains/pastoral/domain/health/**", "classification": "core"},
-    {"glob": "domains/operations/domain/commerce/**", "classification": "demo"},
-    {"glob": "domains/operations/domain/campus/community/**", "classification": "optional"},
-    {"glob": "infrastructure/ai/**", "classification": "optional"},
-    {"glob": "infrastructure/analytics/**", "classification": "optional"},
-    {"glob": "interfaces/gui/**", "classification": "optional"},
-    {"glob": "services/integrations/**", "classification": "integration"},
-    {"glob": "**", "classification": "optional"}
+    {
+      "glob": "domains/admissions/**",
+      "classification": "core"
+    },
+    {
+      "glob": "domains/learners/**",
+      "classification": "core"
+    },
+    {
+      "glob": "domains/academics/**",
+      "classification": "core"
+    },
+    {
+      "glob": "domains/assessment/**",
+      "classification": "core"
+    },
+    {
+      "glob": "domains/finance/**",
+      "classification": "core"
+    },
+    {
+      "glob": "domains/safeguarding/**",
+      "classification": "core"
+    },
+    {
+      "glob": "domains/pastoral/domain/health/**",
+      "classification": "core"
+    },
+    {
+      "glob": "domains/operations/domain/commerce/**",
+      "classification": "demo"
+    },
+    {
+      "glob": "domains/operations/interfaces/gui/campus/community/**",
+      "classification": "optional"
+    },
+    {
+      "glob": "infrastructure/ai/**",
+      "classification": "optional"
+    },
+    {
+      "glob": "infrastructure/analytics/**",
+      "classification": "optional"
+    },
+    {
+      "glob": "shell/gui/**",
+      "classification": "optional"
+    },
+    {
+      "glob": "services/integrations/**",
+      "classification": "integration"
+    },
+    {
+      "glob": "plugins/campus_commerce/**",
+      "classification": "demo"
+    },
+    {
+      "glob": "plugins/community_services/**",
+      "classification": "optional"
+    },
+    {
+      "glob": "**",
+      "classification": "optional"
+    }
   ]
 }

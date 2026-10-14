@@ -18,22 +18,20 @@ def analyze_writing_style_fingerprint(self):
         self.enhanced_results_text.delete('1.0', tk.END)
 
         conn = sqlite3.connect(DEFAULT_DB_PATH)
-        try:
-            cursor = conn.cursor()
+        cursor = conn.cursor()
 
-            # Get student's previous submissions
-            cursor.execute('''
-                SELECT text_content, ai_probability, analysis_date
-                FROM ai_analysis_history
-                WHERE student_id = ?
-                ORDER BY analysis_date
-                LIMIT 10
-            ''', (student_id,))
-            submissions = cursor.fetchall()
+        # Get student's previous submissions
+        cursor.execute('''
+            SELECT text_content, ai_probability, analysis_date
+            FROM ai_analysis_history
+            WHERE student_id = ?
+            ORDER BY analysis_date
+            LIMIT 10
+        ''', (student_id,))
+        submissions = cursor.fetchall()
 
-            if not submissions:
-                self.enhanced_results_text.insert('1.0', f"No submission history found for student {student_id}")
-        finally:
+        if not submissions:
+            self.enhanced_results_text.insert('1.0', f"No submission history found for student {student_id}")
             conn.close()
             return
 

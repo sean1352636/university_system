@@ -163,7 +163,7 @@ class TrainingManager:
                 expiry_date=data.get('expiry_date'),
             )
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         return cert_id
 

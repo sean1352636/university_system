@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 from tkinter.font import Font
@@ -457,7 +461,7 @@ class HelpdeskGUI:
             init_helpdesk_db()
             setup_enhanced_helpdesk_permissions()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Run schema migration to ensure subject column exists
         self.ensure_subject_column()
@@ -475,7 +479,7 @@ class HelpdeskGUI:
         else:
             messagebox.showerror(
                 _t("helpdesk.auth.required_title", default="Authentication Required"),
-                _t("helpdesk.auth.login_required", default="Please log in through the main University System GUI.\n\nRun: python run.py --gui\n\nHelpdesk can only be accessed after logging in through the main system.")
+                _t("helpdesk.auth.login_required", default="Please log in through the main University System GUI.\n\nRun: python -m education_system --gui\n\nHelpdesk can only be accessed after logging in through the main system.")
             )
             root.destroy()
             return
@@ -704,21 +708,6 @@ class HelpdeskGUI:
         for widget in self.main_container.winfo_children():
             widget.destroy()
 
-    def switch_to_cli(self):
-        """Switch to CLI mode"""
-        self.root.withdraw()  # Hide GUI
-        try:
-            # Import and run the original CLI system
-            if self.auth:
-                display_helpdesk_menu(self.auth)
-            else:
-                # Run without auth for demo
-                print("Switching to CLI mode...")
-                print("This would run the original CLI helpdesk system")
-        except Exception as e:
-            print(f"Error switching to CLI: {e}")
-        finally:
-            self.root.deiconify()  # Show GUI again
 
     def return_to_main_menu(self):
         """Return to the main menu"""
@@ -730,7 +719,7 @@ class HelpdeskGUI:
             else:
                 # Running standalone, need to create main GUI
                 self.root.destroy()
-                from education_system.systems.university.interfaces.gui.shell.main import UnifiedManagementGUI
+                from education_system.systems.university.shell.gui.main import UnifiedManagementGUI
                 app = UnifiedManagementGUI(self.auth)
                 app.run()
         except Exception as e:

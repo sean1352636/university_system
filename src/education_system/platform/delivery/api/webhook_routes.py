@@ -1,118 +1,15 @@
-"""REST API routes for webhook management (admin only).
+"""Compatibility shim — this module moved to :mod:`education_system.platform.delivery.api.routes.webhook_routes`.
 
-Endpoints:
-    GET    /api/v1/webhooks/subscriptions     — list subscriptions
-    POST   /api/v1/webhooks/subscriptions     — create subscription
-    DELETE /api/v1/webhooks/subscriptions/<id> — deactivate subscription
-    POST   /api/v1/webhooks/test/<id>         — send test event
-    GET    /api/v1/webhooks/deliveries        — list recent deliveries
+Kept because existing imports across the codebase and tests still point
+here. Import from the new location in new code; this file can be deleted
+once nothing references ``education_system.platform.delivery.api.webhook_routes``.
 """
 
-import logging
-from flask import Blueprint, request, jsonify
+from education_system.platform.delivery.api.routes.webhook_routes import *  # noqa: F401,F403
+from education_system.platform.delivery.api.routes.webhook_routes import __dict__ as _moved  # noqa: E402
 
-from education_system.platform.delivery.api.auth import role_required
-
-logger = logging.getLogger(__name__)
-
-webhook_bp = Blueprint("webhooks", __name__, url_prefix="/api/webhooks")
-
-_webhook_service = None
-
-
-def init_webhook_routes(db_path: str | None = None):
-    """Initialise the webhook routes with a service instance."""
-    global _webhook_service
-    from education_system.platform.integrations.webhooks.webhook_service import WebhookService
-    _webhook_service = WebhookService(db_path)
-
-
-def _svc():
-    if _webhook_service is None:
-        from education_system.platform.integrations.webhooks.webhook_service import WebhookService
-        return WebhookService()
-    return _webhook_service
-
-
-@webhook_bp.route("/subscriptions", methods=["GET"])
-@role_required("admin")
-def list_subscriptions():
-    """List all webhook subscriptions."""
-    system_key = request.args.get("system_key")
-    active_only = request.args.get("active_only", "true").lower() == "true"
-    subs = _svc().list_subscriptions(system_key=system_key, active_only=active_only)
-    return jsonify({"subscriptions": subs, "count": len(subs)})
-
-
-@webhook_bp.route("/subscriptions", methods=["POST"])
-@role_required("admin")
-def create_subscription():
-    """Register a new webhook subscription.
-
-    Request body:
-        {"url": "https://...", "event_types": ["student.enrolled"], "system_key": "sixth_form",
-         "secret": "optional-hmac-secret", "description": "My webhook"}
-    """
-    data = request.get_json(silent=True)
-    if not data or not data.get("url"):
-        return jsonify({"error": "url is required"}), 400
-
-    import secrets as _secrets
-
-    from flask import g
-
-    from education_system.platform.integrations.webhooks.webhook_service import (
-        WebhookURLError,
-    )
-
-    # Deliveries must be signed, so a subscription needs a secret. Generate a
-    # strong one when the caller does not supply theirs, and return it once so
-    # they can configure their receiver; it is not echoed again afterwards.
-    supplied_secret = data.get("secret")
-    secret = supplied_secret or _secrets.token_urlsafe(32)
-    try:
-        sub_id = _svc().subscribe(
-            url=data["url"],
-            event_types=data.get("event_types"),
-            system_key=data.get("system_key", "all"),
-            secret=secret,
-            description=data.get("description"),
-            created_by=g.current_user.get("user_id"),
-        )
-    except WebhookURLError as exc:
-        return jsonify({"error": str(exc)}), 400
-    body = {"message": "Subscription created", "id": sub_id}
-    if not supplied_secret:
-        body["secret"] = secret  # shown once
-    return jsonify(body), 201
-
-
-@webhook_bp.route("/subscriptions/<int:sub_id>", methods=["DELETE"])
-@role_required("admin")
-def delete_subscription(sub_id):
-    """Deactivate a webhook subscription."""
-    success = _svc().unsubscribe(sub_id)
-    if not success:
-        return jsonify({"error": "Subscription not found"}), 404
-    return jsonify({"message": "Subscription deactivated", "id": sub_id})
-
-
-@webhook_bp.route("/test/<int:sub_id>", methods=["POST"])
-@role_required("admin")
-def test_webhook(sub_id):
-    """Send a test event to a specific subscription."""
-    count = _svc().dispatch(
-        event_type="webhook.test",
-        payload={"message": "Test webhook delivery", "subscription_id": sub_id},
-        system_key="shared",
-    )
-    return jsonify({"message": "Test event dispatched", "deliveries_queued": count})
-
-
-@webhook_bp.route("/deliveries", methods=["GET"])
-@role_required("admin")
-def list_deliveries():
-    """List recent webhook deliveries."""
-    limit = min(int(request.args.get("limit", 50)), 200)
-    deliveries = _svc().get_recent_deliveries(limit=limit)
-    return jsonify({"deliveries": deliveries, "count": len(deliveries)})
+# ``import *`` skips names starting with an underscore, and several of
+# these modules keep their state and helpers private (``_rate_limiter``,
+# ``_extract_subdomain``, ``_JWT_SECRET``). Callers and tests reach for
+# those, so re-export everything the target defines.
+globals().update({k: v for k, v in _moved.items() if not k.startswith("__")})

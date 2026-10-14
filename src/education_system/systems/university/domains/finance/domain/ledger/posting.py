@@ -17,6 +17,9 @@ Mappings live in `_REVENUE_FOR_PAYMENT_SOURCE` and friends below; finance staff
 can adjust by editing this module. A more elaborate config-driven ruleset is
 deferred to a future change.
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 from decimal import Decimal
 from datetime import datetime, date
@@ -132,7 +135,7 @@ def _resolve_vat(source_type, explicit_rate, explicit_amount, gross):
             keyword = (explicit_rate or 'standard').lower() if vat > 0 else 'exempt'
             return keyword, vat, net
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     rate_keyword = (explicit_rate or _VAT_DEFAULT_BY_SOURCE.get(
         (source_type or '').lower(), 'exempt')).lower()

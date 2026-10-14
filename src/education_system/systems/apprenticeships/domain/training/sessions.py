@@ -8,7 +8,7 @@ way hours get into the log without anyone typing them.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from education_system.systems.apprenticeships.domain.apprentices.models import ValidationError
 
@@ -80,6 +80,8 @@ class SessionAttendance:
     status: str = "Present"
     otj_hours: float = 0.0
     notes: str | None = None
+    # Why they were not there; only set on Absent or Excused marks.
+    absence_reason: str | None = None
     recorded_at: str = ""
     # Filled by the join.
     apprentice_name: str = ""
@@ -107,48 +109,14 @@ class TrainingPlanItem:
     ksb_codes: str | None = None
     delivery_mode: str | None = None
     status: str = "Planned"
+    # The learning-plan objective this activity delivers, if any.
+    objective_id: int | None = None
     created_at: str = ""
     updated_at: str = ""
 
     @property
     def is_done(self) -> bool:
         return self.status == "Complete"
-
-
-@dataclass
-class AttendanceSummary:
-    """An apprentice's attendance record across all sessions."""
-
-    apprentice_id: int
-    present: int = 0
-    late: int = 0
-    absent: int = 0
-    excused: int = 0
-    records: list[SessionAttendance] = field(default_factory=list)
-
-    @property
-    def total(self) -> int:
-        return self.present + self.late + self.absent + self.excused
-
-    @property
-    def attendance_rate(self) -> float:
-        """Share of sessions attended, counting late as attended.
-
-        Excused absences are excluded from the denominator — penalising
-        an apprentice for authorised leave would make the figure useless
-        for spotting genuine disengagement.
-        """
-        countable = self.present + self.late + self.absent
-        if countable == 0:
-            return 0.0
-        return round((self.present + self.late) / countable * 100, 1)
-
-    @property
-    def punctuality_rate(self) -> float:
-        attended = self.present + self.late
-        if attended == 0:
-            return 0.0
-        return round(self.present / attended * 100, 1)
 
 
 def validate_delivery_mode(value: str | None) -> str:

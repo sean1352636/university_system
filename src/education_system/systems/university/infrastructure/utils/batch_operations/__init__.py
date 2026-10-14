@@ -25,7 +25,7 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 
 def main():
     """Main function to demonstrate the enhanced batch operations system"""
-    print(_t("shared.utils.batch_operations.system_title"))
+    print(_t("shared.utils.batch_operations.system_title", default="===== SYSTEM ====="))
     print("=" * 60)
 
     # Initialize the batch operation manager

@@ -159,7 +159,7 @@ def open_today_window(parent: tk.Misc) -> tk.Toplevel:
             try:
                 c.close()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             conn_holder["conn"] = None
 
     def _refresh():

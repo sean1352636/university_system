@@ -9,6 +9,8 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
+
+from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui import report_widgets as _report
 from datetime import datetime
 from typing import Optional
 import json
@@ -27,6 +29,10 @@ from education_system.systems.university.domains.academics.domain.services.evalu
 from education_system.systems.university.domains.academics.domain.services.evaluation.db_schema import initialize_evaluation_database
 from education_system.systems.university.infrastructure.database.db import get_connection
 from education_system.systems.university.infrastructure.activity_logger import log_activity
+from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui._student_enrolment import enrolment_summary
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class CourseEvaluationGUI:
@@ -297,13 +303,20 @@ class CourseEvaluationGUI:
         ttk.Button(select_frame, text=_t('gui.academics.course_management_gui.course_evaluation.buttons.email_report_to_admin', default="Email Report to Admin"),
                   command=self.email_results_to_admin).pack(side=tk.LEFT, padx=5)
 
-        # Results display
-        results_frame = ttk.LabelFrame(tab, text=_("course_evaluation.labels.evaluation_results"), padding="10")
-        results_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+        ttk.Label(select_frame,
+                  text="Double-click a question for its full breakdown",
+                  foreground="#7f8c8d").pack(side=tk.LEFT, padx=12)
 
-        self.results_text = scrolledtext.ScrolledText(results_frame, wrap=tk.WORD,
-                                                      width=80, height=25)
-        self.results_text.pack(fill=tk.BOTH, expand=True)
+        # Results display: cards and a sortable question table on a scrolling
+        # surface, rather than a fixed-height wall of text.
+        results_frame = ttk.LabelFrame(tab, text=_("course_evaluation.labels.evaluation_results"), padding="6")
+        results_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+        self.results_surface = _report.scrollable(results_frame)
+        self._results_placeholder()
+        # Kept so the export and email actions still have the plain-text
+        # rendering they write out.
+        self._results_plain = ""
+        self._results_rows = []
 
     # ======================== Helper Methods ========================
 
@@ -371,10 +384,16 @@ class CourseEvaluationGUI:
                 for row in rows:
                     self.evaluations_tree.insert('', tk.END, values=tuple(row))
 
-                # Update combo boxes
+                # Update whichever combo boxes exist. ``response_eval_combo``
+                # belongs to create_response_tab, which create_widgets never
+                # calls — so this line raised AttributeError every time and
+                # took the whole loader with it, leaving the Results tab's
+                # dropdown permanently empty and "Calculate Results" unusable.
                 eval_list = [f"{row[0]}: {row[1]} - {row[2]} {row[3]}" for row in rows]
-                self.response_eval_combo['values'] = eval_list
-                self.results_eval_combo['values'] = eval_list
+                for attr in ("response_eval_combo", "results_eval_combo"):
+                    combo = getattr(self, attr, None)
+                    if combo is not None:
+                        combo['values'] = eval_list
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("course_evaluation.messages.failed_load_evaluations").format(error=e))
@@ -641,6 +660,27 @@ class CourseEvaluationGUI:
         ttk.Button(dialog, text=_("course_evaluation.buttons.add_question"),
                   command=save_question).grid(row=5, column=0, columnspan=2, pady=20)
 
+    def _student_scope(self):
+        """Enrolment scope for the signed-in user, or None for staff.
+
+        Returns None when the user is not a student (or has no student
+        record), which leaves the dialogs showing the full catalogue —
+        staff launch evaluations on other people's behalf.
+        """
+        user = getattr(self.auth, "current_user", None) or {}
+        role = str(user.get("role", "")).lower()
+        if role and role != "student":
+            return None
+        student_id = user.get("student_id") or user.get("username")
+        if not student_id:
+            return None
+        try:
+            summary = enrolment_summary(str(student_id))
+        except Exception:
+            logger.debug("Could not resolve enrolment scope", exc_info=True)
+            return None
+        return summary if (summary.get("course") or summary.get("lecturers")) else None
+
     def launch_evaluation(self):
         """Launch a new course evaluation"""
         dialog = tk.Toplevel(self.root)
@@ -653,27 +693,36 @@ class CourseEvaluationGUI:
         fields['module'] = ttk.Combobox(dialog, width=45, state='readonly')
         fields['module'].grid(row=0, column=1, padx=5, pady=5)
 
-        # Populate courses dropdown
+        # A student evaluates their own course, not any course in the
+        # catalogue. Staff and admins launch evaluations on behalf of
+        # others, so they still get the full list.
+        summary = self._student_scope()
         course_codes = {}
+        course_list = []
         try:
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    "SELECT COALESCE(course_code, code), COALESCE(course_name, name) "
-                    "FROM courses "
-                    "WHERE COALESCE(course_code, code) IS NOT NULL "
-                    "AND COALESCE(course_name, name) IS NOT NULL "
-                    "AND LOWER(COALESCE(status, 'active')) = 'active' "
-                    "ORDER BY COALESCE(course_code, code)"
-                )
-                course_list = []
-                for code, name in cursor.fetchall():
-                    label = f"{code} - {name}"
-                    course_list.append(label)
-                    course_codes[label] = code
-                fields['module']['values'] = course_list
-                if course_list:
-                    fields['module'].current(0)
+            if summary and summary.get("course"):
+                course = summary["course"]
+                label = f"{course['code']} - {course['name']}"
+                course_list = [label]
+                course_codes[label] = course["code"]
+            else:
+                with get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        "SELECT COALESCE(course_code, code), COALESCE(course_name, name) "
+                        "FROM courses "
+                        "WHERE COALESCE(course_code, code) IS NOT NULL "
+                        "AND COALESCE(course_name, name) IS NOT NULL "
+                        "AND LOWER(COALESCE(status, 'active')) = 'active' "
+                        "ORDER BY COALESCE(course_code, code)"
+                    )
+                    for code, name in cursor.fetchall():
+                        label = f"{code} - {name}"
+                        course_list.append(label)
+                        course_codes[label] = code
+            fields['module']['values'] = course_list
+            if course_list:
+                fields['module'].current(0)
         except Exception as e:
             print(f"Could not load courses: {e}")
 
@@ -695,35 +744,44 @@ class CourseEvaluationGUI:
         fields['instructor'] = ttk.Combobox(dialog, width=38, state='readonly')
         fields['instructor'].grid(row=3, column=1, padx=5, pady=5)
 
-        # Populate instructors dropdown
+        # Populate instructors dropdown. For a student this is limited to
+        # the lecturers who teach the modules they are enrolled on —
+        # rating someone who has never taught you is not feedback.
         instructor_data = {}
         try:
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT id, first_name, last_name, department, email
-                    FROM instructors
-                    WHERE is_active = 1 AND status = 'Active'
-                    ORDER BY last_name, first_name
-                ''')
-                instructors = cursor.fetchall()
+            if summary and summary.get("lecturers"):
+                instructors = [
+                    (l["id"], l["name"].split(" ")[0],
+                     " ".join(l["name"].split(" ")[1:]), l["department"], l["email"])
+                    for l in summary["lecturers"]
+                ]
+            else:
+                with get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        SELECT id, first_name, last_name, department, email
+                        FROM instructors
+                        WHERE is_active = 1 AND status = 'Active'
+                        ORDER BY last_name, first_name
+                    ''')
+                    instructors = cursor.fetchall()
 
-                if instructors:
-                    instructor_list = []
-                    for row in instructors:
-                        i_id, first_name, last_name, dept, email = tuple(row)
-                        display = f"{i_id}: {first_name} {last_name}"
-                        if dept:
-                            display += f" ({dept})"
-                        instructor_list.append(display)
-                        instructor_data[display] = str(i_id)
+            if instructors:
+                instructor_list = []
+                for row in instructors:
+                    i_id, first_name, last_name, dept, email = tuple(row)
+                    display = f"{i_id}: {first_name} {last_name}"
+                    if dept:
+                        display += f" ({dept})"
+                    instructor_list.append(display)
+                    instructor_data[display] = str(i_id)
 
-                    fields['instructor']['values'] = instructor_list
-                    if instructor_list:
-                        fields['instructor'].current(0)
-                else:
-                    messagebox.showwarning(_("common.warning"),
-                                         _("course_evaluation.messages.no_instructors_available"))
+                fields['instructor']['values'] = instructor_list
+                if instructor_list:
+                    fields['instructor'].current(0)
+            else:
+                messagebox.showwarning(_("common.warning"),
+                                     _("course_evaluation.messages.no_instructors_available"))
         except Exception as e:
             print(f"Could not load instructors: {e}")
             messagebox.showwarning(_("common.warning"), f"Could not load instructors: {e}")
@@ -938,7 +996,7 @@ class CourseEvaluationGUI:
             messagebox.showerror(_("common.error"), _("course_evaluation.messages.failed_submit_response").format(error=e))
 
     def calculate_results(self):
-        """Calculate and display results"""
+        """Calculate results and render them as cards plus a question table."""
         try:
             selection = self.results_eval_combo.get()
             if not selection:
@@ -946,30 +1004,135 @@ class CourseEvaluationGUI:
                 return
 
             eval_id = int(selection.split(':')[0])
-
             results = ResultsAnalyticsManager.calculate_results(eval_id)
-
-            # Display results
-            self.results_text.delete('1.0', tk.END)
-            self.results_text.insert(tk.END, _("course_evaluation.results.header").format(id=eval_id) + "\n")
-            self.results_text.insert(tk.END, "=" * 80 + "\n\n")
-
-            for result in results:
-                avg_score = result['average_score']
-                # Handle None values (when no responses or all NULL)
-                score_display = f"{avg_score:.2f}" if avg_score is not None else "N/A"
-                self.results_text.insert(tk.END,
-                    _("course_evaluation.results.question_id").format(id=result['question_id']) + "\n" +
-                    _("course_evaluation.results.question").format(text=result['question_text']) + "\n" +
-                    _("course_evaluation.results.average_score").format(score=score_display) + "\n" +
-                    _("course_evaluation.results.responses").format(count=result['response_count']) + "\n" +
-                    f"{'-' * 80}\n\n"
-                )
-
-            messagebox.showinfo(_("common.success"), _("course_evaluation.messages.results_calculated"))
+            self._current_eval_id = eval_id
+            self._results_rows = results
+            self._results_plain = self._plain_results_text(eval_id, results)
+            self._render_results(eval_id, selection, results)
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("course_evaluation.messages.failed_calculate_results").format(error=e))
+
+    def _plain_results_text(self, eval_id, results):
+        """The old text rendering, kept for export and the emailed report."""
+        lines = [_("course_evaluation.results.header").format(id=eval_id), "=" * 80, ""]
+        for result in results:
+            avg = result['average_score']
+            lines += [
+                _("course_evaluation.results.question_id").format(id=result['question_id']),
+                _("course_evaluation.results.question").format(text=result['question_text']),
+                _("course_evaluation.results.average_score").format(
+                    score=f"{avg:.2f}" if avg is not None else "N/A"),
+                _("course_evaluation.results.responses").format(count=result['response_count']),
+                "-" * 80, "",
+            ]
+        return "\n".join(lines)
+
+    def _results_placeholder(self):
+        _report.clear(self.results_surface)
+        body = _report.card(self.results_surface, accent=_report.MUTED)
+        tk.Label(body,
+                 text="Choose an evaluation and click Calculate Results.",
+                 bg=_report.CARD, fg=_report.MUTED,
+                 font=(_report.FONT, 9)).pack(anchor="w")
+
+    def _render_results(self, eval_id, selection, results):
+        surface = self.results_surface
+        _report.clear(surface)
+
+        scored = [r for r in results if r['average_score'] is not None]
+        overall = (sum(r['average_score'] for r in scored) / len(scored)) if scored else None
+        responses = max((r['response_count'] or 0) for r in results) if results else 0
+
+        _report.banner(surface, selection, f"Evaluation {eval_id}")
+        _report.stat_strip(surface, [
+            (len(results), "Questions"),
+            (responses, "Responses"),
+            (f"{overall:.2f}" if overall is not None else "N/A", "Overall average",
+             _report.OK if (overall or 0) >= 3.5 else _report.WARN),
+            (len(results) - len(scored), "Free-text only"),
+        ])
+
+        if not results:
+            _report.verdict(surface, None, "No completed responses yet",
+                            "Nothing has been submitted for this evaluation.",
+                            neutral=True)
+            return
+
+        _report.card(surface, "Per-question results", accent="#9b59b6")
+        rows = []
+        for r in results:
+            avg = r['average_score']
+            rows.append((r['question_id'], r['question_text'],
+                         f"{avg:.2f}" if avg is not None else "—",
+                         r['response_count'] or 0))
+        tree = _report.table(
+            surface, ("ID", "Question", "Average", "Responses"), rows,
+            widths={"ID": 60, "Question": 380, "Average": 90, "Responses": 90},
+            height=14)
+
+        def _open(_event=None):
+            sel = tree.selection()
+            if not sel:
+                return
+            qid = tree.item(sel[0])["values"][0]
+            self.show_question_results(eval_id, qid)
+        tree.bind("<Double-1>", _open)
+
+        # Weakest questions are what a module leader acts on, so surface them
+        # rather than making someone scan the table for them.
+        weak = sorted(scored, key=lambda r: r['average_score'])[:3]
+        if weak and overall is not None:
+            body = _report.card(surface, "Lowest scoring", accent=_report.WARN)
+            _report.status_list(body, [
+                (r['average_score'] >= 3.0, r['question_text'],
+                 f"{r['average_score']:.2f} from {r['response_count']} response(s)")
+                for r in weak
+            ])
+
+    def show_question_results(self, eval_id, question_id):
+        """Open one question's full breakdown in its own window."""
+        try:
+            data = ResultsAnalyticsManager.question_breakdown(eval_id, int(question_id))
+        except Exception as e:
+            messagebox.showerror(_("common.error"), f"Could not load question results: {e}")
+            return
+
+        window, surface = _report.report_window(
+            self.root, f"Question {question_id} — results", "760x640")
+
+        _report.banner(surface, data["question_text"],
+                       f"Question {question_id} · {data['question_type'] or 'unknown type'}")
+
+        average = data["average"]
+        _report.stat_strip(surface, [
+            (data["response_count"], "Responses"),
+            (f"{average:.2f}" if average is not None else "—", "Average"),
+            (f"{data['median']:.2f}" if data["median"] is not None else "—", "Median"),
+            (f"{data['lowest']:.0f}–{data['highest']:.0f}"
+             if data["lowest"] is not None else "—", "Range"),
+        ])
+
+        if data["distribution"]:
+            _report.card(surface, "Answer distribution", accent="#3498db")
+            total = sum(count for _v, count in data["distribution"]) or 1
+            _report.table(
+                surface, ("Answer", "Count", "Share"),
+                [(value, count, f"{count / total * 100:.0f}%")
+                 for value, count in data["distribution"]],
+                widths={"Answer": 200, "Count": 90, "Share": 90})
+
+        if data["comments"]:
+            _report.card(surface, f"Comments ({len(data['comments'])})",
+                         accent="#16a34a")
+            _report.table(surface, ("Response",),
+                          [(c,) for c in data["comments"]],
+                          widths={"Response": 620}, height=12)
+
+        if not data["distribution"] and not data["comments"]:
+            _report.verdict(surface, None, "No answers recorded",
+                            "Nobody has answered this question yet.", neutral=True)
+        window.lift()
 
     def export_results(self):
         """Export results to CSV or text file"""
@@ -1078,7 +1241,7 @@ class CourseEvaluationGUI:
         """Email evaluation results report to admin users"""
         try:
             # Get report content from the results text widget
-            report_content = self.results_text.get('1.0', tk.END).strip()
+            report_content = (getattr(self, '_results_plain', '') or '').strip()
             if not report_content:
                 messagebox.showwarning(_("common.warning"),
                                        _t('gui.academics.course_management_gui.course_evaluation.dialogs.no_results_to_email_please_calculate_results_first', default="No results to email. Please calculate results first."))

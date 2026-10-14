@@ -10,7 +10,8 @@ Eight integrated subsystems, each surfaced as a Notebook tab:
   7. Access Cards — keycard / access management (table: ``access_cards``)
   8. Inspections — lift / fire / regulatory (table: ``housing_inspections``)
 
-Persistence: writes to the central ``data/db_files/student_records.db``.
+Persistence: writes to the central ``var/data/university/db_files/student_records.db``
+(via ``paths.UNIVERSITY_DEFAULT_DB_PATH``).
 Existing tables are reused as-is; only the two ``bm_``-prefixed tables
 are created here, and only via ``CREATE TABLE IF NOT EXISTS``.
 
@@ -95,14 +96,21 @@ def _user_display_name(user):
 # Database (uses the central student_records.db)
 # ---------------------------------------------------------------------------
 def _resolve_db_path() -> pathlib.Path:
-    repo_root = pathlib.Path(__file__).resolve()
-    while (repo_root.parent != repo_root
-           and not (repo_root / "education_system").is_dir()):
-        repo_root = repo_root.parent
-    db_dir = (repo_root / "education_system" / "university_system"
-              / "data" / "db_files")
-    db_dir.mkdir(parents=True, exist_ok=True)
-    return db_dir / "student_records.db"
+    """The central university database, from the single paths module.
+
+    This used to walk up for a directory named ``education_system`` and build
+    ``<that>/university_system/data/db_files/``. Two things were wrong with it:
+    the walk stops at ``src/``, and ``university_system/data/`` has not been the
+    data location since ADR 0018. So it pointed at an empty database *inside the
+    source tree* -- and created it as an import side effect, which is why the
+    directory reappeared merely from collecting tests.
+
+    Directories are not created here: ``paths`` never makes them on import, and
+    startup calls ``ensure_university_directories()``.
+    """
+    from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+
+    return UNIVERSITY_DEFAULT_DB_PATH
 
 
 DB_PATH = _resolve_db_path()
@@ -408,7 +416,7 @@ class CRUDTab(ttk.Frame):
         """Subprocess apps go via IPC; in-process tabs call the parent
         directly. BM is always subprocess so we always use IPC."""
         try:
-            from education_system.systems.university.interfaces.gui.shell.main.features.academic_link_bar import (
+            from education_system.systems.university.shell.gui.main.features.academic_link_bar import (
                 request_open,
             )
             request_open(action, context)
@@ -1598,7 +1606,7 @@ def main():
                 _t('gui.operations.campus.facilities.building_management_app.dialogs.facilities_management', default="Facilities Management"),
                 _t('gui.operations.campus.facilities.building_management_app.dialogs.failed_to_start_see_logs_for_details', default="Failed to start. See logs for details."))
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         raise
 
 

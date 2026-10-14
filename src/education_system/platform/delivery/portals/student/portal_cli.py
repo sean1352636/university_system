@@ -23,11 +23,25 @@ SYSTEM_LABELS = {
 }
 
 
+def _current_user(auth):
+    """Return the acting user as a mapping.
+
+    Callers differ: the school-phase launchers pass the user dict straight in,
+    while the university passes its ``UserAuth`` instance. Accept either rather
+    than assuming a mapping and failing with 'no attribute get'.
+    """
+    if auth is None:
+        return {}
+    if isinstance(auth, dict):
+        return auth
+    return getattr(auth, "current_user", None) or {}
+
+
 def run(db_path=None, auth=None):
     """Entry point for the CLI portal menu."""
-    auth = auth or {}
-    username = auth.get("username", "")
-    role = auth.get("role", "").lower()
+    user = _current_user(auth)
+    username = user.get("username") or ""
+    role = (user.get("role") or "").lower()
     is_admin = role in ("admin", "superadmin", "staff")
     service = PortalService()
 

@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
@@ -594,7 +598,7 @@ def view_urgent_messages(self):
                         msg_tree.item(item_id, values=current_values)
                         messages_data[item_id]['is_read'] = True
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
 
     def show_email_details(event):
         """Show details of selected email"""

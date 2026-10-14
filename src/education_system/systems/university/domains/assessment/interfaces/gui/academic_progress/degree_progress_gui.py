@@ -277,7 +277,7 @@ class DegreeProgressGUI:
                         requirements.append(req_dict)
         except Exception:
             # Table may not exist; that is fine, we fall back to the service.
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return requirements
 
     # ------------------------------------------------------------------
@@ -386,7 +386,7 @@ class DegreeProgressGUI:
                     f"Exported progress to {path}",
                 )
             except Exception:
-                pass  # activity logger is best-effort
+                logger.debug("Suppressed exception", exc_info=True)
         except Exception as e:
             logger.exception("Failed to export degree progress")
             messagebox.showerror(

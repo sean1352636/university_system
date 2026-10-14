@@ -50,6 +50,7 @@ class AnalyticsService:
             return
         ph = ",".join("?" * len(mine))
         try:
+            # db-audit: ignore[DBW001] - join of placeholders
             rows = self.ctx.db.cur.execute(
                 f"""SELECT strftime('%Y-%W', date) AS week,
                            CASE strftime('%w', date)
@@ -79,6 +80,7 @@ class AnalyticsService:
         ph = ",".join("?" * len(mine))
         cutoff = (date.today() - timedelta(days=28)).isoformat()
         try:
+            # db-audit: ignore[DBW001] - join of placeholders
             rows = self.ctx.db.cur.execute(
                 f"""SELECT student_id, recent, prior
                     FROM (
@@ -118,6 +120,7 @@ class AnalyticsService:
             return
         ph = ",".join("?" * len(mine))
         try:
+            # db-audit: ignore[DBW001] - join of placeholders
             rows = self.ctx.db.cur.execute(
                 f"""SELECT module_code,
                            SUM(CASE WHEN status='present' THEN 1 ELSE 0 END)
@@ -251,6 +254,7 @@ class AnalyticsService:
                 """CREATE TABLE IF NOT EXISTS student_grades (
                     id INTEGER PRIMARY KEY,
                     student_id TEXT, module_code TEXT, grade TEXT)""")
+            # db-audit: ignore[DBW001] - join of placeholders
             rows = self.ctx.db.cur.execute(
                 f"""SELECT a.student_id, a.module_code,
                            SUM(CASE WHEN a.status='present' THEN 1 ELSE 0 END)

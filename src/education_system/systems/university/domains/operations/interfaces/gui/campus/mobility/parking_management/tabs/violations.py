@@ -197,7 +197,7 @@ class ViolationsMixin:
 
         # Insert violation
         cursor.execute('''
-        INSERT INTO parking_violations VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO parking_violations (violation_id, vehicle_id, license_plate, violation_type, violation_date, fine_amount, payment_status, location, officer_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             violation_id,
             data.get('vehicle_id'),

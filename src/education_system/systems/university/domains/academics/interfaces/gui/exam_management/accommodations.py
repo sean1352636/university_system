@@ -116,7 +116,7 @@ def get_active_accommodations(student_id, exam_id=None) -> Dict:
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
 
 def compute_extended_end_time(start_time: str, base_end_time: str,

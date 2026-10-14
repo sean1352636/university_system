@@ -460,7 +460,12 @@ def bulk_import_books():
 
                 # Insert book
                 cursor.execute('''
-                INSERT INTO books VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO books (
+                book_id, title, author, isbn, publisher, category,
+                year_published, description, location, status, added_date, last_updated,
+                reading_level, tags, cover_image_path, digital_copy_path, acquisition_cost,
+                barcode, qr_code_path, total_pages, language, edition, condition_notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (
                     book_id, title, author, isbn, publisher, category,
                     year_published, description, location, 'available', now, now,
@@ -687,49 +692,54 @@ def manage_library_events():
 
 
 def _ensure_events_schema(cursor):
-    """Create the library events / attendance tables if they do not exist."""
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS library_events (
-        event_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        event_name TEXT NOT NULL,
-        description TEXT,
-        event_date TEXT,
-        event_time TEXT,
-        location TEXT,
-        max_capacity INTEGER,
-        registered_count INTEGER DEFAULT 0,
-        status TEXT DEFAULT 'scheduled',
-        created_by TEXT,
-        created_at TEXT DEFAULT (datetime('now'))
-    )
-    ''')
+    """Prepare the unified events tables this menu now reads and writes.
 
-    # The live database may pre-date the `status` column; add it if missing.
-    existing = {row[1] for row in cursor.execute("PRAGMA table_info(library_events)")}
-    if 'status' not in existing:
-        cursor.execute("ALTER TABLE library_events ADD COLUMN status TEXT DEFAULT 'scheduled'")
+    Library events moved into ``unified_events`` (tagged ``source_type =
+    'library'``); the legacy ``library_events`` tables are kept only as the
+    migration source and are no longer created here.
+    """
+    _ensure_unified_events(cursor)
 
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS library_event_attendance (
-        attendance_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        event_id INTEGER NOT NULL,
-        attendee_id TEXT NOT NULL,
-        attendee_name TEXT,
-        registered_at TEXT DEFAULT (datetime('now')),
-        FOREIGN KEY (event_id) REFERENCES library_events (event_id)
+
+LIBRARY_EVENT_FILTER = "source_type = 'library'"
+
+
+def _ensure_unified_events(cursor):
+    """Make sure the unified provenance plumbing is in place before querying."""
+    from education_system.systems.university.infrastructure.database.schemas.unified_events_link import (
+        ensure_source_link,
     )
-    ''')
+    ensure_source_link(cursor)
+
+
+def _split_start(start_datetime):
+    """Return ``(date, time)`` from a stored ``start_datetime``."""
+    if not start_datetime:
+        return '', ''
+    date_part, _, time_part = str(start_datetime).partition(' ')
+    return date_part, time_part[:5]
+
+
+def _join_start(event_date, event_time):
+    """Combine the CLI's separate date and time prompts into one value."""
+    event_date = (event_date or '').strip()
+    event_time = (event_time or '').strip()
+    return f"{event_date} {event_time}".strip() if event_date else event_time
 
 
 def _list_upcoming_events(cursor):
     """List events dated today or later that are not cancelled."""
-    cursor.execute('''
-    SELECT event_id, event_name, event_date, event_time, location,
-           max_capacity, registered_count, COALESCE(status, 'scheduled')
-    FROM library_events
-    WHERE (event_date IS NULL OR date(event_date) >= date('now'))
-      AND COALESCE(status, 'scheduled') != 'cancelled'
-    ORDER BY event_date, event_time
+    _ensure_unified_events(cursor)
+    cursor.execute(f'''
+    SELECT e.event_id, e.title, e.start_datetime, e.location, e.max_capacity,
+           (SELECT COUNT(*) FROM unified_event_registrations r
+            WHERE r.event_id = e.event_id),
+           COALESCE(e.status, 'scheduled')
+    FROM unified_events e
+    WHERE {LIBRARY_EVENT_FILTER}
+      AND (e.start_datetime IS NULL OR date(e.start_datetime) >= date('now'))
+      AND COALESCE(e.status, 'scheduled') != 'cancelled'
+    ORDER BY e.start_datetime
     ''')
     rows = cursor.fetchall()
 
@@ -741,17 +751,18 @@ def _list_upcoming_events(cursor):
     print("-" * 90)
     print(f"{'ID':<5} {'Title':<28} {'Date':<12} {'Time':<8} {'Location':<18} {'Reg/Cap':<10} {'Status'}")
     print("-" * 90)
-    for r in rows:
-        eid, name, edate, etime, location, cap, reg, status = r
+    for eid, name, start_dt, location, cap, reg, status in rows:
+        edate, etime = _split_start(start_dt)
         cap_display = f"{reg or 0}/{cap if cap is not None else '-'}"
-        print(f"{eid:<5} {(name or '')[:27]:<28} {(edate or ''):<12} "
-              f"{(etime or ''):<8} {(location or '')[:17]:<18} {cap_display:<10} {status}")
+        print(f"{eid:<5} {(name or '')[:27]:<28} {edate:<12} "
+              f"{etime:<8} {(location or '')[:17]:<18} {cap_display:<10} {status}")
     print("-" * 90)
     print(f"Total: {len(rows)} event(s)")
 
 
 def _create_library_event(cursor, conn, created_by):
     """Create a new library event from user input."""
+    _ensure_unified_events(cursor)
     print("\nCreate New Event:")
     title = input("Event title: ").strip()
     if not title:
@@ -771,11 +782,11 @@ def _create_library_event(cursor, conn, created_by):
             print("Invalid capacity; storing as no limit.")
 
     cursor.execute('''
-    INSERT INTO library_events
-        (event_name, description, event_date, event_time, location,
-         max_capacity, registered_count, status, created_by, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, 0, 'scheduled', ?, ?)
-    ''', (title, description, event_date, event_time, location,
+    INSERT INTO unified_events
+        (title, description, start_datetime, location, max_capacity,
+         status, created_by, created_at, source_type)
+    VALUES (?, ?, ?, ?, ?, 'scheduled', ?, ?, 'library')
+    ''', (title, description, _join_start(event_date, event_time), location,
           capacity, created_by, datetime.now().isoformat()))
     conn.commit()
     print(f"✅ Event created (ID {cursor.lastrowid}).")
@@ -783,10 +794,11 @@ def _create_library_event(cursor, conn, created_by):
 
 def _edit_library_event(cursor, conn):
     """Edit details of an existing event."""
+    _ensure_unified_events(cursor)
     event_id = input("Enter event ID to edit: ").strip()
     cursor.execute(
-        "SELECT event_name, description, event_date, event_time, location, max_capacity "
-        "FROM library_events WHERE event_id = ?",
+        f"SELECT title, description, start_datetime, location, max_capacity "
+        f"FROM unified_events WHERE event_id = ? AND {LIBRARY_EVENT_FILTER}",
         (event_id,),
     )
     row = cursor.fetchone()
@@ -794,7 +806,8 @@ def _edit_library_event(cursor, conn):
         print("Event not found.")
         return
 
-    name, description, edate, etime, location, capacity = row
+    name, description, start_dt, location, capacity = row
+    edate, etime = _split_start(start_dt)
     print("Leave a field blank to keep its current value.")
     new_name = input(f"Title [{name}]: ").strip() or name
     new_desc = input(f"Description [{description}]: ").strip() or description
@@ -809,20 +822,23 @@ def _edit_library_event(cursor, conn):
         except ValueError:
             print("Invalid capacity; keeping current value.")
 
-    cursor.execute('''
-    UPDATE library_events
-    SET event_name = ?, description = ?, event_date = ?, event_time = ?,
-        location = ?, max_capacity = ?
-    WHERE event_id = ?
-    ''', (new_name, new_desc, new_date, new_time, new_loc, new_cap, event_id))
+    cursor.execute(f'''
+    UPDATE unified_events
+    SET title = ?, description = ?, start_datetime = ?, location = ?, max_capacity = ?
+    WHERE event_id = ? AND {LIBRARY_EVENT_FILTER}
+    ''', (new_name, new_desc, _join_start(new_date, new_time), new_loc, new_cap, event_id))
     conn.commit()
     print("✅ Event updated." if cursor.rowcount else "No changes applied.")
 
 
 def _cancel_library_event(cursor, conn):
     """Mark an event as cancelled."""
+    _ensure_unified_events(cursor)
     event_id = input("Enter event ID to cancel: ").strip()
-    cursor.execute("SELECT event_name FROM library_events WHERE event_id = ?", (event_id,))
+    cursor.execute(
+        f"SELECT title FROM unified_events WHERE event_id = ? AND {LIBRARY_EVENT_FILTER}",
+        (event_id,),
+    )
     row = cursor.fetchone()
     if not row:
         print("Event not found.")
@@ -834,7 +850,8 @@ def _cancel_library_event(cursor, conn):
         return
 
     cursor.execute(
-        "UPDATE library_events SET status = 'cancelled' WHERE event_id = ?",
+        f"UPDATE unified_events SET status = 'cancelled' "
+        f"WHERE event_id = ? AND {LIBRARY_EVENT_FILTER}",
         (event_id,),
     )
     conn.commit()
@@ -843,6 +860,10 @@ def _cancel_library_event(cursor, conn):
 
 def _event_attendance(cursor, conn):
     """Register attendees for an event or list current registrations."""
+    from education_system.systems.university.infrastructure.database.schemas.unified_events_link import (
+        registered_count,
+    )
+    _ensure_unified_events(cursor)
     print("\nEvent Attendance:")
     print("1. Register an attendee")
     print("2. List attendees")
@@ -850,18 +871,21 @@ def _event_attendance(cursor, conn):
 
     event_id = input("Enter event ID: ").strip()
     cursor.execute(
-        "SELECT event_name, max_capacity, registered_count "
-        "FROM library_events WHERE event_id = ?",
+        f"SELECT title, max_capacity FROM unified_events "
+        f"WHERE event_id = ? AND {LIBRARY_EVENT_FILTER}",
         (event_id,),
     )
     row = cursor.fetchone()
     if not row:
         print("Event not found.")
         return
-    name, capacity, registered = row
+    name, capacity = row
+    # Counted rather than carried in a column, so it cannot drift away from the
+    # registrations it is supposed to describe.
+    registered = registered_count(cursor, event_id)
 
     if sub == '1':
-        if capacity is not None and (registered or 0) >= capacity:
+        if capacity is not None and registered >= capacity:
             print(f"Event '{name}' is full ({registered}/{capacity}).")
             return
         attendee_id = input("Attendee ID: ").strip()
@@ -869,22 +893,19 @@ def _event_attendance(cursor, conn):
             print("Attendee ID is required.")
             return
         attendee_name = input("Attendee name: ").strip()
+        now = datetime.now().isoformat()
         cursor.execute('''
-        INSERT INTO library_event_attendance (event_id, attendee_id, attendee_name, registered_at)
-        VALUES (?, ?, ?, ?)
-        ''', (event_id, attendee_id, attendee_name, datetime.now().isoformat()))
-        cursor.execute(
-            "UPDATE library_events SET registered_count = COALESCE(registered_count, 0) + 1 "
-            "WHERE event_id = ?",
-            (event_id,),
-        )
+        INSERT INTO unified_event_registrations
+            (event_id, user_id, attendee_name, registered_at, registration_date, status)
+        VALUES (?, ?, ?, ?, ?, 'registered')
+        ''', (event_id, attendee_id, attendee_name, now, now))
         conn.commit()
         print(f"✅ Registered {attendee_id} for '{name}'.")
 
     elif sub == '2':
         cursor.execute(
-            "SELECT attendee_id, attendee_name, registered_at "
-            "FROM library_event_attendance WHERE event_id = ? ORDER BY registered_at",
+            "SELECT user_id, attendee_name, registered_at "
+            "FROM unified_event_registrations WHERE event_id = ? ORDER BY registered_at",
             (event_id,),
         )
         attendees = cursor.fetchall()
@@ -894,7 +915,7 @@ def _event_attendance(cursor, conn):
         print(f"\nAttendees for '{name}':")
         print("-" * 60)
         for aid, aname, reg_at in attendees:
-            print(f"{aid:<15} {(aname or ''):<25} {reg_at}")
+            print(f"{(aid or ''):<15} {(aname or ''):<25} {reg_at}")
         print("-" * 60)
         print(f"Total registered: {len(attendees)}")
     else:
@@ -903,14 +924,19 @@ def _event_attendance(cursor, conn):
 
 def _event_report(cursor):
     """Print a simple summary report of events and attendance."""
-    cursor.execute("SELECT COUNT(*) FROM library_events")
+    _ensure_unified_events(cursor)
+    cursor.execute(f"SELECT COUNT(*) FROM unified_events WHERE {LIBRARY_EVENT_FILTER}")
     total = cursor.fetchone()[0]
     cursor.execute(
-        "SELECT COALESCE(status, 'scheduled'), COUNT(*) FROM library_events "
-        "GROUP BY COALESCE(status, 'scheduled')"
+        f"SELECT COALESCE(status, 'scheduled'), COUNT(*) FROM unified_events "
+        f"WHERE {LIBRARY_EVENT_FILTER} GROUP BY COALESCE(status, 'scheduled')"
     )
     by_status = cursor.fetchall()
-    cursor.execute("SELECT COUNT(*) FROM library_event_attendance")
+    cursor.execute(f'''
+    SELECT COUNT(*) FROM unified_event_registrations r
+    JOIN unified_events e ON e.event_id = r.event_id
+    WHERE {LIBRARY_EVENT_FILTER}
+    ''')
     total_attendance = cursor.fetchone()[0]
 
     print("\nLibrary Events Report:")
@@ -921,10 +947,11 @@ def _event_report(cursor):
     print(f"Total attendance registrations: {total_attendance}")
     print("-" * 40)
 
-    cursor.execute('''
-    SELECT e.event_name, COUNT(a.attendance_id) AS registrations
-    FROM library_events e
-    LEFT JOIN library_event_attendance a ON e.event_id = a.event_id
+    cursor.execute(f'''
+    SELECT e.title, COUNT(r.registration_id) AS registrations
+    FROM unified_events e
+    LEFT JOIN unified_event_registrations r ON e.event_id = r.event_id
+    WHERE {LIBRARY_EVENT_FILTER}
     GROUP BY e.event_id
     ORDER BY registrations DESC
     LIMIT 5
@@ -934,5 +961,3 @@ def _event_report(cursor):
         print("Most popular events:")
         for name, count in top:
             print(f"  {name}: {count} registration(s)")
-
-

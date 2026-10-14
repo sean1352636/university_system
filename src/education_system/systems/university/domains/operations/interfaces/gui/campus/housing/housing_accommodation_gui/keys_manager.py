@@ -127,7 +127,7 @@ def show_keys(gui_instance) -> None:
                     asg = notes.split('Housing assignment', 1)[1].strip(
                         ' :|').split(' ', 1)[0]
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
             tree.insert("", "end", iid=cnum, values=(
                 cnum,
                 f"{sname or ''} ({sid or ''})",

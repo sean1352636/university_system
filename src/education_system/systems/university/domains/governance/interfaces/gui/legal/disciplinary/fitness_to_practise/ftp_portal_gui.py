@@ -77,7 +77,7 @@ class FitnessToPractisePortal:
                 self.app._ftp_window = self
                 self.root.bind("<Destroy>", self._on_destroy, add="+")
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
     def _on_destroy(self, event) -> None:
         if event.widget is not self.root:
@@ -86,7 +86,7 @@ class FitnessToPractisePortal:
             if getattr(self.app, "_ftp_window", None) is self:
                 self.app._ftp_window = None
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     # ---- Layout ----
     def _build_ui(self):
@@ -174,7 +174,7 @@ class FitnessToPractisePortal:
         try:
             self.app._last_academic_context = context
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         try:
             fn()
         except Exception as exc:

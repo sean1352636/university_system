@@ -49,7 +49,6 @@ Counts were generated from the working tree on 2026-08-02 and exclude
 │   ├── data/
 │   ├── logs/
 │   └── secrets/
-└── run.py                         # Deprecated shim -> education_system.launcher.main
 ```
 
 The tree currently contains 12,454 non-cache files,
@@ -92,8 +91,9 @@ education_system/platform/
 
 `platform/delivery/api/` owns the shared API machinery — hosting, middleware,
 router registration and common protocol support — and is system-agnostic. Each
-system's own route blueprints live with that system, under
-`systems/<system>/interfaces/api/routes/`, and `unified_server.py` registers
+system's own route blueprints live with that system. Most use
+`systems/<system>/interfaces/api/routes/`; the university's composition routes
+live under `systems/university/shell/api/routes/`. `unified_server.py` registers
 them. University API hosting (`api_server.py`, `core_api.py`, `auth.py`,
 `pagination.py`, `validators.py`) and its static pages remain under
 `platform/delivery/api/university/`.
@@ -136,8 +136,9 @@ Maintenance scripts for both live in `tools/college_and_apprenticeships/`.
 Naming note: a `domain/**/assets/` package (primary, secondary and sixth form
 each carry one) is the *fixed-asset register* business domain — equipment tags,
 custodians, warranties — and holds Python code. It is unrelated to the static
-`assets/` trees above. Likewise `university/domain/academics/services/assignments/templates/`
-is the assignment-templates domain feature, not a static-template directory.
+`assets/` trees above. Likewise
+`university/domains/academics/domain/services/assignments/templates/` is the
+assignment-templates domain feature, not a static-template directory.
 
 ## University system
 
@@ -152,18 +153,18 @@ education_system/systems/university/
 │   ├── progression.py
 │   ├── research.py
 │   └── students.py
-├── domain/                       # Business domains (1,283 .py)
-│   ├── academics/                # Teaching, research and scheduling (392 .py)
-│   ├── admissions/               # Applicant lifecycle and policy (17 .py)
-│   ├── assessment/               # Boards, grading and progress (58 .py)
-│   ├── finance/                  # Accounts, billing and reporting (77 .py)
-│   ├── governance/               # Compliance and institutional policy (26 .py)
-│   ├── learners/                 # Canonical student lifecycle (23 .py)
-│   ├── operations/               # Campus and commerce operations (261 .py)
-│   ├── pastoral/                 # Health and student life (354 .py)
-│   ├── progression/              # Progression workflows (13 .py)
-│   ├── safeguarding/             # Safeguarding domain (24 .py)
-│   └── staff/                    # Staff-owned business rules (37 .py)
+├── domains/                      # Business capabilities grouped by owner
+│   ├── academics/                # Teaching, research and scheduling
+│   ├── admissions/               # Applicant lifecycle and policy
+│   ├── assessment/               # Boards, grading and progress
+│   ├── finance/                  # Accounts, billing and reporting
+│   ├── governance/               # Compliance and institutional policy
+│   ├── learners/                 # Canonical student lifecycle
+│   ├── operations/               # Campus and commerce operations
+│   ├── pastoral/                 # Health and student life
+│   ├── progression/              # Progression workflows
+│   ├── safeguarding/             # Safeguarding domain
+│   └── staff/                    # Staff-owned business rules
 ├── infrastructure/               # Technical adapters (516 .py)
 │   ├── auth/                     # Modular auth façade and implementations
 │   ├── database/                 # Connections, schemas and schema versions
@@ -173,9 +174,10 @@ education_system/systems/university/
 │   ├── security/                 # Encryption and security adapters
 │   ├── unit_of_work.py
 │   └── utils/
-├── interfaces/                   # User-facing delivery (2,543 .py)
-│   ├── cli/                      # CLI shell and feature commands (466 .py)
-│   └── gui/                      # Tkinter applications and components (2,076 .py)
+├── shell/                        # University-wide composition and entry points
+│   ├── api/                      # Composed university HTTP routes
+│   ├── cli/                      # Top-level CLI shell and routing
+│   └── gui/                      # Main GUI shell and global navigation
 ├── services/                     # Cross-domain university services (169 .py)
 │   ├── ai_features/
 │   ├── analytics/
@@ -193,29 +195,29 @@ education_system/systems/university/
 └── plugins/                      # University extension points
 ```
 
-### University interfaces
+Each directory under `domains/` owns its business rules and, where applicable,
+its `application/`, `infrastructure/` and `interfaces/` adapters. Cross-domain
+composition belongs in `shell/`, rather than in a second top-level
+`interfaces/` tree.
+
+### University delivery
 
 ```text
-interfaces/
+domains/<area>/interfaces/
+├── api/                          # Area-owned HTTP adapters, when present
+├── cli/                          # Area-owned commands and menus
+└── gui/                          # Area-owned Tkinter applications
+
+shell/
+├── api/
+│   └── routes/                   # University-wide route composition
 ├── cli/
-│   ├── pastoral/                 # Health and student-life CLIs
-│   └── shell/
-│       ├── bootstrap/            # CLI startup and dependency wiring
-│       ├── features/             # Feature command adapters
-│       ├── menus/                # Menu routing and presentation
-│       ├── routing/              # Command dispatch
-│       └── services/             # Compatibility entry points and CLI services
-└── gui/
-    ├── academics/
-    ├── admissions/
-    ├── assessment/
-    ├── finance/
-    ├── operations/
-    │   ├── campus/
-    │   └── commerce/
-    ├── pastoral/
-    ├── shell/                    # Main window, search, reporting and utilities
-    └── staff/
+│   ├── bootstrap/                # CLI startup and dependency wiring
+│   ├── features/                 # Cross-domain feature adapters
+│   ├── menus/                    # Menu routing and presentation
+│   ├── routing/                  # Command dispatch
+│   └── services/                 # Compatibility entry points and CLI services
+└── gui/                          # Main window, search and global utilities
 ```
 
 Large legacy entry points are retained as compatibility façades. Their
@@ -228,7 +230,7 @@ maintenance threshold.
 Examples include:
 
 ```text
-interfaces/gui/operations/commerce/betting/
+domains/operations/interfaces/gui/commerce/betting/
 ├── betting_shop_gui.py           # Stable compatibility import
 ├── application.py
 ├── base.py
@@ -236,7 +238,7 @@ interfaces/gui/operations/commerce/betting/
 ├── services/
 └── tabs/
 
-interfaces/gui/operations/commerce/nailbar/
+domains/operations/interfaces/gui/commerce/nailbar/
 ├── nailbar_gui.py                # Stable compatibility import
 ├── nailbar_gui_shared.py
 └── nailbar_gui_parts/
@@ -343,18 +345,17 @@ relevant `ensure_*_directories()` at startup, or `ensure_all_directories()`.
 ## Primary entry points
 
 `main()` and argument parsing live in `education_system/launcher/main.py`.
-`education_system/__main__.py` forwards to it so `python -m education_system`
-works, and the repository root carries a deprecated `run.py` shim that imports
-the same function, so `python run.py` keeps working from a source checkout.
+`education_system/__main__.py` forwards to it, so an installed package can be
+started with `python -m education_system`.
 
 ```text
 src/education_system/launcher/main.py
 src/education_system/__main__.py
-education_system/launcher/systems.py
-education_system/platform/delivery/api/unified_server.py
-education_system/platform/delivery/api/university/api_server.py
-education_system/systems/university/interfaces/cli/shell/menu_router.py
-education_system/systems/university/interfaces/gui/shell/main/main_gui.py
+src/education_system/launcher/systems.py
+src/education_system/platform/delivery/api/unified_server.py
+src/education_system/platform/delivery/api/university/api_server.py
+src/education_system/systems/university/shell/cli/menu_router.py
+src/education_system/systems/university/shell/gui/main/main_gui.py
 ```
 
 See [ADR 0018](../adr/0018-repository-layout.md) for layout decisions and the

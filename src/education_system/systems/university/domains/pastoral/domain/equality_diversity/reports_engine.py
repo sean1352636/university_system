@@ -44,6 +44,7 @@ def render_chart(field: str, kind: str = "bar", out_path: str | None = None):
         raise ValueError(f"unknown field {field!r}")
     conn = get_connection()
     try:
+        # db-audit: ignore[DBW001] - parameter checked against an allow-list before use
         rows = conn.execute(
             f"SELECT {field}, COUNT(*) FROM ed_people "
             f"WHERE deleted_at IS NULL AND {field} IS NOT NULL AND {field}!='' "
@@ -81,6 +82,7 @@ def cross_tab(row_field: str, col_field: str) -> dict:
             raise ValueError(f"unknown field {f!r}")
     conn = get_connection()
     try:
+        # db-audit: ignore[DBW001] - parameter checked against an allow-list before use
         rows = conn.execute(
             f"SELECT {row_field}, {col_field}, COUNT(*) FROM ed_people "
             f"WHERE deleted_at IS NULL AND {row_field} IS NOT NULL "
@@ -119,6 +121,7 @@ def yearly_trend(field: str) -> list[tuple[str, str, int]]:
         raise ValueError(f"unknown field {field!r}")
     conn = get_connection()
     try:
+        # db-audit: ignore[DBW001] - parameter checked against an allow-list before use
         rows = conn.execute(
             f"SELECT SUBSTR(date_added, 1, 4) AS yr, {field}, COUNT(*) "
             f"FROM ed_people WHERE deleted_at IS NULL AND date_added IS NOT NULL "
@@ -258,6 +261,8 @@ def run_due_schedules() -> list[str]:
 
 
 def _field_counts(field: str) -> list[tuple[str, int]]:
+    if field not in DEMOGRAPHIC_FIELDS:
+        raise ValueError(f"unknown field {field!r}")
     conn = get_connection()
     try:
         rows = conn.execute(
@@ -310,6 +315,7 @@ def pay_gap(group_field: str = "gender") -> list[tuple[str, float, int]]:
     """Return (group, mean_salary, n) for staff only, n≥5 suppressed."""
     if group_field not in DEMOGRAPHIC_FIELDS:
         raise ValueError(f"bad field {group_field!r}")
+    # db-audit: ignore[DBW001] - parameter checked against an allow-list before use
     conn = get_connection()
     try:
         rows = conn.execute(
@@ -352,6 +358,7 @@ def drill_down(field: str, value: str) -> list[tuple]:
         raise ValueError(f"bad field {field!r}")
     conn = get_connection()
     try:
+        # db-audit: ignore[DBW001] - parameter checked against an allow-list before use
         return conn.execute(
             f"SELECT id, ref_code, person_type, department, date_added "
             f"FROM ed_people WHERE deleted_at IS NULL AND {field}=?",
@@ -392,6 +399,7 @@ def field_by_segment(field: str, segment: str) -> list[tuple[str, str, int]]:
     if segment not in SEGMENT_AXES:
         raise ValueError(f"unknown segment {segment!r}")
     seg_col = SEGMENT_AXES[segment]
+    # db-audit: ignore[DBW001] - module constant; parameter checked against an allow-list before use
     conn = get_connection()
     try:
         rows = conn.execute(
@@ -431,6 +439,7 @@ def attendance_by_demographic(field: str = "disability"
     """
     if field not in DEMOGRAPHIC_FIELDS:
         raise ValueError(f"unknown field {field!r}")
+    # db-audit: ignore[DBW001] - parameter checked against an allow-list before use
     conn = get_connection()
     try:
         rows = conn.execute(
@@ -472,6 +481,7 @@ def disciplinary_overrep(field: str = "ethnicity"
     """
     if field not in DEMOGRAPHIC_FIELDS:
         raise ValueError(f"unknown field {field!r}")
+    # db-audit: ignore[DBW001] - parameter checked against an allow-list before use
     conn = get_connection()
     try:
         rows = conn.execute(
@@ -514,6 +524,7 @@ def risk_feed_distribution(field: str = "ethnicity"
     """
     if field not in DEMOGRAPHIC_FIELDS:
         raise ValueError(f"unknown field {field!r}")
+    # db-audit: ignore[DBW001] - parameter checked against an allow-list before use
     conn = get_connection()
     try:
         rows = conn.execute(
@@ -554,6 +565,7 @@ def attainment_gap(field: str = "ethnicity"
     """
     if field not in DEMOGRAPHIC_FIELDS:
         raise ValueError(f"unknown field {field!r}")
+    # db-audit: ignore[DBW001] - parameter checked against an allow-list before use
     conn = get_connection()
     try:
         rows = conn.execute(
@@ -603,6 +615,7 @@ def data_quality() -> dict[str, Any]:
         ).fetchone()[0] or 0
         per_field = {}
         for f in DEMOGRAPHIC_FIELDS:
+            # db-audit: ignore[DBW001] - imported module constant
             missing = conn.execute(
                 f"SELECT COUNT(*) FROM ed_people WHERE deleted_at IS NULL "
                 f"AND ({f} IS NULL OR {f}='' OR {f}='Prefer not to say')"

@@ -122,7 +122,7 @@ def get_library_summary(user_id) -> LibrarySummary:
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
     return summary
 
 
@@ -257,7 +257,7 @@ def get_reading_lists_for_creator(creator_id):
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
 
 def get_reading_list_items(list_id):
@@ -285,7 +285,7 @@ def get_reading_list_items(list_id):
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
 
 class ReadingListPanel(ttk.LabelFrame):

@@ -529,14 +529,12 @@ def display_enhanced_faqs(support):
 
         # Get FAQ categories
         conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
-        try:
-            cursor = conn.cursor()
+        cursor = conn.cursor()
 
-            # Check if faqs table exists
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='faqs'")
-            if not cursor.fetchone():
-                print("📭 No FAQs available (table not found).")
-        finally:
+        # Check if faqs table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='faqs'")
+        if not cursor.fetchone():
+            print("📭 No FAQs available (table not found).")
             conn.close()
             return
 
@@ -644,14 +642,12 @@ def display_enhanced_resources(support):
 
         # Get resource categories
         conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
-        try:
-            cursor = conn.cursor()
+        cursor = conn.cursor()
 
-            # Check if support_resources table exists
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='support_resources'")
-            if not cursor.fetchone():
-                print("📭 No resources available (table not found).")
-        finally:
+        # Check if support_resources table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='support_resources'")
+        if not cursor.fetchone():
+            print("📭 No resources available (table not found).")
             conn.close()
             return
 

@@ -1,0 +1,11 @@
+{
+    "subject": "🦷 Your dental treatment summary - $appointment_ref",
+    "body": "Dear $patient_name,\n\nYour dental appointment is complete. This is a summary of what was done, for your records.\n\n=== APPOINTMENT ===\nReference: $appointment_ref\nDate: $treatment_date\nDentist: $dentist_name\nTreatment: $treatment_type\n\n=== WHAT WAS FOUND ===\n$diagnosis\n\n=== WHAT WAS DONE ===\n$procedure_notes\n\n=== COST AND PAYMENT ===\nFee: £$fee\nPayment Status: $payment_status\n$payment_note\n\n=== AFTERCARE ===\n- If you were given anaesthetic, avoid hot drinks and take care not to bite your cheek or tongue until the numbness wears off.\n- Some tenderness for a day or two is normal. Ordinary painkillers are usually enough.\n- Brush and floss as usual unless your dentist told you otherwise.\n\n=== WHEN TO CONTACT US ===\nGet in touch if you have:\n- pain that is getting worse rather than better after 2-3 days\n- swelling, a fever, or a bad taste that will not go away\n- a filling or crown that feels loose or comes out\n- bleeding that does not stop\n\nOut of hours, for severe pain or facial swelling, contact the emergency dental service or call 111.\n\n=== NEXT APPOINTMENT ===\n$next_steps\n\n=== CONTACT INFORMATION ===\nUniversity Dental Clinic: dental@university.edu\nPhone: (555) 123-4567\nOffice Hours: Monday-Friday, 9:00 AM - 5:00 PM\n\nBest regards,\nUniversity Dental Clinic\n\n$signature",
+    "variables": {
+        "diagnosis": {"default": "No diagnosis was recorded."},
+        "procedure_notes": {"default": "No procedure notes were recorded."},
+        "payment_note": {"default": ""},
+        "next_steps": {"default": "No follow-up has been booked. Contact the clinic if you would like one."},
+        "dentist_name": {"default": "your dentist"}
+    }
+}

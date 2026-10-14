@@ -1,12 +1,19 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import logging
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext, simpledialog
+from tkinter import ttk, scrolledtext, simpledialog
 from datetime import datetime, timedelta
 from typing import Any, Optional, List, Dict
 from education_system.systems.university.infrastructure.i18n import get_text as _
 from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar.utils import safe_grab_set
+# Message boxes parented to the window that raised them, not the main
+# GUI — see _dialogs.
+from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar._dialogs import messagebox
 
 gui_logger = logging.getLogger(__name__)
 
@@ -259,8 +266,9 @@ class BookResourceDialog:
         event_combo.pack(fill=tk.X, pady=(5, 10))
 
         try:
+            from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar._calendar_events import CALENDAR_EVENTS
             events = self.calendar_manager.db_manager.execute_query(
-                "SELECT id, name FROM academic_calendar_events ORDER BY date_added DESC LIMIT 30"
+                f"SELECT id, name FROM {CALENDAR_EVENTS} ORDER BY date_added DESC LIMIT 30"
             )
             labels = ["(None)"]
             self._event_map["(None)"] = None
@@ -424,7 +432,12 @@ class BookResourceDialog:
 
 
 class CourseManagementDialog:
-    """Dialog for managing courses"""
+    """View-only list of courses.
+
+    Courses are created and edited in Course Management. The calendar only
+    shows them (and can link one to a calendar event), so the Add Course
+    button and its dialog were removed.
+    """
 
     def __init__(self, parent, calendar_manager, callback=None):
         self.calendar_manager = calendar_manager
@@ -452,8 +465,6 @@ class CourseManagementDialog:
         action_frame = ttk.Frame(main_frame)
         action_frame.pack(fill=tk.X, pady=(0, 15))
 
-        ttk.Button(action_frame, text=_("academic_calendar.buttons.add_course"),
-                  command=self._add_course).pack(side=tk.LEFT, padx=5)
         ttk.Button(action_frame, text=_("academic_calendar.buttons.link_to_event"),
                   command=self._link_to_event).pack(side=tk.LEFT, padx=5)
         ttk.Button(action_frame, text=_("academic_calendar.buttons.refresh"),
@@ -506,10 +517,6 @@ class CourseManagementDialog:
         except Exception as e:
             messagebox.showerror(_("common.error"), _("academic_calendar.messages.failed_load_courses", error=str(e)))
 
-    def _add_course(self):
-        """Show add course dialog"""
-        AddCourseDialog(self.dialog, self.calendar_manager, self._load_courses)
-
     def _link_to_event(self):
         """Show link course to event dialog"""
         selection = self.courses_tree.selection()
@@ -527,40 +534,6 @@ class CourseManagementDialog:
         self.dialog.geometry(f"+{x}+{y}")
 
 
-class AddCourseDialog:
-    """Simple dialog for adding courses"""
-
-    def __init__(self, parent, calendar_manager, callback=None):
-        code = simpledialog.askstring(_("academic_calendar.messages.add_course_dialog.title"), _("academic_calendar.messages.add_course_dialog.course_code"))
-        if not code:
-            return
-
-        name = simpledialog.askstring(_("academic_calendar.messages.add_course_dialog.title"), _("academic_calendar.messages.add_course_dialog.course_name"))
-        if not name:
-            return
-
-        credits = simpledialog.askinteger(_("academic_calendar.messages.add_course_dialog.title"), _("academic_calendar.messages.add_course_dialog.credits"), initialvalue=3) or 3
-        department = simpledialog.askstring(_("academic_calendar.messages.add_course_dialog.title"), _("academic_calendar.messages.add_course_dialog.department")) or None
-
-        course_data = {
-            'code': code,
-            'name': name,
-            'credits': credits,
-            'department': department
-        }
-
-        try:
-            success, message = calendar_manager.courses.create_course(course_data)
-            if success:
-                messagebox.showinfo(_("common.success"), message)
-                if callback:
-                    callback()
-            else:
-                messagebox.showerror(_("common.error"), message)
-        except Exception as e:
-            messagebox.showerror(_("common.error"), _("academic_calendar.messages.failed_add_course", error=str(e)))
-
-
 class LinkCourseEventDialog:
     """Dialog for linking courses to events — shows dropdowns for both."""
 
@@ -571,14 +544,15 @@ class LinkCourseEventDialog:
         # Load events
         self.event_map = {}
         try:
+            from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar._calendar_events import CALENDAR_EVENTS
             rows = calendar_manager.db_manager.execute_query(
-                "SELECT id, name FROM academic_calendar_events ORDER BY name"
+                f"SELECT id, name FROM {CALENDAR_EVENTS} ORDER BY name"
             )
             for row in rows:
                 label = f"{row['name']} ({row['id'][:8]}...)"
                 self.event_map[label] = row['id']
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         if not self.event_map:
             messagebox.showwarning(_("common.warning"), _t('gui.academics.academic_calendar.dialogs_resources.dialogs.no_events_found_create_an_event_first', default="No events found. Create an event first."))

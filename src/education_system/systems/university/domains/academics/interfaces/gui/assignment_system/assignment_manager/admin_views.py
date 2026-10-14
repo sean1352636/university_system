@@ -3,7 +3,9 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 
@@ -153,7 +155,7 @@ class AdminViewsMixin:
                 return
 
             # Create details window
-            details_window = tk.Toplevel(self.root)
+            details_window = make_toplevel(self.root)
             details_window.title(f"Assignment Details - {assignment[2]}")  # assignment[2] is title
             details_window.geometry("600x500")
 
@@ -209,7 +211,7 @@ class AdminViewsMixin:
             submissions = cursor.fetchall()
 
             # Create submissions window
-            submissions_window = tk.Toplevel(self.root)
+            submissions_window = make_toplevel(self.root)
             submissions_window.title(f"Submissions for: {assignment_title}")
             submissions_window.geometry("900x600")
 

@@ -1,4 +1,7 @@
 """Core finance tab mixin for LayoutManager."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -80,7 +83,7 @@ class CoreFinanceMixin:
                 club_revenue = cursor.fetchone()[0] or 0
                 total_revenue += club_revenue
             except Exception:
-                pass  # Column may not exist
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Add housing payments to total revenue
             try:
@@ -88,7 +91,7 @@ class CoreFinanceMixin:
                 housing_revenue = cursor.fetchone()[0] or 0
                 total_revenue += housing_revenue
             except Exception:
-                pass  # Table may not exist
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Add butcher shop orders to total revenue
             try:
@@ -96,7 +99,7 @@ class CoreFinanceMixin:
                 butcher_revenue = cursor.fetchone()[0] or 0
                 total_revenue += butcher_revenue
             except Exception:
-                pass  # Table may not exist
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Add gym payments to total revenue
             try:
@@ -104,7 +107,7 @@ class CoreFinanceMixin:
                 gym_revenue = cursor.fetchone()[0] or 0
                 total_revenue += gym_revenue
             except Exception:
-                pass  # Table may not exist
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Add dentist payments to total revenue
             try:
@@ -112,7 +115,7 @@ class CoreFinanceMixin:
                 dentist_revenue = cursor.fetchone()[0] or 0
                 total_revenue += dentist_revenue
             except Exception:
-                pass  # Table may not exist
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Pending payments
             cursor.execute("SELECT COUNT(*) FROM payments WHERE status = 'pending'")

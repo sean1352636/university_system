@@ -179,7 +179,6 @@ _TKINTER_IN_DOMAIN = {
     "domain/student_life/student_union/elections/election_gui_shared.py",
     "domain/student_life/student_union/services/mentoring_matching/mentoring_matching_app.py",
     "domain/student_life/student_union/student_council.py",
-    "domain/tutor_groups/tutor_groups_app.py",
     "domain/wellbeing/student_wellbeing/intervention_support.py",
 }
 
@@ -256,16 +255,8 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = (
 _OPERATIONS_REACHES: set[tuple[str, str]] = {
     ("interfaces/gui/student_union_gui/core/utilities.py",
      f"{_OPS}.interfaces.gui.campus.mobility.trip_management_gui"),
-    ("interfaces/gui/student_union_gui/core/utilities.py",
-     f"{_OPS}.interfaces.gui.commerce.restaurant_management_gui"),
-    ("interfaces/gui/student_union_gui/core/utilities.py",
-     f"{_OPS}.interfaces.gui.commerce.shop_management_gui.main_gui"),
     ("interfaces/gui/student_union_gui/integrations/external_integrations.py",
      f"{_OPS}.interfaces.gui.campus.mobility.trip_management_gui"),
-    ("interfaces/gui/student_union_gui/integrations/external_integrations.py",
-     f"{_OPS}.interfaces.gui.commerce.restaurant_management_gui"),
-    ("interfaces/gui/student_union_gui/integrations/external_integrations.py",
-     f"{_OPS}.interfaces.gui.commerce.shop_management_gui.main_gui"),
 }
 
 KNOWN_VIOLATIONS |= _OPERATIONS_REACHES

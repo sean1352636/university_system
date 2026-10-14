@@ -119,7 +119,13 @@ def get_instructor_schedule_data(instructor_id) -> list[dict]:
 class TimetableManagementGUI:
     """Self-contained timetable window (student & instructor timetables)."""
 
-    def __init__(self, parent=None, auth=None):
+    #: Tab keys accepted by ``initial_tab`` / :meth:`select_tab`, in the order
+    #: the notebook builds them. Callers deep-link by key, not by index, so
+    #: inserting a tab never silently repoints an existing entry point.
+    TAB_KEYS = ("student", "instructor", "module", "term", "exams",
+                "sections", "conflicts", "generate")
+
+    def __init__(self, parent=None, auth=None, initial_tab=None):
         self.parent = parent
         self.auth = auth
         self.scheduler = ModuleScheduler()
@@ -137,8 +143,17 @@ class TimetableManagementGUI:
             try:
                 self.window.transient(parent)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
         self._build_ui()
+        if initial_tab:
+            self.select_tab(initial_tab)
+
+    def select_tab(self, key):
+        """Bring the tab named by *key* to the front. Unknown keys are ignored."""
+        try:
+            self.notebook.select(self.TAB_KEYS.index(key))
+        except (ValueError, tk.TclError, AttributeError):
+            logger.debug("timetable: cannot select tab %r", key)
 
     # -- misc host surface the moved methods rely on -----------------------
     def set_auth(self, auth):
@@ -149,8 +164,825 @@ class TimetableManagementGUI:
 
     # ------------------------------------------------------------------ UI
     def _build_ui(self):
+        """Build the tabbed window.
+
+        This is the single timetable surface for the university. It replaced
+        six separate entry points across three GUIs — Main GUI "Timetable" and
+        "Timetable Manager", Course Management "Timetable", Module Scheduling
+        "Timetable Manager" and "Student Timetables", plus a tab inside the
+        Student CRUD GUI — which between them had four independent weekly-grid
+        renderers over two unrelated data models.
+
+        The read surfaces are unified on :class:`WeeklyGridPanel`, which was
+        written as the "single read-side widget for every timetable surface"
+        and had no callers at all until this merge.
+        """
+        self._load_pickers()
+
+        self.notebook = ttk.Notebook(self.window)
+        self.notebook.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
+
+        self._build_student_tab()
+        self._build_instructor_tab()
+        self._build_module_tab()
+        self._build_term_tab()
+        self._build_exams_tab()
+        self._build_sections_tab()
+        self._build_conflicts_tab()
+
+        # The original single-pane layout becomes the last tab. Keeping it
+        # intact means every existing method (generate/email/export, which
+        # render into ``self.timetable_frame``) keeps working untouched.
+        generate_tab = ttk.Frame(self.notebook)
+        self.notebook.add(generate_tab, text=_t(
+            'gui.academics.timetable_management.tabs.generate_export',
+            default="Generate & Export"))
+        self._build_generate_tab(generate_tab)
+
+    # -- pickers ----------------------------------------------------------
+    def _load_pickers(self):
+        """Load the student / instructor / module dropdown choices.
+
+        Typing raw IDs was the old interface and it made every tab a guessing
+        game — you had to know a student number or an instructor's numeric row
+        id before you could see anything. Each map is ``label -> id``; the
+        label carries a human name so the list is searchable by eye, and the
+        id is what the grid is actually targeted with.
+
+        One connection for all three queries, and every one degrades to an
+        empty map rather than raising: an unreadable table must not stop the
+        window opening.
+        """
+        self._student_choices = {}
+        self._instructor_choices = {}
+        self._module_choices = {}
+        try:
+            with get_connection() as conn:
+                self._student_choices = self._query_choices(
+                    conn,
+                    "SELECT student_id, "
+                    "  COALESCE(first_name, '') || ' ' || COALESCE(last_name, '') "
+                    "FROM students WHERE student_id IS NOT NULL "
+                    "ORDER BY last_name, first_name",
+                )
+                self._instructor_choices = self._query_choices(
+                    conn,
+                    "SELECT id, "
+                    "  COALESCE(first_name, '') || ' ' || COALESCE(last_name, '') "
+                    "FROM instructors ORDER BY last_name, first_name",
+                )
+                self._module_choices = self._query_choices(
+                    conn,
+                    "SELECT module_code, COALESCE(module_name, '') "
+                    "FROM modules WHERE module_code IS NOT NULL "
+                    "ORDER BY module_code",
+                )
+        except Exception as exc:
+            logger.warning("timetable: could not load pickers: %s", exc)
+
+    @staticmethod
+    def _query_choices(conn, sql):
+        """Run *sql* returning ``(id, name)`` rows into a ``label -> id`` map."""
+        try:
+            rows = conn.execute(sql).fetchall()
+        except Exception as exc:
+            logger.debug("timetable picker query failed: %s", exc)
+            return {}
+        choices = {}
+        for ident, name in rows:
+            if ident is None:
+                continue
+            name = (name or "").strip()
+            choices[f"{ident} — {name}" if name else str(ident)] = ident
+        return choices
+
+    def _picker(self, parent, choices, on_pick):
+        """A readonly combobox over *choices*, calling *on_pick* with the id."""
+        var = tk.StringVar()
+        combo = ttk.Combobox(parent, textvariable=var, width=38,
+                             state="readonly", values=list(choices))
+        combo.pack(side=tk.LEFT, padx=(6, 6))
+        combo.bind("<<ComboboxSelected>>",
+                   lambda e: on_pick(choices.get(var.get())))
+        if not choices:
+            combo.set(_t(
+                'gui.academics.timetable_management.labels.nothing_to_choose',
+                default="(nothing to choose from)"))
+        return var, combo
+
+    def _week_bar(self, parent, get_panel):
+        """Previous / This week / Next controls for a weekly grid.
+
+        Week navigation exists because exams are pinned to a single date. A
+        grid that could only ever show "a typical week" had nowhere truthful to
+        put them.
+        """
+        bar = ttk.Frame(parent)
+        bar.pack(fill=tk.X, padx=8, pady=(0, 4))
+
+        def shift(weeks):
+            panel = get_panel()
+            if panel is not None:
+                panel.shift_week(weeks)
+
+        def today():
+            panel = get_panel()
+            if panel is not None:
+                panel.set_week(None)
+
+        ttk.Button(bar, text="◀ " + _t(
+            'gui.academics.timetable_management.buttons.prev_week',
+            default="Previous week"), command=lambda: shift(-1)).pack(side=tk.LEFT)
+        ttk.Button(bar, text=_t(
+            'gui.academics.timetable_management.buttons.this_week',
+            default="This week"), command=today).pack(side=tk.LEFT, padx=4)
+        ttk.Button(bar, text=_t(
+            'gui.academics.timetable_management.buttons.next_week',
+            default="Next week") + " ▶", command=lambda: shift(1)).pack(side=tk.LEFT)
+        return bar
+
+    # -- tab 1: student ---------------------------------------------------
+    def _build_student_tab(self):
+        """A student's week, across *both* scheduling models.
+
+        The grid is module-based (``module_schedule``). Section meetings live
+        in the other model entirely, so they are listed alongside via
+        ``timetable_bridge`` rather than being silently omitted — which is
+        exactly the gap the bridge was written to close.
+        """
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text=_t(
+            'gui.academics.timetable_management.tabs.student', default="Student"))
+
+        bar = ttk.Frame(tab)
+        bar.pack(fill=tk.X, padx=8, pady=8)
+        ttk.Label(bar, text=_t("scheduling.student") + ":").pack(side=tk.LEFT)
+        self.tab_student_id_var, self.tab_student_combo = self._picker(
+            bar, self._student_choices,
+            lambda sid: self._refresh_student_tab(sid))
+        ttk.Button(bar, text=_t(
+            'gui.academics.timetable_management.buttons.show', default="Show"),
+            command=self._refresh_student_tab).pack(side=tk.LEFT)
+
+        self.student_grid = self._make_grid(tab, scope="student")
+        self._week_bar(tab, lambda: self.student_grid)
+
+        sections_box = ttk.LabelFrame(tab, text=_t(
+            'gui.academics.timetable_management.labels.section_meetings',
+            default="Section meetings (course-based schedule)"), padding=6)
+        sections_box.pack(fill=tk.X, padx=8, pady=(0, 8))
+        self.student_sections_list = tk.Listbox(sections_box, height=4)
+        self.student_sections_list.pack(fill=tk.X)
+
+    def select_student(self, student_id):
+        """Point the Student tab at *student_id*, if that student exists.
+
+        The dropdown is keyed by display label, so callers holding a bare ID
+        (the main GUI pre-filling a logged-in student's own timetable) need
+        this rather than setting the variable directly.
+        """
+        student_id = str(student_id)
+        for label, ident in self._student_choices.items():
+            if str(ident) == student_id:
+                self.tab_student_id_var.set(label)
+                self._refresh_student_tab(ident)
+                return True
+        return False
+
+    def _refresh_student_tab(self, student_id=None):
+        if student_id is None:
+            student_id = self._student_choices.get(
+                self.tab_student_id_var.get())
+        if not student_id:
+            messagebox.showwarning(
+                _t("scheduling.student_timetables"),
+                _t('gui.academics.timetable_management.dialogs.pick_student',
+                   default="Choose a student first."),
+                parent=self.window)
+            return
+
+        self._set_grid_target(self.student_grid, "student", student_id)
+
+        self.student_sections_list.delete(0, tk.END)
+        try:
+            from education_system.systems.university.domains.academics.domain.services.timetable_bridge import (
+                get_student_section_meetings,
+            )
+            meetings = get_student_section_meetings(student_id)
+        except Exception as exc:
+            self.student_sections_list.insert(tk.END, f"(unavailable: {exc})")
+            return
+
+        if not meetings:
+            self.student_sections_list.insert(tk.END, _t(
+                'gui.academics.timetable_management.labels.no_section_meetings',
+                default="No section meetings for this student."))
+            return
+        for m in meetings:
+            self.student_sections_list.insert(tk.END, (
+                f"{m.get('day_of_week', '')} {m.get('start_time', '')}"
+                f"-{m.get('end_time', '')}  {m.get('code', '')} "
+                f"{m.get('name', '')}  [{m.get('location', '') or 'no room'}]"
+            ))
+
+    # -- tab 2: instructor ------------------------------------------------
+    def _build_instructor_tab(self):
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text=_t(
+            'gui.academics.timetable_management.tabs.instructor',
+            default="Instructor"))
+
+        bar = ttk.Frame(tab)
+        bar.pack(fill=tk.X, padx=8, pady=8)
+        ttk.Label(bar, text=_t("scheduling.instructor") + ":").pack(side=tk.LEFT)
+        self.tab_instructor_id_var, self.tab_instructor_combo = self._picker(
+            bar, self._instructor_choices,
+            lambda iid: self._set_grid_target(
+                self.instructor_grid, "instructor", iid))
+        ttk.Button(bar, text=_t(
+            'gui.academics.timetable_management.buttons.show', default="Show"),
+            command=lambda: self._set_grid_target(
+                self.instructor_grid, "instructor",
+                self._instructor_choices.get(
+                    self.tab_instructor_id_var.get()))).pack(side=tk.LEFT)
+
+        self.instructor_grid = self._make_grid(tab, scope="instructor")
+        self._week_bar(tab, lambda: self.instructor_grid)
+
+    # -- tab 3: module ----------------------------------------------------
+    def _build_module_tab(self):
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text=_t(
+            'gui.academics.timetable_management.tabs.module', default="Module"))
+
+        bar = ttk.Frame(tab)
+        bar.pack(fill=tk.X, padx=8, pady=8)
+        ttk.Label(bar, text=_t(
+            'gui.academics.timetable_management.labels.module',
+            default="Module:")).pack(side=tk.LEFT)
+        self.tab_module_code_var, self.tab_module_combo = self._picker(
+            bar, self._module_choices,
+            lambda code: self._set_grid_target(
+                self.module_grid, "module", code))
+        ttk.Button(bar, text=_t(
+            'gui.academics.timetable_management.buttons.show', default="Show"),
+            command=lambda: self._set_grid_target(
+                self.module_grid, "module",
+                self._module_choices.get(
+                    self.tab_module_code_var.get()))).pack(side=tk.LEFT)
+
+        self.module_grid = self._make_grid(tab, scope="module")
+        self._week_bar(tab, lambda: self.module_grid)
+
+    # -- shared grid plumbing ---------------------------------------------
+    def _make_grid(self, parent, *, scope):
+        """Embed a WeeklyGridPanel, degrading to a message if unavailable."""
+        try:
+            from education_system.systems.university.domains.academics.interfaces.gui._cross_dialogs.timetable import (
+                WeeklyGridPanel,
+            )
+        except Exception as exc:
+            ttk.Label(parent, text=f"Weekly grid unavailable: {exc}").pack(
+                padx=10, pady=10)
+            return None
+        panel = WeeklyGridPanel(parent, scope=scope, scope_id=None)
+        panel.pack(fill=tk.BOTH, expand=True, padx=8, pady=(0, 8))
+        return panel
+
+    def _set_grid_target(self, panel, scope, scope_id):
+        if panel is None:
+            return
+        if not scope_id:
+            messagebox.showwarning(
+                _t("scheduling.tabs.timetables"),
+                _t('gui.academics.timetable_management.dialogs.pick_one_first',
+                   default="Choose one from the list first."),
+                parent=self.window)
+            return
+        panel.set_target(scope=scope, scope_id=scope_id)
+
+    # -- tab 4: whole term ------------------------------------------------
+    def _build_term_tab(self):
+        """Every session across a whole term, as concrete dates.
+
+        The weekly grid answers "what does a normal week look like"; it cannot
+        answer "when do I actually have to be somewhere over the next three
+        months". Recurring ``module_schedule`` slots are expanded to real dates
+        between the term's start and end, exams are merged in on their own
+        dates, and the result is ordered by date — so an exam appears exactly
+        once, on the day it is sat.
+        """
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text=_t(
+            'gui.academics.timetable_management.tabs.term', default="Full Term"))
+
+        bar = ttk.Frame(tab)
+        bar.pack(fill=tk.X, padx=8, pady=8)
+
+        ttk.Label(bar, text=_t(
+            'gui.academics.timetable_management.labels.term', default="Term:")).pack(
+            side=tk.LEFT)
+        self.term_view_term_var = tk.StringVar()
+        self.term_view_term_combo = ttk.Combobox(
+            bar, textvariable=self.term_view_term_var, width=26, state="readonly")
+        self.term_view_term_combo.pack(side=tk.LEFT, padx=(6, 12))
+
+        ttk.Label(bar, text=_t(
+            'gui.academics.timetable_management.labels.for', default="For:")).pack(
+            side=tk.LEFT)
+        self.term_scope_var = tk.StringVar(value="student")
+        scope_combo = ttk.Combobox(
+            bar, textvariable=self.term_scope_var, width=11, state="readonly",
+            values=["student", "instructor", "module"])
+        scope_combo.pack(side=tk.LEFT, padx=(6, 6))
+        scope_combo.bind("<<ComboboxSelected>>",
+                         lambda e: self._sync_term_target_choices())
+
+        self.term_target_var = tk.StringVar()
+        self.term_target_combo = ttk.Combobox(
+            bar, textvariable=self.term_target_var, width=34, state="readonly")
+        self.term_target_combo.pack(side=tk.LEFT, padx=(0, 6))
+
+        ttk.Button(bar, text=_t(
+            'gui.academics.timetable_management.buttons.show', default="Show"),
+            command=self._refresh_term_tab).pack(side=tk.LEFT)
+
+        columns = ("date", "day", "start", "end", "kind", "module", "room")
+        self.term_tree = ttk.Treeview(
+            tab, columns=columns, show="headings", height=18)
+        for col, heading, width in zip(
+                columns,
+                ("Date", "Day", "Start", "End", "Type", "Module", "Room"),
+                (95, 85, 65, 65, 80, 110, 150)):
+            self.term_tree.heading(col, text=heading)
+            self.term_tree.column(col, width=width, anchor="w")
+        self.term_tree.pack(fill=tk.BOTH, expand=True, padx=8, pady=(0, 4))
+
+        self.term_status_var = tk.StringVar(value="")
+        ttk.Label(tab, textvariable=self.term_status_var,
+                  foreground="#7f8c8d").pack(anchor="w", padx=10, pady=(0, 8))
+
+        self._load_term_view_terms()
+        self._sync_term_target_choices()
+
+    def _load_term_view_terms(self):
+        try:
+            with get_connection() as conn:
+                rows = conn.execute(
+                    "SELECT id, name, start_date, end_date FROM academic_terms "
+                    "WHERE start_date IS NOT NULL AND end_date IS NOT NULL "
+                    "ORDER BY start_date DESC"
+                ).fetchall()
+        except Exception as exc:
+            logger.warning("timetable: could not load terms: %s", exc)
+            rows = []
+        self._term_view_map = {
+            f"{r[1]} ({r[2]} → {r[3]})": (r[2], r[3]) for r in rows
+        }
+        self.term_view_term_combo["values"] = list(self._term_view_map)
+        if self._term_view_map:
+            self.term_view_term_var.set(next(iter(self._term_view_map)))
+
+    def _sync_term_target_choices(self):
+        """Repoint the target dropdown at whichever kind of thing is selected."""
+        scope = self.term_scope_var.get()
+        choices = {
+            "student": self._student_choices,
+            "instructor": self._instructor_choices,
+            "module": self._module_choices,
+        }.get(scope, {})
+        self._term_target_choices = choices
+        self.term_target_combo["values"] = list(choices)
+        self.term_target_var.set("")
+
+    def _refresh_term_tab(self):
+        for item in self.term_tree.get_children():
+            self.term_tree.delete(item)
+        self.term_status_var.set("")
+
+        span = getattr(self, "_term_view_map", {}).get(self.term_view_term_var.get())
+        target = getattr(self, "_term_target_choices", {}).get(
+            self.term_target_var.get())
+        if not span:
+            self.term_status_var.set("Select a term with start and end dates.")
+            return
+        if not target:
+            self.term_status_var.set("Select a student, instructor or module.")
+            return
+
+        try:
+            rows = self._collect_term_rows(
+                span[0], span[1], self.term_scope_var.get(), target)
+        except Exception as exc:
+            self.term_status_var.set(f"(load failed: {exc})")
+            return
+
+        for row in rows:
+            self.term_tree.insert("", "end", values=row)
+
+        sessions = sum(1 for r in rows if r[4] != "Exam")
+        exams = sum(1 for r in rows if r[4] == "Exam")
+        self.term_status_var.set(
+            f"{span[0]} → {span[1]}   ·   {sessions} session(s), {exams} exam(s)")
+
+    def _modules_for(self, conn, scope, target):
+        """Module codes in scope — the same three cases the weekly grid uses."""
+        if scope == "module":
+            return [str(target)]
+        if scope == "student":
+            rows = conn.execute(
+                "SELECT module_code FROM student_modules WHERE student_id = ?",
+                (str(target),)).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT DISTINCT module_code FROM module_schedule "
+                "WHERE instructor_id = ?", (target,)).fetchall()
+        return [r[0] for r in rows if r[0]]
+
+    def _collect_term_rows(self, start_date, end_date, scope, target):
+        """Expand recurring slots across the term and merge in exams."""
+        from datetime import datetime as _dt, timedelta as _td
+
+        term_start = _dt.strptime(str(start_date)[:10], "%Y-%m-%d").date()
+        term_end = _dt.strptime(str(end_date)[:10], "%Y-%m-%d").date()
+        if term_end < term_start:
+            raise ValueError("term ends before it starts")
+
+        out = []
+        with get_connection() as conn:
+            modules = self._modules_for(conn, scope, target)
+            if not modules:
+                return []
+            placeholders = ",".join("?" for _ in modules)
+
+            # Published rows only: a term clone copies each published slot as
+            # a draft for the next term, and those drafts were listed as a
+            # second copy of every session. DISTINCT still collapses any
+            # genuinely identical published slots.
+            slots = conn.execute(
+                f"""
+                SELECT DISTINCT ms.module_code, ms.day_of_week,
+                       ms.start_time, ms.end_time,
+                       COALESCE(ms.session_type, 'Lecture'),
+                       COALESCE(r.building || ' ' || r.room_number, '')
+                FROM module_schedule ms
+                LEFT JOIN rooms r ON ms.room_id = r.id
+                WHERE ms.module_code IN ({placeholders})
+                  AND COALESCE(ms.status, 'published') = 'published'
+                """,
+                modules,
+            ).fetchall()
+
+            # Recurring slot -> one row per matching weekday in the term.
+            day_index = {d.lower(): i for i, d in enumerate(
+                ("Monday", "Tuesday", "Wednesday", "Thursday",
+                 "Friday", "Saturday", "Sunday"))}
+            for code, day_name, start, end, kind, room in slots:
+                idx = day_index.get(str(day_name or "").strip().lower())
+                if idx is None:
+                    continue
+                # First occurrence of that weekday on or after the term start.
+                day = term_start + _td(days=(idx - term_start.weekday()) % 7)
+                while day <= term_end:
+                    out.append((day.isoformat(), day.strftime("%A"),
+                                start or "", end or "",
+                                str(kind).title(), code, room))
+                    day += _td(weeks=1)
+
+            # Exams sit on a single date, so they are taken as-is.
+            try:
+                for code, date, start, end, room in conn.execute(
+                    f"""
+                    SELECT module_code, date, start_time, end_time,
+                           COALESCE(room, '')
+                    FROM exams
+                    WHERE module_code IN ({placeholders})
+                      AND date(date) BETWEEN date(?) AND date(?)
+                    """,
+                    modules + [term_start.isoformat(), term_end.isoformat()],
+                ).fetchall():
+                    try:
+                        day_name = _dt.strptime(
+                            str(date)[:10], "%Y-%m-%d").strftime("%A")
+                    except ValueError:
+                        day_name = ""
+                    out.append((str(date)[:10], day_name, start or "", end or "",
+                                "Exam", code, room))
+            except Exception as exc:
+                logger.debug("term view: exams unavailable: %s", exc)
+
+        out.sort(key=lambda r: (r[0], r[2]))
+        return out
+
+    # -- tab 5: exams -----------------------------------------------------
+    def _build_exams_tab(self):
+        """The exam timetable, read straight from the Exam Scheduling system."""
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text=_t(
+            'gui.academics.timetable_management.tabs.exams', default="Exams"))
+
+        bar = ttk.Frame(tab)
+        bar.pack(fill=tk.X, padx=8, pady=8)
+        ttk.Label(bar, text=_t(
+            'gui.academics.timetable_management.labels.module',
+            default="Module:")).pack(side=tk.LEFT)
+        self.exam_filter_var = tk.StringVar()
+        self.exam_filter_combo = ttk.Combobox(
+            bar, textvariable=self.exam_filter_var, width=34, state="readonly",
+            values=[_t('gui.academics.timetable_management.values.all_modules',
+                       default="(all modules)")] + list(self._module_choices))
+        self.exam_filter_combo.current(0)
+        self.exam_filter_combo.pack(side=tk.LEFT, padx=(6, 6))
+        self.exam_filter_combo.bind("<<ComboboxSelected>>",
+                                    lambda e: self._refresh_exams_tab())
+        ttk.Button(bar, text=_t(
+            'gui.academics.timetable_management.buttons.refresh',
+            default="Refresh"), command=self._refresh_exams_tab).pack(side=tk.LEFT)
+        ttk.Button(bar, text=_t(
+            'gui.academics.timetable_management.buttons.open_exam_scheduler',
+            default="Open Exam Management…"),
+            command=self._open_exam_scheduler).pack(side=tk.RIGHT)
+
+        columns = ("date", "day", "start", "end", "module", "room", "instructor",
+                   "students")
+        self.exams_tree = ttk.Treeview(
+            tab, columns=columns, show="headings", height=18)
+        for col, heading, width in zip(
+                columns,
+                ("Date", "Day", "Start", "End", "Module", "Room", "Instructor",
+                 "Students"),
+                (95, 85, 65, 65, 110, 130, 150, 75)):
+            self.exams_tree.heading(col, text=heading)
+            self.exams_tree.column(col, width=width, anchor="w")
+        self.exams_tree.pack(fill=tk.BOTH, expand=True, padx=8, pady=(0, 4))
+
+        self.exams_status_var = tk.StringVar(value="")
+        ttk.Label(tab, textvariable=self.exams_status_var,
+                  foreground="#7f8c8d").pack(anchor="w", padx=10, pady=(0, 8))
+
+        self._refresh_exams_tab()
+
+    def _refresh_exams_tab(self):
+        from datetime import datetime as _dt
+
+        for item in self.exams_tree.get_children():
+            self.exams_tree.delete(item)
+
+        module_code = self._module_choices.get(self.exam_filter_var.get())
+        sql = ("SELECT date, start_time, end_time, module_code, "
+               "COALESCE(room, ''), COALESCE(instructor_name, ''), "
+               "COALESCE(students_enrolled, 0) FROM exams")
+        params = []
+        if module_code:
+            sql += " WHERE module_code = ?"
+            params.append(module_code)
+        sql += " ORDER BY date, start_time"
+
+        try:
+            with get_connection() as conn:
+                rows = conn.execute(sql, params).fetchall()
+        except Exception as exc:
+            # `exams` is created lazily by the Exam Scheduling GUI.
+            self.exams_status_var.set(
+                f"No exam data available ({exc}). Schedule exams in the "
+                f"Exam Management first.")
+            return
+
+        for date, start, end, code, room, instructor, enrolled in rows:
+            try:
+                day_name = _dt.strptime(str(date)[:10], "%Y-%m-%d").strftime("%A")
+            except ValueError:
+                day_name = ""
+            self.exams_tree.insert("", "end", values=(
+                str(date)[:10], day_name, start or "", end or "", code,
+                room, instructor, enrolled))
+
+        self.exams_status_var.set(
+            f"{len(rows)} exam(s)" if rows else "No exams scheduled.")
+
+    def _open_exam_scheduler(self):
+        try:
+            from education_system.systems.university.domains.academics.interfaces.gui._cross_launchers import (
+                open_exam_gui,
+            )
+            open_exam_gui(self.window, self.auth)
+        except Exception as exc:
+            messagebox.showerror(
+                _t('gui.academics.timetable_management.dialogs.error', default="Error"),
+                f"Failed to open Exam Management: {exc}", parent=self.window)
+
+    # -- tab 6: sections (the other data model) ---------------------------
+    def _build_sections_tab(self):
+        """Section meetings — ``course_sections`` / ``section_meetings``.
+
+        This is the model behind Course Management's old Timetable tab. It is
+        a genuinely different schema from ``module_schedule``, so it gets its
+        own tab and its own reader rather than being forced through
+        WeeklyGridPanel, which only knows the module-based tables.
+
+        Editing meetings stays in Course Management: that editor is built on
+        that GUI's own dialog helpers, and moving it was not worth the risk in
+        the same change as the merge. The button below goes there.
+        """
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text=_t(
+            'gui.academics.timetable_management.tabs.sections',
+            default="Sections"))
+
+        bar = ttk.Frame(tab)
+        bar.pack(fill=tk.X, padx=8, pady=8)
+        ttk.Label(bar, text=_t(
+            'gui.academics.timetable_management.labels.term', default="Term:")).pack(
+            side=tk.LEFT)
+        self.tab_term_var = tk.StringVar()
+        self.tab_term_combo = ttk.Combobox(
+            bar, textvariable=self.tab_term_var, width=28, state="readonly")
+        self.tab_term_combo.pack(side=tk.LEFT, padx=(6, 6))
+        self.tab_term_combo.bind(
+            "<<ComboboxSelected>>", lambda e: self._refresh_sections_tab())
+        ttk.Button(bar, text=_t(
+            'gui.academics.timetable_management.buttons.refresh',
+            default="Refresh"), command=self._refresh_sections_tab).pack(side=tk.LEFT)
+        ttk.Button(bar, text=_t(
+            'gui.academics.timetable_management.buttons.edit_in_course_management',
+            default="Edit in Course Management…"),
+            command=self._open_course_management).pack(side=tk.RIGHT)
+
+        columns = ("day", "start", "end", "course", "section", "location")
+        self.sections_tree = ttk.Treeview(
+            tab, columns=columns, show="headings", height=14)
+        for col, heading in zip(columns, (
+                "Day", "Start", "End", "Course", "Section", "Location")):
+            self.sections_tree.heading(col, text=heading)
+            self.sections_tree.column(col, width=120, anchor="w")
+        self.sections_tree.pack(fill=tk.BOTH, expand=True, padx=8, pady=(0, 8))
+
+        self._load_terms()
+
+    def _load_terms(self):
+        try:
+            with get_connection() as conn:
+                rows = conn.execute(
+                    "SELECT id, name, COALESCE(status, '') FROM academic_terms "
+                    "ORDER BY id DESC"
+                ).fetchall()
+        except Exception:
+            rows = []
+        self._term_map = {
+            f"{r[1]}{(' — ' + r[2]) if r[2] else ''} (#{r[0]})": r[0]
+            for r in rows
+        }
+        self.tab_term_combo["values"] = list(self._term_map)
+        if self._term_map:
+            self.tab_term_var.set(next(iter(self._term_map)))
+            self._refresh_sections_tab()
+
+    def _refresh_sections_tab(self):
+        for item in self.sections_tree.get_children():
+            self.sections_tree.delete(item)
+
+        term_id = getattr(self, "_term_map", {}).get(self.tab_term_var.get())
+        if term_id is None:
+            return
+        try:
+            with get_connection() as conn:
+                # course_sections already carries course_code, so `courses` is
+                # not joined — it holds both `code` and `course_code` columns
+                # and picking between them is an ambiguity worth avoiding.
+                rows = conn.execute(
+                    """
+                    SELECT sm.day_of_week, sm.start_time, sm.end_time,
+                           COALESCE(cs.course_code, ''),
+                           COALESCE(cs.section_number, ''),
+                           COALESCE(sm.location, cs.location, '')
+                    FROM section_meetings sm
+                    JOIN course_sections cs ON sm.section_id = cs.id
+                    WHERE cs.term_id = ?
+                    ORDER BY sm.day_of_week, sm.start_time
+                    """,
+                    (term_id,),
+                ).fetchall()
+        except Exception as exc:
+            self.sections_tree.insert(
+                "", "end", values=(f"(load failed: {exc})", "", "", "", "", ""))
+            return
+
+        for row in rows:
+            self.sections_tree.insert("", "end", values=tuple(row))
+
+    def _open_course_management(self):
+        try:
+            from education_system.systems.university.domains.academics.interfaces.gui._cross_launchers import (
+                open_course_gui,
+            )
+            open_course_gui(self.window, self.auth)
+        except Exception as exc:
+            messagebox.showerror(
+                _t('gui.academics.timetable_management.dialogs.error', default="Error"),
+                f"Failed to open Course Management: {exc}", parent=self.window)
+
+    # -- tab 5: conflicts (spans both models) -----------------------------
+    def _build_conflicts_tab(self):
+        """Unresolved clashes, plus a slot checker that reads both models."""
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text=_t(
+            'gui.academics.timetable_management.tabs.conflicts',
+            default="Conflicts"))
+
+        bar = ttk.Frame(tab)
+        bar.pack(fill=tk.X, padx=8, pady=8)
+        ttk.Button(bar, text=_t(
+            'gui.academics.timetable_management.buttons.refresh',
+            default="Refresh"), command=self._refresh_conflicts).pack(side=tk.LEFT)
+
+        self.conflicts_list = tk.Listbox(tab)
+        self.conflicts_list.pack(fill=tk.BOTH, expand=True, padx=8, pady=(0, 8))
+
+        check = ttk.LabelFrame(tab, text=_t(
+            'gui.academics.timetable_management.labels.check_a_slot',
+            default="Check a slot (both scheduling models)"), padding=6)
+        check.pack(fill=tk.X, padx=8, pady=(0, 8))
+        self.check_day_var = tk.StringVar(value=DAYS_OF_WEEK[0])
+        self.check_start_var = tk.StringVar(value="09:00")
+        self.check_end_var = tk.StringVar(value="10:00")
+        self.check_location_var = tk.StringVar()
+        ttk.Combobox(check, textvariable=self.check_day_var,
+                     values=list(DAYS_OF_WEEK), width=10,
+                     state="readonly").pack(side=tk.LEFT, padx=2)
+        ttk.Entry(check, textvariable=self.check_start_var, width=7).pack(
+            side=tk.LEFT, padx=2)
+        ttk.Entry(check, textvariable=self.check_end_var, width=7).pack(
+            side=tk.LEFT, padx=2)
+        ttk.Entry(check, textvariable=self.check_location_var, width=18).pack(
+            side=tk.LEFT, padx=2)
+        ttk.Button(check, text=_t(
+            'gui.academics.timetable_management.buttons.check', default="Check"),
+            command=self._check_slot).pack(side=tk.LEFT, padx=6)
+
+        self._refresh_conflicts()
+
+    def _refresh_conflicts(self):
+        self.conflicts_list.delete(0, tk.END)
+        try:
+            # One detection pass for the whole database. Never call this per
+            # row — it re-runs the full detector every time.
+            from education_system.systems.university.domains.academics.interfaces.gui._cross_services import (
+                _all_conflicts,
+            )
+            conflicts = _all_conflicts()
+        except Exception as exc:
+            self.conflicts_list.insert(tk.END, f"(unavailable: {exc})")
+            return
+
+        if not conflicts:
+            self.conflicts_list.insert(tk.END, _t(
+                'gui.academics.timetable_management.labels.no_conflicts',
+                default="No unresolved scheduling conflicts."))
+            return
+        for c in conflicts:
+            self.conflicts_list.insert(tk.END, (
+                c.get("description") or c.get("conflict_type") or str(c)))
+
+    def _check_slot(self):
+        location = self.check_location_var.get().strip()
+        if not location:
+            messagebox.showwarning(
+                _t('gui.academics.timetable_management.tabs.conflicts',
+                   default="Conflicts"),
+                _t('gui.academics.timetable_management.dialogs.enter_a_location',
+                   default="Enter a room/location to check against."),
+                parent=self.window)
+            return
+        try:
+            from education_system.systems.university.domains.academics.domain.services.timetable_bridge import (
+                find_timetable_conflicts,
+            )
+            clashes = find_timetable_conflicts(
+                self.check_day_var.get(), self.check_start_var.get(),
+                self.check_end_var.get(), location=location)
+        except Exception as exc:
+            messagebox.showerror(
+                _t('gui.academics.timetable_management.dialogs.error', default="Error"),
+                f"Conflict check failed: {exc}", parent=self.window)
+            return
+
+        if not clashes:
+            messagebox.showinfo(
+                _t('gui.academics.timetable_management.tabs.conflicts',
+                   default="Conflicts"),
+                _t('gui.academics.timetable_management.dialogs.slot_is_free',
+                   default="That slot is free in both scheduling models."),
+                parent=self.window)
+        else:
+            messagebox.showwarning(
+                _t('gui.academics.timetable_management.tabs.conflicts',
+                   default="Conflicts"),
+                "\n".join(f"• {c}" for c in clashes), parent=self.window)
+
+    # -- tab 6: the original generate / email / export pane ----------------
+    def _build_generate_tab(self, container):
         # Left panel: controls
-        left = ttk.Frame(self.window, width=260)
+        left = ttk.Frame(container, width=260)
         left.pack(side=tk.LEFT, fill=tk.Y, padx=10, pady=10)
         left.pack_propagate(False)
 
@@ -172,8 +1004,9 @@ class TimetableManagementGUI:
         ttk.Button(student_frame,
                    text=_t("scheduling.check_student_conflicts"),
                    command=self.check_student_conflicts).pack(fill=tk.X, pady=2)
-        ttk.Button(student_frame, text=_t('gui.academics.timetable_management.buttons.open_student_timetable_viewer', default="Open Student Timetable Viewer…"),
-                   command=self._show_student_timetable_dialog).pack(fill=tk.X, pady=2)
+        # "Open Student Timetable Viewer…" used to sit here and open a second
+        # window. The Student tab is that viewer now, so the button would only
+        # duplicate it.
 
         # Instructor timetable section
         instructor_frame = ttk.LabelFrame(
@@ -204,7 +1037,7 @@ class TimetableManagementGUI:
                    command=self.export_last_timetable).pack(fill=tk.X, pady=5)
 
         # Right panel: scrollable timetable display
-        right = ttk.Frame(self.window)
+        right = ttk.Frame(container)
         right.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=10)
         display_frame = ttk.LabelFrame(
             right, text=_t("scheduling.timetable_display"), padding=10)
@@ -609,12 +1442,15 @@ class TimetableManagementGUI:
                                  parent=self.root)
 
     def _show_student_timetable_dialog(self):
-        try:
-            from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling.student_timetable_dialog import (
-                StudentTimetableDialog,
-            )
-            StudentTimetableDialog(self.root, self.scheduler)
-        except Exception as e:
-            messagebox.showerror(
-                _t('gui.academics.timetable_management.dialogs.error', default="Error"), f"Failed to open student timetable viewer: {e}",
-                parent=self.root)
+        """Jump to the Student tab, carrying the ID already typed here.
+
+        No longer bound to a button — the Student tab replaced it. Kept
+        because it is a documented hook name on the Module Scheduling GUI, and
+        because it now does the right thing if anything still calls it: this
+        used to open ``StudentTimetableDialog`` in a second window, a separate
+        weekly-grid renderer showing the same data as the Student tab.
+        """
+        self.select_tab("student")
+        student_id = self.student_id_var.get().strip()
+        if student_id:
+            self.select_student(student_id)

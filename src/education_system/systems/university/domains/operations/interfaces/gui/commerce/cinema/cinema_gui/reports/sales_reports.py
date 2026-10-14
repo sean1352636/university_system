@@ -1,51 +1,11 @@
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.interfaces.gui.cinema.cinema_gui.reports.sales_reports`` (campus commerce plugin).
+
+The old name *is* the new module object, so ``mock.patch`` and
+``monkeypatch`` targets still act on the real code. Delete once nothing
+imports the old path.
 """
-Cinema Booking System - Sales Reports
+# layout-shim: education_system.systems.university.plugins.campus_commerce.interfaces.gui.cinema.cinema_gui.reports.sales_reports
+import importlib as _importlib
+import sys as _sys
 
-Re-export shim for backward compatibility.
-All functions split into focused modules:
-  reports_page.py  - show_reports_page
-  generators.py    - 6 generate_* report functions
-  charts.py        - create_bar_chart, create_line_chart, create_pie_chart
-  exports.py       - export_report_csv, save_report_txt, email_report_to_admin, open_report_in_window
-"""
-
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.cinema.cinema_gui.reports.reports_page import show_reports_page
-
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.cinema.cinema_gui.reports.generators import (
-    generate_sales_summary,
-    generate_revenue_by_movie,
-    generate_daily_sales,
-    generate_occupancy_report,
-    generate_payment_methods_report,
-    generate_booking_status_report,
-)
-
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.cinema.cinema_gui.reports.charts import (
-    create_bar_chart,
-    create_line_chart,
-    create_pie_chart,
-)
-
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.cinema.cinema_gui.reports.exports import (
-    export_report_csv,
-    save_report_txt,
-    email_report_to_admin,
-    open_report_in_window,
-)
-
-__all__ = [
-    "show_reports_page",
-    "generate_sales_summary",
-    "generate_revenue_by_movie",
-    "generate_daily_sales",
-    "generate_occupancy_report",
-    "generate_payment_methods_report",
-    "generate_booking_status_report",
-    "create_bar_chart",
-    "create_line_chart",
-    "create_pie_chart",
-    "export_report_csv",
-    "save_report_txt",
-    "email_report_to_admin",
-    "open_report_in_window",
-]
+_sys.modules[__name__] = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.interfaces.gui.cinema.cinema_gui.reports.sales_reports")

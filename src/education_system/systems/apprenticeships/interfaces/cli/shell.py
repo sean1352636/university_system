@@ -140,7 +140,7 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
     if shared_auth is None or not getattr(shared_auth, "current_user", None):
         logger.error("Apprenticeships CLI invoked without a shared_auth session")
         raise RuntimeError(
-            "The apprenticeships CLI must be launched via run.py — "
+            "The apprenticeships CLI must be launched via python -m education_system — "
             "no standalone login is available."
         )
     branding.set_system_name(SYSTEM_NAME)
@@ -157,5 +157,5 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
 
 
 if __name__ == "__main__":
-    print("Launch via: python run.py --apprenticeships --cli")
+    print("Launch via: python -m education_system --apprenticeships --cli")
     raise SystemExit(2)

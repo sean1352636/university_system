@@ -78,11 +78,26 @@ BREACH_STATUSES: tuple[str, ...] = (
 )
 DEFAULT_BREACH_STATUS: str = "Reported"
 
+#: The purpose a university handover is recorded under.
+#:
+#: Deliberately snake_case where every other purpose is prose: this one is
+#: matched by machine, not read off a list. ``university_handover.
+#: HANDOVER_CONSENT_PURPOSE`` is the canonical definition and the handover
+#: gate compares against it exactly, so the two strings must stay
+#: identical — see :func:`_check_consent` in ``handover_eligibility``.
+UNIVERSITY_HANDOVER_PURPOSE: str = "university_handover"
+
 CONSENT_PURPOSES: tuple[str, ...] = (
     "Photography / Video", "Marketing", "Trips & Visits",
     "Medical", "Third-Party Sharing",
     "External Coursework Submission", "Newsletter",
-    "Alumni Network", "Other",
+    "Alumni Network",
+    # Without this the consent a university handover requires could not be
+    # recorded at all: the data layer accepts any purpose, but the GUI's
+    # purpose box is a readonly dropdown over this tuple, so a purpose
+    # missing from here is a purpose nobody can grant.
+    UNIVERSITY_HANDOVER_PURPOSE,
+    "Other",
 )
 DEFAULT_CONSENT_PURPOSE: str = "Photography / Video"
 

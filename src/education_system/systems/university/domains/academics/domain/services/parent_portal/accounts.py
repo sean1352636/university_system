@@ -221,7 +221,7 @@ class AccountsMixin:
             print("You must be logged in to create parent accounts.")
             return
 
-        if not (self.auth.check_permission('create_parent') or self.auth.current_user.get('role', '') == 'admin'):
+        if not (self.auth.check_permission('manage_parent_accounts') or self.auth.current_user.get('role', '') == 'admin'):
             print("You don't have permission to create parent accounts.")
             return
 
@@ -585,7 +585,7 @@ class AccountsMixin:
             print("This function is only available for parent accounts.")
             return
 
-        if not self.auth.check_permission('emergency_contact_update'):
+        if not self.auth.check_permission('update_emergency_contacts'):
             print("You don't have permission to update emergency contacts.")
             return
 

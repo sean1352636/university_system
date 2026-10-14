@@ -187,6 +187,7 @@ class WebhookDispatcher:
             params.append(webhook_id)
 
             with transaction() as conn:
+                # db-audit: ignore[DBW001] - join over a code-controlled list
                 conn.execute(f'''
                     UPDATE webhook_subscriptions
                     SET {", ".join(updates)}

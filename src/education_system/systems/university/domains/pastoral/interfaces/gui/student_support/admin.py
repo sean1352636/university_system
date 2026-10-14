@@ -1,8 +1,14 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+
+from ._dialogs import make_toplevel, messagebox
 import tkinter.font as tkFont
 from datetime import datetime, timedelta
 import json
@@ -69,7 +75,7 @@ def _patched_sqlite_connect(database, *args, **kwargs):
         if not database or db_name == str(DEFAULT_DB_PATH):
             return _original_sqlite3_connect(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return _original_sqlite3_connect(database, *args, **kwargs)
 
 sqlite3.connect = _patched_sqlite_connect
@@ -383,10 +389,9 @@ class AdminMixin:
 
     def create_ticket_template(self):
         """Create a new ticket template"""
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.pastoral.student_support.admin.windows.create_ticket_template', default="➕ Create Ticket Template"))
         dialog.geometry("1200x750")
-        dialog.transient(self.root)
         dialog.grab_set()
 
         form_frame = ttk.Frame(dialog, padding="20")
@@ -480,10 +485,9 @@ class AdminMixin:
             return
 
         # Create edit dialog
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(f"✏️ Edit Ticket Template #{template_id}")
         dialog.geometry("1200x750")
-        dialog.transient(self.root)
         dialog.grab_set()
 
         form_frame = ttk.Frame(dialog, padding="20")
@@ -584,10 +588,9 @@ class AdminMixin:
 
     def create_response_template(self):
         """Create a new response template"""
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.pastoral.student_support.admin.windows.create_response_template', default="➕ Create Response Template"))
         dialog.geometry("1200x750")
-        dialog.transient(self.root)
         dialog.grab_set()
 
         form_frame = ttk.Frame(dialog, padding="20")
@@ -672,10 +675,9 @@ class AdminMixin:
             return
 
         # Create edit dialog
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(f"✏️ Edit Response Template #{template_id}")
         dialog.geometry("1200x750")
-        dialog.transient(self.root)
         dialog.grab_set()
 
         form_frame = ttk.Frame(dialog, padding="20")
@@ -951,10 +953,9 @@ class AdminMixin:
 
     def add_kb_article(self):
         """Create a new KB article"""
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.pastoral.student_support.admin.windows.create_kb_article', default="➕ Create KB Article"))
         dialog.geometry("1300x800")
-        dialog.transient(self.root)
         dialog.grab_set()
 
         form_frame = ttk.Frame(dialog, padding="20")
@@ -1052,10 +1053,9 @@ class AdminMixin:
             return
 
         # Create edit dialog
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(f"✏️ Edit KB Article #{article_id}")
         dialog.geometry("1300x800")
-        dialog.transient(self.root)
         dialog.grab_set()
 
         form_frame = ttk.Frame(dialog, padding="20")
@@ -1207,7 +1207,7 @@ class AdminMixin:
                 return
 
             # Create detail window
-            detail_window = tk.Toplevel(self.root)
+            detail_window = make_toplevel(self.root)
             detail_window.title(f"📖 {article['title']}")
             detail_window.geometry("1400x850")
 

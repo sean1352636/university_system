@@ -1,5 +1,8 @@
 """PresenceMixin — extracted from chat.py."""
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.email.admin._imports import (
     datetime,
@@ -308,7 +311,7 @@ class PresenceMixin:
                     cursor, room_id, sender_for_msg, 'System', content, new_msg_id,
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             return {'user_id': row[1], 'username': r[0], 'full_name': full or r[0]}
 
         try:

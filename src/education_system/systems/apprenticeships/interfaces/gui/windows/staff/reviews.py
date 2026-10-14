@@ -41,10 +41,12 @@ _COLUMNS = (
 
 _TARGET_COLUMNS = (
     ("due", "Due", 110),
-    ("description", "Target", 460),
-    ("ksbs", "KSBs", 130),
-    ("status", "Status", 140),
-    ("outcome", "Outcome", 260),
+    ("description", "Target", 400),
+    ("owner", "Owner", 100),
+    ("priority", "Priority", 80),
+    ("ksbs", "KSBs", 110),
+    ("status", "Status", 130),
+    ("outcome", "Outcome", 240),
 )
 
 _STATUS_TAGS = {
@@ -222,9 +224,10 @@ def _detail(gui, review_id: int) -> None:
     )
     targets.populate(
         review.targets,
-        lambda t: (t.due_date, t.description, t.ksb_codes, t.status, t.outcome_note),
+        lambda t: (t.due_date, t.description, t.owner, t.priority, t.ksb_codes, t.status,
+                   t.outcome_note),
         identity=lambda t: t.target_id,
-        tag=lambda t: "Red" if t.is_overdue else ("Green" if t.status == "Met" else None),
+        tag=lambda t: t.rag(date.today()),
         noun="target",
     )
 
@@ -232,6 +235,7 @@ def _detail(gui, review_id: int) -> None:
     if gui.actor.can("review.conduct"):
         buttons += [
             ("Add Target…", lambda: _add_target(gui, review_id)),
+            ("Bring Forward Open Actions", lambda: _carry_forward(gui, review_id)),
             ("Close Target…", lambda: _close_target(gui, review_id, targets)),
             ("Delete Target", lambda: _delete_target(gui, review_id, targets)),
             ("Record Outcome…", lambda: _record(gui, review_id)),
@@ -417,6 +421,11 @@ def _add_target(gui, review_id: int) -> None:
         {"key": "due_date", "label": "Due", "help": "YYYY-MM-DD"},
         {"key": "ksb_codes", "label": "KSBs it works towards",
          "help": "Comma-separated, e.g. K3, S1."},
+        {"key": "owner", "label": "Owner", "kind": "combo", "options": config.ACTION_OWNERS,
+         "value": config.ACTION_DEFAULT_OWNER,
+         "help": "Who has to do it. The apprentice and employer can update their own."},
+        {"key": "priority", "label": "Priority", "kind": "combo",
+         "options": config.ACTION_PRIORITIES, "value": config.ACTION_DEFAULT_PRIORITY},
     ]
 
     def save(values: dict[str, Any]) -> Any:
@@ -424,6 +433,23 @@ def _add_target(gui, review_id: int) -> None:
 
     if widgets.FormDialog(gui.root, "Agree a target", fields, save).saved:
         _detail(gui, review_id)
+
+
+def _carry_forward(gui, review_id: int) -> None:
+    """Pull every action still open on earlier reviews onto this one.
+
+    Starting a review does this on its own; the button is for bringing
+    them across before the meeting opens.
+    """
+    ok, carried = widgets.guard(lambda: review_service.carry_forward(gui.actor, review_id))
+    if not ok:
+        return
+    if carried:
+        widgets.inform(f"{len(carried)} open action(s) brought forward onto this review.")
+    else:
+        widgets.inform("Nothing to bring forward: no earlier action is still open.",
+                       title="Nothing to carry")
+    _detail(gui, review_id)
 
 
 def _close_target(gui, review_id: int, table: widgets.DataTable) -> None:
@@ -434,7 +460,8 @@ def _close_target(gui, review_id: int, table: widgets.DataTable) -> None:
     fields = [
         {"key": "status", "label": "Outcome", "kind": "combo", "required": True,
          "options": outcomes, "value": "Met"},
-        {"key": "note", "label": "Note", "kind": "text"},
+        {"key": "note", "label": "Note", "kind": "text",
+         "help": "Carried Forward moves the action onto the apprentice's next review."},
     ]
 
     def save(values: dict[str, Any]) -> Any:

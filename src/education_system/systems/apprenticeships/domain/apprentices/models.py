@@ -70,6 +70,23 @@ class Apprentice:
         """Age when the programme began — what funding bands key off."""
         return years_between(self.date_of_birth, self.start_date)
 
+    def days_remaining(self, today: date | None = None) -> int | None:
+        """Days until the planned end date; negative once it has passed."""
+        end = _parse(self.planned_end_date)
+        if end is None:
+            return None
+        return (end - (today or date.today())).days
+
+    def is_overdue(self, today: date | None = None) -> bool:
+        """Still active after the planned end date.
+
+        Nobody should be in this state for long: they have either finished
+        and the record was not moved on, or the end date needs revising.
+        Either way it is a record somebody has to look at.
+        """
+        remaining = self.days_remaining(today)
+        return self.is_active and remaining is not None and remaining < 0
+
 
 @dataclass
 class ApprenticeSummary:
@@ -93,6 +110,8 @@ class ApprenticeSummary:
     ksbs_competent: int = 0
     open_reviews: int = 0
     gateway_status: str = "Not Ready"
+    # Days spent on breaks in learning so far, an open break counted to today.
+    break_days: int = 0
 
     @property
     def full_name(self) -> str:
@@ -112,25 +131,19 @@ class ApprenticeSummary:
 
     @property
     def progress_percent(self) -> float:
-        """How far through the programme they are by elapsed time.
+        """How far through the programme they are by elapsed training time.
 
         Time-based rather than achievement-based on purpose: comparing
         this against ``otj_percent`` is exactly how a tutor spots someone
         drifting behind.
         """
-        start, end = self.apprentice.start_date, self.apprentice.planned_end_date
-        if not start or not end:
-            return 0.0
-        try:
-            d_start = date.fromisoformat(start)
-            d_end = date.fromisoformat(end)
-        except ValueError:
-            return 0.0
-        span = (d_end - d_start).days
-        if span <= 0:
-            return 100.0
-        elapsed = (date.today() - d_start).days
-        return max(0.0, min(100.0, round(elapsed / span * 100, 1)))
+        return self.progress_percent_on(date.today())
+
+    def progress_percent_on(self, today: date) -> float:
+        return elapsed_percent(
+            self.apprentice.start_date, self.apprentice.planned_end_date,
+            today, break_days=self.break_days,
+        )
 
     @property
     def is_behind(self) -> bool:
@@ -138,22 +151,45 @@ class ApprenticeSummary:
 
         A 5-point tolerance stops a normal week's lag being flagged.
         """
-        return self.otj_percent + 5 < self.progress_percent
+        return self.is_behind_on(date.today())
+
+    def is_behind_on(self, today: date) -> bool:
+        return self.otj_percent + 5 < self.progress_percent_on(today)
 
 
 def years_between(from_iso: str | None, to_iso: str | None) -> int | None:
     """Whole years between two ISO dates, or None if either is missing."""
-    if not from_iso or not to_iso:
-        return None
-    try:
-        d_from = date.fromisoformat(from_iso)
-        d_to = date.fromisoformat(to_iso)
-    except ValueError:
+    d_from, d_to = _parse(from_iso), _parse(to_iso)
+    if d_from is None or d_to is None:
         return None
     years = d_to.year - d_from.year
     if (d_to.month, d_to.day) < (d_from.month, d_from.day):
         years -= 1
     return years
+
+
+def elapsed_percent(
+    start_iso: str | None,
+    end_iso: str | None,
+    today: date,
+    *,
+    break_days: int = 0,
+) -> float:
+    """Share of the planned programme that has elapsed as training time.
+
+    Time on a break is not training time, so it comes off the elapsed
+    side — otherwise everyone back from a break looks behind on their
+    off-the-job hours. The planned end date is not moved after a break,
+    so the span stays as planned.
+    """
+    start, end = _parse(start_iso), _parse(end_iso)
+    if start is None or end is None:
+        return 0.0
+    span = (end - start).days
+    if span <= 0:
+        return 100.0
+    elapsed = (today - start).days - max(0, break_days)
+    return max(0.0, min(100.0, round(elapsed / span * 100, 1)))
 
 
 def planned_end_for(start_iso: str, duration_months: int, weekly_hours: float) -> str:
@@ -193,6 +229,15 @@ def _days_in_month(year: int, month: int) -> int:
     return (date(year, month + 1, 1) - timedelta(days=1)).day
 
 
+def _parse(iso: str | None) -> date | None:
+    if not iso:
+        return None
+    try:
+        return date.fromisoformat(iso)
+    except ValueError:
+        return None
+
+
 def validate_uln(uln: str | None) -> str | None:
     """Check a Unique Learner Number.
 
@@ -207,3 +252,25 @@ def validate_uln(uln: str | None) -> str | None:
     if not cleaned.isdigit() or len(cleaned) != 10:
         raise ValidationError("ULN must be exactly 10 digits")
     return cleaned
+
+
+def validate_date_of_birth(dob_iso: str | None, today: date) -> None:
+    """A date of birth cannot be in the future."""
+    dob = _parse(dob_iso)
+    if dob is not None and dob > today:
+        raise ValidationError("Date of birth cannot be in the future")
+
+
+def validate_age_at_start(dob_iso: str | None, start_iso: str | None) -> None:
+    """Refuse a start before the apprentice reaches the minimum age.
+
+    Silent when either date is missing: an applicant is routinely enrolled
+    before their start date is known, and the check runs again when they
+    are started on programme.
+    """
+    age = years_between(dob_iso, start_iso)
+    if age is not None and age < config.MINIMUM_AGE_AT_START:
+        raise ValidationError(
+            f"An apprentice must be at least {config.MINIMUM_AGE_AT_START} on their "
+            f"start date; this one would be {age}"
+        )

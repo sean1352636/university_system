@@ -127,7 +127,7 @@ Back to Monitoring Menu or Main Menu
 
 #### Example Session
 ```bash
-$ python run.py --cli
+$ python -m education_system --cli
 Username: admin
 Password: ****
 

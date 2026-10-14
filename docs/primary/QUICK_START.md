@@ -44,7 +44,7 @@ python -c "from education_system.primary_school import __version__; print(__vers
 ### Option A: Launch the GUI
 
 ```bash
-python run.py --primary --gui
+python -m education_system --primary --gui
 ```
 
 This opens the tkinter-based desktop application with a scrollable sidebar listing all 46 available modules.
@@ -52,7 +52,7 @@ This opens the tkinter-based desktop application with a scrollable sidebar listi
 ### Option B: Launch the CLI
 
 ```bash
-python run.py --primary --cli
+python -m education_system --primary --cli
 ```
 
 The CLI provides a text-based menu interface for headless or remote operation.
@@ -60,7 +60,7 @@ The CLI provides a text-based menu interface for headless or remote operation.
 ### Option C: Universal Login
 
 ```bash
-python run.py
+python -m education_system
 ```
 
 The universal login window authenticates against the shared auth system and allows you to select any of the four Education System platforms (University, College, Secondary School, Primary School).

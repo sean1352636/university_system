@@ -29,8 +29,12 @@ from education_system.systems.apprenticeships.infrastructure.persistence.reposit
     staff_repository,
 )
 from education_system.systems.apprenticeships.interfaces.cli import prompts
-from education_system.systems.apprenticeships.interfaces.cli.commands import apprentices
-from education_system.systems.apprenticeships.services import compliance_service, funding_service
+from education_system.systems.apprenticeships.interfaces.cli.commands import apprentices, audit
+from education_system.systems.apprenticeships.services import (
+    compliance_service,
+    document_service,
+    funding_service,
+)
 from education_system.systems.apprenticeships.services.access import Actor, PermissionDenied
 
 logger = logging.getLogger(__name__)
@@ -503,13 +507,29 @@ def show_compliance(actor: Actor, apprentice_id: int, name: str) -> None:
         noun="check",
     )
 
+    # Beside each checklist item, any uploaded file tagged as its evidence.
+    uploads: dict[str, list] = {}
+    if actor.can("document.view"):
+        try:
+            uploads = document_service.checklist_files(actor, apprentice_id)
+        except Exception:
+            logger.debug("Could not read uploaded checklist files", exc_info=True)
+
+    def uploaded(doc_key: str, fallback: str | None) -> str | None:
+        files = uploads.get(doc_key) or []
+        if not files:
+            return fallback
+        return f"{files[0].title} v{files[0].version}" + (
+            f" +{len(files) - 1}" if len(files) > 1 else ""
+        )
+
     prompts.note("\nDocuments:")
     prompts.table(
         (("Document", 34), ("Status", 18), ("Signed", 12), ("Expires", 12),
-         ("File", 20), ("Notes", 24)),
+         ("Uploaded file", 24), ("Notes", 20)),
         status.documents,
         lambda d: (d.label, f"{d.status}{' (expired)' if d.is_expired else ''}",
-                   d.signed_date, d.expiry_date, d.file_name, d.notes),
+                   d.signed_date, d.expiry_date, uploaded(d.doc_key, d.file_name), d.notes),
         noun="document",
     )
 
@@ -594,29 +614,12 @@ def _set_functional_skill(actor: Actor) -> None:
 
 
 def _audit(actor: Actor) -> None:
-    prompts.title("Audit trail")
+    """The Audit Log command's own search, so the two menus cannot drift apart."""
     prompts.note(
         "Administrators only: the log records what every user did, so a scoped view "
         "would still show a tutor who else touched those records."
     )
-    entity = prompts.ask("Entity filter (e.g. otj_entry)")
-    action = prompts.choose("Action filter", config.AUDIT_ACTIONS, allow_blank=True)
-    who = prompts.ask("Username filter")
-    since = prompts.ask("Since (YYYY-MM-DD)")
-    limit = prompts.ask_int("How many rows", default=200)
-
-    rows = compliance_service.audit_trail(
-        actor, entity=entity or None, action=action, actor_username=who or None,
-        since=since or None, limit=limit or 200,
-    )
-    prompts.table(
-        (("When", 20), ("Who", 14), ("Role", 14), ("Action", 10), ("Entity", 20),
-         ("Id", 10), ("Detail", 40)),
-        rows,
-        lambda e: (e.ts, e.actor, e.actor_role, e.action, e.entity, e.entity_id, e.detail),
-        noun="entry",
-    )
-    prompts.pause()
+    audit.browse(actor)
 
 
 def _retention(actor: Actor) -> None:

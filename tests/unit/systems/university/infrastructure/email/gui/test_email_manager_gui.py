@@ -17,7 +17,7 @@ from unittest.mock import Mock, patch, MagicMock, PropertyMock
 
 # Try to import from the correct location, skip tests if it still fails
 try:
-    from education_system.systems.university.interfaces.gui.shell.email.email_gui import (
+    from education_system.systems.university.shell.gui.email.email_gui import (
         EmailManagerGUI,
         main,
         run_gui_mode,

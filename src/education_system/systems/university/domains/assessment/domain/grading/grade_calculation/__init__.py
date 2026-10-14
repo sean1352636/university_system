@@ -113,15 +113,27 @@ from education_system.systems.university.domains.assessment.domain.grading.grade
     predict_student_gpa,
     predict_next_assessment_grade,
     predict_final_module_grade,
+    grade_prediction,
 )
 
 from education_system.systems.university.domains.assessment.domain.grading.grade_calculation.views import (
     view_student_grades,
 )
 
-from education_system.systems.university.domains.assessment.domain.grading.grade_calculation.menus import (
-    display_enhanced_grade_menu,
-    grade_curve_analysis_menu,
-    competency_assessment_menu,
-    grade_prediction,
-)
+# The grade/curve/competency menus are owned by grading.grade_tracking; this package
+# previously carried a stale duplicate set. Re-export the canonical ones lazily so the
+# old `grade_calculation.display_enhanced_grade_menu` import path keeps working without
+# creating a circular import (grade_tracking imports this package at module level).
+_MENU_EXPORTS = {
+    'display_enhanced_grade_menu',
+    'grade_curve_analysis_menu',
+    'competency_assessment_menu',
+}
+
+
+def __getattr__(name):
+    if name in _MENU_EXPORTS:
+        from education_system.systems.university.domains.assessment.domain.grading import grade_tracking
+
+        return getattr(grade_tracking, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

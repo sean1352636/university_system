@@ -16,7 +16,8 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 
 import logging
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
+from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling._dialogs import messagebox
 from datetime import datetime, timedelta
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -155,7 +156,7 @@ class BulkActionsDialog:
             if self.gui and hasattr(self.gui, "_resolve_changed_by"):
                 return self.gui._resolve_changed_by()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return "gui"
 
     def _apply(self):
@@ -247,6 +248,7 @@ class BulkActionsDialog:
                 conn.execute("PRAGMA journal_mode=WAL")
                 cur = conn.cursor()
                 placeholders = ",".join("?" * len(self.schedule_ids))
+                # db-audit: ignore[DBW001] - join of placeholders
                 cur.execute(
                     f"SELECT id, start_time, end_time FROM module_schedule "
                     f"WHERE id IN ({placeholders})",

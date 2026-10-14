@@ -147,7 +147,7 @@ def sync_for_module_schedule(schedule_id: int) -> None:
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
 
 def unsync_for_module_schedule(schedule_id: int) -> None:
@@ -194,7 +194,7 @@ def unsync_for_module_schedule(schedule_id: int) -> None:
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
 
 # ── Rebuild from a student_modules change ──────────────────────────────
@@ -253,7 +253,7 @@ def sync_for_student_enrolment(student_id: str, module_code: str) -> int:
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
 
 def clear_for_student_drop(student_id: str, module_code: str) -> int:
@@ -279,4 +279,4 @@ def clear_for_student_drop(student_id: str, module_code: str) -> int:
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)

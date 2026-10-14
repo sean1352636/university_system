@@ -22,7 +22,7 @@ We will support four interfaces, all driven by the same service layer:
 
 ### 1. CLI (`modules/domain/{domain}/cli/`)
 Click-based command groups. Useful for bulk data import, seeding, and automation scripts.
-Invoked via `run.py --{system} --cli` or directly via the module entry points.
+Invoked via `python -m education_system --{system} --cli` or directly via the module entry points.
 
 ### 2. GUI (`modules/domain/{domain}/gui/`)
 Tkinter-based desktop application. Each module provides a `tk.Frame` subclass. Frames are
@@ -31,7 +31,7 @@ navigation. The shared login/MFA windows (`shared/gui/login_gui.py`, `mfa_gui.py
 access before the system-specific window opens.
 
 All four system launchers accept `user_info=`, `role=`, and `shared_auth=` keyword arguments
-so that the universal login window (`run.py`) can authenticate once and pass credentials into
+so that the universal login window (`python -m education_system`) can authenticate once and pass credentials into
 whichever system the user selects, avoiding a second login prompt.
 
 ### 3. REST API (`shared/api/unified_server.py`)
@@ -44,7 +44,7 @@ Vanilla JS SPA (see ADR 0004) served by the same Flask process. Intended for stu
 parents; does not expose admin-only routes.
 
 ### Interface selection
-`run.py` is the single entry point. Without arguments it shows an interactive prompt. With
+`python -m education_system` is the single entry point. Without arguments it shows an interactive prompt. With
 `--{system} --gui|--cli|--api` flags it launches the requested interface directly. The `--api`
 flag always starts the unified server regardless of which system flag was given.
 
@@ -54,7 +54,7 @@ flag always starts the unified server regardless of which system flag was given.
 - Each user group gets an appropriate interface without duplicating business logic
 - The service layer can be tested in isolation; interface layers are thin adapters
 - Adding a new interface (e.g. a mobile REST client) requires no changes to services
-- The universal `run.py` launcher provides a single documented entry point
+- The universal `python -m education_system` launcher provides a single documented entry point
 
 ### Negative / Trade-offs
 - Each new feature must be exposed in up to four interface layers (service + CLI + GUI + route)

@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
@@ -445,7 +449,7 @@ class ReturnEquipmentDialog:
             finally:
                 conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return user.get('username') or str(user.get('id', ''))
 
     def _get_user_email(self):
@@ -472,7 +476,7 @@ class ReturnEquipmentDialog:
             finally:
                 conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return None
 
     def create_widgets(self):
@@ -824,7 +828,7 @@ class ReturnEquipmentDialog:
             finally:
                 conn.close()
         except Exception:
-            pass  # payments table may not exist - non-critical
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Send payment receipt email
         self._send_payment_receipt_email(checkout_id, equip_name, amount, method)

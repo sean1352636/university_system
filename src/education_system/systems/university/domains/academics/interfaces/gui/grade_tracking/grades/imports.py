@@ -1,4 +1,7 @@
 """Extracted GradeManager behaviour."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from . import *
@@ -132,6 +135,7 @@ class GradeImportMixin:
                 if imported > 0:
                     user_id, session_id = get_gui_context()
                     require_grade_audit(
+                        conn=cursor.connection,
                         action=AuditAction.BULK_UPDATE,
                         user_id=user_id,
                         resource_type='grade',
@@ -162,6 +166,6 @@ class GradeImportMixin:
                 if self.conn:
                     self.conn.rollback()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             logger.exception("Grade import failed")
             messagebox.showerror(_t('gui.academics.grade_tracking.grades.imports.dialogs.import_error', default="Import Error"), "Import could not be completed. Check the file and try again.")

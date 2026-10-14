@@ -29,18 +29,29 @@ Constructor for every panel::
                          panel hits the same DB as the CLI.  Tests inject a
                          connection factory pointed at a temp DB copy.
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox
-from datetime import datetime
+from tkinter import ttk, messagebox, scrolledtext
+from datetime import datetime, timedelta
 
 from education_system.systems.university.infrastructure.database.db import (
     get_connection as _central_get_connection,
 )
 from education_system.systems.university.domains.pastoral.domain.health.records.db.audit import (
     log_audit_event,
+)
+# Referral notifications live with the domain, so the CLI and this panel send
+# students the same three emails through the university email system.
+from education_system.systems.university.domains.pastoral.domain.health.records.referrals.referrals import (
+    _referral_email_context,
+    notify_referral_created,
+    notify_referral_status_changed,
+    notify_referral_updated,
 )
 from education_system.systems.university.domains.pastoral.domain.health.records.screening.schedules import (
     calculate_screening_due_date,
@@ -87,7 +98,7 @@ class _ClinicalPanelBase:
             log_audit_event(self._user_id(), action, resource_type,
                             resource_id, details)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _verify_student(self, cursor, student_id):
         cursor.execute(
@@ -799,8 +810,10 @@ class ReferralsPanel(_ClinicalPanelBase):
         ])
         btns = ttk.Frame(self.parent)
         btns.pack(fill=tk.X, padx=10, pady=(0, 8))
+        ttk.Button(btns, text=_t('gui.pastoral.health.health_portal.clinical_panels.buttons.update_referral', default="Update Referral"),
+                   command=self.update_referral).pack(side=tk.LEFT)
         ttk.Button(btns, text=_t('gui.pastoral.health.health_portal.clinical_panels.buttons.track_update_status', default="Track / Update Status"),
-                   command=self.update_status).pack(side=tk.LEFT)
+                   command=self.update_status).pack(side=tk.LEFT, padx=(6, 0))
         self.refresh()
 
     def add(self):
@@ -834,9 +847,17 @@ class ReferralsPanel(_ClinicalPanelBase):
             )
             conn.commit()
             new_id = cur.lastrowid
+            # Read back what was committed so the email states the stored
+            # record rather than what we think we wrote.
+            context = _referral_email_context(cur, new_id)
             conn.close()
             self._audit("create_referral", "referral", new_id)
-            self._info(f"Referral created successfully! (ID {new_id})")
+
+            emailed = notify_referral_created(context) if context else False
+            note = (f"\n\nConfirmation emailed to {context['student_email']}."
+                    if emailed else
+                    "\n\nNote: the confirmation email could not be sent.")
+            self._info(f"Referral created successfully! (ID {new_id}){note}")
             self.refresh()
         except Exception as exc:
             self._err(f"Failed to create referral: {exc}")
@@ -868,18 +889,194 @@ class ReferralsPanel(_ClinicalPanelBase):
         if not self._can("manage_health_records"):
             self._err("You don't have permission to update referrals.")
             return
-        _status_dialog(self.parent, "Update Referral Status", self.STATUS,
-                       lambda new: self._apply_status(rid, new))
+        # Merged with the appointment date: moving a referral to 'scheduled'
+        # without recording *when* leaves the student with a status change and
+        # no date, which is the one thing that email needs to carry. The CLI
+        # has always asked for it here; the GUI made you go to Update Referral
+        # separately, so the two flows now match.
+        _referral_status_dialog(
+            self.parent, "Update Referral Status", self.STATUS,
+            lambda new, appt: self._apply_status(rid, new, appt))
 
-    def _apply_status(self, rid, new_status):
+    def _actor(self):
+        """Username to attribute a change to in the student's email."""
+        user = getattr(self.auth, "current_user", None) or {}
+        return user.get("username", "the Health Centre")
+
+    def update_referral(self):
+        """Edit a referral's clinical details and email the student the diff.
+
+        Separate from Track / Update Status: that has its own workflow and its
+        own email. Fields are pre-filled with the current values, and only the
+        ones that actually differ are written, audited or reported.
+        """
+        rid = _selected_id(self.tree)
+        if rid is None:
+            return
+        if not self._can("manage_health_records"):
+            self._err("You don't have permission to update referrals.")
+            return
+
         try:
             conn = self._conn()
             cur = conn.cursor()
-            cur.execute("UPDATE referrals SET status = ? WHERE id = ?",
-                        (new_status, rid))
-            conn.commit()
+            before = _referral_email_context(cur, rid)
             conn.close()
-            self._audit("update_referral_status", "referral", rid)
+        except Exception as exc:
+            self._err(f"Failed to load referral: {exc}")
+            return
+
+        if not before:
+            self._err("Referral not found.")
+            return
+
+        dialog = tk.Toplevel(self.parent)
+        dialog.title(f"Update Referral #{rid}")
+        dialog.transient(self.parent.winfo_toplevel())
+        dialog.grab_set()
+        frame = ttk.Frame(dialog, padding=16)
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(frame, text=f"{before['student_name']} ({before['student_id']})",
+                  font=("TkDefaultFont", 10, "bold")).grid(
+            row=0, column=0, columnspan=2, sticky=tk.W, pady=(0, 10))
+
+        current_notes = "" if before["notes"] == "None recorded." else before["notes"]
+        current_appt = ("" if before["appointment_date"] == "Not yet scheduled"
+                        else before["appointment_date"])
+
+        widgets = {}
+        rows = [
+            ("referring_provider", "Referring provider:", "entry", before["referring_provider"], None),
+            ("specialist_provider", "Specialist provider:", "entry", before["specialist_provider"], None),
+            ("specialty", "Specialty:", "combo", before["specialty"], self.SPECIALTY),
+            ("urgency", "Urgency:", "combo", before["urgency"], self.URGENCY),
+            ("reason", "Reason:", "entry", before["reason"], None),
+            ("notes", "Notes:", "entry", current_notes, None),
+            ("appointment_date", "Appointment date (YYYY-MM-DD):", "entry", current_appt, None),
+        ]
+        for index, (key, label, kind, value, values) in enumerate(rows, start=1):
+            ttk.Label(frame, text=label).grid(row=index, column=0, sticky=tk.W,
+                                              pady=3, padx=(0, 8))
+            var = tk.StringVar(value=value or "")
+            if kind == "combo":
+                widget = ttk.Combobox(frame, textvariable=var, values=values,
+                                      state="readonly", width=32)
+            else:
+                widget = ttk.Entry(frame, textvariable=var, width=34)
+            widget.grid(row=index, column=1, sticky=tk.W, pady=3)
+            widgets[key] = var
+
+        def save():
+            values = {k: v.get().strip() for k, v in widgets.items()}
+
+            appointment_date = values["appointment_date"] or None
+            if appointment_date:
+                try:
+                    datetime.strptime(appointment_date, "%Y-%m-%d")
+                except ValueError:
+                    self._err(f"'{appointment_date}' is not a valid date. Use YYYY-MM-DD.")
+                    return
+
+            changes = []
+            for label, old, new in [
+                ("Referring provider", before["referring_provider"], values["referring_provider"]),
+                ("Specialist", before["specialist_provider"], values["specialist_provider"]),
+                ("Specialty", before["specialty"], values["specialty"]),
+                ("Urgency", before["urgency"], values["urgency"]),
+                ("Reason", before["reason"], values["reason"]),
+                ("Notes", current_notes, values["notes"]),
+                ("Appointment date", current_appt or None, appointment_date),
+            ]:
+                if (old or "") != (new or ""):
+                    changes.append((label, old, new))
+
+            if not changes:
+                self._info("Nothing was changed.")
+                dialog.destroy()
+                return
+
+            summary = "\n".join(
+                f"  - {label}: '{old or 'not set'}' -> '{new or 'not set'}'"
+                for label, old, new in changes)
+            if not messagebox.askyesno(
+                    "Confirm changes",
+                    f"Apply these changes to referral #{rid}?\n\n{summary}\n\n"
+                    "The student will be emailed this list.",
+                    parent=dialog):
+                return
+
+            try:
+                conn = self._conn()
+                cur = conn.cursor()
+                cur.execute(
+                    """UPDATE referrals
+                       SET referring_provider = ?, specialist_provider = ?,
+                           specialty = ?, reason = ?, urgency = ?, notes = ?,
+                           appointment_date = ?
+                       WHERE id = ?""",
+                    (values["referring_provider"], values["specialist_provider"],
+                     values["specialty"], values["reason"], values["urgency"],
+                     values["notes"], appointment_date, rid))
+                conn.commit()
+                after = _referral_email_context(cur, rid)
+                conn.close()
+            except Exception as exc:
+                self._err(f"Failed to update referral: {exc}")
+                return
+
+            self._audit("update_referral", "referral", rid,
+                        "; ".join(f"{label}: {old} -> {new}"
+                                  for label, old, new in changes))
+
+            emailed = False
+            if after:
+                emailed = notify_referral_updated(after, changes, self._actor())
+
+            dialog.destroy()
+            self._info(
+                f"Referral #{rid} updated ({len(changes)} change(s))."
+                + (f"\n\nUpdate emailed to {after['student_email']}."
+                   if emailed else
+                   "\n\nNote: the update email could not be sent."))
+            self.refresh()
+
+        buttons = ttk.Frame(frame)
+        buttons.grid(row=len(rows) + 1, column=0, columnspan=2, sticky=tk.E, pady=(12, 0))
+        ttk.Button(buttons, text="Save changes", command=save).pack(side=tk.LEFT, padx=4)
+        ttk.Button(buttons, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT)
+
+    def _apply_status(self, rid, new_status, appointment_date=None):
+        try:
+            conn = self._conn()
+            cur = conn.cursor()
+            # Capture the status being replaced — the email names both.
+            cur.execute("SELECT status FROM referrals WHERE id = ?", (rid,))
+            row = cur.fetchone()
+            previous_status = row[0] if row else "unknown"
+
+            if appointment_date:
+                cur.execute(
+                    "UPDATE referrals SET status = ?, appointment_date = ? WHERE id = ?",
+                    (new_status, appointment_date, rid))
+            else:
+                cur.execute("UPDATE referrals SET status = ? WHERE id = ?",
+                            (new_status, rid))
+            conn.commit()
+            context = _referral_email_context(cur, rid)
+            conn.close()
+            self._audit("update_referral_status", "referral", rid,
+                        f"Status changed from {previous_status} to {new_status}")
+
+            emailed = False
+            if context:
+                emailed = notify_referral_status_changed(
+                    context, previous_status, self._actor())
+            self._info(
+                f"Referral status updated to '{new_status}'."
+                + (f"\n\nStatus change emailed to {context['student_email']}."
+                   if emailed else
+                   "\n\nNote: the status-change email could not be sent."))
             self.refresh()
         except Exception as exc:
             self._err(f"Failed to update referral: {exc}")
@@ -927,7 +1124,233 @@ class ScreeningPanel(_ClinicalPanelBase):
         btns.pack(fill=tk.X, padx=10, pady=(0, 8))
         ttk.Button(btns, text=_t('gui.pastoral.health.health_portal.clinical_panels.buttons.record_results', default="Record Results"),
                    command=self.record_results).pack(side=tk.LEFT)
+        ttk.Button(btns, text=_t('gui.pastoral.health.health_portal.clinical_panels.buttons.send_reminders', default="Send Reminders"),
+                   command=self.send_screening_reminders).pack(side=tk.LEFT, padx=(6, 0))
+        ttk.Button(btns, text=_t('gui.pastoral.health.health_portal.clinical_panels.buttons.send_overdue', default="Send Overdue Notices"),
+                   command=self.send_overdue_notices).pack(side=tk.LEFT, padx=(6, 0))
+        ttk.Button(btns, text=_t('gui.pastoral.health.health_portal.clinical_panels.buttons.population_report', default="Population Report"),
+                   command=self.show_population_report).pack(side=tk.LEFT, padx=(6, 0))
         self.refresh()
+
+    # ------------------------------------------------------------------
+    # Notifications — same domain helpers and templates as the health CLI,
+    # so a student gets identical wording whichever interface was used.
+    # ------------------------------------------------------------------
+    def _collect_screenings(self, overdue):
+        """Rows for a reminder run.
+
+        *overdue* selects past-due screenings; otherwise it is everything
+        falling due within the next seven days, matching the CLI's windows.
+        """
+        today = datetime.now().strftime('%Y-%m-%d')
+        horizon = (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d')
+        comparison = "ss.due_date < ?" if overdue else "ss.due_date <= ?"
+        bound = today if overdue else horizon
+
+        conn = self._conn()
+        try:
+            # db-audit: ignore[DBW001] - conditional between literals
+            rows = conn.execute(
+                "SELECT ss.id, ss.student_id, s.first_name, s.last_name,"
+                "       ss.screening_type, ss.due_date, ss.provider, s.email_address"
+                " FROM screening_schedules ss"
+                " JOIN students s ON ss.student_id = s.student_id"
+                f" WHERE {comparison} AND ss.status = 'due'"
+                " ORDER BY ss.due_date", (bound,)).fetchall()
+        finally:
+            conn.close()
+
+        students = []
+        for (sid, student_id, first, last, screening_type,
+             due_date, provider, email) in rows:
+            entry = {
+                'screening_id': sid, 'student_id': student_id,
+                'student_name': f"{first or ''} {last or ''}".strip() or student_id,
+                'screening_type': screening_type, 'due_date': due_date,
+                'provider': provider, 'email': email,
+            }
+            if overdue:
+                try:
+                    entry['days_overdue'] = (
+                        datetime.now() - datetime.strptime(due_date, '%Y-%m-%d')).days
+                except (ValueError, TypeError):
+                    entry['days_overdue'] = 0
+            students.append(entry)
+        return students
+
+    def _run_notification(self, students, notify, noun):
+        """Confirm, send one email per student, and report honestly.
+
+        Students with no address on file are never counted as sent — the
+        summary distinguishes "could not be reached" from "failed".
+        """
+        if not students:
+            self._info(f"No {noun} to send.")
+            return
+        reachable = [s for s in students if (s.get('email') or '').strip()]
+        unreachable = len(students) - len(reachable)
+
+        detail = "\n".join(
+            f"  • {s['student_name']} ({s['student_id']}) — "
+            f"{s['screening_type']} due {s['due_date']}" for s in students[:12])
+        if len(students) > 12:
+            detail += f"\n  … and {len(students) - 12} more"
+
+        message = (f"Send {noun} to {len(reachable)} student(s)?\n\n{detail}")
+        if unreachable:
+            message += (f"\n\n{unreachable} of {len(students)} have no email "
+                        "address on file and cannot be contacted.")
+        if not messagebox.askyesno("Confirm", message):
+            return
+
+        sent = failed = 0
+        for student in reachable:
+            if notify(student):
+                sent += 1
+            else:
+                failed += 1
+
+        self._audit('send_screening_notifications', 'screening', sent)
+        summary = f"{noun.capitalize()}: {sent} sent"
+        if failed:
+            summary += f", {failed} failed"
+        if unreachable:
+            summary += f", {unreachable} with no address on file"
+        self._info(summary + ".")
+
+    def send_screening_reminders(self):
+        """Email students whose screening falls due in the next seven days."""
+        if not self._can("manage_health_records"):
+            self._err("You don't have permission to send screening reminders.")
+            return
+        try:
+            from education_system.systems.university.domains.pastoral.domain.health.records.screening.reminders import (
+                notify_screening_due,
+            )
+            self._run_notification(self._collect_screenings(overdue=False),
+                                   notify_screening_due, "screening reminders")
+        except Exception as exc:
+            self._err(f"Failed to send screening reminders: {exc}")
+
+    def send_overdue_notices(self):
+        """Email students whose screening is past its due date."""
+        if not self._can("manage_health_records"):
+            self._err("You don't have permission to send overdue notices.")
+            return
+        try:
+            from education_system.systems.university.domains.pastoral.domain.health.records.screening.reminders import (
+                notify_screening_overdue,
+            )
+            self._run_notification(self._collect_screenings(overdue=True),
+                                   notify_screening_overdue, "overdue notices")
+        except Exception as exc:
+            self._err(f"Failed to send overdue notices: {exc}")
+
+    # ------------------------------------------------------------------
+    # Population report
+    # ------------------------------------------------------------------
+    def _population_report_text(self):
+        """Build the same aggregate report the CLI prints."""
+        lines = ["POPULATION SCREENING REPORT", "=" * 40,
+                 f"Generated: {datetime.now():%Y-%m-%d %H:%M:%S}",
+                 "Period: last 12 months", ""]
+        conn = self._conn()
+        try:
+            compliance = conn.execute(
+                "SELECT screening_type, COUNT(*),"
+                "       SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END),"
+                "       SUM(CASE WHEN due_date < date('now') AND status = 'due'"
+                "                THEN 1 ELSE 0 END)"
+                " FROM screening_schedules"
+                " WHERE due_date >= date('now', '-365 days')"
+                " GROUP BY screening_type ORDER BY COUNT(*) DESC").fetchall()
+            if compliance:
+                lines.append("Screening Compliance Rates (Last 12 Months):")
+                lines.append(f"{'Screening Type':<25} {'Total':<8} {'Completed':<10} "
+                             f"{'Overdue':<8} {'Rate':<8}")
+                lines.append("-" * 65)
+                for screening, total, completed, overdue in compliance:
+                    rate = (completed / total * 100) if total else 0
+                    lines.append(f"{screening:<25} {total:<8} {completed:<10} "
+                                 f"{overdue:<8} {rate:.1f}%")
+            else:
+                lines.append("No screenings scheduled in the last 12 months.")
+
+            age_rows = conn.execute(
+                "SELECT CASE WHEN s.age < 25 THEN '18-24'"
+                "            WHEN s.age < 35 THEN '25-34'"
+                "            WHEN s.age < 45 THEN '35-44'"
+                "            ELSE '45+' END AS age_group,"
+                "       COUNT(DISTINCT ss.student_id),"
+                "       AVG(CASE WHEN ss.status = 'completed' THEN 1.0 ELSE 0.0 END) * 100"
+                " FROM screening_schedules ss"
+                " JOIN students s ON ss.student_id = s.student_id"
+                " WHERE ss.due_date >= date('now', '-365 days')"
+                " GROUP BY age_group ORDER BY age_group").fetchall()
+            if age_rows:
+                lines += ["", "Compliance by Age Group:",
+                          f"{'Age Group':<12} {'Students':<10} {'Compliance':<12}",
+                          "-" * 35]
+                for age_group, students, compliance_pct in age_rows:
+                    lines.append(f"{age_group:<12} {students:<10} {compliance_pct:.1f}%")
+        finally:
+            conn.close()
+        return "\n".join(lines)
+
+    def show_population_report(self):
+        """Show the aggregate report, with the option to email the admins."""
+        if not self._can("manage_health_records"):
+            self._err("You don't have permission to view screening reports.")
+            return
+        try:
+            content = self._population_report_text()
+        except Exception as exc:
+            self._err(f"Failed to build the report: {exc}")
+            return
+
+        dialog = tk.Toplevel(self.parent)
+        dialog.title("Population Screening Report")
+        dialog.transient(self.parent.winfo_toplevel())
+        frame = ttk.Frame(dialog, padding=12)
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        text = scrolledtext.ScrolledText(frame, wrap=tk.NONE, width=90, height=26,
+                                         font=('Courier', 9))
+        text.pack(fill=tk.BOTH, expand=True)
+        text.insert('1.0', content)
+        text.config(state='disabled')
+
+        def email_to_admin():
+            try:
+                from education_system.systems.university.domains.pastoral.domain.health.records.screening.reminders import (
+                    send_screening_report_to_admins,
+                )
+            except Exception as exc:
+                self._err(f"Email system unavailable: {exc}")
+                return
+            user = getattr(self.auth, 'current_user', None) or {}
+            sent, failed, addresses = send_screening_report_to_admins(
+                "Population Screening Report", content,
+                user.get('username', 'University Health Portal'))
+            if not sent and not failed:
+                messagebox.showwarning(
+                    "No admin address",
+                    "No admin email address is configured, so the report was "
+                    "not sent. Set an email against an admin user and try again.",
+                    parent=dialog)
+                return
+            self._audit('email_screening_report', 'screening', sent)
+            messagebox.showinfo(
+                "Report sent",
+                f"Emailed to: {', '.join(addresses)}"
+                + (f"\n{failed} could not be sent." if failed else ""),
+                parent=dialog)
+
+        buttons = ttk.Frame(frame)
+        buttons.pack(fill=tk.X, pady=(10, 0))
+        ttk.Button(buttons, text="Email to Admin",
+                   command=email_to_admin).pack(side=tk.LEFT)
+        ttk.Button(buttons, text="Close", command=dialog.destroy).pack(side=tk.RIGHT)
 
     def add(self):
         if not self._can("manage_health_records"):
@@ -1202,6 +1625,75 @@ def _selected_id(tree):
         return tree.item(selection[0])["values"][0]
     except (IndexError, KeyError):
         return None
+
+
+def _referral_status_dialog(parent, title, options, on_save):
+    """Status dialog that also captures an appointment date.
+
+    The date field is only enabled for 'scheduled' — the one status where a
+    date is meaningful — and is required there, because a scheduled referral
+    with no date tells the student nothing useful. ``on_save`` is called with
+    ``(new_status, appointment_date_or_None)``.
+    """
+    dialog = tk.Toplevel(parent)
+    dialog.title(title)
+    dialog.transient(parent.winfo_toplevel())
+    dialog.grab_set()
+    frame = ttk.Frame(dialog, padding=16)
+    frame.pack(fill=tk.BOTH, expand=True)
+
+    ttk.Label(frame, text=_t('gui.pastoral.health.health_portal.clinical_panels.labels.new_status', default="New status:")).grid(
+        row=0, column=0, sticky=tk.W, pady=4, padx=(0, 8))
+    status_var = tk.StringVar(value=options[0])
+    ttk.Combobox(frame, textvariable=status_var, values=options,
+                 state="readonly", width=20).grid(row=0, column=1, pady=4, sticky=tk.W)
+
+    ttk.Label(frame, text="Appointment date (YYYY-MM-DD):").grid(
+        row=1, column=0, sticky=tk.W, pady=4, padx=(0, 8))
+    date_var = tk.StringVar()
+    date_entry = ttk.Entry(frame, textvariable=date_var, width=22)
+    date_entry.grid(row=1, column=1, pady=4, sticky=tk.W)
+
+    hint = ttk.Label(frame, text="Required when the status is 'scheduled'.",
+                     foreground="#666666")
+    hint.grid(row=2, column=1, sticky=tk.W)
+
+    def sync_date_state(*_args):
+        if status_var.get() == "scheduled":
+            date_entry.state(["!disabled"])
+        else:
+            date_var.set("")
+            date_entry.state(["disabled"])
+
+    status_var.trace_add("write", sync_date_state)
+    sync_date_state()
+
+    def save():
+        new_status = status_var.get()
+        appointment_date = date_var.get().strip() or None
+        if new_status == "scheduled":
+            if not appointment_date:
+                messagebox.showwarning(
+                    "Appointment date required",
+                    "A scheduled referral needs a date — the student is told "
+                    "when to attend.", parent=dialog)
+                return
+            try:
+                datetime.strptime(appointment_date, "%Y-%m-%d")
+            except ValueError:
+                messagebox.showwarning(
+                    "Invalid date",
+                    f"'{appointment_date}' is not a valid date. Use YYYY-MM-DD.",
+                    parent=dialog)
+                return
+        on_save(new_status, appointment_date)
+        dialog.destroy()
+
+    buttons = ttk.Frame(frame)
+    buttons.grid(row=3, column=1, sticky=tk.E, pady=(10, 0))
+    ttk.Button(buttons, text=_t('gui.pastoral.health.health_portal.clinical_panels.buttons.save', default="Save"), command=save).pack(side=tk.LEFT, padx=4)
+    ttk.Button(buttons, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT)
+    return dialog
 
 
 def _status_dialog(parent, title, options, on_save):

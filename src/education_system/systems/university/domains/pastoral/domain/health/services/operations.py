@@ -22,7 +22,7 @@ def block_time_slots(auth):
             datetime.strptime(block_date, '%Y-%m-%d')
             break
         except ValueError:
-            print(get_text("health.operations.invalid_date_format"))
+            print(get_text("health.operations.invalid_date_format", default="Invalid date format. Please use YYYY-MM-DD."))
 
     while True:
         start_time = input("Start time (HH:MM): ")
@@ -30,7 +30,7 @@ def block_time_slots(auth):
             datetime.strptime(start_time, '%H:%M')
             break
         except ValueError:
-            print(get_text("health.operations.invalid_time_format"))
+            print(get_text("health.operations.invalid_time_format", default="Invalid time format. Please use HH:MM."))
 
     while True:
         end_time = input("End time (HH:MM): ")
@@ -38,7 +38,7 @@ def block_time_slots(auth):
             datetime.strptime(end_time, '%H:%M')
             break
         except ValueError:
-            print(get_text("health.operations.invalid_time_format"))
+            print(get_text("health.operations.invalid_time_format", default="Invalid time format. Please use HH:MM."))
 
     reason = input("Reason for blocking: ")
 
@@ -53,7 +53,7 @@ def block_time_slots(auth):
 
     conn.commit()
     log_audit_event(auth.current_user['id'], 'block_time_slots', 'provider_schedule', cursor.lastrowid)
-    print(get_text("health.operations.time_slot_blocked", provider=provider_name, date=block_date, start=start_time, end=end_time))
+    print(get_text("health.operations.time_slot_blocked", provider=provider_name, date=block_date, start=start_time, end=end_time, default="Time Slot Blocked: {date} {end} {provider} {start}"))
     conn.close()
 
 def patient_queue(auth):
@@ -77,7 +77,7 @@ def patient_queue(auth):
 
     queue = cursor.fetchall()
 
-    print(get_text("health.operations.patient_queue_title", date=today))
+    print(get_text("health.operations.patient_queue_title", date=today, default="===== PATIENT QUEUE ===== {date}"))
 
     if not queue:
         print(get_text("health.operations.no_patients_in_queue"))
@@ -86,29 +86,29 @@ def patient_queue(auth):
 
     for apt_id, apt_time, first_name, last_name, student_id, apt_type, reason, status in queue:
         status_icon = "🟡" if status == 'checked_in' else "⏳"
-        print(get_text("health.operations.queue_patient_header", icon=status_icon, time=apt_time, first_name=first_name, last_name=last_name))
-        print(get_text("health.operations.queue_patient_id", student_id=student_id))
-        print(get_text("health.operations.queue_patient_type", apt_type=apt_type))
-        print(get_text("health.operations.queue_patient_reason", reason=reason))
-        print(get_text("health.operations.queue_patient_status", status=status))
+        print(get_text("health.operations.queue_patient_header", icon=status_icon, time=apt_time, first_name=first_name, last_name=last_name, default="Queue Patient: {first_name} {icon} {last_name} {time}"))
+        print(get_text("health.operations.queue_patient_id", student_id=student_id, default="Queue Patient ID: {student_id}"))
+        print(get_text("health.operations.queue_patient_type", apt_type=apt_type, default="Queue Patient Type: {apt_type}"))
+        print(get_text("health.operations.queue_patient_reason", reason=reason, default="Queue Patient Reason: {reason}"))
+        print(get_text("health.operations.queue_patient_status", status=status, default="Queue Patient Status: {status}"))
 
         if status == 'checked_in':
-            print(get_text("health.operations.ready_for_provider"))
+            print(get_text("health.operations.ready_for_provider", default="Ready For Provider"))
 
     # Quick actions
-    print(get_text("health.operations.quick_actions_title"))
-    print(get_text("health.operations.quick_action_mark_seen"))
-    print(get_text("health.operations.quick_action_add_walkin"))
-    print(get_text("health.operations.quick_action_return"))
+    print(get_text("health.operations.quick_actions_title", default="===== QUICK ACTIONS ====="))
+    print(get_text("health.operations.quick_action_mark_seen", default="Quick Action Mark Seen"))
+    print(get_text("health.operations.quick_action_add_walkin", default="Quick Action Add Walkin"))
+    print(get_text("health.operations.quick_action_return", default="Quick Action Return"))
 
-    action = input(get_text("health.operations.select_action_1_3"))
+    action = input(get_text("health.operations.select_action_1_3", default="Select Action 1 3"))
 
     if action == '1':
-        apt_id = input(get_text("health.operations.enter_appointment_id"))
+        apt_id = input(get_text("health.operations.enter_appointment_id", default="Enter Appointment ID: "))
         cursor.execute('UPDATE health_appointments SET status = ? WHERE id = ?',
                       ('completed', apt_id))
         conn.commit()
-        print(get_text("health.operations.patient_marked_seen"))
+        print(get_text("health.operations.patient_marked_seen", default="Patient Marked Seen"))
 
     elif action == '2':
         student_id = input("Student ID: ").strip()
@@ -142,7 +142,7 @@ def pending_tasks(auth):
     conn = get_connection()
     cursor = conn.cursor()
 
-    print(get_text("health.operations.pending_tasks_title"))
+    print(get_text("health.operations.pending_tasks_title", default="===== PENDING TASKS ====="))
 
     tasks = []
 
@@ -154,7 +154,7 @@ def pending_tasks(auth):
     unverified_vax = cursor.fetchone()[0]
 
     if unverified_vax > 0:
-        tasks.append(get_text("health.operations.task_vaccination_verification", count=unverified_vax))
+        tasks.append(get_text("health.operations.task_vaccination_verification", count=unverified_vax, default="Task Vaccination Verification: {count}"))
 
     # Pending referrals
     cursor.execute('''
@@ -174,7 +174,7 @@ def pending_tasks(auth):
     stale_care_plans = cursor.fetchone()[0]
 
     if stale_care_plans > 0:
-        tasks.append(get_text("health.operations.task_care_plans_review", count=stale_care_plans))
+        tasks.append(get_text("health.operations.task_care_plans_review", count=stale_care_plans, default="Task Care Plans Review: {count}"))
 
     # Students without emergency contacts
     cursor.execute('''
@@ -186,13 +186,13 @@ def pending_tasks(auth):
     no_emergency_contacts = cursor.fetchone()[0]
 
     if no_emergency_contacts > 0:
-        tasks.append(get_text("health.operations.task_missing_emergency_contacts", count=no_emergency_contacts))
+        tasks.append(get_text("health.operations.task_missing_emergency_contacts", count=no_emergency_contacts, default="Task Missing Emergency Contacts: {count}"))
 
     if tasks:
         for task in tasks:
             print(f"  {task}")
     else:
-        print(get_text("health.operations.no_pending_tasks"))
+        print(get_text("health.operations.no_pending_tasks", default="No Pending Tasks."))
 
     conn.close()
 
@@ -201,10 +201,10 @@ def quick_patient_lookup(auth):
     conn = get_connection()
     cursor = conn.cursor()
 
-    search_term = input(get_text("health.operations.enter_search_term")).strip()
+    search_term = input(get_text("health.operations.enter_search_term", default="Enter Search Term: ")).strip()
 
     if not search_term:
-        print(get_text("health.operations.please_enter_search_term"))
+        print(get_text("health.operations.please_enter_search_term", default="Please enter a search term."))
         conn.close()
         return
 
@@ -220,32 +220,32 @@ def quick_patient_lookup(auth):
     students = cursor.fetchall()
 
     if not students:
-        print(get_text("health.operations.no_students_found"))
+        print(get_text("health.operations.no_students_found", default="No students found."))
         conn.close()
         return
 
-    print(get_text("health.operations.search_results_header", search_term=search_term))
+    print(get_text("health.operations.search_results_header", search_term=search_term, default="Search Results: {search_term}"))
 
     for i, (student_id, first_name, last_name, age, gender) in enumerate(students):
-        print(get_text("health.operations.search_result_item", num=i+1, last_name=last_name, first_name=first_name, student_id=student_id, age=age, gender=gender))
+        print(get_text("health.operations.search_result_item", num=i+1, last_name=last_name, first_name=first_name, student_id=student_id, age=age, gender=gender, default="Search Result Item: {age} {first_name} {gender} {last_name} {num} {student_id}"))
 
     if len(students) == 1:
         selected_student = students[0]
     else:
         while True:
-            choice = input(get_text("health.operations.select_student_prompt", count=len(students)))
+            choice = input(get_text("health.operations.select_student_prompt", count=len(students), default="Select Student {count}: "))
             if choice.lower() == 'q':
                 conn.close()
                 return
             if choice.isdigit() and 1 <= int(choice) <= len(students):
                 selected_student = students[int(choice) - 1]
                 break
-            print(get_text("health.operations.invalid_choice"))
+            print(get_text("health.operations.invalid_choice", default="Invalid choice. Please try again."))
 
     # Show quick summary
     student_id, first_name, last_name, age, gender = selected_student
 
-    print(get_text("health.operations.quick_summary_header", first_name=first_name, last_name=last_name))
+    print(get_text("health.operations.quick_summary_header", first_name=first_name, last_name=last_name, default="Quick Summary: {first_name} {last_name}"))
 
     # Recent appointments
     cursor.execute('''
@@ -259,7 +259,7 @@ def quick_patient_lookup(auth):
     recent_appts = cursor.fetchall()
 
     if recent_appts:
-        print(get_text("health.operations.recent_appointments"))
+        print(get_text("health.operations.recent_appointments", default="Recent Appointments"))
         for date, apt_type, status in recent_appts:
             print(f"  {date}: {apt_type} ({status})")
 
@@ -273,7 +273,7 @@ def quick_patient_lookup(auth):
     conditions = cursor.fetchall()
 
     if conditions:
-        print(get_text("health.operations.active_conditions"))
+        print(get_text("health.operations.active_conditions", default="Active Conditions"))
         for condition, severity in conditions:
             print(f"  • {condition} ({severity})")
 
@@ -287,7 +287,7 @@ def quick_patient_lookup(auth):
     critical_allergies = cursor.fetchall()
 
     if critical_allergies:
-        print(get_text("health.operations.critical_allergies"))
+        print(get_text("health.operations.critical_allergies", default="Critical Allergies"))
         for allergen, severity in critical_allergies:
             print(f"  🚨 {allergen} ({severity})")
 
@@ -306,29 +306,29 @@ def external_system_connections(auth):
         {"name": "Hospital EMR System", "status": "Pending", "last_sync": "Never"}
     ]
 
-    print(get_text("health.operations.external_system_status"))
+    print(get_text("health.operations.external_system_status", default="External System Status"))
     for i, system in enumerate(systems):
         status_icon = "✅" if system["status"] == "Connected" else "❌" if system["status"] == "Disconnected" else "🟡"
         print(f"{i+1}. {status_icon} {system['name']}")
-        print(get_text("health.operations.status_label", status=system['status']))
-        print(get_text("health.operations.last_sync_label", last_sync=system['last_sync']))
+        print(get_text("health.operations.status_label", status=system['status'], default="Status: {status}"))
+        print(get_text("health.operations.last_sync_label", last_sync=system['last_sync'], default="Last Sync: {last_sync}"))
 
-    print(get_text("health.operations.actions_menu"))
-    print(get_text("health.operations.action_test_connection"))
-    print(get_text("health.operations.action_configure_new"))
-    print(get_text("health.operations.action_disconnect"))
-    print(get_text("health.operations.action_view_details"))
-    print(get_text("health.operations.action_return"))
+    print(get_text("health.operations.actions_menu", default="Actions Menu"))
+    print(get_text("health.operations.action_test_connection", default="Action Test Connection"))
+    print(get_text("health.operations.action_configure_new", default="Action Configure New"))
+    print(get_text("health.operations.action_disconnect", default="Action Disconnect"))
+    print(get_text("health.operations.action_view_details", default="Action View Details"))
+    print(get_text("health.operations.action_return", default="Action Return"))
 
-    choice = input(get_text("health.operations.select_action_1_5"))
+    choice = input(get_text("health.operations.select_action_1_5", default="Select Action 1 5"))
 
     if choice == '1':
-        system_num = input(get_text("health.operations.enter_system_number"))
+        system_num = input(get_text("health.operations.enter_system_number", default="Enter System Number: "))
         print(get_text("health.operations.testing_connection", system_num=system_num))
-        print(get_text("health.operations.connection_test_ok"))
+        print(get_text("health.operations.connection_test_ok", default="Connection Test OK"))
 
     elif choice == '2':
-        system_name = input(get_text("health.operations.enter_system_name"))
-        endpoint_url = input(get_text("health.operations.enter_api_endpoint"))
-        print(get_text("health.operations.integration_configured", system_name=system_name))
+        system_name = input(get_text("health.operations.enter_system_name", default="Enter System Name: "))
+        endpoint_url = input(get_text("health.operations.enter_api_endpoint", default="Enter API Endpoint: "))
+        print(get_text("health.operations.integration_configured", system_name=system_name, default="Integration Configured: {system_name}"))
         log_audit_event(auth.current_user['id'], 'configure_integration', 'integration', 0, system_name)

@@ -160,7 +160,7 @@ The system will warn you about:
 python -m university_system.modules.domain.academics.gui.exam_scheduler
 
 # Or through main GUI
-python run.py --gui
+python -m education_system --gui
 # Navigate to: Academics → Exam Scheduler
 ```
 

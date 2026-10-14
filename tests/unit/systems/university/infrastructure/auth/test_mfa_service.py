@@ -361,7 +361,7 @@ class TestSMSOTPMethods:
         """Test successful SMS OTP generation"""
         service = MFAService(db_path=temp_db)
 
-        result = service.generate_sms_otp(user_id=1, phone_number='+15551234567')
+        result = service.generate_sms_otp(user_id=1, phone_number='+15551234567', allow_new_identifier=True)
 
         assert result['success'] is True
         assert 'expires_at' in result
@@ -376,7 +376,7 @@ class TestSMSOTPMethods:
         """Test that SMS OTP generation creates database entry"""
         service = MFAService(db_path=temp_db)
 
-        result = service.generate_sms_otp(user_id=1, phone_number='+15551234567')
+        result = service.generate_sms_otp(user_id=1, phone_number='+15551234567', allow_new_identifier=True)
 
         # Verify database
         conn = sqlite3.connect(temp_db)
@@ -404,11 +404,11 @@ class TestSMSOTPMethods:
         service = MFAService(db_path=temp_db)
 
         # Generate first OTP
-        result1 = service.generate_sms_otp(user_id=1, phone_number='+15551234567')
+        result1 = service.generate_sms_otp(user_id=1, phone_number='+15551234567', allow_new_identifier=True)
         code1 = _get_otp_code(result1, temp_db, 1, 'sms')
 
         # Generate second OTP
-        result2 = service.generate_sms_otp(user_id=1, phone_number='+15551234567')
+        result2 = service.generate_sms_otp(user_id=1, phone_number='+15551234567', allow_new_identifier=True)
 
         # Verify first code is invalidated
         conn = sqlite3.connect(temp_db)
@@ -429,7 +429,7 @@ class TestSMSOTPMethods:
         service = MFAService(db_path=temp_db)
 
         # Generate OTP
-        gen_result = service.generate_sms_otp(user_id=1, phone_number='+15551234567')
+        gen_result = service.generate_sms_otp(user_id=1, phone_number='+15551234567', allow_new_identifier=True)
         code = _get_otp_code(gen_result, temp_db, 1, 'sms')
 
         # Verify OTP
@@ -443,7 +443,7 @@ class TestSMSOTPMethods:
         service = MFAService(db_path=temp_db)
 
         # Generate OTP
-        service.generate_sms_otp(user_id=1, phone_number='+15551234567')
+        service.generate_sms_otp(user_id=1, phone_number='+15551234567', allow_new_identifier=True)
 
         # Try to verify with wrong code
         verify_result = service.verify_sms_otp(user_id=1, code='999999')
@@ -456,7 +456,7 @@ class TestSMSOTPMethods:
         service = MFAService(db_path=temp_db)
 
         # Generate OTP
-        gen_result = service.generate_sms_otp(user_id=1, phone_number='+15551234567')
+        gen_result = service.generate_sms_otp(user_id=1, phone_number='+15551234567', allow_new_identifier=True)
         code = _get_otp_code(gen_result, temp_db, 1, 'sms')
 
         # Manually expire the code in database
@@ -481,7 +481,7 @@ class TestSMSOTPMethods:
         service = MFAService(db_path=temp_db)
 
         # Generate OTP
-        gen_result = service.generate_sms_otp(user_id=1, phone_number='+15551234567')
+        gen_result = service.generate_sms_otp(user_id=1, phone_number='+15551234567', allow_new_identifier=True)
         code = _get_otp_code(gen_result, temp_db, 1, 'sms')
 
         # Manually set attempts to max
@@ -508,7 +508,7 @@ class TestEmailOTPMethods:
         """Test successful Email OTP generation"""
         service = MFAService(db_path=temp_db)
 
-        result = service.generate_email_otp(user_id=1, email='test@example.com')
+        result = service.generate_email_otp(user_id=1, email='test@example.com', allow_new_identifier=True)
 
         assert result['success'] is True
         assert 'expires_at' in result
@@ -524,7 +524,7 @@ class TestEmailOTPMethods:
         service = MFAService(db_path=temp_db)
 
         # Generate OTP
-        gen_result = service.generate_email_otp(user_id=1, email='test@example.com')
+        gen_result = service.generate_email_otp(user_id=1, email='test@example.com', allow_new_identifier=True)
         code = _get_otp_code(gen_result, temp_db, 1, 'email')
 
         # Verify OTP
@@ -538,7 +538,7 @@ class TestEmailOTPMethods:
         service = MFAService(db_path=temp_db)
 
         # Generate OTP
-        gen_result = service.generate_email_otp(user_id=1, email='test@example.com')
+        gen_result = service.generate_email_otp(user_id=1, email='test@example.com', allow_new_identifier=True)
         code = _get_otp_code(gen_result, temp_db, 1, 'email')
 
         # Verify with device ID
@@ -923,6 +923,125 @@ class TestVerificationAttemptLogging:
         is_locked = service.is_mfa_locked(user_id=1)
 
         assert is_locked is True
+
+class TestUndeliveredOTPIsNotDisclosed:
+    """An OTP that could not be delivered must not be handed back.
+
+    Returning it defeats MFA wherever a delivery provider is missing or
+    misconfigured — which is exactly the state a fresh deployment is in.
+    """
+
+    @pytest.fixture
+    def failing_delivery(self, monkeypatch):
+        monkeypatch.setattr(
+            "education_system.platform.identity.auth.mfa.service.send_sms_otp",
+            lambda phone, code: {'success': False, 'error': 'no provider'},
+        )
+        monkeypatch.setattr(
+            "education_system.platform.identity.auth.mfa.service.send_email_otp",
+            lambda email, code, username=None: {'success': False, 'error': 'no provider'},
+        )
+
+    @pytest.mark.parametrize("app_env", ["production", "development", "dev", "local", "staging", ""])
+    def test_code_is_withheld_outside_test_environments(self, temp_db, failing_delivery, monkeypatch, app_env):
+        monkeypatch.setenv("APP_ENV", app_env)
+        service = MFAService(db_path=temp_db)
+
+        result = service.generate_sms_otp(1, '+15551234567', allow_new_identifier=True)
+
+        assert result['success'] is False
+        assert 'code' not in result
+        assert result.get('delivery_failed') is True
+
+    def test_unset_app_env_is_treated_as_production(self, temp_db, failing_delivery, monkeypatch):
+        monkeypatch.delenv("APP_ENV", raising=False)
+        service = MFAService(db_path=temp_db)
+
+        result = service.generate_email_otp(1, 'user@example.com', allow_new_identifier=True)
+
+        assert result['success'] is False
+        assert 'code' not in result
+
+    @pytest.mark.parametrize("app_env", ["test", "testing"])
+    def test_test_environments_still_get_the_code(self, temp_db, failing_delivery, monkeypatch, app_env):
+        monkeypatch.setenv("APP_ENV", app_env)
+        service = MFAService(db_path=temp_db)
+
+        result = service.generate_sms_otp(1, '+15551234567', allow_new_identifier=True)
+
+        assert result['success'] is True
+        assert len(result['code']) == 6
+
+
+class TestChallengeDestinationIsNotCallerSupplied:
+    """A sign-in challenge must reach the enrolled destination, nothing else.
+
+    The endpoint that sends the code is reachable with only the password, so a
+    caller-supplied phone or email would let an attacker holding the password
+    point the second factor at themselves and finish the login.
+    """
+
+    def _enrol(self, service, method, identifier):
+        if method == 'sms':
+            return service.generate_sms_otp(1, identifier, allow_new_identifier=True)
+        return service.generate_email_otp(1, identifier, allow_new_identifier=True)
+
+    def _registered(self, db_path, method):
+        conn = sqlite3.connect(db_path)
+        row = conn.execute(
+            "SELECT method_identifier FROM mfa_methods WHERE user_id = 1 AND method_type = ?",
+            (method,),
+        ).fetchone()
+        conn.close()
+        return row[0] if row else None
+
+    @pytest.mark.parametrize("method,enrolled,attacker", [
+        ('sms', '+15551234567', '+15559999999'),
+        ('email', 'victim@example.com', 'attacker@example.com'),
+    ])
+    def test_supplied_destination_is_refused_and_not_stored(self, temp_db, method, enrolled, attacker):
+        service = MFAService(db_path=temp_db)
+        assert self._enrol(service, method, enrolled)['success'] is True
+
+        if method == 'sms':
+            result = service.generate_sms_otp(1, attacker)
+        else:
+            result = service.generate_email_otp(1, attacker)
+
+        assert result['success'] is False
+        # The enrolled destination survives, and no code was minted.
+        assert self._registered(temp_db, method) == enrolled
+        conn = sqlite3.connect(temp_db)
+        pending = conn.execute(
+            "SELECT COUNT(*) FROM mfa_otp_codes WHERE user_id = 1 AND method_type = ? AND is_used = 0",
+            (method,),
+        ).fetchone()[0]
+        conn.close()
+        assert pending == 0
+
+    def test_challenge_without_a_destination_uses_the_enrolled_one(self, temp_db):
+        service = MFAService(db_path=temp_db)
+        self._enrol(service, 'sms', '+15551234567')
+
+        result = service.generate_sms_otp(1)
+
+        assert result['success'] is True
+        assert self._registered(temp_db, 'sms') == '+15551234567'
+
+    def test_formatting_differences_still_match(self, temp_db):
+        service = MFAService(db_path=temp_db)
+        self._enrol(service, 'sms', '+15551234567')
+
+        assert service.generate_sms_otp(1, '+1 (555) 123-4567')['success'] is True
+
+    def test_challenge_without_enrolment_is_refused(self, temp_db):
+        service = MFAService(db_path=temp_db)
+
+        result = service.generate_sms_otp(1, '+15559999999')
+
+        assert result['success'] is False
+        assert 'registered' in result['error'].lower()
+
 
 class TestConvenienceFunctions:
     """Test module-level convenience functions"""

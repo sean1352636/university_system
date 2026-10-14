@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection, transaction  # injected
 from education_system.systems.university.infrastructure.exceptions import (
@@ -34,7 +38,8 @@ except ImportError:
     show_gui_language_selector = lambda parent=None: "en"
 
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling._dialogs import messagebox
 from tkinter.font import Font
 import os
 import sys
@@ -64,6 +69,7 @@ except ImportError:
         class ModuleScheduler: pass
 
 from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling.main_gui import ModuleSchedulingGUI
+from education_system.systems.university.infrastructure.email.sign_off import office_name
 
 def _send_room_change_notifications(self, module_code, day, start_time, end_time, old_room, new_room):
     """Send email notifications to students and lecturers about room change"""
@@ -120,7 +126,7 @@ def _send_room_change_notifications(self, module_code, day, start_time, end_time
                         if subject and body:
                             send_email(email, subject, body)
                     except Exception:
-                        pass  # Continue even if individual email fails
+                        logger.debug("Suppressed exception", exc_info=True)
 
             # Send emails to lecturers
             for email, first_name, last_name in lecturers:
@@ -129,7 +135,7 @@ def _send_room_change_notifications(self, module_code, day, start_time, end_time
                     try:
                         send_email(email, subject, personalized_body)
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
 
     except Exception as e:
         # Don't fail the entire operation if email fails
@@ -177,7 +183,7 @@ def create_notification(self, recipient_type, recipient_id, message, notificatio
                 # Fallback if template not found
                 if not subject or not body:
                     subject = f"Module Scheduling Notification - {notification_type.replace('_', ' ').title()}"
-                    body = f"Dear {recipient_name},\n\n{message}\n\nBest regards,\nUniversity Module Scheduling System"
+                    body = f"Dear {recipient_name},\n\n{message}\n\nBest regards,\n{office_name('Module Scheduling')}"
 
                 send_email(email_address, subject, body)
 
@@ -330,7 +336,7 @@ def email_all_students_on_module(self, module_code, subject, message, include_in
 
                     # Fallback if template not found
                     if not template_subject or not personalized_message:
-                        personalized_message = f"Dear {student_name},\n\n{message}\n\nModule: {module_name} ({module_code})\n\nBest regards,\nUniversity Module Scheduling System"
+                        personalized_message = f"Dear {student_name},\n\n{message}\n\nModule: {module_name} ({module_code})\n\nBest regards,\n{office_name('Module Scheduling')}"
 
                     send_email(email, subject, personalized_message)
                     summary['students_emailed'] += 1
@@ -354,7 +360,7 @@ def email_all_students_on_module(self, module_code, subject, message, include_in
                     email, first_name, last_name = instructor
                     try:
                         instructor_name = f"{first_name or ''} {last_name or ''}".strip() or "Instructor"
-                        personalized_message = f"Dear {instructor_name},\n\n{message}\n\nModule: {module_name} ({module_code})\n\nBest regards,\nUniversity Module Scheduling System"
+                        personalized_message = f"Dear {instructor_name},\n\n{message}\n\nModule: {module_name} ({module_code})\n\nBest regards,\n{office_name('Module Scheduling')}"
 
                         send_email(email, subject, personalized_message)
                         summary['instructor_emailed'] = True

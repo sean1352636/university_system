@@ -17,6 +17,40 @@ from education_system.systems.apprenticeships.infrastructure.persistence import 
 from education_system.systems.apprenticeships.services.access import Actor
 
 
+@pytest.fixture(autouse=True)
+def platform_auth_db(tmp_path, monkeypatch):
+    """Keep every platform write in this package off the live ``auth.db``.
+
+    Creating an apprentice registers them on the platform (identity,
+    enrolment, bus events) and links their login, and the account screens
+    read the shared logins — all through ``auth.db.connect()``, which
+    reads ``PLATFORM_AUTH_DB_FILE`` when called. Repointing that name
+    moves them all. The cross-system modules cache "schema ready" under
+    the default-path key, so those caches are reset too, or the new file
+    would never get its tables. Autouse, so it is in place before ``db``
+    or ``cohort`` create anything.
+    """
+    from education_system import paths
+    from education_system.platform.cross_system import (
+        destinations,
+        enrolment_schema,
+        identity_service,
+        qualifications,
+    )
+    from education_system.platform.identity.auth import db as auth_db
+    from education_system.platform.identity.auth.schema import initialise_auth_db
+
+    path = tmp_path / "platform_auth.db"
+    for module, name in ((auth_db, "PLATFORM_AUTH_DB_FILE"), (auth_db, "AUTH_DB_FILE"),
+                         (paths, "PLATFORM_AUTH_DB_FILE"), (paths, "PLATFORM_AUTH_DB")):
+        value = str(path) if isinstance(getattr(module, name, None), str) else path
+        monkeypatch.setattr(module, name, value, raising=False)
+    for module in (identity_service, enrolment_schema, destinations, qualifications):
+        monkeypatch.setattr(module, "_initialised", set())
+    initialise_auth_db(str(path))
+    yield str(path)
+
+
 @pytest.fixture
 def db(tmp_path, monkeypatch):
     """Point the system at an empty database for one test."""

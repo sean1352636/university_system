@@ -212,7 +212,7 @@ def record_exam_attendance_bulk(
                     module_code=module_code,
                     action="exam_attendance_recorded")
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         try:
             from education_system.systems.university.domains.academics.interfaces.gui._attendance_eligibility import (
                 bulk_recompute_for_exam,
@@ -220,7 +220,7 @@ def record_exam_attendance_bulk(
             if exam_id:
                 bulk_recompute_for_exam(int(exam_id))
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     return {
         "written": written,

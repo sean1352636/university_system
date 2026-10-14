@@ -71,7 +71,7 @@ The existing `audit_log` database table is retained for queryable in-app audit h
 the structured log provides an independent, tamper-resistant copy.
 
 **Initialisation**: `shared/logging/setup.py` exports a `configure_logging()` function called
-once at application startup from `run.py` and the unified server factory.
+once at application startup from `python -m education_system` and the unified server factory.
 
 ## Consequences
 

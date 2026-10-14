@@ -3,7 +3,9 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 import os
 import shutil
 import threading
@@ -16,6 +18,7 @@ from education_system.systems.university.infrastructure.database.db import sqlit
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system import paths
 from collections import deque
+from education_system.systems.university.domains.academics.interfaces.gui._field_pickers import attach_date
 
 class TemplateManager:
     """Assignment template management"""
@@ -330,7 +333,7 @@ class TemplateManager:
 
         ttk.Label(due_frame, text=_t('gui.academics.assignment_system.template_manager.labels.due_date_yyyy_mm_dd', default="Due Date (YYYY-MM-DD):")).pack(side='left')
         self.use_due_date_var = tk.StringVar()
-        ttk.Entry(due_frame, textvariable=self.use_due_date_var, width=15).pack(side='left', padx=(10, 0))
+        attach_date(due_frame, id_var=self.use_due_date_var).pack(side='left', padx=(10, 0))
 
         ttk.Label(due_frame, text=_t('gui.academics.assignment_system.template_manager.labels.time', default="Time:")).pack(side='left', padx=(20, 5))
         self.use_due_time_var = tk.StringVar(value="23:59")
@@ -537,7 +540,7 @@ class TemplateManager:
         template_id = item['values'][0]
 
         # Create edit window
-        edit_window = tk.Toplevel(self.root)
+        edit_window = make_toplevel(self.root)
         edit_window.title(_t('gui.academics.assignment_system.template_manager.windows.edit_template', default="Edit Template"))
         edit_window.geometry("600x500")
 

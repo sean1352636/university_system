@@ -13,6 +13,8 @@ from education_system.systems.university.infrastructure.email.admin._imports imp
     load_config,
     log_event,
     logger,
+    _out,
+    _err,
     render_template,
     save_config,
     save_default_templates,
@@ -195,14 +197,14 @@ def cleanup_communication_system():
 @handle_exception
 def test_email_system():
     """Test the email system with database storage"""
-    logger.info("Testing Email System - Database Storage Mode")
-    logger.info("=" * 50)
+    _out("Testing Email System - Database Storage Mode")
+    _out("=" * 50)
 
     # Initialize system
     if initialize_communication_system():
-        logger.info("\u2713 Communication system initialized")
+        _out("\u2713 Communication system initialized")
     else:
-        logger.error("\u2717 Failed to initialize communication system")
+        _err("\u2717 Failed to initialize communication system")
         return False
 
     # Test sending an email
@@ -210,20 +212,20 @@ def test_email_system():
     test_subject = "Test Email"
     test_body = "This is a test email stored in the database."
 
-    logger.info(f"\nTesting email to {test_email}...")
+    _out(f"\nTesting email to {test_email}...")
     if send_email(test_email, test_subject, test_body):
-        logger.info("\u2713 Email stored successfully")
+        _out("\u2713 Email stored successfully")
 
         # Log metrics
         log_email_metrics('sent')
-        logger.info("\u2713 Metrics logged")
+        _out("\u2713 Metrics logged")
 
     else:
-        logger.error("\u2717 Failed to store email")
+        _err("\u2717 Failed to store email")
         return False
 
     # Test template email
-    logger.info("\nTesting template email...")
+    _out("\nTesting template email...")
     template_vars = {
         'student_id': 'TEST123',
         'title': 'Mr',
@@ -235,12 +237,12 @@ def test_email_system():
     }
 
     if send_template_email('user_management/registration_confirmation', test_email, template_vars):
-        logger.info("\u2713 Template email stored successfully")
+        _out("\u2713 Template email stored successfully")
     else:
-        logger.error("\u2717 Failed to store template email")
+        _err("\u2717 Failed to store template email")
 
-    logger.info("\n" + "=" * 50)
-    logger.info("Email system test completed!")
+    _out("\n" + "=" * 50)
+    _out("Email system test completed!")
 
     return True
 
@@ -251,14 +253,14 @@ def test_communication_dashboard_methods(auth=None):
     # Lazy import to avoid circular dependency
     from education_system.systems.university.infrastructure.email.admin import CommunicationDashboard
 
-    logger.info("Testing CommunicationDashboard methods...")
+    _out("Testing CommunicationDashboard methods...")
 
     # Create dashboard instance
     try:
         dashboard = CommunicationDashboard(auth=auth)
-        logger.info("\u2705 CommunicationDashboard created successfully")
+        _out("\u2705 CommunicationDashboard created successfully")
     except Exception as e:
-        logger.error(f"\u274c Failed to create CommunicationDashboard: {e}")
+        _err(f"\u274c Failed to create CommunicationDashboard: {e}")
         return False
 
     # List of required methods
@@ -284,20 +286,20 @@ def test_communication_dashboard_methods(auth=None):
         if hasattr(dashboard, method_name):
             method = getattr(dashboard, method_name)
             if callable(method):
-                logger.info(f"\u2705 {method_name} - Found")
+                _out(f"\u2705 {method_name} - Found")
             else:
-                logger.info(f"\u274c {method_name} - Not callable")
+                _out(f"\u274c {method_name} - Not callable")
                 missing_methods.append(method_name)
         else:
-            logger.info(f"\u274c {method_name} - Missing")
+            _out(f"\u274c {method_name} - Missing")
             missing_methods.append(method_name)
 
     if missing_methods:
-        logger.info(f"\n\u274c Missing methods: {', '.join(missing_methods)}")
-        logger.info("Please add these methods to your CommunicationDashboard class.")
+        _out(f"\n\u274c Missing methods: {', '.join(missing_methods)}")
+        _out("Please add these methods to your CommunicationDashboard class.")
         return False
     else:
-        logger.info("\n\u2705 All required methods are present!")
+        _out("\n\u2705 All required methods are present!")
         return True
 
 

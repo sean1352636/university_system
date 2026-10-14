@@ -1,4 +1,5 @@
 """Predictive analytics and forecasting"""
+from education_system.systems.university.shell.gui import report_view as _rv
 
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
@@ -160,7 +161,7 @@ class AnalyticsManager:
             report_window.geometry("800x600")
 
             from tkinter.scrolledtext import ScrolledText
-            text = ScrolledText(report_window, font=('Courier', 10), wrap='word')
+            text = _rv.TextReportView(report_window, font=('Courier', 10), wrap='word')
             text.pack(fill='both', expand=True, padx=10, pady=10)
             text.insert('1.0', output)
             text.config(state='disabled')
@@ -177,7 +178,7 @@ class AnalyticsManager:
             if hasattr(self.gui, 'layout') and hasattr(self.gui.layout, 'show_tab'):
                 self.gui.layout.show_tab(tab_name)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def create_analytics_tab(self):
         """Create analytics and dashboard tab"""
@@ -238,14 +239,14 @@ class AnalyticsManager:
             try:
                 canvas.get_tk_widget().destroy()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             self.canvas = None
         fig = getattr(self, 'fig', None)
         if fig is not None:
             try:
                 plt.close(fig)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             self.fig = None
 
     def _safe_draw(self):
@@ -264,7 +265,7 @@ class AnalyticsManager:
                 return
             canvas.draw_idle()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def create_forecasting_tab(self):
         """Create financial forecasting tab"""
@@ -312,7 +313,7 @@ class AnalyticsManager:
                  bg=colors['secondary'], fg='white').grid(row=0, column=4, padx=10, pady=2)
 
         # Forecast results
-        self.forecast_output = ScrolledText(revenue_frame, height=20, font=('Courier', 9))
+        self.forecast_output = _rv.TextReportView(revenue_frame, height=20, font=('Courier', 9))
         self.forecast_output.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Scenarios tab
@@ -745,7 +746,7 @@ class AnalyticsManager:
                 forecast_window.geometry("600x400")
 
                 from tkinter.scrolledtext import ScrolledText
-                output = ScrolledText(forecast_window, font=('Courier', 10))
+                output = _rv.TextReportView(forecast_window, font=('Courier', 10))
                 output.pack(fill='both', expand=True, padx=10, pady=10)
 
                 # Generate forecast data

@@ -31,17 +31,34 @@ logger = logging.getLogger(__name__)
 
 # Room left for window furniture: the title bar the window manager draws
 # above the frame, and a taskbar or dock along one edge. Tk cannot report
-# the desktop work area portably, so this is a deliberate estimate — too
-# generous by a few pixels costs nothing, too mean puts the buttons back
-# under the taskbar.
-SCREEN_INSET: tuple[int, int] = (16, 72)
+# the desktop work area portably, so this is a deliberate estimate.
+#
+# The vertical 72px is real and needed: title bar plus a horizontal taskbar,
+# the usual desktop layout. The horizontal figure is 0 because a *vertical*
+# dock down one side is the unusual case, and reserving width for one that
+# isn't there is not free — it leaves a visible strip of desktop down the
+# right of every maximised-looking window, which is what it was previously
+# doing on a 1366px display (window 1350 wide, 16px gap). A window that ends
+# up marginally too wide for a side dock is the window manager's problem to
+# resolve, and a far smaller annoyance than the gap.
+SCREEN_INSET: tuple[int, int] = (0, 72)
 
 # Never clamp below this. A window squeezed onto a very small display is
 # already compromised; making it unusably narrow as well helps nobody.
 FLOOR: tuple[int, int] = (640, 400)
 
 # "1400x900", "1400x900+40+40", "+40+40" — size, position, or both.
-_GEOMETRY_RE = re.compile(r"^(?:(\d+)x(\d+))?((?:[+-]\d+){0,2})$")
+#
+# The offset value may itself be negative: centring maths like
+# ``(screen_w - 1400) // 2`` on a 1366px display yields -17, and "%+d" style
+# formatting turns that into "+-17". Tk accepts it, so this must too — it
+# previously did not match, which meant the whole geometry (size included) was
+# passed through with no clamping at all, on exactly the small displays the
+# clamping exists for.
+_GEOMETRY_RE = re.compile(r"^(?:(\d+)x(\d+))?((?:[+-]-?\d+){0,2})$")
+
+# One "+x" or "-x" offset within a position string.
+_OFFSET_RE = re.compile(r"([+-])(-?\d+)")
 
 _installed = False
 _original_geometry = None
@@ -69,6 +86,30 @@ def clamp(win: tk.Misc, width: int, height: int) -> tuple[int, int]:
     return (min(width, usable_w), min(height, usable_h))
 
 
+def clamp_position(position: str) -> str:
+    """Pull a window back on screen if it was positioned off the top or left.
+
+    Centring a window larger than the display gives negative offsets, which
+    put the title bar and the first row of controls above the top of the
+    screen where they cannot be clicked. A negative *offset from the left or
+    top* is therefore clamped to zero.
+
+    ``-x-y`` is left alone: in Tk that is not a negative position but the
+    offset of the window's bottom-right corner from the screen's, which is a
+    perfectly ordinary way to position a window.
+    """
+    if not position:
+        return position
+
+    def _fix(match: "re.Match[str]") -> str:
+        sign, value = match.group(1), int(match.group(2))
+        if sign == "+" and value < 0:
+            return "+0"
+        return f"{sign}{value}"
+
+    return _OFFSET_RE.sub(_fix, position)
+
+
 def fit(
     win: tk.Misc,
     geometry: str | None = None,
@@ -92,6 +133,56 @@ def fit(
     if minsize:
         win.minsize(*clamp(win, minsize[0], minsize[1]))
     return applied
+
+
+def center(win: "tk.Misc", width: int, height: int,
+           minsize: "tuple[int, int] | None" = None) -> "tuple[int, int]":
+    """Size *win* and place it in the middle of the screen, in one call.
+
+    Setting only a size — ``win.geometry("1200x800")`` — leaves the position
+    to whatever the window is currently thought to be, and a freshly created
+    Toplevel is Tk's default 200x200. The window manager centres *that*, so
+    the top-left corner lands near the middle of the display and a large
+    window then hangs off the bottom-right. Passing size and position
+    together, with the position computed from the clamped size, puts the
+    window where it was meant to go.
+
+    Returns the size actually applied.
+    """
+    width, height = clamp(win, int(width), int(height))
+    screen_w = win.winfo_screenwidth()
+    screen_h = win.winfo_screenheight()
+    x = max(0, (screen_w - width) // 2)
+    y = max(0, (screen_h - height) // 2)
+    target = f"{width}x{height}+{x}+{y}"
+    win.geometry(target)
+    if minsize:
+        win.minsize(*clamp(win, int(minsize[0]), int(minsize[1])))
+
+    # Re-apply once the window has actually been realised.
+    #
+    # Before a window is mapped, a position is only a *request*. Window
+    # managers routinely override it for a ``transient`` window — which every
+    # dialog opened through ``make_toplevel`` is — placing it relative to its
+    # owner instead, which is how these windows ended up in the bottom-right
+    # corner. Setting the same geometry again after the window exists is
+    # applied directly rather than negotiated, so it sticks.
+    #
+    # ``after_idle`` also puts this after the inner GUI's own constructor, so
+    # a class that sets a size-only geometry on the window it was handed
+    # cannot leave it somewhere else.
+    def _reapply() -> None:
+        try:
+            if win.winfo_exists():
+                win.geometry(target)
+        except tk.TclError:
+            pass
+
+    try:
+        win.after_idle(_reapply)
+    except tk.TclError:
+        pass
+    return width, height
 
 
 def install() -> None:
@@ -118,9 +209,12 @@ def install() -> None:
             parsed = _parse(newGeometry)
             if parsed is not None:
                 width, height, position = parsed
+                position = clamp_position(position)
                 if width and height:
                     width, height = clamp(self, width, height)
                     newGeometry = f"{width}x{height}{position}"
+                elif position:
+                    newGeometry = position
         return _original_geometry(self, newGeometry)
 
     def wm_minsize(self, width=None, height=None):

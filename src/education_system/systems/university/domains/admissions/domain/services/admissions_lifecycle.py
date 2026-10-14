@@ -154,6 +154,7 @@ def get_application(application_id: int) -> dict[str, Any]:
             ("history", "admission_status_history", "history_id"),
         ):
             result[key] = [
+                # db-audit: ignore[DBW001] - statement builds SQL without splicing a value
                 dict(row) for row in conn.execute(
                     f"SELECT * FROM {table} WHERE application_id = ? "
                     f"ORDER BY {order}",
@@ -348,7 +349,8 @@ def convert_to_student(application_id: int, *, actor_id: str = "") -> str:
         if locked_app["converted_student_id"]:
             return str(locked_app["converted_student_id"])
         row = conn.execute(
-            """SELECT p.*, c.programme_code, a.academic_year, a.journey_id
+            """SELECT p.*, c.programme_code, a.academic_year, a.journey_id,
+                      a.application_type, a.external_reference
                  FROM admission_applications a
                  JOIN admission_prospects p ON p.prospect_id = a.prospect_id
                  JOIN admission_application_choices c
@@ -358,8 +360,15 @@ def convert_to_student(application_id: int, *, actor_id: str = "") -> str:
         ).fetchone()
         if row is None:
             raise AdmissionsBoundaryError("Applicant or accepted choice is missing")
-        for _ in range(20):
-            student_id = str(secrets.randbelow(9_000_000) + 1_000_000)
+        requested_student_id = (
+            str(row["external_reference"] or "").strip()
+            if row["application_type"] == "degree_apprenticeship" else ""
+        )
+        for attempt in range(20):
+            student_id = (
+                requested_student_id if attempt == 0 and requested_student_id
+                else str(secrets.randbelow(9_000_000) + 1_000_000)
+            )
             exists = conn.execute(
                 "SELECT 1 FROM students WHERE student_id = ?", (student_id,)
             ).fetchone()
@@ -513,8 +522,13 @@ def convert_to_student(application_id: int, *, actor_id: str = "") -> str:
             identity_service.link_system(
                 journey_id, "university", student_id=student_id, set_current=True
             )
+            source_system = (
+                "apprenticeships"
+                if row["application_type"] == "degree_apprenticeship"
+                else "sixth_form"
+            )
             identity_service.record_transition(
-                journey_id, from_system="sixth_form", to_system="university",
+                journey_id, from_system=source_system, to_system="university",
                 reason="Admissions conversion completed",
             )
         except Exception:
@@ -524,7 +538,160 @@ def convert_to_student(application_id: int, *, actor_id: str = "") -> str:
                 "Identity projection deferred for converted application %s",
                 application_id,
             )
+        if row["application_type"] != "degree_apprenticeship":
+            _import_sixth_form_medical(journey_id, student_id, application_id,
+                                       actor_id)
+        if row["application_type"] == "degree_apprenticeship":
+            try:
+                from education_system.systems.university.services.bus import (
+                    degree_apprenticeship_events,
+                )
+                with get_connection() as conn:
+                    degree = conn.execute(
+                        """SELECT program_id FROM degree_programs
+                             WHERE program_code=? AND is_active=1
+                             ORDER BY program_id LIMIT 1""",
+                        (row["programme_code"],),
+                    ).fetchone()
+                if degree:
+                    degree_apprenticeship_events.publish_current_snapshot(
+                        journey_id=journey_id,
+                        university_student_id=student_id,
+                        university_degree_program_id=int(degree["program_id"]),
+                        reason="registration",
+                    )
+            except Exception:
+                logger.exception(
+                    "Degree-apprenticeship registration projection deferred "
+                    "for application %s", application_id,
+                )
     return student_id
+
+
+def attach_direct_enrolment(application_id: int, student_id: str, *,
+                            actor_id: str = "", reason: str = "") -> bool:
+    """Bind a student who was created outside this lifecycle to their
+    application.
+
+    :func:`convert_to_student` is the supported route and does the checks.
+    This is the reconciliation for the route that does not: the students
+    GUI's sixth-form import creates an active student directly, and if
+    the bus had already staged that learner as an applicant, the two
+    records sat side by side with nothing joining them — one person, two
+    canonical rows, and an application that would sit in
+    ``documents_pending`` forever against somebody already enrolled.
+
+    Attaching is strictly better than leaving the orphan, and strictly
+    worse than converting properly, so it says so in the audit trail: the
+    status history records that the enrolment bypassed the gates rather
+    than passing them.
+
+    Returns True if this call did the attaching. False if the application
+    is already bound — to this student (nothing to do) or, more
+    importantly, to a *different* one, which is a genuine conflict and is
+    logged rather than silently overwritten.
+    """
+    _ensure()
+    with transaction() as conn:
+        app = _application(conn, application_id)
+        current_student = app["converted_student_id"]
+        if current_student:
+            if str(current_student) == str(student_id):
+                return False
+            logger.error(
+                "Application %s is already enrolled as student %s; refusing "
+                "to re-point it at %s. Two university records now exist for "
+                "one applicant and need manual reconciliation.",
+                application_id, current_student, student_id)
+            return False
+        from_status = (app["status"] or SUBMITTED).strip().lower()
+        conn.execute(
+            """UPDATE admission_applications
+                  SET converted_student_id = ?, enrollment_confirmed = 1,
+                      status = ?, lifecycle_updated_at = ?
+                WHERE application_id = ?""",
+            (student_id, ENROLLED, datetime.now().isoformat(),
+             application_id),
+        )
+        conn.execute(
+            """INSERT INTO admission_status_history
+                   (application_id, from_status, to_status, reason, actor_id)
+               VALUES (?, ?, ?, ?, ?)""",
+            (application_id, from_status, ENROLLED,
+             reason or "Enrolled directly outside the admissions lifecycle "
+                       "— readiness gates were not evaluated",
+             actor_id),
+        )
+    logger.warning(
+        "Application %s attached to directly-created student %s by %s. The "
+        "readiness gates (conditions, right to study, registration) were "
+        "NOT evaluated for this enrolment.",
+        application_id, student_id, actor_id or "unknown actor")
+    return True
+
+
+def _import_sixth_form_medical(journey_id: str, student_id: str,
+                               application_id: int,
+                               actor_id: str = "") -> None:
+    """Copy a converted applicant's sixth-form medical record onto the student.
+
+    Conversion is the earliest point this can happen at all: the import
+    needs a university student id, and the bus intake deliberately creates
+    an *applicant*. A helper that lived beside that intake could therefore
+    never fire — one did, and never did, so every bus-driven transfer
+    landed a student with no allergies, conditions or medications while
+    the manual GUI import carried them.
+
+    The sixth-form id comes from the journey rather than the application's
+    ``external_reference``, which holds a UCAS number whenever there is one.
+
+    Guarded separately from the identity projection above: a student who
+    is enrolled stays enrolled even if their medical record cannot be
+    copied. The failure is logged at exception level rather than shrugged
+    off, because a missing allergy is a safety matter, not untidy data.
+
+    No lawful basis is asserted here. Conversion is a planned, routine
+    step with a real applicant record behind it, so if the learner never
+    consented to their health data crossing, the answer is that it does
+    not cross — a refusal is logged and enrolment continues. Vital
+    interests exist for the emergency, and an emergency is not what a
+    scheduled admissions conversion is.
+    """
+    try:
+        from education_system.platform.cross_system import identity_service
+        journey = identity_service.get(journey_id) or {}
+        _pk_col, sf_id_col = identity_service.SYSTEM_SLOTS["sixth_form"]
+        sf_student_id = journey.get(sf_id_col)
+        if not sf_student_id:
+            return
+        # Admissions reaching into Pastoral. Allow-listed, and the target
+        # design is still a port Pastoral owns — see the admissions slice
+        # boundary ratchet.
+        from education_system.systems.university.domains.pastoral.domain.health.records import (
+            sixth_form_import,
+        )
+        try:
+            summary = sixth_form_import.import_from_sixth_form(
+                uni_student_id=student_id, sf_student_id=sf_student_id,
+                actor=actor_id or "admissions",
+                received_by="university admissions")
+        except sixth_form_import.MedicalHandoverRefused as refused:
+            logger.warning(
+                "Sixth-form medical record NOT copied for %s -> %s: %s. "
+                "The student is enrolled; wellbeing must collect their "
+                "health record directly or obtain the consent.",
+                sf_student_id, student_id, refused)
+            return
+        logger.info(
+            "Imported sixth-form medical record for %s -> %s "
+            "(basis=%s, %d conditions, %d medications, %d allergies)",
+            sf_student_id, student_id, summary.basis,
+            summary.conditions_written, summary.medications_written,
+            summary.allergies_written)
+    except Exception:
+        logger.exception(
+            "Sixth-form medical import failed for converted application %s "
+            "(student %s is enrolled regardless)", application_id, student_id)
 
 
 __all__ = [
@@ -532,5 +699,5 @@ __all__ = [
     "transition", "get_application", "add_choice", "accept_choice",
     "add_requirement", "verify_requirement", "schedule_activity",
     "add_condition", "satisfy_condition", "readiness_issues",
-    "convert_to_student",
+    "convert_to_student", "attach_direct_enrolment",
 ]

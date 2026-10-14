@@ -76,9 +76,10 @@ _FINANCE_INTEGRATION_CALLERS = {
 
 #: Tk applications and dialogs sitting in the domain layer.
 _TKINTER_IN_DOMAIN = {
-    "domain/course_planning/lesson_planner.py",
     "domain/research/services/university_research_shared.py",
-    "domain/services/attendance/absence_tracking/absence_enhancements.py",
+    "domain/services/attendance/absence_tracking/absence_enhancements/tabs.py",
+    "domain/services/attendance/absence_tracking/absence_enhancements/theme.py",
+    "domain/services/attendance/absence_tracking/absence_enhancements/tree_ux.py",
     "domain/services/attendance/absence_tracking/absence_tracker.py",
     "domain/services/attendance/absence_tracking/admin_features/context.py",
     "domain/services/attendance/absence_tracking/admin_features/export_email.py",
@@ -145,9 +146,19 @@ _TKINTER_IN_DOMAIN = {
 
 #: Direct SQL driver use in the domain layer.
 _SQLITE_IN_DOMAIN = {
-    "domain/course_planning/lesson_planner.py",
     "domain/research/services/university_research_shared.py",
-    "domain/services/attendance/absence_tracking/absence_enhancements.py",
+    "domain/services/attendance/absence_tracking/absence_enhancements/anomaly.py",
+    "domain/services/attendance/absence_tracking/absence_enhancements/categories.py",
+    "domain/services/attendance/absence_tracking/absence_enhancements/chatbot.py",
+    "domain/services/attendance/absence_tracking/absence_enhancements/checkin.py",
+    "domain/services/attendance/absence_tracking/absence_enhancements/compliance.py",
+    "domain/services/attendance/absence_tracking/absence_enhancements/evidence.py",
+    "domain/services/attendance/absence_tracking/absence_enhancements/lms.py",
+    "domain/services/attendance/absence_tracking/absence_enhancements/push.py",
+    "domain/services/attendance/absence_tracking/absence_enhancements/schema.py",
+    "domain/services/attendance/absence_tracking/absence_enhancements/settings.py",
+    "domain/services/attendance/absence_tracking/absence_enhancements/tabs.py",
+    "domain/services/attendance/absence_tracking/absence_enhancements/theme.py",
     "domain/services/attendance/absence_tracking/absence_tracker.py",
     "domain/services/attendance/absence_tracking/admin_features/context.py",
     "domain/services/attendance/absence_tracking/admin_features/export_email.py",
@@ -215,7 +226,6 @@ _SQLITE_IN_DOMAIN = {
 #: Flask imported by domain modules — request-scoped helpers belonging in
 #: interfaces/api.
 _FLASK_IN_DOMAIN = {
-    "domain/research/external_quality_assurance/api/qa_routes.py",
     "domain/services/academic_calendar/manager/_shared.py",
     "domain/services/academic_calendar/mobile_api.py",
     "domain/services/academic_calendar/web_api.py",
@@ -281,10 +291,6 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = (
         ("interfaces/gui/grade_tracking_management_gui/core.py",
          f"{_ASSESS}.domain.mitigating_circumstances.integration"),
         ("interfaces/gui/research/external_quality_assurance/qa_dashboard_gui.py",
-         f"{_ASSESS}.domain.mitigating_circumstances.integration"),
-        ("interfaces/gui/student_dashboard/overview.py",
-         f"{_ASSESS}.domain.grading.grade_calculation"),
-        ("interfaces/gui/student_dashboard/overview.py",
          f"{_ASSESS}.domain.mitigating_circumstances.integration"),
         ("interfaces/gui/student_grades/dashboard.py",
          f"{_ASSESS}.domain.grading.grade_calculation"),
@@ -361,11 +367,11 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = (
          f"{_UNI}.domains.academics.interfaces.cli.study_matching.study_matching_cli"),
         # Domain modules reaching into the university shell's CLI.
         ("domain/research/external_quality_assurance/services/qa_integrations.py",
-         f"{_UNI}.interfaces.cli.shell.chatbot_integration"),
+         f"{_UNI}.shell.cli.chatbot_integration"),
         ("domain/services/attendance/backup.py",
-         f"{_UNI}.interfaces.cli.shell.cli_main"),
+         f"{_UNI}.shell.cli.cli_main"),
         ("domain/services/course_management/menu.py",
-         f"{_UNI}.interfaces.cli.shell.module_operations"),
+         f"{_UNI}.shell.cli.module_operations"),
         # Other Finance reaches.
         ("domain/services/attendance/absence_tracking/admin_features/services/integration.py",
          f"{_FIN}.interfaces.gui.financial_aid.scholarship_manager"),
@@ -399,13 +405,9 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = (
         ("domain/course_planning/lesson_planner_integrations.py",
          f"{_UNI}.domains.pastoral.domain.advising.services.advising_service"),
         ("domain/course_planning/lesson_planner_integrations.py",
-         f"{_UNI}.domains.pastoral.domain.tutor_groups"),
-        ("domain/course_planning/lesson_planner_integrations.py",
          f"{_UNI}.domains.staff.domain.staff_hr.services.managers.leave_manager"),
         ("domain/course_planning/lesson_planner_integrations.py",
          f"{_UNI}.domains.staff.domain.staff_hr.services.managers.teaching_load_manager"),
-        ("domain/services/academic_calendar/cli.py",
-         f"{_OPS}.domain.campus.mobility.services"),
         ("domain/services/attendance/absence_tracking/admin_features/services/integration.py",
          f"{_UNI}.domains.governance.domain.legal.disciplinary.disciplinary_portal"),
         ("domain/services/attendance/absence_tracking/admin_features/services/integration.py",

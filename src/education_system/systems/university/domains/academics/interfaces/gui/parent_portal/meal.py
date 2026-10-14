@@ -44,6 +44,7 @@ except ImportError:
 
 
 from education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base import ParentPortalGUI
+from education_system.systems.university.infrastructure.email.sign_off import office_name
 
 def check_meal_balance(self):
     """Check meal account balances with top-up functionality"""
@@ -362,7 +363,7 @@ def check_meal_balance(self):
                     # Fallback if template not found
                     if not email_subject or not email_body:
                         email_subject = "Meal Account Top-Up Notification"
-                        email_body = f"Dear {student_name},\n\nYour meal account has been topped up!\n\nAmount Added: £{amount:.2f}\nNew Balance: £{new_balance:.2f}\nDate: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}\n\nThis top-up was made by your parent/guardian through the Family Portal.\n\nBest regards,\nUniversity Management System"
+                        email_body = f"Dear {student_name},\n\nYour meal account has been topped up!\n\nAmount Added: £{amount:.2f}\nNew Balance: £{new_balance:.2f}\nDate: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}\n\nThis top-up was made by your parent/guardian through the Family Portal.\n\nBest regards,\n{office_name('Family Portal')}"
 
                     email_conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
                     try:

@@ -228,14 +228,14 @@ class AccountSecurityGUI:
             try:
                 self.mfa_status_label.configure(foreground="green")
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             self.mfa_toggle_btn.configure(text=_t('gui.pastoral.account_security.security.text.disable_mfa', default="Disable MFA"))
         else:
             self.mfa_status_var.set("Disabled")
             try:
                 self.mfa_status_label.configure(foreground="red")
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             self.mfa_toggle_btn.configure(text=_t('gui.pastoral.account_security.security.text.enable_mfa', default="Enable MFA"))
 
     def _toggle_mfa(self):

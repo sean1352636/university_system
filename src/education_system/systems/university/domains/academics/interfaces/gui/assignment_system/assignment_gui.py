@@ -1,9 +1,15 @@
 """Main Assignment GUI - coordinates all manager classes"""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
+from education_system.platform.delivery.gui.window_sizing import center as _center_window
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.i18n import get_text as _, init_i18n
 init_i18n()
@@ -23,6 +29,7 @@ from education_system.systems.university.domains.academics.interfaces.gui.assign
 from education_system.systems.university.domains.academics.interfaces.gui.assignment_system.analytics import AnalyticsManager
 from education_system.systems.university.domains.academics.interfaces.gui.assignment_system.file_preview import FilePreviewManager
 from education_system.systems.university.domains.academics.interfaces.gui.assignment_system.assessment_manager import AssessmentManager
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system.quiz_manager import QuizManager
 from education_system.systems.university.domains.academics.interfaces.gui.assignment_system.rubric_manager import RubricManager
 from education_system.systems.university.domains.academics.interfaces.gui.assignment_system.peer_review import PeerReviewManager
 from education_system.systems.university.domains.academics.interfaces.gui.assignment_system.maintenance import MaintenanceManager
@@ -43,6 +50,24 @@ class AssignmentGUI:
     def __init__(self, assignment_system, auth, parent=None):
         self.assignment_system = assignment_system
         self.auth = auth
+
+        # Hand the signed-in session to the service.
+        #
+        # AssignmentSubmission() builds its own UserAuth when none is passed,
+        # and every caller here constructs it that way — so the service held
+        # an auth object with no current_user while the GUI held the real
+        # session. Ten-odd screens ask the *service* for the student id
+        # (peer reviews, extensions, drafts, the dashboard...), so a signed-in
+        # student was told "no student ID found" throughout.
+        if auth is not None and assignment_system is not None:
+            service_user = getattr(getattr(assignment_system, "auth", None),
+                                   "current_user", None)
+            if not isinstance(service_user, dict):
+                setter = getattr(assignment_system, "set_auth", None)
+                if callable(setter):
+                    setter(auth)
+                else:
+                    assignment_system.auth = auth
 
         if parent is not None:
             self.root = parent
@@ -100,6 +125,7 @@ class AssignmentGUI:
         self.analytics = AnalyticsManager(self)
         self.file_preview = FilePreviewManager(self)
         self.assessments = AssessmentManager(self)
+        self.quizzes = QuizManager(self)
         self.rubrics = RubricManager(self)
         self.peer_review = PeerReviewManager(self)
         self.maintenance = MaintenanceManager(self)
@@ -140,12 +166,12 @@ class AssignmentGUI:
                     try:
                         self.dashboard.show_dashboard()
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
                 if hasattr(self, "notifications_mgr"):
                     try:
                         self.notifications_mgr.update_notifications()
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
 
             for evt in (EVENT_GRADE_CHANGED, EVENT_EXAM_CHANGED,
                         EVENT_MODULE_SCHEDULE_CHANGED, EVENT_COURSE_CHANGED,
@@ -169,12 +195,12 @@ class AssignmentGUI:
                 try:
                     self.current_module_code = target
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
                 _on_external_change()
 
             subscribe_tk(EVENT_SELECTION_CHANGED, self.root, _on_selection)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _ensure_assignment_system_methods(self):
         """
@@ -248,10 +274,13 @@ class AssignmentGUI:
         """Launch the Plagiarism Checker GUI"""
         try:
             from education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui import PlagiarismCheckerGUI
-            import tkinter as _tk
-            plagiarism_window = _tk.Toplevel(self.root)
+            plagiarism_window = make_toplevel(self.root)
             plagiarism_window.title(_("ai_features.window_titles.plagiarism_detection"))
-            plagiarism_window.geometry("1200x800")
+            # Size and position together: a size-only geometry leaves the
+            # position at the new Toplevel's default 200x200 placement, which
+            # the window manager centres — putting this window's top-left near
+            # the middle of the screen and the rest off the bottom-right.
+            _center_window(plagiarism_window, 1200, 800)
             PlagiarismCheckerGUI(plagiarism_window, self.auth)
         except Exception as e:
             messagebox.showerror(_("common.error"), _("ai_features.messages.plagiarism_launch_error").format(error=str(e)))
@@ -260,10 +289,9 @@ class AssignmentGUI:
         """Launch the AI Content Detector GUI"""
         try:
             from education_system.systems.university.domains.academics.interfaces.gui.ai_detector import AIDetectorGUI
-            import tkinter as _tk
-            ai_window = _tk.Toplevel(self.root)
+            ai_window = make_toplevel(self.root)
             ai_window.title(_("ai_features.window_titles.ai_content_detector"))
-            ai_window.geometry("1000x700")
+            _center_window(ai_window, 1000, 700)
             AIDetectorGUI(ai_window, self.auth)
         except Exception as e:
             messagebox.showerror(_("common.error"), _("ai_features.messages.ai_detector_launch_error").format(error=str(e)))
@@ -272,11 +300,14 @@ class AssignmentGUI:
         """Launch the Academic Misconduct Panel GUI"""
         try:
             from education_system.platform.governance.academic_misconduct.academic_misconduct_gui import AcademicMisconductPanel
-            import tkinter as _tk
-            window = _tk.Toplevel(self.root)
+            window = make_toplevel(self.root)
             window.title(_t('gui.academics.assignment_system.assignment.windows.academic_misconduct', default="Academic Misconduct"))
-            window.geometry("1200x800")
-            AcademicMisconductPanel(window, system_key='university')
+            _center_window(window, 1200, 800)
+            # Pass auth explicitly. The panel falls back to the shared-context
+            # get_auth() when it is omitted, but that returns None here, so the
+            # panel rejected an already-logged-in user with "You must be logged
+            # in". Every other launch site passes auth; this one did not.
+            AcademicMisconductPanel(window, auth=self.auth, system_key='university')
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Failed to open Academic Misconduct: {e}")
 
@@ -327,7 +358,7 @@ class AssignmentGUI:
         components = curr.list_assessment_components(descriptor["id"])
         validation = curr.validate_assessment_strategy(descriptor["id"])
 
-        dlg = _tk.Toplevel(self.root)
+        dlg = make_toplevel(self.root)
         dlg.title(f"Assessment Strategy — {module_code} v{descriptor['version']}")
         dlg.geometry("760x420")
         _ttk.Label(dlg,
@@ -390,8 +421,26 @@ class AssignmentGUI:
     def show_manage_assignments(self):
         return self.assignments.show_manage_assignments()
 
+    def _open_grade_tracking(self, what):
+        """Open Grade Tracking, which is where submissions are marked.
+
+        Marking moved there because Grade Tracking already wrote to
+        assignment_submissions from three other places — the same rows were
+        being marked by two GUIs through two different code paths, and the
+        copy here read its query by column position and showed the wrong
+        student, file and mark total as a result.
+        """
+        from education_system.systems.university.domains.academics.interfaces.gui._cross_launchers import (
+            open_grade_gui,
+        )
+        try:
+            open_grade_gui(self.root, self.auth)
+        except Exception as e:
+            messagebox.showerror(_("common.error"),
+                                 f"Could not open Grade Tracking for {what}: {e}")
+
     def show_grade_submissions(self):
-        return self.grading.show_grade_submissions()
+        return self._open_grade_tracking("Grade Submissions")
 
     def show_analytics(self):
         return self.analytics.show_analytics()
@@ -420,7 +469,7 @@ class AssignmentGUI:
             if ext and ext.get('new_deadline'):
                 return ext['new_deadline'], ext
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return original_deadline, None
 
     def show_mitigating_circumstances(self):
@@ -437,10 +486,10 @@ class AssignmentGUI:
                 if hasattr(self.assignment_system, '_get_student_id'):
                     student_id = self.assignment_system._get_student_id()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             open_mc_gui_for_student(self.root, student_id=student_id)
         except Exception as exc:
-            from tkinter import messagebox
+            from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
             messagebox.showerror(_t('gui.academics.assignment_system.assignment.dialogs.error', default="Error"), f"Failed to open MC GUI: {exc}")
 
     def show_send_messages(self):
@@ -495,7 +544,7 @@ class AssignmentGUI:
         return self.analytics.generate_custom_reports()
 
     def grade_with_rubrics(self):
-        return self.grading.grade_with_rubrics()
+        return self._open_grade_tracking("Grade with Rubrics")
 
     def manage_notifications(self):
         return self.notifications_mgr.manage_notifications()
@@ -508,6 +557,12 @@ class AssignmentGUI:
 
     def show_manage_assessments(self):
         return self.assessments.show_manage_assessments()
+
+    def show_quizzes(self):
+        return self.quizzes.show_quizzes()
+
+    def show_create_quiz(self):
+        return self.quizzes.show_create_quiz()
 
     def show_create_rubric(self):
         return self.rubrics.show_create_rubric()
@@ -784,7 +839,7 @@ class AssignmentGUI:
             directories = [
                 paths.UNIVERSITY_DATA_DIR / 'assignments',
                 paths.UNIVERSITY_SUBMISSIONS_DIR,
-                paths.UNIVERSITY_DATA_DIR / 'backups' / 'assignments',
+                paths.UNIVERSITY_BACKUP_ASSIGNMENTS_DIR,
                 paths.UNIVERSITY_DATA_DIR / 'temp' / 'assignments',
             ]
 
@@ -1026,7 +1081,9 @@ def launch_gui(assignment_system, auth):
 def display_assignment_menu_gui(auth):
     """Display assignment menu in GUI mode"""
     from education_system.systems.university.domains.academics.domain.services.assignments.assignment_submission import AssignmentSubmission
-    assignment_system = AssignmentSubmission()
+    # Pass the session to the service as well as the GUI; see AssignmentGUI
+    # for what goes wrong when the service has no logged-in user.
+    assignment_system = AssignmentSubmission(auth=auth)
     launch_gui(assignment_system, auth)
 
 def display_assignment_menu(auth):

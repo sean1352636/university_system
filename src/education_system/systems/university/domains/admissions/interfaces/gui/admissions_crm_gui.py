@@ -92,15 +92,6 @@ class AdmissionsCRMGUI:
             font=('Arial', 18, 'bold')
         ).pack(side=tk.LEFT)
 
-        # Language button
-        lang_btn = ttk.Button(
-            header_frame,
-            text=f"🌐 {get_current_language_name()}",
-            command=self._on_language_change,
-            width=15
-        )
-        lang_btn.pack(side=tk.RIGHT, padx=5)
-
         user_label = ttk.Label(
             header_frame,
             text=_t("admissions_crm.user_label", username=self.auth.current_user.get('username', 'Unknown')),

@@ -313,7 +313,7 @@ class ApplicationManager:
             due = datetime.fromisoformat(deposit_due).date()
             days_remaining = str((due - datetime.now().date()).days)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         return _send_applicant_email('deposit_reminder', application_id, {
             'deposit_amount': deposit_amount,

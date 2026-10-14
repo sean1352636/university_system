@@ -7,7 +7,6 @@ from education_system.systems.university.domains.finance.infrastructure.database
 from education_system.systems.university.infrastructure.database.schemas.student_union_schemas import init_student_union_db, init_student_affairs_tables, init_social_tables
 from education_system.systems.university.infrastructure.database.schemas.communication_schemas import init_email_system_db, init_communication_tables
 from education_system.systems.university.infrastructure.database.schemas.health_wellness_schemas import init_health_system_db, init_mental_health_system_db, init_health_tables, init_wellness_tables
-from education_system.systems.university.infrastructure.database.schemas.lms_schemas import init_lms_system_db
 from education_system.systems.university.infrastructure.database.schemas.attendance_warning_schemas import init_attendance_system_db, init_early_warning_system_db, init_peer_support_tables
 from education_system.systems.university.infrastructure.database.schemas.degree_audit_schemas import init_degree_audit_system_db
 from education_system.systems.university.infrastructure.database.schemas.career_alumni_schemas import init_career_services_system_db, init_alumni_relations_system_db, init_career_tables, init_alumni_tables
@@ -36,7 +35,6 @@ __all__ = [
     'init_mental_health_system_db',
     'init_health_tables',
     'init_wellness_tables',
-    'init_lms_system_db',
     'init_attendance_system_db',
     'init_early_warning_system_db',
     'init_peer_support_tables',
@@ -87,7 +85,6 @@ def init_all_schemas():
     init_student_union_db()
     init_email_system_db()
     init_health_system_db()
-    init_lms_system_db()
     init_attendance_system_db()
     init_mental_health_system_db()
     init_early_warning_system_db()

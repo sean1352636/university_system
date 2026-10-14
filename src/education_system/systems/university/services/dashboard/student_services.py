@@ -124,7 +124,7 @@ class StudentDashboardService:
                             if dp_row and dp_row["total_credits_required"]:
                                 data["credits_required"] = dp_row["total_credits_required"]
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 if data["credits_required"] > 0:
                     data["progress_pct"] = round(
@@ -148,7 +148,7 @@ class StudentDashboardService:
                         if gpa_row and gpa_row["gpa"] is not None:
                             data["gpa"] = round(gpa_row["gpa"], 2)
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
 
                 # Requirement completion
                 # Join with degree_requirements to get readable names
@@ -180,7 +180,7 @@ class StudentDashboardService:
                             req_list.append(req_dict)
                         data["requirements"] = req_list
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 # Fallback: modules.credits and student_degree_progress are
                 # not populated in this dataset (all zeros), and most students
@@ -225,7 +225,7 @@ class StudentDashboardService:
                         if synth:
                             data["requirements"] = synth
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
 
                 # If modules.credits was uniformly zero, derive credits_earned
                 # from the synthetic requirements we just built.
@@ -274,7 +274,7 @@ class StudentDashboardService:
                         data["balance"] = acct["balance"] or 0.0
                         data["total_charges"] = acct["total_charges"] or 0.0
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 # Financial aid
                 try:
@@ -286,7 +286,7 @@ class StudentDashboardService:
                     ).fetchone()
                     data["total_aid"] = aid["total"] if aid else 0.0
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 # Scholarships
                 try:
@@ -298,7 +298,7 @@ class StudentDashboardService:
                     ).fetchone()
                     data["total_scholarships"] = sch["total"] if sch else 0.0
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 # Upcoming payments (from payment_plans or transactions)
                 try:
@@ -314,7 +314,7 @@ class StudentDashboardService:
                     ).fetchall()
                     data["upcoming_payments"] = [dict(r) for r in upcoming] if upcoming else []
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 # Overdue payments
                 try:
@@ -330,7 +330,7 @@ class StudentDashboardService:
                     ).fetchall()
                     data["overdue_payments"] = [dict(r) for r in overdue] if overdue else []
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
         except Exception as e:
             logger.error(f"Error fetching financial summary: {e}")

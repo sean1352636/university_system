@@ -24,7 +24,7 @@ class DirectoryTabMixin:
         search_frame.columnconfigure(1, weight=1)
 
         # Filter frame
-        filter_frame = ttk.LabelFrame(parent, text=_t("navigation.directory.filter_by_type", default="Filter by Type"), padding=10)
+        filter_frame = ttk.LabelFrame(parent, text=_t("navigation.directory.filter_by_type", default="By Type"), padding=10)
         filter_frame.pack(fill=tk.X, padx=5, pady=5)
 
         self.building_type_var = tk.StringVar(value=_t("navigation.building_types.all", default="All"))

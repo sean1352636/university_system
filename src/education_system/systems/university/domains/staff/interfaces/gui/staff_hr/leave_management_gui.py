@@ -10,6 +10,9 @@ Provides interface for:
 """
 
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -528,7 +531,7 @@ class LeaveManagementGUI:
                 for row in cursor.fetchall():
                     leave_types[row[1]] = row[0]
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return leave_types
 
     def _view_request_details(self, event=None):
@@ -652,7 +655,7 @@ Rejection Reason: {row[11] or 'N/A'}
                         if full:
                             availability_changes.append(dict(full))
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
 
                     log_activity('update', 'leave_request',
                                  details={'action': 'approved', 'approved_by': approved_by, 'request_id': request_id})
@@ -673,7 +676,7 @@ Rejection Reason: {row[11] or 'N/A'}
                         source="leave_management",
                     )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         except Exception as e:
             messagebox.showerror(_t('gui.staff.staff_hr.leave_management.dialogs.error', default="Error"), f"Failed to approve requests: {e}")
@@ -948,7 +951,7 @@ Rejection Reason: {row[11] or 'N/A'}
                         current += timedelta(days=1)
 
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         return leave_data
 

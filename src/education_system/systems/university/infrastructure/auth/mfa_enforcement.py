@@ -215,6 +215,7 @@ class MFAEnforcement:
                 cursor = conn.cursor()
                 # Build query with proper number of placeholders
                 placeholders = ','.join('?' * len(roles_tuple))
+                # db-audit: ignore[DBW001] - join of placeholders
                 cursor.execute(f'''
                     SELECT u.id, u.username, u.email, u.role, u.created_at
                     FROM users u

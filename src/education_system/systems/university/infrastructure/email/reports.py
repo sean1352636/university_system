@@ -209,7 +209,7 @@ def generate_report_form():
     print(f"3. {_t('email.reports.current_month')}")
     print(f"4. {_t('email.reports.custom_range')}")
 
-    choice = input(_t("email.common.enter_choice") + " (1-4): ")
+    choice = input(_t("email.common.enter_choice", default="Enter your choice: ") + " (1-4): ")
 
     end_date = today
 
@@ -257,7 +257,7 @@ def generate_report_form():
     print(f"1. {_t('email.reports.on_screen_json')}")
     print(f"2. {_t('email.reports.csv_file')}")
 
-    format_choice = input(_t("email.common.enter_choice") + " (1-2): ")
+    format_choice = input(_t("email.common.enter_choice", default="Enter your choice: ") + " (1-2): ")
 
     if format_choice == '1':
         output_format = 'json'

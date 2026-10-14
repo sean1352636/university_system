@@ -8,11 +8,95 @@ from education_system.systems.university.infrastructure.database.db import sqlit
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Tuple
 import json
+import logging
 from decimal import Decimal
 
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.activity_logger import log_activity
 from education_system.systems.university.domains.assessment.domain.grading.grade_calculation.gpa import calculate_student_gpa
+
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Curriculum sources
+#
+# ``degree_program_courses`` is the explicit, hand-configured curriculum map,
+# and nothing in the GUI ever writes to it — on a real database it is empty,
+# which used to leave the Academic Progress dashboard reporting "No programs
+# with courses configured" even though the curriculum is fully described by
+# the ``courses`` and ``modules`` tables (every module carries the programme
+# code it belongs to in ``modules.course``, plus its year and type).
+#
+# These CTEs read both: an explicitly mapped course always wins, and every
+# programme-tagged module is picked up implicitly. Seeding the mapping table
+# later therefore overrides, rather than duplicates, what is derived here.
+# ---------------------------------------------------------------------------
+
+_PROGRAM_SOURCE_SQL = """
+    programs AS (
+        SELECT dp.program_code AS program_code,
+               dp.program_name AS program_name,
+               dp.degree_type  AS degree_type,
+               CASE WHEN COALESCE(dp.total_credits_required, 0) > 0
+                    THEN dp.total_credits_required END AS total_credits_required
+        FROM degree_programs dp
+        WHERE dp.program_code IS NOT NULL AND dp.program_code != ''
+        UNION ALL
+        SELECT c.code,
+               COALESCE(c.name, c.course_name),
+               c.course_type,
+               CASE WHEN COALESCE(c.credits, 0) > 0 THEN c.credits
+                    WHEN COALESCE(c.credit_hours, 0) > 0 THEN c.credit_hours END
+        FROM courses c
+        WHERE c.code IS NOT NULL AND c.code != ''
+          AND NOT EXISTS (
+                SELECT 1 FROM degree_programs dp WHERE dp.program_code = c.code
+          )
+    )
+"""
+
+_CURRICULUM_SOURCE_SQL = """
+    curriculum AS (
+        SELECT dpc.program_code AS program_code,
+               dpc.course_id    AS course_id,
+               COALESCE(NULLIF(dpc.requirement_type, ''), 'Core') AS requirement_type,
+               dpc.year_level       AS year_level,
+               dpc.semester_offered AS semester_offered,
+               COALESCE(m.module_name, c.name, c.course_name) AS course_name,
+               CASE WHEN COALESCE(m.credits, 0) > 0 THEN m.credits
+                    WHEN COALESCE(c.credits, 0) > 0 THEN c.credits
+                    WHEN COALESCE(c.credit_hours, 0) > 0 THEN c.credit_hours END AS credits
+        FROM degree_program_courses dpc
+        LEFT JOIN modules m ON dpc.course_id = m.module_code OR dpc.course_id = m.module_id
+        LEFT JOIN courses c ON dpc.course_id = c.code OR dpc.course_id = c.id
+        WHERE m.module_code IS NOT NULL OR c.code IS NOT NULL
+        UNION ALL
+        SELECT m.course,
+               m.module_code,
+               CASE WHEN LOWER(COALESCE(m.module_type, '')) IN
+                         ('compulsory', 'core', 'mandatory', 'required')
+                    THEN 'Core' ELSE 'Elective' END,
+               CAST(m.year AS INTEGER),
+               m.semester,
+               m.module_name,
+               CASE WHEN COALESCE(m.credits, 0) > 0 THEN m.credits END
+        FROM modules m
+        WHERE m.course IS NOT NULL AND m.course != ''
+          AND m.module_code IS NOT NULL AND m.module_code != ''
+          AND COALESCE(m.is_active, 1) = 1
+          AND NOT EXISTS (
+                SELECT 1 FROM degree_program_courses d
+                WHERE d.program_code = m.course AND d.course_id = m.module_code
+          )
+    )
+"""
+
+_CURRICULUM_CTE = "WITH " + _PROGRAM_SOURCE_SQL + "," + _CURRICULUM_SOURCE_SQL
+
+# Last-resort per-module credit value when neither the module, its programme,
+# nor the programme's total says anything useful.
+_FALLBACK_MODULE_CREDITS = 3
+
 
 class ProgressService:
     """Service for academic progress tracking and forecasting."""
@@ -214,37 +298,88 @@ class ProgressService:
 
     # ========== Degree Progress Tracking ==========
 
+    @staticmethod
+    def _row_value(row, key, default=None):
+        """Read an optional column from a row without assuming it is present."""
+        try:
+            value = row[key]
+        except (KeyError, IndexError, TypeError):
+            return default
+        return default if value is None else value
+
+    @staticmethod
+    def _module_credit_default(total_credits_required, course_count) -> int:
+        """Per-module credit value to assume when a module records none.
+
+        The seeded modules carry ``credits = 0``, but their programme knows
+        what a full degree is worth (``degree_programs.total_credits_required``
+        or the programme row in ``courses``). Splitting that across the
+        programme's modules gives the real value — 360 credits over 18 modules
+        is 20 — instead of a flat guess that makes every percentage wrong.
+        """
+        try:
+            total = int(total_credits_required or 0)
+            count = int(course_count or 0)
+        except (TypeError, ValueError):
+            return _FALLBACK_MODULE_CREDITS
+        if total > 0 and count > 0:
+            return max(1, round(total / count))
+        return _FALLBACK_MODULE_CREDITS
+
+    @classmethod
+    def _apply_credit_fallback(cls, rows: List[Dict], total_credits_required) -> List[Dict]:
+        """Fill in ``credits`` for curriculum rows that don't carry one."""
+        default = cls._module_credit_default(total_credits_required, len(rows))
+        for row in rows:
+            if not row.get('credits'):
+                row['credits'] = default
+        return rows
+
     def get_available_programs(self) -> List[Dict]:
         """
         Get list of programs that have courses configured.
+
+        Reads the explicit ``degree_program_courses`` map where one exists and
+        falls back to the programme-tagged modules otherwise, so the dashboard
+        works against the curriculum as it is actually recorded.
 
         Returns:
             List of program dictionaries with code, name, and course count
         """
         with get_connection() as conn:
-            programs = conn.execute("""
+            programs = conn.execute(_CURRICULUM_CTE + """
                 SELECT
-                    dp.program_code,
-                    dp.program_name,
-                    dp.degree_type,
-                    COUNT(DISTINCT dpc.course_id) as course_count,
-                    SUM(CASE
-                        WHEN COALESCE(m.credits, 0) > 0 THEN m.credits
-                        WHEN COALESCE(c.credits, 0) > 0 THEN c.credits
-                        WHEN COALESCE(c.credit_hours, 0) > 0 THEN c.credit_hours
-                        ELSE 3
-                    END) as total_credits
-                FROM degree_programs dp
-                INNER JOIN degree_program_courses dpc ON dp.program_code = dpc.program_code
-                LEFT JOIN modules m ON dpc.course_id = m.module_code OR dpc.course_id = m.module_id
-                LEFT JOIN courses c ON dpc.course_id = c.code OR dpc.course_id = c.id
-                WHERE (m.module_code IS NOT NULL OR c.code IS NOT NULL)
-                GROUP BY dp.program_id, dp.program_code, dp.program_name, dp.degree_type
-                HAVING COUNT(DISTINCT dpc.course_id) > 0
-                ORDER BY dp.program_code
+                    p.program_code,
+                    p.program_name,
+                    p.degree_type,
+                    p.total_credits_required,
+                    COUNT(DISTINCT cur.course_id) as course_count,
+                    COALESCE(SUM(cur.credits), 0) as known_credits,
+                    COUNT(cur.credits) as known_credit_count
+                FROM programs p
+                INNER JOIN curriculum cur ON cur.program_code = p.program_code
+                GROUP BY p.program_code, p.program_name, p.degree_type,
+                         p.total_credits_required
+                HAVING COUNT(DISTINCT cur.course_id) > 0
+                ORDER BY p.program_code
             """).fetchall()
 
-            return [dict(p) for p in programs]
+            results = []
+            for row in programs:
+                program = dict(row)
+                course_count = program['course_count']
+                # Modules with no recorded credit value fall back to the
+                # programme's own per-module share.
+                unknown = max(0, (course_count or 0) - (program.pop('known_credit_count', 0) or 0))
+                default = self._module_credit_default(
+                    program.get('total_credits_required'), course_count
+                )
+                program['total_credits'] = (
+                    (program.pop('known_credits', 0) or 0) + unknown * default
+                )
+                results.append(program)
+
+            return results
 
     def calculate_degree_progress(self, student_id: str, program_code: str) -> Dict:
         """
@@ -262,17 +397,15 @@ class ProgressService:
         """
         # Validate program exists and has courses
         with get_connection() as conn:
-            program_check = conn.execute("""
-                SELECT
-                    dp.program_id,
-                    COUNT(DISTINCT dpc.course_id) as course_count
-                FROM degree_programs dp
-                LEFT JOIN degree_program_courses dpc ON dp.program_code = dpc.program_code
-                LEFT JOIN modules m ON dpc.course_id = m.module_code OR dpc.course_id = m.module_id
-                LEFT JOIN courses c ON dpc.course_id = c.code OR dpc.course_id = c.id
-                WHERE dp.program_code = ?
-                AND (m.module_code IS NOT NULL OR c.code IS NOT NULL OR dpc.course_id IS NULL)
-                GROUP BY dp.program_id
+            program_check = conn.execute(_CURRICULUM_CTE + """
+                SELECT (SELECT dp.program_id FROM degree_programs dp
+                        WHERE dp.program_code = p.program_code) as program_id,
+                       p.total_credits_required,
+                       (SELECT COUNT(DISTINCT cur.course_id) FROM curriculum cur
+                        WHERE cur.program_code = p.program_code) as course_count
+                FROM programs p
+                WHERE p.program_code = ?
+                LIMIT 1
             """, (program_code,)).fetchone()
 
             if not program_check:
@@ -281,30 +414,32 @@ class ProgressService:
             if program_check['course_count'] == 0:
                 raise ValueError(f"Program '{program_code}' has no courses configured. Please add courses to this program first.")
 
-            program_id = program_check['program_id']
+            total_credits_required = self._row_value(program_check, 'total_credits_required')
+            # Only programmes recorded in ``degree_programs`` carry a
+            # program_id; one derived from ``courses`` has none, and the
+            # progress record is then skipped (``_update_progress_records``
+            # no-ops on a falsy id).
+            program_id = self._row_value(program_check, 'program_id')
 
         with get_connection() as conn:
-            # Get all courses for the program from degree_program_courses
-            # Only include courses that actually exist in modules or courses tables
-            program_courses = conn.execute("""
-                SELECT
-                    dpc.course_id,
-                    dpc.requirement_type,
-                    CASE
-                        WHEN COALESCE(m.credits, 0) > 0 THEN m.credits
-                        WHEN COALESCE(c.credits, 0) > 0 THEN c.credits
-                        WHEN COALESCE(c.credit_hours, 0) > 0 THEN c.credit_hours
-                        ELSE 3
-                    END as credits,
-                    dpc.year_level,
-                    dpc.semester_offered
-                FROM degree_program_courses dpc
-                LEFT JOIN modules m ON dpc.course_id = m.module_code OR dpc.course_id = m.module_id
-                LEFT JOIN courses c ON dpc.course_id = c.code OR dpc.course_id = c.id
-                WHERE dpc.program_code = ?
-                AND (m.module_code IS NOT NULL OR c.code IS NOT NULL)
-                ORDER BY dpc.requirement_type, dpc.year_level
-            """, (program_code,)).fetchall()
+            # The curriculum: explicitly mapped courses where they exist,
+            # programme-tagged modules otherwise.
+            program_courses = [
+                dict(row) for row in conn.execute(_CURRICULUM_CTE + """
+                    SELECT cur.course_id,
+                           cur.requirement_type,
+                           cur.credits,
+                           cur.year_level,
+                           cur.semester_offered
+                    FROM curriculum cur
+                    WHERE cur.program_code = ?
+                    GROUP BY cur.course_id
+                    ORDER BY cur.requirement_type, cur.year_level
+                """, (program_code,)).fetchall()
+            ]
+            program_courses = self._apply_credit_fallback(
+                program_courses, total_credits_required
+            )
 
             if not program_courses:
                 # No courses found for this program - return empty progress
@@ -315,7 +450,7 @@ class ProgressService:
             completed_courses = conn.execute("""
                 SELECT
                     mg.module_code as course_id,
-                    CASE WHEN COALESCE(m.credits, 0) > 0 THEN m.credits ELSE 3 END as credits,
+                    CASE WHEN COALESCE(m.credits, 0) > 0 THEN m.credits END as credits,
                     mg.final_grade as grade
                 FROM module_grades mg
                 INNER JOIN modules m ON mg.module_code = m.module_code
@@ -328,7 +463,6 @@ class ProgressService:
                     CASE
                         WHEN COALESCE(c.credits, 0) > 0 THEN c.credits
                         WHEN COALESCE(c.credit_hours, 0) > 0 THEN c.credit_hours
-                        ELSE 3
                     END as credits,
                     sg.grade
                 FROM student_grades sg
@@ -340,15 +474,68 @@ class ProgressService:
             """, (student_id, student_id)).fetchall()
 
             # Get current enrollments - only from actual modules
+            # "In progress" is a module the student is sitting: a grade row
+            # awaiting a final mark, or a live registration in
+            # ``module_enrolments`` — which is where enrolment actually lives,
+            # and was previously ignored here.
             current_enrollments = conn.execute("""
                 SELECT
                     mg.module_code as course_id,
-                    CASE WHEN COALESCE(m.credits, 0) > 0 THEN m.credits ELSE 3 END as credits
+                    CASE WHEN COALESCE(m.credits, 0) > 0 THEN m.credits END as credits
                 FROM module_grades mg
                 INNER JOIN modules m ON mg.module_code = m.module_code
                 WHERE mg.student_id = ?
                 AND mg.final_grade IS NULL
-            """, (student_id,)).fetchall()
+                UNION
+                SELECT
+                    me.module_code as course_id,
+                    CASE WHEN COALESCE(m.credits, 0) > 0 THEN m.credits END as credits
+                FROM module_enrolments me
+                INNER JOIN modules m ON me.module_code = m.module_code
+                WHERE me.student_id = ?
+                AND LOWER(COALESCE(me.status, '')) IN
+                    ('enrolled', 'active', 'registered', 'in progress', 'in_progress')
+                AND me.effective_to IS NULL
+                AND NOT EXISTS (
+                    SELECT 1 FROM module_grades mg2
+                    WHERE mg2.student_id = me.student_id
+                      AND mg2.module_code = me.module_code
+                      AND mg2.final_grade IS NOT NULL
+                )
+            """, (student_id, student_id)).fetchall()
+
+            # A student's grade rows carry the same unrecorded credits as the
+            # curriculum does, so resolve them against the curriculum value for
+            # that course — otherwise a completed module counts for a different
+            # number of credits than the same module counts for as required.
+            curriculum_credits = {c['course_id']: c['credits'] for c in program_courses}
+            course_default = self._module_credit_default(
+                total_credits_required, len(program_courses)
+            )
+
+            def _credits_of(row):
+                return (
+                    row['credits']
+                    or curriculum_credits.get(row['course_id'])
+                    or course_default
+                )
+
+            completed_courses = [
+                {'course_id': r['course_id'], 'credits': _credits_of(r), 'grade': r['grade']}
+                for r in completed_courses
+            ]
+            seen_enrolled = set()
+            deduped_enrollments = []
+            for r in current_enrollments:
+                # A module with both a pending grade row and a live enrolment
+                # is one module, not two.
+                if r['course_id'] in seen_enrolled:
+                    continue
+                seen_enrolled.add(r['course_id'])
+                deduped_enrollments.append(
+                    {'course_id': r['course_id'], 'credits': _credits_of(r)}
+                )
+            current_enrollments = deduped_enrollments
 
             # Group courses by requirement type and calculate progress
             progress_by_category = {}
@@ -488,28 +675,28 @@ class ProgressService:
             List of course dictionaries with details
         """
         with get_connection() as conn:
-            courses = conn.execute("""
-                SELECT
-                    dpc.course_id,
-                    dpc.requirement_type,
-                    COALESCE(m.module_name, c.name, c.course_name) as course_name,
-                    CASE
-                        WHEN COALESCE(m.credits, 0) > 0 THEN m.credits
-                        WHEN COALESCE(c.credits, 0) > 0 THEN c.credits
-                        WHEN COALESCE(c.credit_hours, 0) > 0 THEN c.credit_hours
-                        ELSE 3
-                    END as credits,
-                    dpc.year_level,
-                    dpc.semester_offered
-                FROM degree_program_courses dpc
-                LEFT JOIN modules m ON dpc.course_id = m.module_code OR dpc.course_id = m.module_id
-                LEFT JOIN courses c ON dpc.course_id = c.code OR dpc.course_id = c.id
-                WHERE dpc.program_code = ?
-                AND (m.module_code IS NOT NULL OR c.code IS NOT NULL)
-                ORDER BY dpc.requirement_type, dpc.year_level, dpc.course_id
+            total_required = conn.execute(_CURRICULUM_CTE + """
+                SELECT p.total_credits_required FROM programs p
+                WHERE p.program_code = ? LIMIT 1
+            """, (program_code,)).fetchone()
+
+            courses = conn.execute(_CURRICULUM_CTE + """
+                SELECT cur.course_id,
+                       cur.requirement_type,
+                       cur.course_name,
+                       cur.credits,
+                       cur.year_level,
+                       cur.semester_offered
+                FROM curriculum cur
+                WHERE cur.program_code = ?
+                GROUP BY cur.course_id
+                ORDER BY cur.requirement_type, cur.year_level, cur.course_id
             """, (program_code,)).fetchall()
 
-            return [dict(c) for c in courses]
+            return self._apply_credit_fallback(
+                [dict(c) for c in courses],
+                total_required['total_credits_required'] if total_required else None,
+            )
 
     def add_course_to_program(self, program_code: str, course_id: str,
                              requirement_type: str = 'Core', year_level: int = 1,
@@ -595,6 +782,18 @@ class ProgressService:
                     last_updated = excluded.last_updated
             """, (student_id, program_id, current_year, total_completed,
                   round(completion_pct, 1), datetime.now().isoformat()))
+        try:
+            from education_system.systems.university.services.bus import (
+                degree_apprenticeship_events,
+            )
+            degree_apprenticeship_events.publish_for_student(
+                student_id, program_id, reason="credits",
+            )
+        except Exception:
+            logger.exception(
+                "Could not publish degree-apprenticeship progress for %s",
+                student_id,
+            )
 
     def get_degree_visualization_data(self, student_id: str, program_code: str) -> Dict:
         """Get formatted data for degree progress visualization."""

@@ -243,7 +243,15 @@ CREATE TABLE IF NOT EXISTS student_journey (
     created_at            TEXT    NOT NULL DEFAULT (datetime('now')),
     updated_at            TEXT    NOT NULL DEFAULT (datetime('now'))
 );
-CREATE UNIQUE INDEX IF NOT EXISTS idx_journey_dob_name
+-- Identity lookup index — deliberately NOT unique. Two different people can
+-- share a legal name and a date of birth; the old unique
+-- ``idx_journey_dob_name`` made the registry fold the second of them onto
+-- the first one's journey, so their records silently merged. Resolution
+-- now disambiguates on NHS number, UPN and open local records (see
+-- identity_service), and real duplicates are merged deliberately through
+-- identity_service.merge_journeys. The old index is dropped in the
+-- migration block of initialise_auth_db.
+CREATE INDEX IF NOT EXISTS idx_journey_identity
     ON student_journey(date_of_birth, legal_last_name, legal_first_name);
 CREATE INDEX IF NOT EXISTS idx_journey_college_pk
     ON student_journey(college_pk) WHERE college_pk IS NOT NULL;
@@ -272,6 +280,36 @@ CREATE TABLE IF NOT EXISTS student_journey_transitions (
 );
 CREATE INDEX IF NOT EXISTS idx_journey_trans_journey
     ON student_journey_transitions(journey_id);
+
+-- Log of identity merges (identity_service.merge_journeys). One row per
+-- duplicate folded into a survivor; the snapshot is the duplicate's row as
+-- it stood, so an operator can reverse a wrong merge by hand.
+CREATE TABLE IF NOT EXISTS student_journey_merges (
+    merge_id                TEXT    PRIMARY KEY,
+    survivor_id             TEXT    NOT NULL REFERENCES student_journey(journey_id),
+    duplicate_id            TEXT    NOT NULL REFERENCES student_journey(journey_id),
+    actor                   TEXT    NOT NULL,
+    reason                  TEXT,
+    moved_json              TEXT    NOT NULL,
+    duplicate_snapshot_json TEXT    NOT NULL,
+    merged_at               TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_journey_merges_duplicate
+    ON student_journey_merges(duplicate_id);
+CREATE INDEX IF NOT EXISTS idx_journey_merges_survivor
+    ON student_journey_merges(survivor_id);
+
+-- Pairs an administrator has confirmed are different people (twins, two
+-- unrelated learners sharing a name and birthday), so the duplicate
+-- finder stops proposing them. Stored with journey_a < journey_b.
+CREATE TABLE IF NOT EXISTS student_journey_distinct (
+    journey_a   TEXT    NOT NULL,
+    journey_b   TEXT    NOT NULL,
+    actor       TEXT    NOT NULL,
+    reason      TEXT,
+    decided_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (journey_a, journey_b)
+);
 
 -- ── Cross-system durable event bus ──
 -- Producers append; consumer pollers (one per subsystem process) read events
@@ -821,6 +859,16 @@ def initialise_auth_db(db_path: str | None = None):
                 "ALTER TABLE users ADD COLUMN must_change_password "
                 "INTEGER NOT NULL DEFAULT 0"
             )
+        # Login -> learner link (identity_service.link_user_account). The
+        # users row and the student_journey row describe the same person
+        # but nothing joined them, so "which logins does this learner
+        # have?" could only be guessed from names or emails.
+        if "journey_id" not in cols:
+            conn.execute("ALTER TABLE users ADD COLUMN journey_id TEXT")
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_users_journey "
+            "ON users(journey_id) WHERE journey_id IS NOT NULL"
+        )
         conn.commit()
 
         # System-key rename: converge Sixth Form (college→sixth_form) and
@@ -857,10 +905,22 @@ def initialise_auth_db(db_path: str | None = None):
                 ("fe_college_student_id", "TEXT"),
                 ("apprenticeships_pk", "INTEGER"),
                 ("apprenticeships_learner_id", "TEXT"),
+                # Identity merge tombstone: a merged journey keeps its row
+                # (status 'merged') and points at the survivor.
+                ("merged_into", "TEXT"),
+                ("merged_at", "TEXT"),
             ):
                 if column not in jcols:
                     conn.execute(
                         f"ALTER TABLE student_journey ADD COLUMN {column} {coltype}")
+            # The unique name+DOB index forced two different people who share
+            # a name and birthday onto one journey. It is replaced by the
+            # non-unique idx_journey_identity in _TABLES_SQL. Dropping an index
+            # never touches rows, and IF EXISTS makes this a no-op once done.
+            conn.execute("DROP INDEX IF EXISTS idx_journey_dob_name")
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_journey_merged_into "
+                "ON student_journey(merged_into) WHERE merged_into IS NOT NULL")
             # The partial indexes live in _TABLES_SQL, which runs before this
             # block — on an old database the columns did not exist yet, so
             # those CREATE INDEX statements were skipped. Create them here now

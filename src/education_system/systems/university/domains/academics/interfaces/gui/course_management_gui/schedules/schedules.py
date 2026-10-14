@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 # gui_course_management.py
 import tkinter as tk
@@ -36,7 +40,7 @@ def _patched_sqlite_connect(database, *args, **kwargs):
         if not database or db_name in (str(DEFAULT_DB_PATH), "courses.db"):
             return _original_sqlite_connect(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return _original_sqlite_connect(database, *args, **kwargs)
 
 sqlite3.connect = _patched_sqlite_connect
@@ -48,23 +52,13 @@ from typing import List, Dict, Optional, Tuple
 import threading
 import logging
 
-# Import chart generation utility
-try:
-    import matplotlib
-    matplotlib.use('TkAgg')
-    import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-    from matplotlib.figure import Figure
-    import seaborn as sns
-    import numpy as np
-    CHARTS_AVAILABLE = True
-except ImportError:
-    CHARTS_AVAILABLE = False
-    plt = None
-    Figure = None
-    FigureCanvasTkAgg = None
-    sns = None
-    np = None
+# Chart generation utilities — deferred, see _lazy_charts. Importing seaborn
+# here pulled matplotlib, pandas and scipy (~4.7s) into every Course Management
+# open, for charts only the analytics dialogs draw.
+from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui._lazy_charts import (
+    CHARTS_AVAILABLE, plt, Figure, FigureCanvasTkAgg, sns, np,
+)
+from education_system.systems.university.domains.academics.interfaces.gui._field_pickers import attach_combo, recent_years, time_values
 
 # Import email service
 try:
@@ -950,21 +944,24 @@ def _show_schedule_edit_dialog(self, schedule_id):
     # Year
     ttk.Label(form_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.year', default="Year:")).grid(row=row, column=0, sticky=tk.W, pady=5)
     year_var = tk.StringVar(value=str(current[2]))
-    year_entry = ttk.Entry(form_frame, textvariable=year_var, width=27)
+    year_entry = attach_combo(form_frame, recent_years(ahead=3, back=3),
+                              textvariable=year_var, width=25)
     year_entry.grid(row=row, column=1, sticky=tk.W, pady=5, padx=5)
     row += 1
 
     # Start time
     ttk.Label(form_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.start_time_hh_mm', default="Start Time (HH:MM):")).grid(row=row, column=0, sticky=tk.W, pady=5)
     start_time_var = tk.StringVar(value=current[3] or '')
-    start_time_entry = ttk.Entry(form_frame, textvariable=start_time_var, width=27)
+    start_time_entry = attach_combo(form_frame, time_values(),
+                                   textvariable=start_time_var, width=25)
     start_time_entry.grid(row=row, column=1, sticky=tk.W, pady=5, padx=5)
     row += 1
 
     # End time
     ttk.Label(form_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.end_time_hh_mm', default="End Time (HH:MM):")).grid(row=row, column=0, sticky=tk.W, pady=5)
     end_time_var = tk.StringVar(value=current[4] or '')
-    end_time_entry = ttk.Entry(form_frame, textvariable=end_time_var, width=27)
+    end_time_entry = attach_combo(form_frame, time_values(),
+                                 textvariable=end_time_var, width=25)
     end_time_entry.grid(row=row, column=1, sticky=tk.W, pady=5, padx=5)
     row += 1
 
@@ -1275,7 +1272,7 @@ class CreateScheduleDialog:
                 _send_schedule_email(cur, course_id, semester, year, start_time, end_time,
                                     days_str, classroom, instructor_id, "Created")
             except Exception:
-                pass  # Email is best-effort
+                logger.debug("Suppressed exception", exc_info=True)
 
             messagebox.showinfo(_("common.success"), _t('gui.academics.course_management_gui.schedules.schedules.dialogs.schedule_created_successfully', default="Schedule created successfully."))
             self.dialog.destroy()
@@ -1697,7 +1694,7 @@ class UpdateScheduleFormDialog:
                     _send_schedule_email(cur, course_id, semester, year, new_start, new_end,
                                         new_days, new_classroom, new_instructor_id, "Updated", change_details)
             except Exception:
-                pass  # Email is best-effort
+                logger.debug("Suppressed exception", exc_info=True)
 
             messagebox.showinfo(_("common.success"),
                                 "Schedule updated successfully!\n\nChanges:\n" + "\n".join(f"• {c}" for c in changes))

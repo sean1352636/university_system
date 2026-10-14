@@ -1,7 +1,13 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+
+from ._dialogs import make_toplevel, messagebox
 import tkinter.font as tkFont
 from datetime import datetime, timedelta
 import json
@@ -68,7 +74,7 @@ def _patched_sqlite_connect(database, *args, **kwargs):
         if not database or db_name == str(DEFAULT_DB_PATH):
             return _original_sqlite3_connect(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return _original_sqlite3_connect(database, *args, **kwargs)
 
 sqlite3.connect = _patched_sqlite_connect
@@ -216,7 +222,18 @@ class SearchMixin:
 
         # Clear previous results
         for tab in self.results_notebook.tabs():
+            # forget() alone would leave the tab's frame and its children
+            # alive under the notebook; every search leaked a result page.
+            try:
+                _w = self.results_notebook.nametowidget(tab)
+            except KeyError:
+                _w = None
             self.results_notebook.forget(tab)
+            if _w is not None:
+                try:
+                    _w.destroy()
+                except tk.TclError:
+                    pass
 
         search_type_map = {
             "Everything": "global",

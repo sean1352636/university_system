@@ -5,6 +5,9 @@ import logging
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.union_context import auto_award_points
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.calendar_bridge import (
+    mirror as _mirror_to_calendar,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -296,6 +299,26 @@ def create_new_competition(organizer_id, cursor, conn):
         print(f"Competition '{competition_name}' created successfully!")
         print(f"Competition ID: {competition_id}")
         print(f"Status: {status}")
+
+        if _mirror_to_calendar(
+            name=f"SU Competition: {competition_name}", kind="competition",
+            date_start=start_date, date_end=end_date,
+            description=description or f"{competition_type} inter-club competition",
+            created_by=organizer_id,
+            source_table="club_competitions", source_id=competition_id,
+            conn=conn,
+        ):
+            print("Added to the university academic calendar.")
+
+        # The registration deadline is its own dated milestone.
+        _mirror_to_calendar(
+            name=f"SU Competition entries close: {competition_name}",
+            kind="competition_deadline", date=registration_deadline,
+            description=f"Registration deadline for {competition_name}",
+            created_by=organizer_id,
+            source_table="club_competitions_deadline",
+            source_id=competition_id, conn=conn,
+        )
 
     except sqlite3.Error as e:
         logger.error("Database error: %s", e, exc_info=True)

@@ -58,8 +58,8 @@ def __getattr__(name: str):
         value = getattr(_load_attendance_tracker(), _ALIASES[name])
     else:
         raise AttributeError(
-            f"module 'education_system.systems.university.domain."
-            f"academics.services.attendance' has no attribute {name!r}")
+            f"module 'education_system.systems.university.domains.academics."
+            f"domain.services.attendance' has no attribute {name!r}")
     # Cache on the module so subsequent lookups skip __getattr__.
     globals()[name] = value
     return value

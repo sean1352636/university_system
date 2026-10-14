@@ -1,12 +1,18 @@
 """Grade dispute and appeal workflow management"""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext, filedialog
+from tkinter import ttk, scrolledtext, filedialog
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 import json
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
+from education_system.systems.university.domains.academics.interfaces.gui._field_pickers import attach_picker
 
 
 class GradeDisputeManager:
@@ -282,7 +288,7 @@ class GradeDisputeManager:
                         ids = ", ".join(f"#{c['id']} ({c['status']})" for c in related[:5])
                         mc_note = f"\nRelated MC claim(s): {ids}"
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 msg = "Grade dispute submitted successfully."
                 if ticket_id:
@@ -527,7 +533,7 @@ class GradeDisputeManager:
         did, student_id, atitle, orig_grade, action, reason, evidence, status, prev_comments, prev_new = row
 
         # Build dialog
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(f"Review Dispute #{did}")
         dialog.geometry("550x600")
         dialog.transient(self.root)
@@ -697,9 +703,8 @@ class GradeDisputeManager:
 
         ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.student_id', default="Student ID:")).grid(row=0, column=2, sticky='w', padx=5, pady=3)
         self.hist_student_var = tk.StringVar()
-        ttk.Entry(filter_frame, textvariable=self.hist_student_var, width=15).grid(
-            row=0, column=3, sticky='w', padx=5, pady=3
-        )
+        attach_picker(filter_frame, 'student', id_var=self.hist_student_var,
+                      width=28).grid(row=0, column=3, sticky='w', padx=5, pady=3)
 
         ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.from', default="From:")).grid(row=1, column=0, sticky='w', padx=5, pady=3)
         self.hist_from_var = tk.StringVar()

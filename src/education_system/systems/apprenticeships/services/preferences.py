@@ -85,6 +85,10 @@ def activate(username: str | None) -> dict[str, Any]:
         reset_active()
         return dict(_ACTIVE)
     try:
+        # A new login starts from defaults. Updating the previous user's
+        # dictionary in place would leak any setting the new user has not
+        # explicitly stored into their session.
+        reset_active()
         _ACTIVE.update(_coerce(repo.load(_ACTIVE_USER)))
     except Exception:
         logger.warning("Could not load preferences for %s", _ACTIVE_USER, exc_info=True)

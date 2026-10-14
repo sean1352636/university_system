@@ -1495,12 +1495,35 @@ Please log in to the Security Desk to review and respond to this ticket."""
 
         self.time_label = ttk.Label(status_frame, text="", style='Subtitle.TLabel')
         self.time_label.pack(side=tk.RIGHT)
+        self._time_after_id = None
+        # See the note in tabs/_base.py: an uncancelled after() fires after
+        # the window is destroyed and Tk reports it as a background error.
+        self.root.bind("<Destroy>", self._cancel_time_updates, add="+")
         self.update_time()
 
     def update_time(self):
-        current_time = datetime.now().strftime("%A, %B %d, %Y  |  %I:%M:%S %p")
-        self.time_label.configure(text=current_time)
-        self.root.after(1000, self.update_time)
+        try:
+            if not self.time_label.winfo_exists():
+                self._time_after_id = None
+                return
+            current_time = datetime.now().strftime("%A, %B %d, %Y  |  %I:%M:%S %p")
+            self.time_label.configure(text=current_time)
+            self._time_after_id = self.root.after(1000, self.update_time)
+        except tk.TclError:
+            self._time_after_id = None
+
+    def _cancel_time_updates(self, event=None):
+        """Stop the clock when the window goes away."""
+        if event is not None and event.widget is not self.root:
+            return
+        after_id = getattr(self, "_time_after_id", None)
+        if after_id is None:
+            return
+        self._time_after_id = None
+        try:
+            self.root.after_cancel(after_id)
+        except tk.TclError:
+            pass
 
     def dial_number(self, number):
         messagebox.showinfo(_t("security_desk.messages.dialing"),

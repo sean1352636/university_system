@@ -92,7 +92,7 @@ class EventCategoryManager:
 
             # Verify event exists
             event_exists = self.db_manager.execute_query(
-                "SELECT id FROM academic_calendar_events WHERE id = ?", (event_id,)
+                "SELECT id FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') WHERE id = ?", (event_id,)
             )
             if not event_exists:
                 raise ValidationError(f"Event with ID '{event_id}' not found")
@@ -204,7 +204,7 @@ class CourseManager:
 
             # Verify both event and course exist
             event_exists = self.db_manager.execute_query(
-                "SELECT id FROM academic_calendar_events WHERE id = ?", (event_id,)
+                "SELECT id FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') WHERE id = ?", (event_id,)
             )
             if not event_exists:
                 return False, f"Event with ID '{event_id}' not found"

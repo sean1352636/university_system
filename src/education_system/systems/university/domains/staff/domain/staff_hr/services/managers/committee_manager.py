@@ -15,6 +15,16 @@ from typing import Any, Dict, List, Optional
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.activity_logger import log_activity
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608
+from education_system.systems.university.infrastructure.database.schemas.unified_events_link import (
+    COMMITTEE_MEETINGS_SRC,
+    SOURCE_COMMITTEE,
+    start_datetime,
+)
+
+# Meetings are rows in ``unified_events`` tagged ``source_type = 'committee'``;
+# a meeting's id is its ``event_id``. Reads go through COMMITTEE_MEETINGS_SRC,
+# which keeps the legacy column names; these are the renamed ones for writes.
+_MEETING_COLUMNS = {'meeting_date': 'event_date', 'chair_id': 'organizer_id'}
 
 
 class CommitteeManager:
@@ -230,12 +240,15 @@ class CommitteeManager:
         """
         with transaction() as conn:
             cursor = conn.execute('''
-                INSERT INTO committee_meetings (
-                    committee_id, title, meeting_date, start_time, end_time,
-                    location, virtual_link, chair_id, secretary_id,
+                INSERT INTO unified_events (
+                    source_type, event_category, start_datetime,
+                    committee_id, title, event_date, start_time, end_time,
+                    location, virtual_link, organizer_id, secretary_id,
                     recurrence, status, created_by, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'scheduled', ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'scheduled', ?, ?, ?)
             ''', (
+                SOURCE_COMMITTEE, 'committee_meeting',
+                start_datetime(meeting_date, start_time),
                 committee_id, title, meeting_date, start_time, end_time,
                 location, virtual_link, chair_id, secretary_id,
                 recurrence, created_by,
@@ -260,8 +273,8 @@ class CommitteeManager:
         """
         with get_connection() as conn:
             row = conn.execute('''
-                SELECT * FROM committee_meetings WHERE id = ?
-            ''', (meeting_id,)).fetchone()
+                SELECT * FROM %s m WHERE id = ?
+            ''' % COMMITTEE_MEETINGS_SRC, (meeting_id,)).fetchone()
             return dict(row) if row else None
 
     @staticmethod
@@ -277,7 +290,7 @@ class CommitteeManager:
             A list of meeting dicts ordered by meeting_date descending.
         """
         with get_connection() as conn:
-            query = 'SELECT * FROM committee_meetings WHERE 1=1'
+            query = 'SELECT * FROM ' + COMMITTEE_MEETINGS_SRC + ' m WHERE 1=1'
             params: list = []
 
             if committee_id:
@@ -312,7 +325,8 @@ class CommitteeManager:
         values = []
         for key, value in data.items():
             if key in allowed_fields:
-                fields.append(validate_identifier(key, "column") + ' = ?')
+                column = _MEETING_COLUMNS.get(key, key)
+                fields.append(validate_identifier(column, "column") + ' = ?')
                 values.append(value)
 
         if not fields:
@@ -324,8 +338,19 @@ class CommitteeManager:
 
         with transaction() as conn:
             conn.execute(
-                'UPDATE committee_meetings SET ' + ', '.join(fields) + ' WHERE id = ?',
-                values)
+                'UPDATE unified_events SET ' + ', '.join(fields)
+                + ' WHERE event_id = ? AND source_type = ?',
+                values + [SOURCE_COMMITTEE])
+            if 'meeting_date' in data or 'start_time' in data:
+                row = conn.execute(
+                    'SELECT event_date, start_time FROM unified_events '
+                    'WHERE event_id = ? AND source_type = ?',
+                    (meeting_id, SOURCE_COMMITTEE)).fetchone()
+                if row:
+                    conn.execute(
+                        'UPDATE unified_events SET start_datetime = ? '
+                        'WHERE event_id = ?',
+                        (start_datetime(row[0], row[1]), meeting_id))
             log_activity('update', 'committee_meeting', details={
                 'meeting_id': meeting_id,
                 'updated_fields': list(data.keys()),
@@ -340,10 +365,10 @@ class CommitteeManager:
         """
         with transaction() as conn:
             conn.execute('''
-                UPDATE committee_meetings
+                UPDATE unified_events
                 SET status = 'cancelled', updated_at = ?
-                WHERE id = ?
-            ''', (datetime.now().isoformat(), meeting_id))
+                WHERE event_id = ? AND source_type = ?
+            ''', (datetime.now().isoformat(), meeting_id, SOURCE_COMMITTEE))
             log_activity('update', 'committee_meeting', details={
                 'meeting_id': meeting_id, 'action': 'cancelled',
             })

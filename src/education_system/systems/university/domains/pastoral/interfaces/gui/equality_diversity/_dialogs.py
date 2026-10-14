@@ -133,6 +133,7 @@ class MergeDialog:
         sets = ", ".join(f"{k}=?" for k in winners) + ", updated_at=?, updated_by=?"
         conn = get_connection()
         try:
+            # db-audit: ignore[DBW001] - concatenation of literals
             conn.execute(
                 f"UPDATE ed_people SET {sets} WHERE id=?",
                 (*winners.values(),

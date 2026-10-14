@@ -1,4 +1,5 @@
 """Payment analytics and email reminder functionality"""
+from education_system.systems.university.shell.gui import report_view as _rv
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -368,7 +369,7 @@ class AnalyticsEmailMixin:
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Create text widget for results
-            results_text = ScrolledText(main_frame, width=80, height=30,
+            results_text = _rv.TextReportView(main_frame, width=80, height=30,
                                        font=('Courier', 10), wrap=tk.WORD)
             results_text.pack(fill=tk.BOTH, expand=True)
 

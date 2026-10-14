@@ -2,12 +2,15 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import logging
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
+from tkinter import ttk, scrolledtext
 from datetime import datetime, timedelta
 import json
 from typing import Any, Optional, List, Dict
 from education_system.systems.university.infrastructure.i18n import get_text as _
 from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar.utils import safe_show_warning
+# Message boxes parented to the window that raised them, not the main
+# GUI — see _dialogs.
+from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar._dialogs import messagebox
 
 gui_logger = logging.getLogger(__name__)
 
@@ -483,6 +486,36 @@ class EventsViewMixin:
 
         return library_events
 
+    def _selected_event_record(self, item, event_name):
+        """The calendar event behind a tree row, or None.
+
+        Rows in the events list carry the full event as JSON, including its
+        real id, so that is used first: event titles are not unique (hundreds
+        of "Training" sessions share one), and a lookup by name returned
+        whichever came first. Rows without it fall back to the name, read from
+        unified_events — the legacy academic_calendar_events table is retired
+        and empty, so that lookup used to find nothing.
+        """
+        from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar._calendar_events import CALENDAR_EVENTS
+        if hasattr(self, 'events_tree') and self.events_tree.exists(item):
+            raw = self.events_tree.set(item, 'full_data')
+            if raw:
+                try:
+                    data = json.loads(raw)
+                    if isinstance(data, dict) and data.get('id'):
+                        return data
+                except (json.JSONDecodeError, TypeError):
+                    gui_logger.debug("Event row has no usable JSON; falling back to its name", exc_info=True)
+        rows = self.calendar_manager.db_manager.execute_query(
+            f"SELECT * FROM {CALENDAR_EVENTS} WHERE name = ? ORDER BY COALESCE(date, date_start) LIMIT 1",
+            (event_name,)
+        )
+        return dict(rows[0]) if rows else None
+
+    def _selected_event_id(self, item, event_name):
+        event = self._selected_event_record(item, event_name)
+        return event.get('id') if event else None
+
     def _edit_selected_event(self):
         """Edit selected event"""
         selection = self.events_tree.selection() if hasattr(self, 'events_tree') else []
@@ -513,11 +546,9 @@ class EventsViewMixin:
                 event_name = ' '.join(event_name.split(' ')[1:])
 
             try:
-                events = self.calendar_manager.db_manager.execute_query(
-                    "SELECT * FROM academic_calendar_events WHERE name = ? LIMIT 1", (event_name,)
-                )
-                if events:
-                    _get_edit_event_dialog()(self.root, self.calendar_manager, dict(events[0]),
+                event = self._selected_event_record(item, event_name)
+                if event:
+                    _get_edit_event_dialog()(self.root, self.calendar_manager, event,
                                   self._refresh_current_view)
                 else:
                     self._show_error(_("academic_calendar.messages.event_not_found"))
@@ -544,12 +575,9 @@ class EventsViewMixin:
             if messagebox.askyesno(_("academic_calendar.messages.confirm_delete"),
                                  _("academic_calendar.messages.confirm_delete_event").format(name=event_name)):
                 try:
-                    # Get event ID
-                    events = self.calendar_manager.db_manager.execute_query(
-                        "SELECT id FROM academic_calendar_events WHERE name = ? LIMIT 1", (event_name,)
-                    )
-                    if events:
-                        result = self.calendar_manager.delete_event(events[0]['id'])
+                    event_id = self._selected_event_id(item, event_name)
+                    if event_id:
+                        result = self.calendar_manager.delete_event(event_id)
                         if result['success']:
                             self._show_success(result['message'])
                             self._refresh_current_view()
@@ -578,11 +606,9 @@ class EventsViewMixin:
                 event_name = ' '.join(event_name.split(' ')[1:])
 
             try:
-                events = self.calendar_manager.db_manager.execute_query(
-                    "SELECT * FROM academic_calendar_events WHERE name = ? LIMIT 1", (event_name,)
-                )
-                if events:
-                    _get_event_details_dialog()(self.root, dict(events[0]))
+                event = self._selected_event_record(item, event_name)
+                if event:
+                    _get_event_details_dialog()(self.root, event)
                 else:
                     self._show_error(_("academic_calendar.messages.event_not_found"))
             except Exception as e:
@@ -603,12 +629,10 @@ class EventsViewMixin:
                 event_name = ' '.join(event_name.split(' ')[1:])
 
             try:
-                events = self.calendar_manager.db_manager.execute_query(
-                    "SELECT id FROM academic_calendar_events WHERE name = ? LIMIT 1", (event_name,)
-                )
-                if events:
+                event_id = self._selected_event_id(item, event_name)
+                if event_id:
                     self.root.clipboard_clear()
-                    self.root.clipboard_append(events[0]['id'])
+                    self.root.clipboard_append(event_id)
                     self._update_status(_("academic_calendar.messages.event_id_copied_success"), "success")
                 else:
                     self._show_error(_("academic_calendar.messages.event_not_found"))
@@ -774,7 +798,7 @@ Academic Calendar System"""
         """Open (or create) the chat room linked to the selected event."""
         sel = self.events_tree.selection() if hasattr(self, 'events_tree') else ()
         if not sel:
-            from tkinter import messagebox
+            from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar._dialogs import messagebox
             messagebox.showwarning(_t('gui.academics.academic_calendar.events_view.dialogs.open_chat', default="Open chat"),
                                    _t('gui.academics.academic_calendar.events_view.dialogs.select_an_event_first', default="Select an event first."))
             return
@@ -786,7 +810,7 @@ Academic Calendar System"""
         except Exception:
             event_id = None
         if not event_id:
-            from tkinter import messagebox
+            from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar._dialogs import messagebox
             messagebox.showerror(_t('gui.academics.academic_calendar.events_view.dialogs.open_chat', default="Open chat"), _t('gui.academics.academic_calendar.events_view.dialogs.could_not_determine_event_id', default="Could not determine event id."))
             return
         try:
@@ -797,7 +821,7 @@ Academic Calendar System"""
                 open_chat_for_event,
             )
         except Exception as e:
-            from tkinter import messagebox
+            from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar._dialogs import messagebox
             messagebox.showerror(_t('gui.academics.academic_calendar.events_view.dialogs.open_chat', default="Open chat"), f"Chat module unavailable: {e}")
             return
         dashboard = CommunicationDashboard(

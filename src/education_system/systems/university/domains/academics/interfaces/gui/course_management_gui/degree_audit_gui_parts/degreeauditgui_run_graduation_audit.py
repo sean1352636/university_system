@@ -1,12 +1,18 @@
 """Methods run_graduation_audit through view_requirements."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from .. import degree_audit_gui_shared as _shared
 globals().update({name: value for name, value in _shared.__dict__.items() if not name.startswith("__")})
 
+# Imported after the namespace splat so it cannot be shadowed.
+from .. import report_widgets as _report
+
 
 class DegreeAuditGUI:
     def run_graduation_audit(self):
-        """Run comprehensive graduation audit using actual database data"""
+        """Run the graduation audit and show the result in its own window."""
         try:
             student_id = self._student_id_from_label(self.grad_student_entry.get())
             course_selection = self.grad_program_combo.get()
@@ -15,7 +21,6 @@ class DegreeAuditGUI:
                 messagebox.showwarning(_("common.warning"), _("degree_audit.messages.enter_student_select_course"))
                 return
 
-            # Extract course code from selection
             course_code = course_selection.split(':')[1].split('-')[0].strip()
 
             # Single source of truth for eligibility — the same check the
@@ -28,74 +33,120 @@ class DegreeAuditGUI:
                 messagebox.showerror(_("common.error"), _("degree_audit.messages.student_not_found_db").format(student_id=student_id))
                 return
 
-            student_name = report['student_name']
-            enrolled_course = self._student_course(student_id) or ''
-            modules_completed = report['modules_completed']
-            credits_earned = report['credits_earned']
-            current_gpa = report['current_gpa']
-            required_credits = report['required_credits']
-            required_gpa = report['required_gpa']
-            required_modules = report['required_modules']
-            credit_met = report['credit_met']
-            gpa_met = report['gpa_met']
-            modules_met = report['modules_met']
             all_met = report['eligible']
 
-            # Remember the outcome so the "Add to Graduation Ceremony" button
-            # only works for an eligible student.
+            # Remember the outcome so "Add to Graduation Ceremony" only works
+            # for an eligible student.
             self._grad_eligible = all_met
             self._grad_student_id = student_id
             if hasattr(self, '_grad_add_ceremony_btn'):
                 self._grad_add_ceremony_btn.config(
                     state='normal' if all_met else 'disabled')
 
-            # Update checklist
-            self.checklist_vars['all_requirements'].set(all_met)
-            self.checklist_vars['gpa_requirement'].set(gpa_met)
-            self.checklist_vars['credit_requirement'].set(credit_met)
-
-            # Display results
-            self.grad_results_text.delete('1.0', tk.END)
-            self.grad_results_text.insert(tk.END, "GRADUATION AUDIT RESULTS\n")
-            self.grad_results_text.insert(tk.END, "=" * 60 + "\n\n")
-            self.grad_results_text.insert(tk.END, f"Student: {student_name} ({student_id})\n")
-            self.grad_results_text.insert(tk.END, f"Enrolled Course: {enrolled_course}\n")
-            self.grad_results_text.insert(tk.END, f"Audit Course: {course_code}\n\n")
-
-            self.grad_results_text.insert(tk.END, "PROGRESS:\n")
-            self.grad_results_text.insert(tk.END, f"  Modules Completed: {modules_completed} / {required_modules}\n")
-            self.grad_results_text.insert(tk.END, f"  Credits Earned: {credits_earned:.0f} / {required_credits}\n")
-            self.grad_results_text.insert(tk.END, f"  Current GPA: {current_gpa:.2f} / {required_gpa:.2f}\n\n")
-
-            self.grad_results_text.insert(tk.END, "REQUIREMENT STATUS:\n")
-            self.grad_results_text.insert(tk.END, f"  Module Requirement: {'PASS' if modules_met else 'FAIL'}\n")
-            self.grad_results_text.insert(tk.END, f"  Credit Requirement: {'PASS' if credit_met else 'FAIL'}\n")
-            self.grad_results_text.insert(tk.END, f"  GPA Requirement: {'PASS' if gpa_met else 'FAIL'}\n")
-            self.grad_results_text.insert(tk.END, f"  All Requirements: {'PASS' if all_met else 'FAIL'}\n\n")
-
-            if all_met:
-                self.grad_results_text.insert(tk.END,
-                    "RESULT: ELIGIBLE FOR GRADUATION\n\n"
-                    "The student has met all requirements for graduation.\n"
-                    "You may proceed with graduation approval.")
-            else:
-                self.grad_results_text.insert(tk.END,
-                    "RESULT: NOT ELIGIBLE FOR GRADUATION\n\n"
-                    "The student has not met all requirements.\n")
-                if not modules_met:
-                    self.grad_results_text.insert(tk.END, f"  - Complete {required_modules - modules_completed} more modules\n")
-                if not credit_met:
-                    self.grad_results_text.insert(tk.END, f"  - Earn {required_credits - credits_earned:.0f} more credits\n")
-                if not gpa_met:
-                    self.grad_results_text.insert(tk.END, f"  - Raise GPA by {required_gpa - current_gpa:.2f} points\n")
+            self._update_grad_checklist(report)
+            self._show_graduation_results(student_id, course_code, report)
 
             log_activity('run', 'graduation_audit', student_id,
-                       {'course': course_code, 'can_graduate': all_met})
-
-            messagebox.showinfo(_("common.success"), _("degree_audit.messages.graduation_audit_completed_short"))
+                         {'course': course_code, 'can_graduate': all_met})
 
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Failed to run audit: {e}")
+
+    def _update_grad_checklist(self, report):
+        """Refresh the on-tab checklist from the audit result.
+
+        The items are outcomes, not inputs, so they are not editable — but
+        they used to be ``ttk.Checkbutton(state='disabled')``, which renders
+        grey whether ticked or not, so the result was unreadable. Two of the
+        five were never populated at all. They are now ✓ / ✗ / — indicators,
+        with "—" meaning *not assessed* rather than failed.
+        """
+        results = {
+            'all_requirements': report.get('eligible'),
+            'gpa_requirement': report.get('gpa_met'),
+            'credit_requirement': report.get('credit_met'),
+            # Not modelled anywhere yet: say so rather than showing a cross
+            # that reads as "this student failed it".
+            'residency': None,
+            'financial': None,
+        }
+        for key, indicator in getattr(self, '_checklist_indicators', {}).items():
+            value = results.get(key)
+            mark, colour = ("\u2713", "#16a34a") if value else (
+                ("\u2014", "#95a5a6") if value is None else ("\u2717", "#dc2626"))
+            suffix = "" if value is not None else "  (not assessed)"
+            indicator.config(text=f"{mark} {indicator._label}{suffix}", foreground=colour)
+            if key in self.checklist_vars:
+                self.checklist_vars[key].set(bool(value))
+
+    def _show_graduation_results(self, student_id, course_code, report):
+        """Render the audit in its own window."""
+        eligible = report['eligible']
+        window, surface = _report.report_window(
+            self.root, f"Graduation audit — {report['student_name']}", "900x700")
+
+        _report.banner(
+            surface, f"Graduation audit — {report['student_name']}",
+            f"{student_id} · audited against {course_code}")
+
+        credits = report['credits_earned']
+        required = report['required_credits']
+        _report.stat_strip(surface, [
+            (f"{credits:.0f}", "Credits earned",
+             _report.OK if report['credit_met'] else _report.WARN),
+            (f"{required}", "Credits required"),
+            (f"{report['modules_completed']}", "Modules passed"),
+            (f"{report['current_gpa']:.2f}", "GPA",
+             _report.OK if report['gpa_met'] else _report.WARN),
+        ])
+
+        body = _report.card(surface, "Progress")
+        pairs = [
+            ("Modules passed", f"{report['modules_completed']} / {report['required_modules']}"),
+            ("Credits earned", f"{credits:.0f} / {required}"),
+            ("GPA", f"{report['current_gpa']:.2f} / {report['required_gpa']:.2f}"),
+        ]
+        if report.get('modules_enrolled') is not None:
+            pairs.append(("Modules enrolled", report.get('modules_enrolled', 0)))
+            pairs.append(("Modules marked", report.get('modules_graded', 0)))
+        _report.kv_grid(body, pairs)
+
+        body = _report.card(surface, "Requirements", accent="#9b59b6")
+        _report.status_list(body, [
+            (report['modules_met'], "Module requirement",
+             f"{report['modules_completed']} of {report['required_modules']}"),
+            (report['credit_met'], "Credit requirement",
+             f"{credits:.0f} of {required}"),
+            (report['gpa_met'], "GPA requirement",
+             f"{report['current_gpa']:.2f} of {report['required_gpa']:.2f}"),
+            (report.get('award_ratified'), "Ratified award",
+             "released by an exam board" if report.get('award_ratified')
+             else "no ratified, release-authorised award"),
+            (None, "Residency requirement", "not assessed"),
+            (None, "Financial clearance", "not assessed"),
+        ])
+
+        if report.get('ratified_award'):
+            award = report['ratified_award']
+            body = _report.card(surface, "Ratified award", accent=_report.OK)
+            _report.kv_grid(body, [
+                ("Award", award.get('award_name', '—')),
+                ("Classification", award.get('classification', '—')),
+                ("Academic year", award.get('academic_year', '—')),
+                ("Ratified at", award.get('ratified_at', '—')),
+            ])
+
+        reasons = report.get('reasons') or []
+        if eligible:
+            _report.verdict(surface, True, "Eligible for graduation",
+                            "All requirements are met. You may proceed with approval.")
+        else:
+            _report.verdict(
+                surface, False, "Not eligible for graduation",
+                "\n".join(f"• {r}" for r in reasons)
+                if reasons else "One or more requirements are outstanding.")
+
+        window.lift()
 
     def approve_graduation(self):
         """Approve student for graduation"""
@@ -216,7 +267,7 @@ class DegreeAuditGUI:
         try:
             log_activity('add_to_ceremony', 'graduation_ceremony', sid, {'ceremony_id': cid})
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         if messagebox.askyesno(
                 _("common.success"),
                 _("degree_audit.dialogs.added_open_question",

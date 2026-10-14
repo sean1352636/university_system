@@ -13,6 +13,9 @@ Covers: Monitoring Records, Incidents, Reports & Analytics, and Data Protection
 """
 
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from typing import Optional
 
@@ -98,7 +101,7 @@ def _current_username(auth) -> str:
         if isinstance(user, dict):
             return user.get("username") or user.get("name") or "cli-user"
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return "cli-user"
 
 
@@ -170,7 +173,7 @@ def _view_record(auth) -> None:
     try:
         access.record_view("person", rid, _current_username(auth))
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
 
 def _edit_record(auth) -> None:
@@ -308,7 +311,7 @@ def _view_incident(auth) -> None:
     try:
         access.record_view("incident", iid, _current_username(auth))
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
 
 def _update_incident_status(auth) -> None:

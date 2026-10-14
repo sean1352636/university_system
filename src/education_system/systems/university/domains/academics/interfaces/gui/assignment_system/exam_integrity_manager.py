@@ -3,10 +3,13 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
+from tkinter import ttk, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 import json
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
+from education_system.systems.university.domains.academics.interfaces.gui._field_pickers import attach_picker
 
 
 class ExamIntegrityManager:
@@ -233,7 +236,7 @@ class ExamIntegrityManager:
         if not self._check_permission('manage_assignments'):
             return
 
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.academics.assignment_system.exam_integrity_manager.windows.configure_randomization', default="Configure Randomization"))
         dialog.geometry("450x350")
         dialog.transient(self.root)
@@ -307,7 +310,7 @@ class ExamIntegrityManager:
         if not self._check_permission('manage_assignments'):
             return
 
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.academics.assignment_system.exam_integrity_manager.windows.configure_time_limits', default="Configure Time Limits"))
         dialog.geometry("450x320")
         dialog.transient(self.root)
@@ -385,7 +388,7 @@ class ExamIntegrityManager:
         if not self._check_permission('manage_assignments'):
             return
 
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.academics.assignment_system.exam_integrity_manager.windows.browser_lockdown_proctoring', default="Browser Lockdown & Proctoring"))
         dialog.geometry("500x420")
         dialog.transient(self.root)
@@ -470,7 +473,7 @@ class ExamIntegrityManager:
         if not self._check_permission('manage_assignments'):
             return
 
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.academics.assignment_system.exam_integrity_manager.windows.ip_restrictions', default="IP Restrictions"))
         dialog.geometry("500x480")
         dialog.transient(self.root)
@@ -699,9 +702,8 @@ class ExamIntegrityManager:
 
         ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.student_id', default="Student ID:")).grid(row=0, column=2, sticky='w', pady=5, padx=(20, 0))
         student_filter_var = tk.StringVar()
-        ttk.Entry(filter_frame, textvariable=student_filter_var, width=15).grid(
-            row=0, column=3, sticky='w', pady=5, padx=(10, 0)
-        )
+        attach_picker(filter_frame, 'student', id_var=student_filter_var,
+                      width=28).grid(row=0, column=3, sticky='w', pady=5, padx=(10, 0))
 
         # Log tree
         log_frame = ttk.Frame(content)
@@ -787,7 +789,7 @@ class ExamIntegrityManager:
             if not values:
                 return
 
-            detail_win = tk.Toplevel(self.root)
+            detail_win = make_toplevel(self.root)
             detail_win.title(f"Log Entry #{values[0]}")
             detail_win.geometry("400x300")
             detail_win.transient(self.root)
@@ -1006,6 +1008,7 @@ class ExamIntegrityManager:
                     values.append(value)
                 set_clauses.append("updated_at = datetime('now')")
                 values.append(assessment_id)
+                # db-audit: ignore[DBW001] - join over a code-controlled list
                 cursor.execute(
                     f"UPDATE exam_integrity_settings SET {', '.join(set_clauses)} WHERE assessment_id = ?",
                     values

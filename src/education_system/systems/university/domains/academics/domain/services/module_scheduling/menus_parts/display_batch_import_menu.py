@@ -34,7 +34,7 @@ def display_batch_import_menu(scheduler):
         }
 
         # Ensure directory exists
-        timetable_reports_dir = paths.REPORTS_DIR / 'timetable_reports'
+        timetable_reports_dir = paths.UNIVERSITY_REPORTS_DIR / 'timetable_reports'
         os.makedirs(str(timetable_reports_dir), exist_ok=True)
 
         df = pd.DataFrame(template_data)

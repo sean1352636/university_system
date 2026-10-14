@@ -56,17 +56,17 @@ def check_dependencies():
         optional_missing.append("reportlab (for PDF export)")
 
     if missing_deps:
-        print(get_text("mobility.parking.error_missing_required_deps"))
+        print(get_text("mobility.parking.error_missing_required_deps", default="Error Missing Required Deps."))
         for dep in missing_deps:
-            print(get_text("mobility.parking.dep_item", dep=dep))
-        print(get_text("mobility.parking.install_missing_deps"))
+            print(get_text("mobility.parking.dep_item", dep=dep, default="Dep Item {dep}"))
+        print(get_text("mobility.parking.install_missing_deps", default="Install Missing Deps"))
         return False
 
     if optional_missing:
-        print(get_text("mobility.parking.warning_missing_optional_deps"))
+        print(get_text("mobility.parking.warning_missing_optional_deps", default="Warning Missing Optional Deps."))
         for dep in optional_missing:
-            print(get_text("mobility.parking.dep_item", dep=dep))
-        print(get_text("mobility.parking.some_features_unavailable"))
+            print(get_text("mobility.parking.dep_item", dep=dep, default="Dep Item {dep}"))
+        print(get_text("mobility.parking.some_features_unavailable", default="Some Features Unavailable"))
 
     return True
 
@@ -79,7 +79,7 @@ def launch_gui():
         # ``parking_management.py`` as ``parking_management_gui.py``.
         from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.parking_management_gui import ParkingManagementGUI
 
-        print(get_text("mobility.parking.starting_gui"))
+        print(get_text("mobility.parking.starting_gui", default="Starting Gui"))
 
         # Create and run the GUI
         root = tk.Tk()
@@ -94,11 +94,11 @@ def launch_gui():
         root.mainloop()
 
     except ImportError as e:
-        print(get_text("mobility.parking.error_import_gui", error=str(e)))
-        print(get_text("mobility.parking.ensure_gui_in_directory"))
+        print(get_text("mobility.parking.error_import_gui", error=str(e), default="Error Import Gui. {error}"))
+        print(get_text("mobility.parking.ensure_gui_in_directory", default="Ensure Gui In Directory"))
         return False
     except Exception as e:
-        print(get_text("mobility.parking.error_launching_gui", error=str(e)))
+        print(get_text("mobility.parking.error_launching_gui", error=str(e), default="Error Launching Gui. {error}"))
         return False
 
     return True
@@ -112,7 +112,7 @@ def launch_console():
         from education_system.systems.university.infrastructure.auth import UserAuth
         from education_system.systems.university.infrastructure.shared_context import get_auth
 
-        print(get_text("mobility.parking.starting_console"))
+        print(get_text("mobility.parking.starting_console", default="Starting Console"))
         print("=" * 60)
 
         # Initialize authentication

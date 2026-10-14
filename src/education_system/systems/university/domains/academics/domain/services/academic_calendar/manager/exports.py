@@ -10,8 +10,12 @@ class ExportsMixin:
         if not self.auth_manager.check_permission('export_data'):
             raise PermissionError("Insufficient permissions to export data")
 
-        # Validate file path
-        safe_path = ValidationUtils.sanitize_filename(os.path.basename(file_path))
+        # Resolve the path inside the exports directory. Reducing it to a bare
+        # basename (as this did) wrote the export to the process's working
+        # directory, wherever the app happened to be launched from.
+        safe_path = ValidationUtils.resolve_safe_path(
+            file_path, self.config.export_directory, allow_absolute=True
+        )
         if not safe_path:
             raise ValidationError("Invalid file name")
 
@@ -64,7 +68,7 @@ class ExportsMixin:
                        COALESCE(e.date, e.date_start) as event_date,
                        e.date_end, e.event_type, e.description
                 FROM semesters s
-                LEFT JOIN academic_calendar_events e ON (
+                LEFT JOIN (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') e ON (
                     (e.date BETWEEN s.start_date AND s.end_date) OR
                     (e.date_start BETWEEN s.start_date AND s.end_date) OR
                     (e.date_end BETWEEN s.start_date AND s.end_date)
@@ -325,17 +329,25 @@ class ExportsMixin:
     def safe_open_file(self, file_path: str):
         """Safely open a file with security checks"""
         try:
-            # Sanitize file path
-            safe_path = ValidationUtils.sanitize_filename(os.path.basename(file_path))
+            # Confine the path to a directory this system writes to, keeping
+            # the directory itself: stripping it to a basename meant only
+            # files in the current working directory could ever be opened.
+            # Resolve where the file actually is: a bare name means the
+            # exports directory, an absolute path is taken as given (it is
+            # what export_calendar just returned to the caller).
+            safe_path = ValidationUtils.resolve_safe_path(
+                file_path, self.config.export_directory, create=False, allow_absolute=True
+            )
+            if not safe_path:
+                raise ValidationError("Invalid file name")
+
+            if not os.path.exists(safe_path):
+                raise ValidationError(f"File {safe_path} not found")
 
             # Check file extension
             _, ext = os.path.splitext(safe_path)
             if ext.lower() not in self.config.allowed_file_types:
                 raise ValidationError(f"File type {ext} not allowed")
-
-            # Check if file exists
-            if not os.path.exists(safe_path):
-                raise ValidationError(f"File {safe_path} not found")
 
             # Open file with appropriate application
             if platform.system() == "Windows":

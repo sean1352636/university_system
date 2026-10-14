@@ -549,7 +549,7 @@ When you launch the GUI application:
 When you use the CLI:
 
 ```bash
-python run.py --cli
+python -m education_system --cli
 ```
 
 **First Login**:

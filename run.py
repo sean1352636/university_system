@@ -1,33 +1,34 @@
 #!/usr/bin/env python3
-"""Deprecated compatibility shim for ``python run.py``.
+"""Run the Education System from a source checkout.
 
-The launcher is package-native: use ``python -m education_system`` or the
-``education-system`` console script instead. Both resolve to
-:func:`education_system.launcher.main.main`, which this module simply
-re-exports so existing scripts and documentation keep working.
+This root-level entry point mirrors both supported package entry points::
 
-This file is scheduled for removal after a compatibility period.
+    python -m education_system
+    education-system
+
+The launcher implementation lives in :mod:`education_system.launcher.main`.
+Keeping this file as a small adapter ensures every launch method uses the same
+argument parsing, environment setup, migrations, authentication, and system
+dispatch logic.
 """
 
+from __future__ import annotations
+
 import sys
-import warnings
 from pathlib import Path
 
-# Support running from a source checkout without installing the project first.
-# Insert src/, never src/education_system/ — the latter would put the package's
-# platform/ directory on sys.path and shadow the stdlib `platform` module.
-sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
+
+# The project uses a ``src`` layout.  Add the source root when this file is run
+# from an uninstalled checkout; an installed package continues to work too.
+SOURCE_ROOT = Path(__file__).resolve().parent / "src"
+if str(SOURCE_ROOT) not in sys.path:
+    sys.path.insert(0, str(SOURCE_ROOT))
 
 from education_system.launcher.main import main  # noqa: E402
 
-warnings.warn(
-    "run.py is deprecated; use `python -m education_system` or the "
-    "`education-system` console script instead.",
-    DeprecationWarning,
-    stacklevel=2,
-)
 
 __all__ = ["main"]
+
 
 if __name__ == "__main__":
     main()

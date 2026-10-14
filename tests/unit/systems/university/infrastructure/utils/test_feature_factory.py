@@ -230,7 +230,7 @@ class TestCreateCLIMenu:
 
         title = "Test Menu"
         features = {"Feature 1": "Description", "Return": "Exit"}
-        instruction = "CLI access via python run.py"
+        instruction = "CLI access via python -m education_system"
 
         menu_func = create_cli_menu(title, features, cli_instruction=instruction)
 
@@ -269,7 +269,7 @@ class TestCreateGUILauncher:
 
         title = "Test GUI"
         description = "Test description"
-        instruction = "Use CLI: python run.py --feature"
+        instruction = "Use CLI: python -m education_system --feature"
 
         launcher_func = create_gui_launcher(title, description, cli_instruction=instruction)
 
@@ -448,7 +448,7 @@ class TestCreateGUILauncher:
 
         title = "Test GUI"
         description = "Test description"
-        instruction = "Use CLI: python run.py --test"
+        instruction = "Use CLI: python -m education_system --test"
 
         launcher_func = create_gui_launcher(title, description, cli_instruction=instruction)
 

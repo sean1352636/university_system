@@ -494,7 +494,7 @@ class AcademicsMixin:
                 SELECT name AS event_name, description AS event_description,
                        COALESCE(date, substr(date_start, 1, 10)) AS event_date,
                        start_time, end_time, location, event_type
-                FROM academic_calendar_events
+                FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar')
                 WHERE COALESCE(date, substr(date_start, 1, 10)) >= ?
                 ORDER BY event_date, start_time
                 LIMIT 10
@@ -506,7 +506,7 @@ class AcademicsMixin:
                 SELECT name AS event_name, description AS event_description,
                        COALESCE(date, substr(date_start, 1, 10)) AS event_date,
                        start_time, end_time, location, event_type
-                FROM academic_calendar_events
+                FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar')
                 WHERE COALESCE(date, substr(date_start, 1, 10)) LIKE ?
                 ORDER BY event_date, start_time
                 ''', (f"{current_month}%",))
@@ -516,7 +516,7 @@ class AcademicsMixin:
                 SELECT name AS event_name, description AS event_description,
                        COALESCE(date, substr(date_start, 1, 10)) AS event_date,
                        start_time, end_time, location, event_type
-                FROM academic_calendar_events
+                FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar')
                 ORDER BY event_date, start_time
                 ''')
                 print("\nAll Events:")
@@ -525,7 +525,7 @@ class AcademicsMixin:
                 SELECT name AS event_name, description AS event_description,
                        COALESCE(date, substr(date_start, 1, 10)) AS event_date,
                        start_time, end_time, location, event_type
-                FROM academic_calendar_events
+                FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar')
                 WHERE (audience IS NULL OR audience IN ('all', 'parents'))
                 ORDER BY event_date, start_time
                 ''')
@@ -536,7 +536,7 @@ class AcademicsMixin:
                 SELECT name AS event_name, description AS event_description,
                        COALESCE(date, substr(date_start, 1, 10)) AS event_date,
                        start_time, end_time, location, event_type
-                FROM academic_calendar_events
+                FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar')
                 WHERE COALESCE(date, substr(date_start, 1, 10)) >= ?
                 ORDER BY event_date, start_time
                 LIMIT 10
@@ -843,7 +843,7 @@ class AcademicsMixin:
                 SELECT name AS event_name,
                        COALESCE(date, substr(date_start, 1, 10)) AS event_date,
                        event_type
-                FROM academic_calendar_events
+                FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar')
                 WHERE COALESCE(date, substr(date_start, 1, 10)) >= ?
                   AND COALESCE(date, substr(date_start, 1, 10)) <= date(?, '+14 days')
                   AND (audience IS NULL OR audience IN ('all', 'parents'))

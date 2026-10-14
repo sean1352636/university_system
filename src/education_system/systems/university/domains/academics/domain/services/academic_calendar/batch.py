@@ -43,10 +43,9 @@ class BatchOperationsManager:
                         event_id = str(uuid.uuid4())
 
                         self.db_manager.execute_update('''
-                        INSERT INTO academic_calendar_events (id, name, date, date_start, date_end,
-                                          description, event_type, date_added,
-                                          last_modified, created_by)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        INSERT INTO unified_events (
+                    source_event_id, title, event_date, start_datetime, end_datetime, description, event_type, created_at, updated_at, created_by, source_type
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'academic_calendar')
                         ''', (
                             event_id,
                             ValidationUtils.sanitize_string(event_data['name'], 255),
@@ -113,20 +112,27 @@ class BatchOperationsManager:
                         set_clauses = []
                         params = []
 
+                        COLUMN_FOR_FIELD = {
+                            "name": "title", "date": "event_date",
+                            "date_start": "start_datetime", "date_end": "end_datetime",
+                            "description": "description", "event_type": "event_type",
+                            "location": "location", "status": "status",
+                        }
                         for field, value in update_data.items():
                             if field in allowed_fields and value is not None:
-                                set_clauses.append(f"{field} = ?")
+                                set_clauses.append(
+                                    f"{COLUMN_FOR_FIELD.get(field, field)} = ?")
                                 if field in ['name', 'description', 'event_type']:
                                     params.append(ValidationUtils.sanitize_string(str(value), 255 if field == 'name' else 1000))
                                 else:
                                     params.append(str(value))
 
                         if set_clauses:
-                            set_clauses.append("last_modified = ?")
+                            set_clauses.append("updated_at = ?")
                             params.append(datetime.now().isoformat())
                             params.append(event_id)
 
-                            query = f"UPDATE academic_calendar_events SET {', '.join(set_clauses)} WHERE id = ?"
+                            query = f"UPDATE unified_events SET {', '.join(set_clauses)} WHERE source_type = 'academic_calendar' AND (source_event_id = ?)"
                             rows_affected = self.db_manager.execute_update(query, tuple(params))
 
                             if rows_affected > 0:

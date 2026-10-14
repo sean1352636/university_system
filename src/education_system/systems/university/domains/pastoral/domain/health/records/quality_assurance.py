@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.domains.pastoral.infrastructure.health.storage import sqlite3, DatabaseManager, get_connection
 from education_system.systems.university.domains.pastoral.domain.health.services import log_audit_event
 from datetime import datetime, timedelta
@@ -450,7 +454,7 @@ def patient_safety_metrics(auth):
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
     input("\nPress Enter to return...")
 
 
@@ -523,7 +527,7 @@ def performance_improvement(auth):
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
     input("\nPress Enter to return...")
 
 
@@ -583,5 +587,5 @@ def compliance_monitoring(auth):
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
     input("\nPress Enter to return...")

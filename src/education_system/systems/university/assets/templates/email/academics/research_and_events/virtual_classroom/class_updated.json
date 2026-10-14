@@ -1,0 +1,4 @@
+{
+    "subject": "✏️ Updated — $class_name ($module_code)",
+    "body": "Dear $participant_name,\n\nThe online class for $module_name ($module_code) has been changed. What changed is listed below — please check it against anything you have already saved.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nWHAT CHANGED\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n$changes\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nCURRENT DETAILS\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nClass:            $class_name\nModule:           $module_name ($module_code)\nLecturer:         $host_name\nJoin link:        $join_url\nMeeting ID:       $meeting_id\nAccess code:      $passcode\nPlatform:         $platform\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nIf a link or access code changed, the old one will no longer work.\n\nKind regards,\n$sender_name"
+}

@@ -205,11 +205,56 @@ class WebAuthnService:
                     ON webauthn_challenges(session_id, consumed)
                 """)
 
+                self._add_missing_credential_columns(conn)
+
                 conn.commit()
                 logger.debug("WebAuthn database tables ensured")
 
         except sqlite3.Error:
             logger.error("Failed to create WebAuthn tables")
+
+    # Columns this service writes that older webauthn_credentials tables
+    # predate. CREATE TABLE IF NOT EXISTS above is a no-op on those DBs, so
+    # without this back-fill every registration fails with "no such column".
+    # Both shipped variants of the table are missing at least four of these.
+    _CREDENTIAL_COLUMNS = (
+        ("device_name", "TEXT DEFAULT 'Security Key'"),
+        ("transports", "TEXT DEFAULT '[]'"),
+        ("aaguid", "TEXT"),
+        ("last_used_at", "TEXT"),
+        ("is_active", "INTEGER DEFAULT 1"),
+        ("attestation_format", "TEXT"),
+        ("credential_type", "TEXT DEFAULT 'public-key'"),
+        ("backup_eligible", "INTEGER DEFAULT 0"),
+        ("backup_state", "INTEGER DEFAULT 0"),
+    )
+
+    def _add_missing_credential_columns(self, conn) -> None:
+        """Bring a pre-existing webauthn_credentials table up to schema.
+
+        Adding a column is additive and idempotent — existing rows take the
+        column default — so this is safe to run on every startup.
+        """
+        try:
+            existing = {
+                row[1] for row in conn.execute("PRAGMA table_info(webauthn_credentials)")
+            }
+        except sqlite3.Error:
+            return
+        if not existing:
+            return
+        for name, decl in self._CREDENTIAL_COLUMNS:
+            if name in existing:
+                continue
+            try:
+                # Identifiers are literals from _CREDENTIAL_COLUMNS, not input.
+                # db-audit: ignore[DBW001] - literal collection
+                conn.execute(
+                    f"ALTER TABLE webauthn_credentials ADD COLUMN {name} {decl}"  # nosec B608
+                )
+                logger.info("Added missing webauthn_credentials column: %s", name)
+            except sqlite3.Error as exc:
+                logger.warning("Could not add webauthn_credentials.%s: %s", name, exc)
 
     # =========================================================================
     # Registration Flow

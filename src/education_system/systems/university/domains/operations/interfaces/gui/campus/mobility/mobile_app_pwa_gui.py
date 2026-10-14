@@ -133,9 +133,10 @@ class MobileAppPWAGUI:
                 ]
                 for table, col, col_type in _migrations:
                     try:
+                        # db-audit: ignore[DBW001] - literal collection
                         conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {col_type}")
                     except Exception:
-                        pass  # Column already exists
+                        logger.debug("Suppressed exception", exc_info=True)
 
             logger.info("Mobile App database tables initialized successfully")
         except Exception as e:
@@ -207,14 +208,6 @@ class MobileAppPWAGUI:
         # Refresh all button
         ttk.Button(button_frame, text=_t("common.refresh_all"),
                   command=self.refresh_all_data).pack(side='left', padx=(0, 10))
-
-        # Language selector button
-        self.lang_btn = ttk.Button(
-            button_frame,
-            text=f"🌐 {_t('gui.change_language')} [{get_current_language_name()}]",
-            command=self.change_language
-        )
-        self.lang_btn.pack(side='right', padx=(10, 0))
 
         # Status row
         status_frame = ttk.Frame(header_frame)
@@ -472,11 +465,11 @@ class MobileAppPWAGUI:
 
         ttk.Button(controls_frame, text=f"🔄 {_t('common.refresh')}",
                   command=self.load_analytics).pack(side='left', padx=5)
-        ttk.Button(controls_frame, text=f"📈 {_t('common.export_report')}",
+        ttk.Button(controls_frame, text=f"📈 {_t('common.export_report', default='Export Report')}",
                   command=self.export_analytics).pack(side='left', padx=5)
 
         # Date filter
-        ttk.Label(controls_frame, text=f"{_t('common.days')}:").pack(side='left', padx=5)
+        ttk.Label(controls_frame, text=f"{_t('common.days', default='Days')}:").pack(side='left', padx=5)
         self.analytics_days_var = tk.StringVar(value='7')
         ttk.Spinbox(controls_frame, from_=1, to=365, textvariable=self.analytics_days_var,
                    width=10).pack(side='left', padx=5)
@@ -496,7 +489,7 @@ class MobileAppPWAGUI:
         self.analytics_tree.heading('user_id', text=_t('common.user_id'))
         self.analytics_tree.heading('device_id', text=_t('mobile_app.device_id'))
         self.analytics_tree.heading('event_type', text=_t('mobile_app.event_type'))
-        self.analytics_tree.heading('timestamp', text=_t('common.timestamp'))
+        self.analytics_tree.heading('timestamp', text=_t('common.timestamp', default="Timestamp"))
         self.analytics_tree.heading('event_data', text=_t('mobile_app.event_data'))
         for col in columns:
             self.analytics_tree.column(col, width=120)
@@ -889,7 +882,7 @@ class MobileAppPWAGUI:
 
         except Exception as e:
             logger.error(f"Error opening register dialog: {e}")
-            messagebox.showerror(_t("common.error"), f"{_t('common.failed_open_dialog')}: {e}")
+            messagebox.showerror(_t("common.error"), f"{_t('common.failed_open_dialog', default='Failed Open Dialog')}: {e}")
 
     def deactivate_device(self):
         """Deactivate selected device"""
@@ -1065,7 +1058,7 @@ class MobileAppPWAGUI:
             with open(filename, 'w', newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow([_t('mobile_app.analytics_id'), _t('common.user_id'), _t('mobile_app.device_id'),
-                               _t('mobile_app.event_type'), _t('common.timestamp'), _t('mobile_app.event_data')])
+                               _t('mobile_app.event_type'), _t('common.timestamp', default="Timestamp"), _t('mobile_app.event_data')])
                 writer.writerows(analytics)
 
             messagebox.showinfo(_t("common.success"), f"{_t('mobile_app.analytics_exported')}: {filename}")

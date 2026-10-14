@@ -81,8 +81,14 @@ class AccessibilityToolsGUI:
             else:
                 self.window = tk.Toplevel(self.root)
                 self.window.title(_t("accessibility.title"))
-                self.window.geometry("1400x900")
-                self.window.minsize(1200, 700)
+                # Size-only geometry() leaves the window in a screen corner;
+                # center() clamps to the display and supplies the offset.
+                try:
+                    from education_system.platform.delivery.gui.window_sizing import center
+                    center(self.window, 1400, 900, minsize=(1200, 700))
+                except Exception:
+                    self.window.geometry("1400x900")
+                    self.window.minsize(1200, 700)
 
             # Configure style
             style = ttk.Style()
@@ -111,6 +117,7 @@ class AccessibilityToolsGUI:
             # Create tabs
             self.create_profiles_tab()
             self.create_requests_tab()
+            self.create_general_accommodations_tab()
             self.create_exam_accommodations_tab()
             self.create_assistive_tech_tab()
             self.create_settings_tab()
@@ -305,6 +312,303 @@ class AccessibilityToolsGUI:
         self.exam_tree.bind('<Double-1>', self.view_exam_accommodation)
 
         self.load_exam_accommodations()
+
+    # ── General accommodations (student_accommodations) ────────────────
+    #
+    # These apply across *all* assessments, unlike the exam tab which is
+    # per-exam. The distinguishing field is ``time_multiplier`` (1.5 =
+    # 50% extra time), which the assessment and exam-scheduling code
+    # reads via exam_management/accommodations.get_active_accommodations.
+    # Managed here so accessibility staff have one place for every kind
+    # of accommodation.
+
+    GENERAL_ACCOMMODATION_TYPES = ['extended_time', 'alt_format',
+                                   'screen_reader', 'large_text', 'other']
+
+    def create_general_accommodations_tab(self):
+        """Create the general (all-assessments) accommodations tab."""
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text=_t("accessibility.tabs.general_accommodations",
+                                       default="General Accommodations"))
+
+        header_frame = ttk.Frame(tab)
+        header_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Label(header_frame,
+                  text=_t("accessibility.header.general_accommodations",
+                          default="Accommodations applying to all assessments"),
+                  style='Header.TLabel').pack(side=tk.LEFT, padx=10)
+
+        ttk.Button(header_frame, text=_t("accessibility.btn.add_accommodation",
+                                         default="Add Accommodation"),
+                   command=self.add_general_accommodation).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(header_frame, text=_t("accessibility.btn.refresh", default="Refresh"),
+                   command=self.load_general_accommodations).pack(side=tk.RIGHT, padx=5)
+
+        filter_frame = ttk.Frame(tab)
+        filter_frame.pack(fill=tk.X, padx=10)
+        ttk.Label(filter_frame,
+                  text=_t("accessibility.labels.student_id", default="Student ID") + ":"
+                  ).pack(side=tk.LEFT, padx=(10, 5))
+        self.gen_student_var = tk.StringVar()
+        gen_entry = ttk.Entry(filter_frame, textvariable=self.gen_student_var, width=16)
+        gen_entry.pack(side=tk.LEFT, padx=5)
+        ttk.Button(filter_frame,
+                   text=_t('gui.pastoral.accessibility_tools.buttons.lookup', default="🔍 Lookup"),
+                   command=lambda: self.lookup_student(gen_entry), width=10).pack(side=tk.LEFT)
+        self.gen_active_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(filter_frame,
+                        text=_t("accessibility.labels.active_only", default="Active only"),
+                        variable=self.gen_active_var).pack(side=tk.LEFT, padx=(15, 5))
+        ttk.Button(filter_frame, text=_t("common.search", default="Search"),
+                   command=self.load_general_accommodations).pack(side=tk.LEFT, padx=10)
+
+        tree_frame = ttk.Frame(tab)
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        v_scroll = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL)
+        self.general_tree = ttk.Treeview(
+            tree_frame,
+            columns=('ID', 'Student ID', 'Type', 'Details', 'Time Multiplier',
+                     'Active', 'Approved By', 'Expires'),
+            show='tree headings', yscrollcommand=v_scroll.set)
+        v_scroll.config(command=self.general_tree.yview)
+
+        self.general_tree.heading('#0', text='')
+        self.general_tree.column('#0', width=30)
+
+        for col, width, header in [
+            ('ID', 60, _t("accessibility.columns.id", default="ID")),
+            ('Student ID', 100, _t("accessibility.columns.student_id", default="Student ID")),
+            ('Type', 130, _t("accessibility.columns.type", default="Type")),
+            ('Details', 220, _t("accessibility.columns.details", default="Details")),
+            ('Time Multiplier', 120, _t("accessibility.columns.time_multiplier",
+                                        default="Time Multiplier")),
+            ('Active', 70, _t("accessibility.columns.active", default="Active")),
+            ('Approved By', 110, _t("accessibility.columns.approved_by", default="Approved By")),
+            ('Expires', 110, _t("accessibility.columns.expires", default="Expires")),
+        ]:
+            self.general_tree.heading(col, text=header)
+            self.general_tree.column(col, width=width)
+
+        self.general_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        v_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+        btn_frame = ttk.Frame(tab)
+        btn_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
+        ttk.Button(btn_frame,
+                   text=_t("accessibility.btn.deactivate_selected", default="Deactivate Selected"),
+                   command=self.deactivate_general_accommodation).pack(side=tk.LEFT, padx=5)
+
+        self.load_general_accommodations()
+
+    def load_general_accommodations(self):
+        """Load general accommodations into the tree."""
+        try:
+            self.general_tree.delete(*self.general_tree.get_children())
+
+            query = ("""SELECT id, student_id, accommodation_type, details,
+                               time_multiplier, is_active, approved_by, expires_at
+                        FROM student_accommodations WHERE 1=1""")
+            params = []
+            student_filter = self.gen_student_var.get().strip()
+            if student_filter:
+                query += " AND student_id = ?"
+                params.append(student_filter)
+            if self.gen_active_var.get():
+                query += " AND is_active = 1"
+            query += " ORDER BY created_at DESC LIMIT 200"
+
+            with get_connection() as conn:
+                for row in conn.execute(query, params).fetchall():
+                    self.general_tree.insert('', 'end', values=(
+                        row['id'], row['student_id'], row['accommodation_type'],
+                        row['details'] or '',
+                        f"x{row['time_multiplier'] or 1.0:g}",
+                        _t("common.yes", default="Yes") if row['is_active']
+                        else _t("common.no", default="No"),
+                        row['approved_by'] or '',
+                        row['expires_at'] or _t("accessibility.defaults.no_expiry",
+                                                default="No expiry"),
+                    ))
+
+            self.update_status(_t("accessibility.status.loaded_general_accommodations",
+                                  count=len(self.general_tree.get_children()),
+                                  default=f"Loaded {len(self.general_tree.get_children())} general accommodations"))
+        except Exception as e:
+            messagebox.showerror(_t("common.error", default="Error"),
+                                 f"Failed to load general accommodations: {e}")
+            traceback.print_exc()
+
+    def add_general_accommodation(self, student_id=None, accommodation_type=None,
+                                  details=None):
+        """Add a general (all-assessments) accommodation."""
+        dialog = tk.Toplevel(self.window)
+        dialog.title(_t("accessibility.dialogs.add_general_accommodation",
+                        default="Add General Accommodation"))
+        dialog.geometry("520x520")
+        dialog.transient(self.window)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text=_t("accessibility.titles.add_general_accommodation",
+                                      default="Add General Accommodation"),
+                  font=('Arial', 14, 'bold')).pack(pady=(0, 5))
+        ttk.Label(main_frame,
+                  text=_t("accessibility.help.general_accommodation",
+                          default="Applies to every assessment. For a single exam, "
+                                  "use the Exam Accommodations tab."),
+                  wraplength=460, foreground='#555').pack(pady=(0, 15))
+
+        row1 = ttk.Frame(main_frame)
+        row1.pack(fill=tk.X, pady=5)
+        ttk.Label(row1, text=_t("accessibility.labels.student_id",
+                                default="Student ID") + ":", width=22).pack(side=tk.LEFT)
+        student_var = tk.StringVar(value=student_id or '')
+        student_entry = ttk.Entry(row1, textvariable=student_var, width=20)
+        student_entry.pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(row1, text=_t('gui.pastoral.accessibility_tools.buttons.lookup',
+                                 default="🔍 Lookup"),
+                   command=lambda: self.lookup_student(student_entry), width=10).pack(side=tk.LEFT)
+
+        row2 = ttk.Frame(main_frame)
+        row2.pack(fill=tk.X, pady=5)
+        ttk.Label(row2, text=_t("accessibility.labels.accommodation_type",
+                                default="Type") + ":", width=22).pack(side=tk.LEFT)
+        type_var = tk.StringVar(value=accommodation_type
+                                if accommodation_type in self.GENERAL_ACCOMMODATION_TYPES
+                                else 'extended_time')
+        ttk.Combobox(row2, textvariable=type_var,
+                     values=self.GENERAL_ACCOMMODATION_TYPES,
+                     state='readonly', width=25).pack(side=tk.LEFT)
+
+        ttk.Label(main_frame, text=_t("accessibility.labels.details",
+                                      default="Details") + ":").pack(anchor=tk.W, pady=(10, 2))
+        details_text = scrolledtext.ScrolledText(main_frame, height=5, width=50)
+        if details:
+            details_text.insert('1.0', details)
+        details_text.pack(fill=tk.X)
+
+        row3 = ttk.Frame(main_frame)
+        row3.pack(fill=tk.X, pady=(10, 5))
+        ttk.Label(row3, text=_t("accessibility.labels.time_multiplier",
+                                default="Time multiplier (1.5 = 50% extra)") + ":",
+                  width=32).pack(side=tk.LEFT)
+        multiplier_var = tk.StringVar(value='1.0')
+        ttk.Entry(row3, textvariable=multiplier_var, width=10).pack(side=tk.LEFT)
+
+        row4 = ttk.Frame(main_frame)
+        row4.pack(fill=tk.X, pady=5)
+        ttk.Label(row4, text=_t("accessibility.labels.expires_optional",
+                                default="Expires (YYYY-MM-DD, blank = never)") + ":",
+                  width=32).pack(side=tk.LEFT)
+        expires_var = tk.StringVar()
+        ttk.Entry(row4, textvariable=expires_var, width=14).pack(side=tk.LEFT)
+
+        def save():
+            sid = student_var.get().strip()
+            if not sid:
+                messagebox.showerror(_t("common.error", default="Error"),
+                                     _t("accessibility.error.student_id_required",
+                                        default="Student ID is required."),
+                                     parent=dialog)
+                return
+            try:
+                time_mult = float(multiplier_var.get().strip())
+            except ValueError:
+                messagebox.showerror(_t("common.error", default="Error"),
+                                     "Time multiplier must be a number.", parent=dialog)
+                return
+            if time_mult <= 0:
+                messagebox.showerror(_t("common.error", default="Error"),
+                                     "Time multiplier must be greater than 0.", parent=dialog)
+                return
+
+            expires = expires_var.get().strip() or None
+            if expires:
+                try:
+                    datetime.strptime(expires, '%Y-%m-%d')
+                except ValueError:
+                    messagebox.showerror(_t("common.error", default="Error"),
+                                         "Expiry date must be YYYY-MM-DD.", parent=dialog)
+                    return
+            try:
+                self._insert_general_accommodation(
+                    sid, type_var.get(), details_text.get('1.0', tk.END).strip(),
+                    time_mult, expires)
+                messagebox.showinfo(_t("common.success", default="Success"),
+                                    _t("accessibility.messages.general_accommodation_added",
+                                       default="Accommodation added."), parent=dialog)
+                dialog.destroy()
+                self.load_general_accommodations()
+            except Exception as e:
+                messagebox.showerror(_t("common.error", default="Error"),
+                                     f"Failed to add accommodation: {e}", parent=dialog)
+
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(pady=20)
+        ttk.Button(btn_frame, text=_t("common.save", default="Save"),
+                   command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t("common.cancel", default="Cancel"),
+                   command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    def _insert_general_accommodation(self, student_id, accommodation_type, details,
+                                      time_multiplier, expires_at):
+        """Write one student_accommodations row. Shared by the dialog and
+        by request approval, so both record provenance the same way."""
+        approved_by = self.current_user.get('username') if isinstance(
+            self.current_user, dict) else None
+        with transaction() as conn:
+            conn.execute(
+                """INSERT INTO student_accommodations
+                   (student_id, accommodation_type, details, time_multiplier,
+                    is_active, approved_by, expires_at)
+                   VALUES (?, ?, ?, ?, 1, ?, ?)""",
+                (str(student_id), accommodation_type, details or '',
+                 time_multiplier, approved_by, expires_at))
+        log_activity(f"Added general accommodation for {student_id}",
+                     user=approved_by)
+
+    @staticmethod
+    def _map_request_type(request_type):
+        """Map a free-text accommodation_requests type onto one of the
+        constrained student_accommodations types (the column has a CHECK)."""
+        raw = (request_type or '').strip().lower().replace(' ', '_')
+        aliases = {
+            'extended_time': 'extended_time', 'extra_time': 'extended_time',
+            'additional_time': 'extended_time', 'time_extension': 'extended_time',
+            'alternative_format': 'alt_format', 'alt_format': 'alt_format',
+            'alternate_format': 'alt_format', 'braille': 'alt_format',
+            'screen_reader': 'screen_reader', 'text_to_speech': 'screen_reader',
+            'large_text': 'large_text', 'large_print': 'large_text',
+        }
+        return aliases.get(raw, 'other')
+
+    def deactivate_general_accommodation(self):
+        """Deactivate the selected general accommodation."""
+        selection = self.general_tree.selection()
+        if not selection:
+            messagebox.showwarning(_t("common.warning", default="Warning"),
+                                   _t("accessibility.messages.no_accommodation_selected",
+                                      default="No accommodation selected."))
+            return
+        values = self.general_tree.item(selection[0], 'values')
+        accom_id = values[0]
+        if not messagebox.askyesno(_t("common.confirm", default="Confirm"),
+                                   f"Deactivate accommodation #{accom_id}?"):
+            return
+        try:
+            with transaction() as conn:
+                conn.execute("UPDATE student_accommodations SET is_active = 0 WHERE id = ?",
+                             (accom_id,))
+            log_activity(f"Deactivated general accommodation {accom_id}",
+                         user=self.current_user.get('username'))
+            self.load_general_accommodations()
+        except Exception as e:
+            messagebox.showerror(_t("common.error", default="Error"),
+                                 f"Failed to deactivate: {e}")
 
     def create_assistive_tech_tab(self):
         """Create assistive technology requests tab"""
@@ -1276,11 +1580,35 @@ class AccessibilityToolsGUI:
                                 WHERE request_id = ?
                             ''', (self.current_user.get('username'), datetime.now().isoformat(),
                                  notes_text.get('1.0', tk.END).strip(), request_id))
-                        messagebox.showinfo(_t("common.success"), _t("accessibility.messages.request_approved"))
                         log_activity(f"Approved accommodation request {request_id}",
                                    user=self.current_user.get('username'))
                         dialog.destroy()
                         self.load_requests()
+
+                        # An approved request used to stop here: the row was
+                        # marked 'approved' but nothing ever provisioned the
+                        # accommodation, so assessments never saw it. Offer to
+                        # create the matching general accommodation now.
+                        if messagebox.askyesno(
+                                _t("common.success"),
+                                _t("accessibility.messages.request_approved")
+                                + "\n\n"
+                                + _t("accessibility.messages.provision_now",
+                                     default="Set up the accommodation for this "
+                                             "student now? It will then apply to "
+                                             "their assessments.")):
+                            self.add_general_accommodation(
+                                student_id=row['student_id'],
+                                accommodation_type=self._map_request_type(
+                                    row['accommodation_type']),
+                                details=row['description'] or '')
+                        else:
+                            messagebox.showinfo(
+                                _t("common.success"),
+                                _t("accessibility.messages.provision_later",
+                                   default="Request approved. It will not affect "
+                                           "assessments until an accommodation is "
+                                           "added on the General Accommodations tab."))
                     except Exception as e:
                         messagebox.showerror(_t("common.error"), _t("accessibility.error.approve_failed", error=str(e)))
 

@@ -1,9 +1,14 @@
 """Group configuration dialog and auto-generation"""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, simpledialog, messagebox, scrolledtext
+from tkinter import ttk, simpledialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 
@@ -14,7 +19,7 @@ class ConfigurationMixin:
     def show_group_configuration(self):
         """Show comprehensive group configuration interface"""
         try:
-            dialog = tk.Toplevel(self.root)
+            dialog = make_toplevel(self.root)
             dialog.title(_t('gui.academics.assignment_system.group_manager.configuration.windows.group_configuration', default="Group Configuration"))
             dialog.geometry("1000x700")
             dialog.transient(self.root)
@@ -47,7 +52,7 @@ class ConfigurationMixin:
                 elif config_module_map:
                     config_module_combo.current(0)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Store for use by child methods
             if not hasattr(self, 'group_module_var'):
@@ -282,7 +287,7 @@ class ConfigurationMixin:
                     result_msg += f"  - {fname} {lname} (ID: {sid})\n"
                 result_msg += "\n"
 
-            result_window = tk.Toplevel(dialog)
+            result_window = make_toplevel(dialog)
             result_window.title(_t('gui.academics.assignment_system.group_manager.configuration.windows.generated_groups', default="Generated Groups"))
             result_window.geometry("500x600")
 
@@ -355,7 +360,7 @@ class ConfigurationMixin:
         current_status = current_values[2] if len(current_values) > 2 else 'Empty'
 
         # Create edit dialog
-        edit_dialog = tk.Toplevel()
+        edit_dialog = make_toplevel()
         edit_dialog.title(_t('gui.academics.assignment_system.group_manager.configuration.windows.edit_group', default="Edit Group"))
         edit_dialog.geometry("400x200")
         edit_dialog.transient(tree.winfo_toplevel())
@@ -451,7 +456,7 @@ class ConfigurationMixin:
             groups_info.append(group_name)
 
         # Create merge dialog
-        merge_dialog = tk.Toplevel()
+        merge_dialog = make_toplevel()
         merge_dialog.title(_t('gui.academics.assignment_system.group_manager.configuration.windows.merge_groups', default="Merge Groups"))
         merge_dialog.geometry("450x300")
         merge_dialog.transient(tree.winfo_toplevel())

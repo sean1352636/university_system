@@ -51,7 +51,7 @@ records (sessions, temporary tokens) are hard-deleted.
 **Execution**: a `RetentionJob` class applies all registered policies for a given db_path.
 The job is designed to run as:
 - A scheduled task via `APScheduler` (in-process, runs nightly at 02:00)
-- A standalone CLI command: `python run.py --school --cli retention run`
+- A standalone CLI command: `python -m education_system --school --cli retention run`
 - A Makefile target: `make retention-run`
 
 **Audit trail**: every deletion or anonymisation is recorded in the existing `audit_log` table

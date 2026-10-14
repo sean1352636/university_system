@@ -1,28 +1,12 @@
-"""Tkinter view for the Accident & Incident Log (Nursery System).
+"""Moved to ``education_system.systems.nursery.interfaces.gui.pastoral.health.accident_log.accident_log_views``.
 
-Delegates to the shared Accident / Incident register view (``accident_report``):
-the Daily-Care "Log" and the Compliance "Report" render the same manager.
+Delivery code (screens and terminal menus) lives under ``interfaces/``.
+This alias keeps the old import path working: the old name *is* the new
+module object, so ``mock.patch`` and ``monkeypatch`` targets still act on
+the real module. Delete it once nothing imports the old path.
 """
+# layout-shim: education_system.systems.nursery.interfaces.gui.pastoral.health.accident_log.accident_log_views
+import importlib as _importlib
+import sys as _sys
 
-from __future__ import annotations
-
-import tkinter as tk
-from tkinter import ttk
-
-from education_system.systems.nursery.domain.pastoral.health.accident_report import (
-    accident_report_views as _impl,
-)
-
-
-def open_manager(host) -> None:
-    """Open the shared Accident / Incident register in the host content pane."""
-    _impl.open_accident_report_window(host)
-
-
-def build(parent: tk.Misc, auth=None) -> ttk.Frame:
-    frame = ttk.Frame(parent, padding=16)
-    ttk.Label(frame, text="Accident & Incident Log",
-              font=("", 14, "bold")).pack(anchor="w", pady=(0, 6))
-    ttk.Label(frame, text="Open the Accident & Incident Log from the navigation menu."
-              ).pack(anchor="w")
-    return frame
+_sys.modules[__name__] = _importlib.import_module("education_system.systems.nursery.interfaces.gui.pastoral.health.accident_log.accident_log_views")

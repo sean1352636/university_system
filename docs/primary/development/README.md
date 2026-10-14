@@ -37,7 +37,7 @@ python -c "from education_system.primary_school.core.paths import DB_FILE; print
 
 ```bash
 # Via the universal launcher (shared login across all 4 systems)
-python run.py
+python -m education_system
 
 # Directly (standalone login)
 python -m education_system.primary_school
@@ -240,7 +240,7 @@ python -m ruff check --fix education_system/primary_school/
 
 ```bash
 # Run the full application (GUI)
-python run.py
+python -m education_system
 
 # Run CLI
 python -m education_system.primary_school.cli.cli_main

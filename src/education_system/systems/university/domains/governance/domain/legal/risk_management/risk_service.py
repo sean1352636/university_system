@@ -206,7 +206,7 @@ class RiskDB:
             if review_date:
                 risk_bus.set_review_date(new_id, review_date)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         return new_id
 

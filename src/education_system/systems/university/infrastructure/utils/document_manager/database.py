@@ -3,6 +3,12 @@ from education_system.systems.university.infrastructure.utils.document_manager._
     get_connection, _t, log_activity,
     ACTIVITY_LOGGER_AVAILABLE,
 )
+from education_system.systems.university.infrastructure.database.schemas.students_table import ensure_students_table
+from education_system.systems.university.infrastructure.database.schemas.users_table import ensure_users_table
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class DatabaseMixin:
@@ -13,41 +19,10 @@ class DatabaseMixin:
             cursor = conn.cursor()
 
             # Users table for authentication
-            cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE,
-                password_hash TEXT,
-                password_salt TEXT,
-                role TEXT,
-                email TEXT,
-                first_name TEXT,
-                last_name TEXT,
-                created_date TEXT,
-                is_active BOOLEAN DEFAULT 1
-            )
-            ''')
+            ensure_users_table(cursor)
 
             # Students table
-            cursor.execute('''
-            CREATE TABLE IF NOT EXISTS students (
-                student_id TEXT PRIMARY KEY,
-                first_name TEXT,
-                last_name TEXT,
-                email_address TEXT,
-                course TEXT,
-                year INTEGER,
-                program TEXT,
-                enrollment_date TEXT,
-                status TEXT DEFAULT 'active',
-                phone TEXT,
-                address TEXT,
-                emergency_contact TEXT,
-                created_date TEXT DEFAULT (datetime('now')),
-                is_active BOOLEAN DEFAULT 1,
-                grade_level TEXT
-            )
-            ''')
+            ensure_students_table(cursor)
 
             # Enhanced document_types table
             cursor.execute('''
@@ -256,25 +231,7 @@ class DatabaseMixin:
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='students'")
             if not cursor.fetchone():
                 print("Creating missing students table")
-                cursor.execute('''
-                CREATE TABLE IF NOT EXISTS students (
-                    student_id TEXT PRIMARY KEY,
-                    first_name TEXT,
-                    last_name TEXT,
-                    email_address TEXT,
-                    course TEXT,
-                    year INTEGER,
-                    program TEXT,
-                    enrollment_date TEXT,
-                    status TEXT DEFAULT 'active',
-                    phone TEXT,
-                    address TEXT,
-                    emergency_contact TEXT,
-                    created_date TEXT DEFAULT (datetime('now')),
-                    is_active BOOLEAN DEFAULT 1,
-                    grade_level TEXT
-                )
-                ''')
+                ensure_students_table(cursor)
 
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='student_documents'")
             if not cursor.fetchone():
@@ -353,32 +310,27 @@ class DatabaseMixin:
                 else:
                     raise Exception("Auth system returned no user_id")
             except Exception as e:
-                # Fallback to direct insertion if auth system not available during initialization
-                # This is ONLY for bootstrap scenarios where the auth system may not be fully initialized
-                print(f"WARNING: Using fallback admin creation (auth system unavailable): {e}")
-                print("NOTE: This fallback uses weaker password hashing and should only occur during initial setup.")
-
-                # Use PBKDF2 for better security instead of SHA256
-                import secrets
-                salt = secrets.token_hex(16)
-                # Simple PBKDF2 implementation
-                password_hash = hashlib.pbkdf2_hmac('sha256', admin_password.encode(), salt.encode(), 100000).hex()
-
-                cursor.execute('''
-                INSERT INTO users (username, password_hash, password_salt, role, email, first_name, last_name, created_date)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ''', ("admin", password_hash, salt, "admin", "admin@school.edu", "System", "Administrator", datetime.now().strftime('%Y-%m-%d')))
-                user_id = cursor.lastrowid
-                admin_created = True
-
-                # Log activity even in fallback mode
-                if ACTIVITY_LOGGER_AVAILABLE:
-                    log_activity('create', 'user', user_id=user_id, details={
-                        'username': 'admin',
-                        'role': 'admin',
-                        'source': 'bootstrap',
-                        'method': 'fallback'
-                    })
+                # There is deliberately no local fallback here any more.
+                #
+                # This used to PBKDF2-hash the real admin password and insert
+                # it into student_records.db's users table — a second
+                # credential store, with none of auth.db's bcrypt, MFA,
+                # lockout or password policy, and invisible to every login
+                # path. The columns it wrote (password_hash, password_salt)
+                # exist on no live database, so the insert has been failing
+                # anyway; the only thing the fallback actually achieved was
+                # to hide the real problem, which is that the central auth
+                # system did not initialise.
+                #
+                # Credentials belong in auth.db. If bootstrap cannot reach
+                # it, that is worth surfacing, not working around.
+                logger.error(
+                    "Central auth system unavailable during document-manager "
+                    "bootstrap; no admin account was created. Fix auth "
+                    "initialisation rather than creating a local one: %s", e)
+                print("ERROR: Could not create the default admin account — "
+                      "the central auth system is unavailable.")
+                admin_created = False
 
             if not admin_created:
                 print("ERROR: Failed to create default admin user")

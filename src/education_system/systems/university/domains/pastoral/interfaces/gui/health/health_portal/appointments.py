@@ -203,7 +203,7 @@ class AppointmentsMixin:
         buttons_frame.grid(row=2, column=0, pady=10)
 
         ttk.Button(buttons_frame, text=_t('gui.pastoral.health.health_portal.appointments.buttons.view_details', default="View Details"), command=self.view_appointment_details).pack(side=tk.LEFT, padx=5)
-        if self.auth.check_permission('manage_health_appointments') or self.auth.check_permission('cancel_own_appointment'):
+        if self.auth.check_permission('manage_health_appointments') or self.auth.check_permission('view_own_appointments'):
             ttk.Button(buttons_frame, text=_t('gui.pastoral.health.health_portal.appointments.buttons.update_status', default="Update Status"), command=self.update_appointment_status).pack(side=tk.LEFT, padx=5)
             ttk.Button(buttons_frame, text=_t('gui.pastoral.health.health_portal.appointments.buttons.cancel', default="Cancel"), command=self.cancel_appointment).pack(side=tk.LEFT, padx=5)
 

@@ -50,7 +50,7 @@ def _enrolled_students_for_module(module_code: str) -> list[str]:
                 except Exception:
                     continue
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return []
 
 def _on_exam_event(**payload: Any) -> None:

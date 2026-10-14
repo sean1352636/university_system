@@ -84,7 +84,7 @@ class BulkOperationsDialog:
         select_frame.pack(fill=tk.X, pady=(0, GuiConfig.PADDING_MEDIUM))
 
         ttk.Button(select_frame, text=_t("common.select_all"), command=self.select_all).pack(side=tk.LEFT)
-        ttk.Button(select_frame, text=_t("common.select_none"), command=self.select_none).pack(side=tk.LEFT, padx=(GuiConfig.PADDING_SMALL, 0))
+        ttk.Button(select_frame, text=_t("common.select_none", default="Select None"), command=self.select_none).pack(side=tk.LEFT, padx=(GuiConfig.PADDING_SMALL, 0))
         ttk.Button(select_frame, text=_t("plagiarism.toggle_selection"), command=self.toggle_selection).pack(side=tk.LEFT, padx=(GuiConfig.PADDING_SMALL, 0))
 
         # Operations
@@ -226,7 +226,7 @@ class BulkOperationsDialog:
                 for i, doc_id in enumerate(selected_docs):
                     try:
                         self.dialog.after(0, lambda p=i/total*100: self.progress_var.set(p))
-                        self.dialog.after(0, lambda: self.status_var.set(f"Checking document {i+1} of {total}..."))
+                        self.dialog.after(0, lambda n=i: self.status_var.set(f"Checking document {n+1} of {total}..."))
 
                         result = self.checker.check_plagiarism(doc_id, self.auth.current_user['id'], threshold)
                         results.append(result)

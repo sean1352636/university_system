@@ -3,6 +3,7 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from .. import *
 from ..scale import GRADE_SYSTEMS, letter_to_gpa, letter_to_percentage, percentage_to_letter
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import make_toplevel
 
 class StatisticsDialogMixin:
     def show_grade_statistics(self):
@@ -51,6 +52,7 @@ class StatisticsDialogMixin:
             """
 
             # Get overall statistics
+            # db-audit: ignore[DBW001] - string literal
             cursor.execute(f"""
                 {all_grades_cte}
                 SELECT COUNT(*) as total_grades,
@@ -66,7 +68,7 @@ class StatisticsDialogMixin:
                 return
 
             # Create statistics dialog
-            stats_dialog = tk.Toplevel(self.root)
+            stats_dialog = make_toplevel(self.root)
             stats_dialog.title(_t('gui.academics.grade_tracking.grades.ui.statistics_dialog.windows.grade_statistics', default="Grade Statistics"))
             stats_dialog.geometry("800x700")
 
@@ -87,6 +89,7 @@ class StatisticsDialogMixin:
             stats_text.insert('end', f"Maximum Percentage: {overall_stats[3]:.2f}%\n\n")
 
             # Grade distribution
+            # db-audit: ignore[DBW001] - string literal
             cursor.execute(f"""
                 {all_grades_cte}
                 SELECT letter_grade, COUNT(*) as count
@@ -109,6 +112,7 @@ class StatisticsDialogMixin:
             assessment_text = scrolledtext.ScrolledText(assessment_frame, width=80, height=35)
             assessment_text.pack(fill='both', expand=True, padx=10, pady=10)
 
+            # db-audit: ignore[DBW001] - string literal
             cursor.execute(f"""
                 {all_grades_cte}
                 SELECT assessment_name, max_points,
@@ -140,6 +144,7 @@ class StatisticsDialogMixin:
             student_text = scrolledtext.ScrolledText(student_frame, width=80, height=35)
             student_text.pack(fill='both', expand=True, padx=10, pady=10)
 
+            # db-audit: ignore[DBW001] - string literal
             cursor.execute(f"""
                 {all_grades_cte}
                 SELECT student_id, first_name, last_name,

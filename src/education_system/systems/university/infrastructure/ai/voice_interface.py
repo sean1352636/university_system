@@ -341,7 +341,7 @@ class VoiceInterface:
             try:
                 self._tts.stop()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
 
 # Convenience functions

@@ -4,9 +4,12 @@ from __future__ import annotations
 
 from typing import Any
 
+from collections.abc import Iterable
+
+from education_system.systems.apprenticeships.domain.training import attendance as attendance_rules
+from education_system.systems.apprenticeships.domain.training.attendance import AttendanceSummary
 from education_system.systems.apprenticeships.domain.training.off_the_job_hours import OTJEntry
 from education_system.systems.apprenticeships.domain.training.sessions import (
-    AttendanceSummary,
     SessionAttendance,
     TrainingPlanItem,
     TrainingSession,
@@ -57,7 +60,7 @@ _SESSION_FIELDS = (
 
 _PLAN_FIELDS = (
     "apprentice_id", "title", "description", "planned_start", "planned_end",
-    "planned_hours", "ksb_codes", "delivery_mode", "status",
+    "planned_hours", "ksb_codes", "delivery_mode", "status", "objective_id",
 )
 
 _ENTRY_FIELDS = (
@@ -98,6 +101,7 @@ def _map_attendance(row: Any) -> SessionAttendance:
         status=col(row, "status", "Present"),
         otj_hours=to_float(col(row, "otj_hours")),
         notes=col(row, "notes"),
+        absence_reason=col(row, "absence_reason"),
         recorded_at=col(row, "recorded_at", ""),
         apprentice_name=col(row, "apprentice_name", ""),
     )
@@ -115,6 +119,7 @@ def _map_plan_item(row: Any) -> TrainingPlanItem:
         ksb_codes=col(row, "ksb_codes"),
         delivery_mode=col(row, "delivery_mode"),
         status=col(row, "status", "Planned"),
+        objective_id=col(row, "objective_id"),
         created_at=col(row, "created_at", ""),
         updated_at=col(row, "updated_at", ""),
     )
@@ -254,6 +259,7 @@ def upsert_attendance(
     status: str,
     otj_hours: float,
     notes: str | None = None,
+    absence_reason: str | None = None,
 ) -> int:
     """Mark the register for one apprentice, replacing any earlier mark.
 
@@ -266,14 +272,15 @@ def upsert_attendance(
     with connect() as conn:
         conn.execute(
             """INSERT INTO session_attendance
-                   (session_id, apprentice_id, status, otj_hours, notes)
-               VALUES (?, ?, ?, ?, ?)
+                   (session_id, apprentice_id, status, otj_hours, notes, absence_reason)
+               VALUES (?, ?, ?, ?, ?, ?)
                ON CONFLICT(session_id, apprentice_id) DO UPDATE SET
-                   status      = excluded.status,
-                   otj_hours   = excluded.otj_hours,
-                   notes       = excluded.notes,
-                   recorded_at = datetime('now')""",
-            (session_id, apprentice_id, status, otj_hours, notes),
+                   status         = excluded.status,
+                   otj_hours      = excluded.otj_hours,
+                   notes          = excluded.notes,
+                   absence_reason = excluded.absence_reason,
+                   recorded_at    = datetime('now')""",
+            (session_id, apprentice_id, status, otj_hours, notes, absence_reason),
         )
         # lastrowid is only meaningful when the INSERT branch ran, so the
         # id is read back rather than assumed.
@@ -306,25 +313,38 @@ def list_attendance_for_apprentice(apprentice_id: int) -> list[SessionAttendance
     return [_map_attendance(r) for r in rows]
 
 
-def attendance_summary(apprentice_id: int) -> AttendanceSummary:
-    """Counts per mark plus the marks themselves.
+def attendance_by_apprentice(
+    apprentice_ids: Iterable[int],
+) -> dict[int, list[SessionAttendance]]:
+    """Every mark for each apprentice, newest first — one query for a cohort.
 
-    Counted in Python off the one list the caller is shown anyway, so the
-    headline figures and the rows beneath them cannot disagree.
+    An apprentice with no marks still gets an empty list, so a caller can
+    tell "never marked" from "not asked about".
     """
+    ids = sorted(set(apprentice_ids))
+    if not ids:
+        return {}
     init_db()
-    records = list_attendance_for_apprentice(apprentice_id)
-    counts = {"Present": 0, "Late": 0, "Absent": 0, "Excused": 0}
-    for record in records:
-        if record.status in counts:
-            counts[record.status] += 1
-    return AttendanceSummary(
-        apprentice_id=apprentice_id,
-        present=counts["Present"],
-        late=counts["Late"],
-        absent=counts["Absent"],
-        excused=counts["Excused"],
-        records=records,
+    qb = QueryBuilder()
+    qb.add_in("sa.apprentice_id", ids)
+    with connect() as conn:
+        rows = conn.execute(
+            f"""{_ATTENDANCE_SELECT}
+                  JOIN training_sessions ts ON ts.session_id = sa.session_id
+                  {qb.where}
+                 ORDER BY ts.session_date DESC, sa.attendance_id DESC""",
+            qb.args,
+        ).fetchall()
+    grouped: dict[int, list[SessionAttendance]] = {i: [] for i in ids}
+    for row in rows:
+        grouped[row["apprentice_id"]].append(_map_attendance(row))
+    return grouped
+
+
+def attendance_summary(apprentice_id: int) -> AttendanceSummary:
+    """Counts per mark plus the marks themselves."""
+    return attendance_rules.summarise(
+        apprentice_id, list_attendance_for_apprentice(apprentice_id)
     )
 
 

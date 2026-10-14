@@ -521,3 +521,43 @@ __all__ = [
     "merge_cases",
     "split_case",
 ]
+
+
+def export_case_rows_csv(out_path, case_ids, *, actor="system"):
+    """Export only the cases named in ``case_ids``.
+
+    ``export_cases_csv`` writes the whole table filtered by date; this writes
+    exactly what the reviewer has on screen after the status / severity /
+    lifecycle filters, which is what the UniGuard prototype's export did.
+    Same columns and same no-free-text rule as the bulk export.
+    """
+    import csv
+
+    ids = [int(i) for i in case_ids]
+    if not ids:
+        return out_path, 0
+    placeholders = ",".join("?" for _ in ids)
+    conn = _connect()
+    cur = conn.cursor()
+    # db-audit: ignore[DBW001] - placeholders are generated '?' only
+    cur.execute(
+        "SELECT "
+        + ", ".join(EXPORT_COLUMNS)
+        + " FROM safeguarding_submissions "
+        + f"WHERE COALESCE(purged,0)=0 AND id IN ({placeholders}) "
+        + "ORDER BY submitted_at ASC",
+        ids,
+    )
+    rows = cur.fetchall()
+    conn.close()
+    with open(out_path, "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(EXPORT_COLUMNS)
+        for r in rows:
+            w.writerow(r)
+    audit_log(
+        actor=actor,
+        action="filtered_export",
+        details=f"rows={len(rows)} path={out_path}",
+    )
+    return out_path, len(rows)

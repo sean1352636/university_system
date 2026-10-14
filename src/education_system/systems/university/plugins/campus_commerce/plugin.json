@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "campus-commerce",
+  "version": "1.0.0",
+  "platform": {
+    "minimum": "9.7.0",
+    "maximumExclusive": "10.0.0"
+  },
+  "capabilities": [
+    "campus.bakery",
+    "campus.bar",
+    "campus.barber",
+    "campus.betting",
+    "campus.butcher",
+    "campus.cafe",
+    "campus.car-rental",
+    "campus.charity-shop",
+    "campus.cinema",
+    "campus.dining",
+    "campus.grocery",
+    "campus.gym",
+    "campus.marketplace",
+    "campus.music-shop",
+    "campus.nailbar",
+    "campus.phone-shop",
+    "campus.printing",
+    "campus.restaurant",
+    "campus.shop",
+    "campus.takeaway",
+    "campus.textbooks"
+  ],
+  "routes": [
+    "education_system.systems.university.plugins.campus_commerce.api.barber_routes:barber_bp",
+    "education_system.systems.university.plugins.campus_commerce.api.betting_routes:betting_bp",
+    "education_system.systems.university.plugins.campus_commerce.api.butcher_routes:butcher_bp",
+    "education_system.systems.university.plugins.campus_commerce.api.carrental_routes:carrental_bp",
+    "education_system.systems.university.plugins.campus_commerce.api.cinema_routes:cinema_bp",
+    "education_system.systems.university.plugins.campus_commerce.api.commerce_routes:commerce_bp",
+    "education_system.systems.university.plugins.campus_commerce.api.dining_routes:dining_bp",
+    "education_system.systems.university.plugins.campus_commerce.api.gym_routes:gym_bp",
+    "education_system.systems.university.plugins.campus_commerce.api.marketplace_routes:marketplace_bp",
+    "education_system.systems.university.plugins.campus_commerce.api.musicshop_routes:musicshop_bp",
+    "education_system.systems.university.plugins.campus_commerce.api.nailbar_routes:nailbar_bp",
+    "education_system.systems.university.plugins.campus_commerce.api.phoneshop_routes:phoneshop_bp",
+    "education_system.systems.university.plugins.campus_commerce.api.printing_routes:printing_bp",
+    "education_system.systems.university.plugins.campus_commerce.api.textbooks_routes:textbooks_bp"
+  ],
+  "optionalDependencies": [
+    "education-system[commerce]"
+  ],
+  "permissions": [
+    "plugin.campus-commerce.use",
+    "plugin.campus-commerce.admin"
+  ],
+  "dataClassifications": [
+    "personal",
+    "confidential"
+  ],
+  "canonicalWrites": [],
+  "support": "demo",
+  "retention": "Transactions: 7 years; preferences: account lifetime plus 90 days",
+  "healthCheck": "plugin database and payment-adapter connectivity",
+  "uninstall": "Export financial records, revoke routes, retain ledger read-only"
+}

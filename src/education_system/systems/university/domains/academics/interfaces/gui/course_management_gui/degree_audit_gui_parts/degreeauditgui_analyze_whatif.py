@@ -1,14 +1,36 @@
 """Methods analyze_whatif through load_appointments."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 from .. import degree_audit_gui_shared as _shared
 globals().update({name: value for name, value in _shared.__dict__.items() if not name.startswith("__")})
 
+# Imported after the namespace splat so it cannot be shadowed.
+from .. import report_widgets as _report
+
+
+def _describe_email_result(sent):
+    """Wording for the confirmation line after a delivery attempt."""
+    ok = sent.get("sent") or []
+    skipped = sent.get("skipped") or []
+    parts = []
+    if ok:
+        parts.append("✓ Confirmation emailed to " + " and ".join(ok))
+    if skipped:
+        parts.append("no email address on file for " + " and ".join(skipped))
+    return "; ".join(parts) if parts else "No confirmation emails were sent."
+
 
 class DegreeAuditGUI:
     def analyze_whatif(self):
-        """Analyze what-if scenario for course switching"""
+        """Analyse switching a student onto another course.
+
+        Opens its own window: the analysis is something you read and act on,
+        and it was previously buried in a fixed-height text box on the tab.
+        """
         try:
             student_id = self._whatif_student_id()
             course_selection = self.whatif_program_combo.get()
@@ -17,89 +39,146 @@ class DegreeAuditGUI:
                 messagebox.showwarning(_("common.warning"), _t('gui.academics.course_management_gui.degree_audit_gui_parts.degreeauditgui_analyze_whatif.dialogs.please_select_a_student_and_target_course', default="Please select a student and target course"))
                 return
 
-            # Extract target course code
             target_course = course_selection.split(':')[1].split('-')[0].strip()
+
+            from education_system.systems.university.domains.academics.domain.services.degree_audit.progress import (
+                earned_progress,
+                module_progress,
+                required_credits_for_course,
+            )
 
             with get_connection() as conn:
                 cursor = conn.cursor()
-
-                # Get student's current course and modules
-                cursor.execute('SELECT course FROM students WHERE student_id = ?', (student_id,))
+                cursor.execute(
+                    'SELECT course, first_name, last_name FROM students WHERE student_id = ?',
+                    (student_id,))
                 student_data = cursor.fetchone()
                 if not student_data:
                     messagebox.showerror(_("common.error"), f"Student {student_id} not found")
                     return
-
                 current_course = student_data[0]
+                student_name = (f"{student_data[1] or ''} {student_data[2] or ''}".strip()
+                                or student_id)
 
-                # Get current modules and credits
-                cursor.execute('''
-                    SELECT COUNT(DISTINCT sm.module_code) as module_count,
-                           SUM(COALESCE(m.credits, 0)) as total_credits
-                    FROM student_modules sm
-                    LEFT JOIN modules m ON sm.module_code = m.module_code
-                    WHERE sm.student_id = ?
-                ''', (student_id,))
+                progress = earned_progress(conn, student_id)
+                required_credits = required_credits_for_course(conn, target_course)
 
-                current_progress = cursor.fetchone()
-                current_modules = current_progress[0] or 0
-                current_credits = current_progress[1] or 0
+                # A programme's modules are the ones tagged with its code in
+                # modules.course. This matched on module_type instead, which
+                # holds 'Core' / 'Elective', so it always counted 0.
+                cursor.execute(
+                    "SELECT module_code, COALESCE(credits, 0) FROM modules WHERE course = ? "
+                    "AND COALESCE(module_code, '') <> '' AND COALESCE(is_active, 1) = 1",
+                    (target_course,))
+                target_credits = {row[0]: row[1] for row in cursor.fetchall()}
+                target_modules = len(target_credits)
 
-                # Get modules of the target course type
-                cursor.execute('''
-                    SELECT COUNT(*) as available_modules
-                    FROM modules
-                    WHERE module_type = ? AND is_active = 1
-                ''', (target_course,))
+                # Seeded modules record no credits; value them at the target
+                # programme's share, not the student's current programme's.
+                target_share = (round(required_credits / target_modules)
+                                if required_credits and target_modules else 0)
 
-                target_modules = cursor.fetchone()[0] or 0
+                # Modules already taken that also belong to the target course.
+                # Read through module_progress so a mark recorded in Grade
+                # Tracking (module_grades) shows here, not 'Not graded'.
+                carried, carried_credits = [], 0.0
+                for r in module_progress(conn, student_id):
+                    if r["module_code"] not in target_credits:
+                        continue
+                    carried.append((
+                        r["module_code"], r["module_name"],
+                        "Completed" if r["earned"] and r["status"].lower() == "enrolled"
+                        else r["status"],
+                        r["grade"]))
+                    if r["earned"]:
+                        carried_credits += target_credits[r["module_code"]] or target_share
 
-                # Calculate overlap - modules that match target course
-                cursor.execute('''
-                    SELECT COUNT(*) as matching_modules
-                    FROM student_modules sm
-                    JOIN modules m ON sm.module_code = m.module_code
-                    WHERE sm.student_id = ? AND m.module_type = ?
-                ''', (student_id, target_course))
-
-                matching_modules = cursor.fetchone()[0] or 0
-
-            # Calculate analysis
-            standard_required = 40  # Typical number of modules for a degree
-            completion_pct = (matching_modules / standard_required * 100) if standard_required > 0 else 0
-            additional_needed = max(0, standard_required - matching_modules)
-
-            self.whatif_results_text.delete('1.0', tk.END)
-            self.whatif_results_text.insert(tk.END, "WHAT-IF SCENARIO ANALYSIS\n")
-            self.whatif_results_text.insert(tk.END, "=" * 60 + "\n\n")
-            self.whatif_results_text.insert(tk.END, f"Student ID: {student_id}\n")
-            self.whatif_results_text.insert(tk.END, f"Current Course: {current_course}\n")
-            self.whatif_results_text.insert(tk.END, f"Target Course: {target_course}\n\n")
-            self.whatif_results_text.insert(tk.END, f"Current Modules Completed: {current_modules}\n")
-            self.whatif_results_text.insert(tk.END, f"Current Credits Earned: {current_credits}\n\n")
-            self.whatif_results_text.insert(tk.END, f"Modules Matching Target Course: {matching_modules}\n")
-            self.whatif_results_text.insert(tk.END, f"Available {target_course} Modules: {target_modules}\n")
-            self.whatif_results_text.insert(tk.END, f"Additional Modules Needed: {additional_needed}\n")
-            self.whatif_results_text.insert(tk.END, f"Completion Percentage: {completion_pct:.1f}%\n\n")
-
-            if completion_pct >= 50:
-                self.whatif_results_text.insert(tk.END,
-                    "RECOMMENDATION: Feasible\n\n"
-                    f"You have completed over half of the requirements for {target_course}. "
-                    "Switching courses is feasible with manageable additional coursework.")
-            elif completion_pct >= 25:
-                self.whatif_results_text.insert(tk.END,
-                    "RECOMMENDATION: Moderate Effort Required\n\n"
-                    f"You have completed {completion_pct:.1f}% of requirements for {target_course}. "
-                    "Switching is possible but will require significant additional coursework.")
-            else:
-                self.whatif_results_text.insert(tk.END,
-                    "RECOMMENDATION: Consider Carefully\n\n"
-                    f"You have completed only {completion_pct:.1f}% of requirements for {target_course}. "
-                    "Switching courses would require substantial additional coursework.")
+            self._show_whatif_results(
+                student_id=student_id, student_name=student_name,
+                current_course=current_course, target_course=target_course,
+                progress=progress, required_credits=required_credits,
+                target_modules=target_modules, carried=carried,
+                carried_credits=carried_credits)
 
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Failed to analyze scenario: {e}")
+
+    def _show_whatif_results(self, *, student_id, student_name, current_course,
+                             target_course, progress, required_credits,
+                             target_modules, carried, carried_credits):
+        """Render the what-if analysis in its own window."""
+        window, surface = _report.report_window(
+            self.root, f"What-if: {current_course} → {target_course}", "880x660")
+
+        _report.banner(surface,
+                       f"Switching to {target_course}",
+                       f"{student_name} ({student_id}) — currently on {current_course}")
+
+        # Only credit from passed modules that belong to the target counts.
+        # This used to be every credit the student had earned, so switching
+        # to an unrelated programme claimed credit for modules that list
+        # below as not carrying across.
+        remaining = max(0, required_credits - carried_credits)
+        pct = (carried_credits / required_credits * 100) if required_credits else 0.0
+
+        _report.stat_strip(surface, [
+            (f"{carried_credits:.0f}", "Credits carried across"),
+            (f"{required_credits}", f"Required for {target_course}"),
+            (f"{remaining:.0f}", "Still to earn",
+             _report.OK if remaining == 0 else _report.WARN),
+            (f"{pct:.1f}%", "Toward the target"),
+        ])
+
+        body = _report.card(surface, "Current standing")
+        _report.kv_grid(body, [
+            ("Current course", current_course or "—"),
+            ("Target course", target_course),
+            ("Modules enrolled", progress["modules_enrolled"]),
+            ("Modules passed", progress["modules_completed"]),
+            ("Modules marked so far", progress["modules_graded"]),
+            ("Modules available on target", target_modules),
+        ])
+
+        if carried:
+            _report.card(surface, f"Modules that carry across to {target_course}",
+                         accent="#16a34a")
+            _report.table(
+                surface, ("Code", "Module", "Status", "Grade"),
+                [(c, n or "—", st or "—", g or "Not graded") for c, n, st, g in carried],
+                widths={"Code": 110, "Module": 280, "Status": 110, "Grade": 100})
+        else:
+            body = _report.card(surface, f"Modules that carry across to {target_course}",
+                                accent=_report.MUTED)
+            tk.Label(body,
+                     text="None of this student's modules belong to the target "
+                          "course, so the switch would start from zero.",
+                     bg=_report.CARD, fg=_report.MUTED, font=(_report.FONT, 9),
+                     wraplength=620, justify="left").pack(anchor="w")
+
+        # The recommendation reads off credits carried, not a module count
+        # against a made-up "40 modules for a degree" constant.
+        if progress["modules_graded"] == 0:
+            _report.verdict(
+                surface, None, "No marked work yet", neutral=True,
+                detail=(f"{student_name} has no graded modules, so nothing has "
+                        f"been earned to carry across. The comparison below is "
+                        f"based on enrolment only and will change once work is "
+                        f"marked."))
+        elif pct >= 50:
+            _report.verdict(surface, True, "Feasible",
+                            f"Over half of {target_course}'s credits are already earned. "
+                            f"About {remaining:.0f} credits would remain.")
+        elif pct >= 25:
+            _report.verdict(surface, False, "Possible, with significant extra work",
+                            f"{pct:.1f}% of {target_course}'s credits are earned; "
+                            f"about {remaining:.0f} credits would remain.")
+        else:
+            _report.verdict(surface, False, "Consider carefully",
+                            f"Only {pct:.1f}% of {target_course}'s credits are earned. "
+                            f"About {remaining:.0f} credits would remain, which is close "
+                            f"to starting the course afresh.")
+
+        window.lift()
 
     def _lookup_student_for_appointment(self, entry_widget):
         """Lookup student from database for appointments"""
@@ -324,49 +403,94 @@ class DegreeAuditGUI:
         """
         root = getattr(self, "root", None)
 
+        def _status(text, colour):
+            """Update the confirmation line under the schedule form."""
+            label = getattr(self, "appointment_email_status", None)
+            if label is None:
+                return
+            try:
+                label.config(text=text, foreground=colour)
+            except Exception:
+                logger.debug("Suppressed exception", exc_info=True)
+
         def _notify_failure(err):
+            _status(f"⚠ Appointment saved, but the confirmation emails could "
+                    f"not be sent: {err}", "#dc2626")
             messagebox.showwarning(
                 _("common.warning"),
                 "The appointment was saved, but the confirmation email could "
                 f"not be sent:\n{err}",
             )
 
+        _status("Sending confirmation emails…", "#7f8c8d")
+
         def _worker():
             try:
-                self._send_appointment_emails(**kwargs)
+                sent = self._send_appointment_emails(**kwargs)
             except Exception as email_err:  # noqa: BLE001 - best-effort delivery
                 print(f"Appointment email notification failed: {email_err}")
                 if root is not None:
                     try:
                         root.after(0, lambda err=email_err: _notify_failure(err))
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
+            else:
+                if root is not None:
+                    try:
+                        root.after(0, lambda s=sent: _status(_describe_email_result(s),
+                                                             "#16a34a" if s.get("sent")
+                                                             else "#d97706"))
+                    except Exception:
+                        logger.debug("Suppressed exception", exc_info=True)
 
         threading.Thread(target=_worker, name="advising-email", daemon=True).start()
 
+    def _is_admin(self):
+        """True for a role that may see everyone's appointments."""
+        user = getattr(self.auth, "current_user", None) if self.auth else None
+        role = str((user or {}).get("role", "")).strip().lower()
+        return role in ("admin", "superadmin", "staff")
+
+    def _fill_appointments(self, appointments, scope_text):
+        self.appointments_tree.delete(*self.appointments_tree.get_children())
+        for appt in appointments:
+            self.appointments_tree.insert('', tk.END, values=(
+                appt.get('appointment_id', ''),
+                appt.get('student_id', ''),
+                appt.get('advisor_id', ''),
+                appt.get('appointment_date', ''),
+                appt.get('appointment_time', ''),
+                appt.get('appointment_type', ''),
+                appt.get('topic', ''),
+                appt.get('status', '')
+            ))
+        label = getattr(self, "appointments_scope", None)
+        if label is not None:
+            label.config(text=f"{scope_text} — {len(appointments)} appointment(s)")
+
     def load_appointments(self):
-        """Load advising appointments for current user"""
+        """Load the signed-in user's advising appointments."""
         try:
             student_id = self.auth.current_user.get('username') if self.auth.current_user else None
             if not student_id:
                 messagebox.showwarning(_("common.warning"), _("degree_audit.messages.no_user_logged_in"))
                 return
+            self._fill_appointments(
+                AdvisingAppointmentManager.get_student_appointments(student_id),
+                f"Showing appointments for {student_id}")
+        except Exception as e:
+            messagebox.showerror(_("common.error"), _("degree_audit.messages.failed_load_appointments").format(error=e))
 
-            self.appointments_tree.delete(*self.appointments_tree.get_children())
-
-            appointments = AdvisingAppointmentManager.get_student_appointments(student_id)
-
-            for appt in appointments:
-                self.appointments_tree.insert('', tk.END, values=(
-                    appt.get('appointment_id', ''),
-                    appt.get('student_id', ''),
-                    appt.get('advisor_id', ''),
-                    appt.get('appointment_date', ''),
-                    appt.get('appointment_time', ''),
-                    appt.get('appointment_type', ''),
-                    appt.get('topic', ''),
-                    appt.get('status', '')
-                ))
-
+    def load_all_appointments(self):
+        """Load every appointment — administrators only."""
+        if not self._is_admin():
+            messagebox.showwarning(
+                _("common.warning"),
+                "Only administrators can view all appointments.")
+            return
+        try:
+            self._fill_appointments(
+                AdvisingAppointmentManager.get_all_appointments(),
+                "Showing all appointments")
         except Exception as e:
             messagebox.showerror(_("common.error"), _("degree_audit.messages.failed_load_appointments").format(error=e))

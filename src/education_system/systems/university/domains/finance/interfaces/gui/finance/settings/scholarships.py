@@ -1,4 +1,5 @@
 """Scholarship management: creation, awarding, browsing, and reporting."""
+from education_system.systems.university.shell.gui import report_view as _rv
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -330,7 +331,7 @@ class ScholarshipsMixin:
         output_frame = ttk.LabelFrame(dialog, text=_("finance_gui.settings.report_output_frame"), padding=15)
         output_frame.pack(fill='both', expand=True, padx=20, pady=10)
 
-        report_output = ScrolledText(output_frame, height=20, width=80, font=('Courier', 10))
+        report_output = _rv.TextReportView(output_frame, height=20, width=80, font=('Courier', 10))
         report_output.pack(fill='both', expand=True)
 
         def generate_scholarship_report():

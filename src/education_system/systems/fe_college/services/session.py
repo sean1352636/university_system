@@ -136,6 +136,13 @@ class CollegeSession:
                 identity.staff = self._find_staff(email, username)
             if view == "student":
                 identity.student = self._find_student(email, username)
+                if identity.student is not None and resolved_role in ("student", "alumni"):
+                    # Sign-in is where a login from before automatic linking
+                    # meets it. The platform re-checks the pairing exactly
+                    # (never the fuzzy search above), so this can only link
+                    # a login to a learner it unmistakably belongs to.
+                    from education_system.platform.cross_system import login_links
+                    login_links.try_sync_username(username)
         except Exception:
             logger.exception("Could not resolve FE College record for %s", username)
         return identity

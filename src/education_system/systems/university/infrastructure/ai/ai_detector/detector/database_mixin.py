@@ -19,6 +19,7 @@ from education_system.systems.university.infrastructure.ai.ai_detector.features 
 from education_system.systems.university.infrastructure.ai.ai_detector.ml import AdvancedMLTrainer
 from education_system.systems.university.infrastructure.ai.ai_detector.visualization import VisualAnalyzer
 from education_system.systems.university.infrastructure.ai.ai_detector.integration import APIGateway, ComplianceManager
+from education_system.systems.university.infrastructure.database.schemas.users_table import ensure_users_table
 
 
 class DatabaseMixin:
@@ -129,15 +130,7 @@ class DatabaseMixin:
             ''')
 
             # Users table
-            cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                password_hash TEXT NOT NULL,
-                role TEXT NOT NULL,
-                created_at TEXT NOT NULL
-            )
-            ''')
+            ensure_users_table(cursor)
 
             conn.commit()
             conn.close()
@@ -320,7 +313,7 @@ class DatabaseMixin:
         try:
             detector.fix_database_schema()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         return detector
 

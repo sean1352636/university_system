@@ -1,0 +1,81 @@
+{
+  "template_id": "trip_registration_receipt",
+  "category": "mobility",
+  "name": "Trip Registration Receipt",
+  "description": "Payment receipt sent to a participant after they register and pay for a trip",
+  "version": "1.0.0",
+  "subject": "Receipt for {trip_name} - £{amount_paid}",
+  "body_text": "Dear {participant_name},\n\nThank you for registering for {trip_name}. Your payment has been received and your place is confirmed.\n\n{separator}\nTRIP DETAILS\n{separator}\nTrip:         {trip_name}\nDestination:  {destination}\nDates:        {trip_dates}\nRegistration: {registration_reference}\n\n{separator}\nPAYMENT\n{separator}\nAmount paid:  £{amount_paid}\nMethod:       {payment_method}\nReference:    {payment_reference}\nDate:         {payment_date}\n{balance_line}\n{separator}\n\nPlease keep this receipt for your records. If any of the details above are wrong, contact the trips office before the departure date.\n\n{signature}",
+  "body_html": "<html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Trip Registration Receipt</title></head><body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'><div style='max-width: 640px; margin: 0 auto; padding: 20px;'><h2 style='color: #2c5282; border-bottom: 2px solid #2c5282; padding-bottom: 10px;'>Trip Registration Receipt</h2><p>Dear <strong>{participant_name}</strong>,</p><p>Thank you for registering for <strong>{trip_name}</strong>. Your payment has been received and your place is confirmed.</p><h3 style='color: #2c5282; margin-bottom: 6px;'>Trip details</h3><table style='width: 100%; border-collapse: collapse; margin-bottom: 20px;'><tr><td style='padding: 6px 0; color: #718096; width: 40%;'>Trip</td><td style='padding: 6px 0;'><strong>{trip_name}</strong></td></tr><tr><td style='padding: 6px 0; color: #718096;'>Destination</td><td style='padding: 6px 0;'>{destination}</td></tr><tr><td style='padding: 6px 0; color: #718096;'>Dates</td><td style='padding: 6px 0;'>{trip_dates}</td></tr><tr><td style='padding: 6px 0; color: #718096;'>Registration</td><td style='padding: 6px 0;'>{registration_reference}</td></tr></table><h3 style='color: #2c5282; margin-bottom: 6px;'>Payment</h3><table style='width: 100%; border-collapse: collapse; background-color: #f7fafc; border: 1px solid #cbd5e0; border-radius: 4px;'><tr><td style='padding: 10px 12px; color: #718096; width: 40%;'>Amount paid</td><td style='padding: 10px 12px; font-size: 1.15em;'><strong>£{amount_paid}</strong></td></tr><tr><td style='padding: 10px 12px; color: #718096;'>Method</td><td style='padding: 10px 12px;'>{payment_method}</td></tr><tr><td style='padding: 10px 12px; color: #718096;'>Reference</td><td style='padding: 10px 12px;'>{payment_reference}</td></tr><tr><td style='padding: 10px 12px; color: #718096;'>Date</td><td style='padding: 10px 12px;'>{payment_date}</td></tr></table><p style='color: #718096; font-size: 0.9em;'>{balance_line}</p><p style='color: #718096; font-size: 0.9em; font-style: italic;'>Please keep this receipt for your records. If any of the details above are wrong, contact the trips office before the departure date.</p><p style='margin-top: 30px;'>{signature}</p></div></body></html>",
+  "variables": {
+    "participant_name": {
+      "type": "string",
+      "description": "Name of the person who registered",
+      "required": true
+    },
+    "trip_name": {
+      "type": "string",
+      "description": "Name of the trip",
+      "required": true
+    },
+    "destination": {
+      "type": "string",
+      "description": "Trip destination",
+      "required": true
+    },
+    "trip_dates": {
+      "type": "string",
+      "description": "Trip dates, already formatted (a single date for single-day trips)",
+      "required": true
+    },
+    "registration_reference": {
+      "type": "string",
+      "description": "Registration/participant reference for this booking",
+      "required": true
+    },
+    "amount_paid": {
+      "type": "string",
+      "description": "Amount paid, formatted to two decimal places without the currency symbol",
+      "required": true
+    },
+    "payment_method": {
+      "type": "string",
+      "description": "How the participant paid (Cash, Card, Student finance account)",
+      "required": true
+    },
+    "payment_reference": {
+      "type": "string",
+      "description": "Finance transaction or payment reference",
+      "required": true
+    },
+    "payment_date": {
+      "type": "string",
+      "description": "Timestamp the payment was taken",
+      "required": true
+    },
+    "balance_line": {
+      "type": "string",
+      "description": "Remaining student finance account balance; blank for cash and card payments",
+      "required": false,
+      "default": ""
+    },
+    "separator": {
+      "type": "string",
+      "description": "Visual separator for the text version",
+      "required": false,
+      "default": "----------------------------------------------------------------------"
+    },
+    "signature": {
+      "type": "string",
+      "description": "Email signature; supplied by the renderer when omitted",
+      "required": false
+    }
+  },
+  "tags": [
+    "trip",
+    "receipt",
+    "payment",
+    "registration",
+    "mobility"
+  ]
+}

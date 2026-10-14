@@ -71,6 +71,11 @@ from education_system.systems.university.domains.safeguarding.application.servic
     risk_trend,
     leadership_stats,
 )
+from education_system.systems.university.domains.safeguarding.application.services.register import (
+    student_register,
+    category_breakdown,
+    dashboard_counters,
+)
 from education_system.systems.university.domains.safeguarding.application.services.submissions import (
     save_submission,
     resolve_content,
@@ -104,6 +109,7 @@ from education_system.systems.university.domains.safeguarding.application.servic
     close_case,
     EXPORT_COLUMNS,
     export_cases_csv,
+    export_case_rows_csv,
     merge_cases,
     split_case,
 )
@@ -236,6 +242,7 @@ __all__ = [
     "can",
     "can_view_whistleblowing",
     "canonical_subject_id",
+    "category_breakdown",
     "check_mandatory_reporting",
     "clear_draft",
     "close_case",
@@ -246,12 +253,14 @@ __all__ = [
     "create_wellbeing_appointment",
     "cumulative_concern",
     "daily_dsl_digest",
+    "dashboard_counters",
     "decrypt_to_temp",
     "disable_webhook",
     "due_reviews",
     "emit_webhook_event",
     "encrypt_and_store",
     "escalation_notify_dsl",
+    "export_case_rows_csv",
     "export_cases_csv",
     "fetch_submissions",
     "fetch_user_submissions",
@@ -298,6 +307,7 @@ __all__ = [
     "set_lifecycle_state",
     "split_case",
     "stuck_case_alerts",
+    "student_register",
     "tr",
     "training_compliance_summary",
     "training_status",

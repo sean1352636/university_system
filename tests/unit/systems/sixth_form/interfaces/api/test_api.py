@@ -8,20 +8,20 @@ import pytest
 # ── tokens ───────────────────────────────────────────────────────────
 
 def test_token_round_trip():
-    from education_system.systems.sixth_form.interfaces.api import tokens
+    from education_system.api.sixth_form import tokens
     tok = tokens.issue(42, now=1000.0)
     assert tokens.verify(tok, now=1000.0) == 42
 
 
 def test_token_expiry():
-    from education_system.systems.sixth_form.interfaces.api import tokens
+    from education_system.api.sixth_form import tokens
     tok = tokens.issue(7, ttl=10, now=1000.0)
     assert tokens.verify(tok, now=1005.0) == 7
     assert tokens.verify(tok, now=2000.0) is None        # expired
 
 
 def test_token_tamper_detected():
-    from education_system.systems.sixth_form.interfaces.api import tokens
+    from education_system.api.sixth_form import tokens
     tok = tokens.issue(1, now=1000.0)
     payload, sig = tok.split(".", 1)
     forged = payload + ".AAAA"
@@ -33,7 +33,7 @@ def test_token_tamper_detected():
 
 @pytest.fixture
 def client(feature_db):
-    from education_system.systems.sixth_form.interfaces.api import create_app
+    from education_system.api.sixth_form import create_app
     app = create_app()
     app.config.update(TESTING=True)
     return app.test_client()

@@ -1,4 +1,7 @@
 """Methods _process_approval through _new_request."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -243,7 +246,7 @@ class AdminToolsGUI:
                     self.req_tree.insert("", tk.END, values=values, tags=(priority,))
 
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _on_request_select(self, event):
         """Handle request selection."""
@@ -286,7 +289,7 @@ Created: {row[13]}
                     self.req_detail_text.config(state=tk.DISABLED)
 
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _new_request(self):
         """Create a new interdepartmental request."""

@@ -14,7 +14,7 @@ For the domain itself — roles, gateway, EPA, off-the-job rules — see
 The house 4-layer shape, with one addition:
 
 ```
-interfaces/    CLI, GUI  (and api/, portals/ — scaffolding, see below)
+interfaces/    CLI, GUI  (HTTP routes live outside, see below)
     ↓
 services/      Actor-first orchestration. The only write path.
     ↓
@@ -34,9 +34,9 @@ Two rules keep the boundary sharp:
   lets the rules be tested without a database and reused by the CLI, the
   GUI and the cross-system adapter alike.
 
-`pathways/` and `integrations/` sit alongside these rather than inside
-them. Both are currently scaffolding except
-`integrations/cross_system_adapter.py`, which is live.
+Adapters onto other systems — the cross-system handover, degree events
+and the read-only university gateway — are infrastructure, in
+`infrastructure/integrations/`.
 
 ## Where each concern lives
 
@@ -63,16 +63,19 @@ the whole point, so do not "helpfully" fall back to the full cohort.
 `config.EPAO_EXCLUSIVE` — `gateway.approve` and `epa.grade` — are
 subtracted from the admin role. That is not an oversight to correct.
 
-## Scaffolding
+## No scaffolding
 
-`interfaces/api/` (24 modules) and `interfaces/portals/` (38 modules)
-are empty: a docstring each, no route registration, nothing importing
-them. Apprenticeships is therefore absent from the unified REST API and
-from the web portal. `pathways/` and three of the four
-`integrations/*_gateway.py` modules are the same.
+The package used to carry about 110 placeholder files: star re-export
+shims under `domain/`, docstring-only `interfaces/portals/` and
+`pathways/` trees, and three empty `integrations/*_gateway.py` modules.
+They were cleared out in September 2026 because they made the tree look
+far larger than the working system. `tests/unit/systems/apprenticeships/test_layout.py`
+now fails on either kind, so a planned module is written up here rather
+than stubbed.
 
-They are directory shape agreed up front, not half-finished code. Adding
-any of them is new work with its own design decisions, not wiring.
+The HTTP routes live outside the package, in
+`src/education_system/api/apprenticeships/`, and answer 501 until each
+is backed by a service. There is no web portal.
 
 ## fe_college
 

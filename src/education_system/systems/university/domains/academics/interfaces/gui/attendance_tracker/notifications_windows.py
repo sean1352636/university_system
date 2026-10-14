@@ -71,6 +71,7 @@ def _ensure_parent_notifications_columns(conn):
             if col in existing:
                 continue
             try:
+                # db-audit: ignore[DBW001] - module constant
                 cur.execute(
                     f"ALTER TABLE parent_notifications ADD COLUMN {col} {decl}"
                 )

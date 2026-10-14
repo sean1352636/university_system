@@ -132,13 +132,10 @@ class HousingGUI:
         toolbar.grid(row=0, column=0, sticky='ew')
         ttk.Button(toolbar, text=_t("housing.return_to_main"), command=self.return_to_main_menu).pack(side=tk.LEFT)
 
-        # Language button
-        self.lang_btn = ttk.Button(
-            toolbar,
-            text=f"{_t('menu.language')}: {get_current_language_name()}",
-            command=self.change_language
-        )
-        self.lang_btn.pack(side=tk.RIGHT, padx=5)
+        # The language switcher has been removed from Housing to match the
+        # housing CLI, which no longer offers it either. change_language() and
+        # refresh_ui_text() are kept because the rest of the window still uses
+        # them when the language is changed from the main university menu.
 
         # Main frame
         main_frame = ttk.Frame(self.root, padding="10")
@@ -643,7 +640,7 @@ class HousingGUI:
             try:
                 conn.close()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         self._render_student_quick_actions(inner)
 

@@ -4,6 +4,7 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 from .. import *
 from ..scale import GRADE_SYSTEMS, letter_to_gpa, letter_to_percentage, percentage_to_letter
 from .grade_view import safe_combo_update, safe_grab_set
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import make_toplevel
 
 class EditGradeDialogMixin:
     def edit_grade_dialog(self):
@@ -78,7 +79,7 @@ class EditGradeDialogMixin:
             display_score = grade_data[3]
             max_points = grade_data[9]
 
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.academics.grade_tracking.grades.ui.edit_dialog.windows.edit_grade', default="Edit Grade"))
         dialog.geometry("500x550")
         dialog.transient(self.root)
@@ -161,6 +162,7 @@ class EditGradeDialogMixin:
                 if IMMUTABLE_AUDIT_AVAILABLE:
                     user_id, session_id = get_gui_context()
                     require_grade_audit(
+                        conn=cursor.connection,
                         action=AuditAction.RECORD_UPDATE,
                         user_id=user_id,
                         resource_type='grade',

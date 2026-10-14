@@ -8,6 +8,7 @@ from education_system.systems.university.domains.academics.interfaces.gui.course
 from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.waitlists.add_dialog import AddToWaitlistDialog
 from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.waitlists.view_dialog import ViewWaitlistsDialog
 from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.waitlists.process_dialog import ProcessWaitlistDialog
+from education_system.systems.university.domains.academics.interfaces.gui._field_pickers import attach_picker
 
 
 def show_add_waitlist(self):
@@ -59,7 +60,8 @@ def add_to_waitlist_gui(self):
 
     ttk.Label(student_frame, text=_t('gui.academics.course_management_gui.waitlists.actions.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky=tk.W, pady=5)
     student_id_var = tk.StringVar()
-    student_id_entry = ttk.Entry(student_frame, textvariable=student_id_var, width=20)
+    student_id_entry = attach_picker(student_frame, 'student',
+                                     id_var=student_id_var, width=32)
     student_id_entry.grid(row=0, column=1, sticky=tk.W, pady=5, padx=5)
 
     # Add lookup button

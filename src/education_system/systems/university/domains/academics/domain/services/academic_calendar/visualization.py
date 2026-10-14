@@ -5,7 +5,7 @@ from collections import defaultdict
 from typing import Dict, List, Tuple
 from education_system.systems.university.infrastructure.logging.log_config import configure_logging
 from education_system.systems.university.domains.academics.domain.services.academic_calendar.exceptions import PermissionError, ValidationError
-from education_system.systems.university.domains.academics.domain.services.academic_calendar.config import ValidationUtils
+from education_system.systems.university.domains.academics.domain.services.academic_calendar.config import CalendarConfig, ValidationUtils
 
 logger = configure_logging(name=__name__)
 
@@ -44,7 +44,7 @@ class EnhancedCalendarVisualizationManager:
             # Get events for academic year
             query = '''
             SELECT e.*, s.name as semester_name
-            FROM academic_calendar_events e
+            FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') e
             LEFT JOIN semesters s ON (e.date BETWEEN s.start_date AND s.end_date)
             WHERE s.academic_year_id = ?
             ORDER BY COALESCE(e.date, e.date_start)
@@ -145,8 +145,8 @@ class EnhancedCalendarVisualizationManager:
                    e1.date_start as event1_start, e1.date_end as event1_end,
                    e2.id as event2_id, e2.name as event2_name,
                    e2.date_start as event2_start, e2.date_end as event2_end
-            FROM academic_calendar_events e1
-            JOIN academic_calendar_events e2 ON e1.id != e2.id
+            FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') e1
+            JOIN (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') e2 ON e1.id != e2.id
             WHERE e1.date_start BETWEEN ? AND ?
             AND e2.date_start BETWEEN ? AND ?
             AND e1.date_start < e2.date_end
@@ -221,6 +221,166 @@ class DataVisualizationManager:
         self.db_manager = db_manager
         self.auth_manager = auth_manager
 
+    def _daily_event_counts(self, year: int):
+        """Per-day event counts for *year*, as (dates, counts) over every day.
+
+        Shared by the interactive (plotly) and image (matplotlib) renderers so
+        the two cannot disagree about what they are showing.
+        """
+        current_year = datetime.now().year
+        if not (current_year - 5 <= year <= current_year + 5):
+            raise ValidationError("Year must be within 5 years of current year")
+
+        start_date = f"{year}-01-01"
+        end_date = f"{year}-12-31"
+
+        query = """
+            SELECT DATE(COALESCE(e.date, e.date_start)) as event_date, COUNT(*) as event_count
+            FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') e
+            WHERE (e.date BETWEEN ? AND ?)
+            OR (e.date_start BETWEEN ? AND ?)
+            GROUP BY DATE(COALESCE(e.date, e.date_start))
+            ORDER BY event_date
+        """
+
+        rows = self.db_manager.execute_query(query, (start_date, end_date, start_date, end_date))
+        data = {row['event_date']: row['event_count'] for row in rows}
+
+        start = datetime(year, 1, 1)
+        dates = []
+        event_counts = []
+
+        days_in_year = 366 if cal.isleap(year) else 365
+        for i in range(days_in_year):
+            current_date = start + timedelta(days=i)
+            dates.append(current_date)
+            event_counts.append(data.get(current_date.strftime("%Y-%m-%d"), 0))
+
+        return dates, event_counts
+
+    def create_calendar_heatmap_image(self, year: int, output_path: str) -> Tuple[bool, str]:
+        """Render the year's event density as a PNG.
+
+        The plotly version below produces an interactive HTML document, which
+        a terminal cannot display — printing it dumps a screenful of markup.
+        This one writes a real image the CLI can hand to the image viewer.
+        """
+        if not self.auth_manager.check_permission('export_data'):
+            raise PermissionError("Insufficient permissions to create visualizations")
+
+        if not MATPLOTLIB_AVAILABLE:
+            return False, "matplotlib is required to produce chart images"
+
+        try:
+            dates, event_counts = self._daily_event_counts(year)
+
+            # Week-of-year across, day-of-week down — the familiar contribution
+            # -graph layout. Days with no events stay blank rather than being
+            # drawn as the bottom of the colour scale, so the eye only tracks
+            # days that actually have something on them.
+            grid = [[float('nan')] * 54 for _ in range(7)]
+            for date, count in zip(dates, event_counts):
+                if count:
+                    grid[date.weekday()][int(date.strftime("%U"))] = count
+
+            busiest = max(event_counts, default=0)
+            active_days = sum(1 for c in event_counts if c)
+
+            # Event counts per day span orders of magnitude — a bulk import can
+            # put hundreds on one day while a normal day has one or two. On a
+            # linear scale that single day saturates the ramp and every other
+            # day reads as empty, so the scale is logarithmic.
+            fig, ax = plt.subplots(figsize=(16, 4))
+            cmap = plt.get_cmap('viridis').copy()
+            cmap.set_bad('#f2f2f2')  # days with no events
+
+            if busiest > 1:
+                from matplotlib.colors import LogNorm
+                mesh = ax.imshow(grid, aspect='auto', cmap=cmap, interpolation='nearest',
+                                 norm=LogNorm(vmin=1, vmax=busiest))
+            else:
+                mesh = ax.imshow(grid, aspect='auto', cmap=cmap, interpolation='nearest',
+                                 vmin=0, vmax=max(busiest, 1))
+
+            ax.set_yticks(range(7))
+            ax.set_yticklabels(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])
+            ax.set_xticks(range(0, 54, 4))
+            ax.set_xlabel('Week of year')
+            ax.set_title(f'Academic Calendar Activity Heatmap - {year}   '
+                         f'({sum(event_counts)} events across {active_days} days; '
+                         f'busiest day {busiest})')
+
+            fig.colorbar(mesh, ax=ax, label='Events per day (log scale)')
+            fig.tight_layout()
+            fig.savefig(output_path, dpi=150, bbox_inches='tight')
+            plt.close(fig)
+
+            total = sum(event_counts)
+            return True, f"Heatmap of {total} events saved to {output_path}"
+
+        except Exception as e:
+            logger.error(f"Failed to create heatmap image: {e}")
+            return False, f"Error creating heatmap image: {str(e)}"
+
+    def create_event_distribution_image(self, timeframe: str = 'month', output_path: str = None) -> Tuple[bool, str]:
+        """Render the event-type split as a PNG bar chart.
+
+        A bar chart rather than a pie: the counts are a magnitude comparison,
+        and one type routinely holds most of the events, which turns a pie into
+        one enormous slice with the rest as unreadable slivers and overlapping
+        labels. Bars are sorted longest-first, share a single hue (magnitude is
+        the length, not the colour) and carry their count directly.
+        """
+        if not self.auth_manager.check_permission('export_data'):
+            raise PermissionError("Insufficient permissions to create visualizations")
+
+        if not MATPLOTLIB_AVAILABLE:
+            return False, "matplotlib is required to produce chart images"
+
+        try:
+            data = self._distribution_data(timeframe)
+            if not data:
+                return False, "No data found for the specified timeframe"
+
+            # Ascending, so the largest lands at the top of a horizontal chart.
+            ordered = sorted(data, key=lambda row: row['count'])
+            event_types = [row['event_type'] or 'Unspecified' for row in ordered]
+            counts = [row['count'] for row in ordered]
+            total = sum(counts)
+
+            fig, ax = plt.subplots(figsize=(11, max(3.5, 0.5 * len(counts) + 2)))
+            bars = ax.barh(event_types, counts, color='#2a78d6', height=0.68)
+
+            # The count sits with each bar: with a dominant category the small
+            # bars are slivers, and the number is what the reader needs.
+            span = max(counts)
+            for bar, count in zip(bars, counts):
+                share = (count / total * 100) if total else 0
+                ax.text(bar.get_width() + span * 0.01, bar.get_y() + bar.get_height() / 2,
+                        f"{count:,} ({share:.1f}%)", va='center', fontsize=9, color='#52514e')
+
+            ax.set_xlim(0, span * 1.18)
+            ax.set_xlabel('Events')
+            ax.set_title(f'Event Distribution by Type - {timeframe.title()}   ({total:,} events)')
+
+            # Recessive chrome: no box around the plot, faint x grid only.
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['left'].set_color('#d5d4d0')
+            ax.spines['bottom'].set_color('#d5d4d0')
+            ax.xaxis.grid(True, color='#eceae6', linewidth=0.8)
+            ax.set_axisbelow(True)
+
+            fig.tight_layout()
+            fig.savefig(output_path, dpi=150, bbox_inches='tight')
+            plt.close(fig)
+
+            return True, f"Distribution chart of {total} events saved to {output_path}"
+
+        except Exception as e:
+            logger.error(f"Failed to create distribution image: {e}")
+            return False, f"Error creating distribution image: {str(e)}"
+
     def create_calendar_heatmap(self, year: int, output_path: str = None) -> Tuple[bool, str]:
         """Create a calendar heatmap showing event density"""
         if not self.auth_manager.check_permission('export_data'):
@@ -230,37 +390,7 @@ class DataVisualizationManager:
             return False, "Plotly not available for visualizations"
 
         try:
-            # Validate year
-            current_year = datetime.now().year
-            if not (current_year - 5 <= year <= current_year + 5):
-                raise ValidationError("Year must be within 5 years of current year")
-
-            start_date = f"{year}-01-01"
-            end_date = f"{year}-12-31"
-
-            query = """
-                SELECT DATE(COALESCE(e.date, e.date_start)) as event_date, COUNT(*) as event_count
-                FROM academic_calendar_events e
-                WHERE (e.date BETWEEN ? AND ?)
-                OR (e.date_start BETWEEN ? AND ?)
-                GROUP BY DATE(COALESCE(e.date, e.date_start))
-                ORDER BY event_date
-            """
-
-            rows = self.db_manager.execute_query(query, (start_date, end_date, start_date, end_date))
-            data = {row['event_date']: row['event_count'] for row in rows}
-
-            # Create date range for the year
-            start = datetime(year, 1, 1)
-            dates = []
-            event_counts = []
-
-            days_in_year = 366 if cal.isleap(year) else 365
-            for i in range(days_in_year):
-                current_date = start + timedelta(days=i)
-                date_str = current_date.strftime("%Y-%m-%d")
-                dates.append(current_date)
-                event_counts.append(data.get(date_str, 0))
+            dates, event_counts = self._daily_event_counts(year)
 
             # Create heatmap using plotly
             fig = go.Figure(data=go.Heatmap(
@@ -280,7 +410,11 @@ class DataVisualizationManager:
             )
 
             if output_path:
-                safe_path = ValidationUtils.sanitize_filename(output_path)
+                # Keep the caller's directory (confined to the exports root);
+                # sanitize_filename() alone would drop it and write to CWD.
+                safe_path = ValidationUtils.resolve_safe_path(
+                    output_path, CalendarConfig().export_directory
+                )
                 fig.write_html(safe_path)
                 return True, f"Heatmap saved to {safe_path}"
             else:
@@ -291,6 +425,36 @@ class DataVisualizationManager:
             logger.error(f"Failed to create heatmap: {e}")
             return False, f"Error creating heatmap: {str(e)}"
 
+    def _distribution_data(self, timeframe: str = 'month'):
+        """Event counts per type over *timeframe*, newest-heaviest first."""
+        timeframe = ValidationUtils.sanitize_string(timeframe, 20).lower()
+
+        query = """
+            SELECT e.event_type, COUNT(*) as count
+            FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') e
+        """
+
+        params = []
+
+        # Add time filter
+        if timeframe == 'month':
+            current_month_start = datetime.now().replace(day=1).strftime("%Y-%m-%d")
+            query += " WHERE COALESCE(e.date, e.date_start) >= ?"
+            params.append(current_month_start)
+        elif timeframe == 'semester':
+            semester_start = (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%d")
+            query += " WHERE COALESCE(e.date, e.date_start) >= ?"
+            params.append(semester_start)
+        elif timeframe == 'year':
+            year_start = datetime.now().replace(month=1, day=1).strftime("%Y-%m-%d")
+            query += " WHERE COALESCE(e.date, e.date_start) >= ?"
+            params.append(year_start)
+
+        query += " GROUP BY e.event_type ORDER BY count DESC"
+
+        rows = self.db_manager.execute_query(query, tuple(params))
+        return [dict(row) for row in rows]
+
     def create_event_distribution_chart(self, timeframe: str = 'month', output_path: str = None) -> Tuple[bool, str]:
         """Create event distribution charts by type"""
         if not self.auth_manager.check_permission('export_data'):
@@ -300,33 +464,7 @@ class DataVisualizationManager:
             return False, "Plotly not available for visualizations"
 
         try:
-            timeframe = ValidationUtils.sanitize_string(timeframe, 20).lower()
-
-            query = """
-                SELECT e.event_type, COUNT(*) as count
-                FROM academic_calendar_events e
-            """
-
-            params = []
-
-            # Add time filter
-            if timeframe == 'month':
-                current_month_start = datetime.now().replace(day=1).strftime("%Y-%m-%d")
-                query += " WHERE COALESCE(e.date, e.date_start) >= ?"
-                params.append(current_month_start)
-            elif timeframe == 'semester':
-                semester_start = (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%d")
-                query += " WHERE COALESCE(e.date, e.date_start) >= ?"
-                params.append(semester_start)
-            elif timeframe == 'year':
-                year_start = datetime.now().replace(month=1, day=1).strftime("%Y-%m-%d")
-                query += " WHERE COALESCE(e.date, e.date_start) >= ?"
-                params.append(year_start)
-
-            query += " GROUP BY e.event_type ORDER BY count DESC"
-
-            rows = self.db_manager.execute_query(query, tuple(params))
-            data = [dict(row) for row in rows]
+            data = self._distribution_data(timeframe)
 
             if not data:
                 return False, "No data found for the specified timeframe"
@@ -344,7 +482,11 @@ class DataVisualizationManager:
             fig.update_traces(textposition='inside', textinfo='percent+label')
 
             if output_path:
-                safe_path = ValidationUtils.sanitize_filename(output_path)
+                # Keep the caller's directory (confined to the exports root);
+                # sanitize_filename() alone would drop it and write to CWD.
+                safe_path = ValidationUtils.resolve_safe_path(
+                    output_path, CalendarConfig().export_directory
+                )
                 fig.write_html(safe_path)
                 return True, f"Distribution chart saved to {safe_path}"
             else:

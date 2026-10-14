@@ -1,4 +1,7 @@
 """MinimalChatbot: lightweight chatbot without full NLP/auth dependencies."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from datetime import datetime
 
@@ -63,7 +66,7 @@ class MinimalChatbot:
                     user_id_for_log
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         return response
 

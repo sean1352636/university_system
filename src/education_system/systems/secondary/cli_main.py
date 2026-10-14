@@ -61,7 +61,7 @@ CATEGORIES: list[tuple[str, list[str]]] = [
         "Custom Export",
     ]),
     ("Cross-System", [
-        "Student Journey", "Promote to Next System",
+        "Post-16 Destinations", "Student Journey", "Promote to Next System",
     ]),
     ("System", [
         "Change Password", "Multi-Factor Authentication",
@@ -409,6 +409,10 @@ def _submenu(category: str, items: list[str], *, auth=None) -> None:
                 show_language_selector_cli()
                 continue
             from education_system.platform.cross_system import journey_cli
+            if label == "Post-16 Destinations":
+                from education_system.platform.cross_system.secondary_post16_cli import menu
+                menu()
+                continue
             if journey_cli.dispatch(label, "secondary", auth=auth):
                 continue
             if (pupil_cli.dispatch(label)
@@ -587,7 +591,7 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
     if shared_auth is None or not getattr(shared_auth, "current_user", None):
         logger.error("secondarysch CLI invoked without a shared_auth session")
         raise RuntimeError(
-            "secondarysch_system CLI must be launched via run.py — "
+            "secondarysch_system CLI must be launched via python -m education_system — "
             "no standalone login is available."
         )
     cu = shared_auth.current_user or {}
@@ -597,5 +601,5 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
 
 
 if __name__ == "__main__":
-    print("Launch via: python run.py --cli  (then choose Secondary School)")
+    print("Launch via: python -m education_system --cli  (then choose Secondary School)")
     raise SystemExit(2)

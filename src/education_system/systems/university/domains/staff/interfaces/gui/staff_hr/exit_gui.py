@@ -989,9 +989,6 @@ Areas for Improvement:
             ))
 
 
-# Add simpledialog import
-try:
-    from tkinter import simpledialog
-    tk.simpledialog = simpledialog
-except ImportError:
-    pass
+# ``tk.simpledialog`` is only an attribute once the submodule is
+# imported; this registers it without patching the tkinter module.
+import tkinter.simpledialog  # noqa: F401,E402

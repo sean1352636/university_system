@@ -4,6 +4,9 @@ Formal APL/RPL claims for work experience and prior qualifications that
 sit outside the standard school-to-uni credit-transfer flow already
 handled by ``clearing_adjustment``.
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -185,7 +188,7 @@ class PriorLearningService:
                         target_course=claim.get("target_course"),
                     )
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
         return True
 
     def withdraw_claim(self, claim_id: int) -> bool:

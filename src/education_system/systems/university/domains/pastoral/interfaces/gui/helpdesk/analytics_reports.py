@@ -1,3 +1,4 @@
+from education_system.systems.university.shell.gui import report_view as _rv
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
@@ -859,7 +860,7 @@ def generate_report(self, report_type):
         ttk.Label(main_frame, text=report_name, font=('TkDefaultFont', 16, 'bold')).pack(pady=(0, 10))
 
         # Report content area
-        report_text = scrolledtext.ScrolledText(main_frame, wrap='word', font=('Courier', 10))
+        report_text = _rv.TextReportView(main_frame, wrap='word', font=('Courier', 10))
         report_text.pack(fill='both', expand=True, pady=(0, 10))
         report_text.insert('1.0', report_content)
         report_text.config(state='disabled')
@@ -1071,7 +1072,7 @@ def _send_report_to_admin(self, report_name, report_content):
                 'generated_datetime': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             }
 
-            subject, body = render_template('helpdesk_report_admin', template_vars)
+            subject, body = render_template('campus_services/helpdesk/helpdesk_report_admin', template_vars)
 
             if not subject or not body:
                 # Fallback if template fails

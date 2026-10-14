@@ -1,6 +1,9 @@
 """Database initialization mixin for CommunicationDashboard."""
 
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.email.admin._imports import (
     execute_db_operation,
@@ -352,7 +355,7 @@ class _DbMixin:
                         cursor.connection,
                     )
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
             # Profanity / safeguarding wordlist
             cursor.execute('''
@@ -407,7 +410,7 @@ class _DbMixin:
                         cursor.connection,
                     )
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
             # At-rest encryption keys (deterrent — DB-local; not E2E)
             cursor.execute('''
@@ -563,6 +566,7 @@ class _DbMixin:
             ]
             for index_name, table, cols in chat_indexes:
                 try:
+                    # db-audit: ignore[DBW001] - literal collection
                     cursor.execute(
                         f'CREATE INDEX IF NOT EXISTS {index_name} ON {table} {cols}'
                     )

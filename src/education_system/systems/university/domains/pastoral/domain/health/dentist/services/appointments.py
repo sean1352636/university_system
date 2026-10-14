@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 import csv
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
@@ -167,7 +171,7 @@ class AppointmentServiceMixin:
                                 WHERE student_id = ? AND account_status = 'active'
                             ''', (treatment_fee, self.user_id))
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
                 messagebox.showerror(_t("dentist.window_title"), _t("dentist.errors.booking_failed"))
 
         def cancel_appointment(self):
@@ -283,12 +287,48 @@ class AppointmentServiceMixin:
                 messagebox.showwarning(_t("dentist.window_title"), _t("dentist.warnings.email_unavailable"))
                 return
             upcoming = ReportManager.get_upcoming_appointments(days=2)
-            sent = 0
-            for appt in upcoming:
-                if appt.get('user_email'):
-                    subject = "Dental Appointment Reminder"
-                    body = f"Dear {appt['user_name']},\n\nThis is a reminder of your dental appointment:\nDate: {appt['appointment_date']}\nTime: {appt['appointment_time']}\nDentist: {appt['dentist_name']}\n\nPlease arrive 10 minutes early."
-                    if send_email(appt['user_email'], subject, body):
-                        sent += 1
-            messagebox.showinfo(_t("dentist.window_title"), _t("dentist.messages.reminders_sent").format(count=sent))
+            if not upcoming:
+                messagebox.showinfo(_t("dentist.window_title"),
+                                    "No appointments in the next 2 days.")
+                return
+
+            reachable = [a for a in upcoming if (a.get('user_email') or '').strip()]
+            unreachable = len(upcoming) - len(reachable)
+            detail = "\n".join(
+                f"  • {a.get('user_name', 'Patient')} — {a['appointment_date']} "
+                f"at {a['appointment_time']}" for a in upcoming[:12])
+            if len(upcoming) > 12:
+                detail += f"\n  … and {len(upcoming) - 12} more"
+            prompt = f"Send reminders to {len(reachable)} patient(s)?\n\n{detail}"
+            if unreachable:
+                prompt += (f"\n\n{unreachable} of {len(upcoming)} have no email "
+                           "address on file and cannot be reminded.")
+            if not messagebox.askyesno(_t("dentist.window_title"), prompt):
+                return
+
+            # Use the appointment_reminder template rather than an inline body,
+            # so the clinic's wording lives in one place and matches the CLI.
+            sent = failed = 0
+            for appt in reachable:
+                try:
+                    subject, body = render_template(
+                        'finance_commerce/commerce/dentist/appointment_reminder', {
+                            'patient_name': appt.get('user_name') or 'Patient',
+                            'appointment_date': appt['appointment_date'],
+                            'appointment_time': appt['appointment_time'],
+                            'dentist_name': appt.get('dentist_name') or 'your dentist',
+                        })
+                except Exception:
+                    subject, body = None, None
+                if subject and body and _send_dentist_email(appt['user_email'], subject, body):
+                    sent += 1
+                else:
+                    failed += 1
+
+            summary = f"Reminders: {sent} sent"
+            if failed:
+                summary += f", {failed} failed"
+            if unreachable:
+                summary += f", {unreachable} with no address on file"
+            messagebox.showinfo(_t("dentist.window_title"), summary + ".")
 

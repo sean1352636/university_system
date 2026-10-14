@@ -1,7 +1,11 @@
 """Database schema and migration management"""
+import logging
+
+logger = logging.getLogger(__name__)
 
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
 import os
 import shutil
 import threading
@@ -18,6 +22,10 @@ from education_system.systems.university.infrastructure.sql_safety import (
     safe_alter_table_add_column,
     SQLIdentifierError
 )
+from education_system.systems.university.infrastructure.database.schemas.students_table import ensure_students_table
+from education_system.systems.university.infrastructure.database.schemas.users_table import ensure_users_table
+from education_system.systems.university.infrastructure.database.schemas.modules_table import ensure_modules_table
+from education_system.systems.university.infrastructure.database.schemas.modules_table import ensure_student_modules_table
 
 
 
@@ -84,7 +92,15 @@ class DatabaseManager:
             column_defs = {
                 'duration_minutes': 'INTEGER DEFAULT 0',
                 'status': "TEXT DEFAULT 'Active'",
-                'updated_at': "TEXT DEFAULT (datetime('now'))"
+                'updated_at': "TEXT DEFAULT (datetime('now'))",
+                # An assessment of type 'exam' also gets a row in `exams` so it
+                # reaches the Exam Scheduling GUI, the academic calendar and the
+                # shared room_bookings table. This holds that row's id. Plain
+                # INTEGER, not a REFERENCES clause: foreign keys are enforced
+                # here and `exams` is created lazily by the exam module, so a
+                # declared FK would fail on a database where it does not exist
+                # yet.
+                'exam_id': 'INTEGER',
             }
 
             for column, definition in column_defs.items():
@@ -239,68 +255,22 @@ class DatabaseManager:
             if "duplicate column name" not in str(e):
                 print(f"Warning: Could not add hours_per_week column: {e}")
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def create_database_tables(self, cursor):
         """Create all required database tables"""
 
         # Users table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            role TEXT NOT NULL CHECK (role IN ('student', 'instructor', 'admin')),
-            first_name TEXT NOT NULL,
-            last_name TEXT NOT NULL,
-            is_active BOOLEAN DEFAULT 1,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-        )
-        ''')
+        ensure_users_table(cursor)
 
         # Students table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS students (
-            student_id TEXT PRIMARY KEY,
-            user_id INTEGER UNIQUE,
-            first_name TEXT NOT NULL,
-            last_name TEXT NOT NULL,
-            email TEXT NOT NULL,
-            enrollment_date DATE,
-            is_active BOOLEAN DEFAULT 1,
-            FOREIGN KEY (user_id) REFERENCES users (id)
-        )
-        ''')
+        ensure_students_table(cursor)
 
         # Modules table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS modules (
-            module_code TEXT PRIMARY KEY,
-            module_name TEXT NOT NULL,
-            description TEXT,
-            credits INTEGER DEFAULT 0,
-            instructor_id INTEGER,
-            is_active BOOLEAN DEFAULT 1,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (instructor_id) REFERENCES users (id)
-        )
-        ''')
+        ensure_modules_table(cursor)
 
         # Student modules
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS student_modules (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id TEXT NOT NULL,
-            module_code TEXT NOT NULL,
-            enrollment_date DATE DEFAULT CURRENT_DATE,
-            status TEXT DEFAULT 'enrolled',
-            FOREIGN KEY (student_id) REFERENCES students (student_id),
-            FOREIGN KEY (module_code) REFERENCES modules (module_code),
-            UNIQUE(student_id, module_code)
-        )
-        ''')
+        ensure_student_modules_table(cursor)
 
         # Assignments table
         cursor.execute('''
@@ -962,21 +932,27 @@ class DatabaseManager:
     def insert_sample_data(self, cursor):
         """Insert sample data for testing"""
 
-        # Sample users
+        # Sample users. These are directory rows, not accounts — the local
+        # users table holds no credentials, so the placeholder password_hash
+        # this used to write had nowhere to go.
         cursor.execute('''
-        INSERT OR IGNORE INTO users (id, username, email, password_hash, role, first_name, last_name)
-        VALUES (1, 'admin', 'admin@university.edu', 'admin_hash', 'admin', 'System', 'Administrator')
+        INSERT OR IGNORE INTO users (id, username, email, role, first_name, last_name, created_at, updated_at)
+        VALUES (1, 'admin', 'admin@university.edu', 'admin', 'System', 'Administrator',
+                datetime('now'), datetime('now'))
         ''')
 
         cursor.execute('''
-        INSERT OR IGNORE INTO users (id, username, email, password_hash, role, first_name, last_name)
-        VALUES (2, 'instructor1', 'instructor1@university.edu', 'inst_hash', 'instructor', 'John', 'Smith')
+        INSERT OR IGNORE INTO users (id, username, email, role, first_name, last_name, created_at, updated_at)
+        VALUES (2, 'instructor1', 'instructor1@university.edu', 'instructor', 'John', 'Smith',
+                datetime('now'), datetime('now'))
         ''')
 
-        # Sample students
+        # Sample students. ``user_id`` is not a column on this table and
+        # ``email`` is spelled email_address; the old statement inserted
+        # nothing.
         cursor.execute('''
-        INSERT OR IGNORE INTO students (student_id, user_id, first_name, last_name, email, enrollment_date)
-        VALUES ('STU001', 1, 'Test', 'Student', 'student@university.edu', '2024-01-15')
+        INSERT OR IGNORE INTO students (student_id, first_name, last_name, email_address, enrollment_date)
+        VALUES ('STU001', 'Test', 'Student', 'student@university.edu', '2024-01-15')
         ''')
 
         # Sample modules

@@ -2,6 +2,9 @@ from education_system.systems.university.domains.pastoral.domain.student_life.st
     datetime, sqlite3, get_connection,
 )
 import education_system.systems.university.domains.pastoral.domain.student_life.student_union.clubs.club_management._imports as _state
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.identity import (
+    current_student_id as _current_student_id,
+)
 
 
 def view_club_financial_reports():
@@ -17,15 +20,13 @@ def view_club_financial_reports():
         cursor = conn.cursor()
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, auth)
 
-        if not result:
+        if not student_id:
             print("No student record is associated with your account.")
             conn.close()
             return
 
-        student_id = result[0]
 
         # Get clubs user can view
         if auth.check_permission('manage_all_clubs'):
@@ -174,15 +175,13 @@ def manage_club_budgets():
         cursor = conn.cursor()
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, auth)
 
-        if not result:
+        if not student_id:
             print("No student record is associated with your account.")
             conn.close()
             return
 
-        student_id = result[0]
 
         # Get clubs user can manage
         if auth.check_permission('manage_all_clubs'):

@@ -3,11 +3,10 @@
 Education System - Unified Launcher
 
 This module owns ``main()`` and the command-line argument parsing. It is the
-single implementation behind all three entry points:
+single implementation behind both supported entry points:
 
   - ``python -m education_system``     (via education_system/__main__.py)
   - ``education-system``               (console script -> main below)
-  - ``python run.py``                  (deprecated root shim)
 
 It delegates the actual work to the sibling education_system.launcher modules:
   - auth:     shared auth init & MFA sync
@@ -55,6 +54,15 @@ try:
         _load_dotenv(_root_env)
 except ImportError:
     pass
+
+# Declare the environment before anything can consult it. Must run after the
+# .env load (so a declared APP_ENV wins) and before any bootstrap, because the
+# fail-closed secret guards read APP_ENV on first use and an unset value counts
+# as production — which stops a source-checkout launch dead on its first audit
+# write. Applies to every interface the launcher dispatches to, not just the API.
+from education_system.launcher.environment import apply_launcher_env_defaults  # noqa: E402
+
+_APP_ENV = apply_launcher_env_defaults()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -117,6 +125,11 @@ def _quiet_console():
 
 _quiet_console()
 
+# Logged after the console is quieted so it costs a line only under --verbose/-v.
+# A development APP_ENV relaxes the fail-closed secret guards, so which mode a
+# run is in is worth confirming when it behaves unlike a deployment.
+logger.info("APP_ENV=%s", _APP_ENV)
+
 # Both tables are derived from the per-system manifests rather than restated
 # here; each system owns its own key, display name and package location.
 from education_system.systems.registry import display_names, package_dirs
@@ -177,7 +190,7 @@ def run_cli_mode():
     """Launch CLI mode with error handling. Returns True on success, False on failure."""
     print("  Starting Command Line Interface...")
     try:
-        from education_system.systems.university.interfaces.cli.shell.cli_main import main as cli_main
+        from education_system.systems.university.shell.cli.cli_main import main as cli_main
         cli_main()
         return True
     except ImportError as e:
@@ -198,7 +211,7 @@ def run_gui_mode():
     """Launch GUI mode with error handling and CLI fallback. Returns True on success."""
     print("  Starting Graphical User Interface...")
     try:
-        from education_system.systems.university.interfaces.gui.shell.gui_launcher import launch_main_gui
+        from education_system.systems.university.shell.gui.gui_launcher import launch_main_gui
         launch_main_gui()
         return True
     except ImportError as e:
@@ -331,7 +344,7 @@ def run_web_server(system="university", port=8000, open_browser=True,
             httpd.serve_forever()
     except OSError as exc:
         print(f"  ✗ Could not start server on port {port}: {exc}")
-        print(f"    Try a different port: python run.py --web --web-port 8080")
+        print(f"    Try a different port: python -m education_system --web --web-port 8080")
         sys.exit(1)
     except KeyboardInterrupt:
         print("\n  Server stopped.")

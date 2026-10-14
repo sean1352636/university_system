@@ -306,7 +306,7 @@ class BackgroundTaskRunner:
             try:
                 future.result(timeout=timeout)
             except Exception:
-                pass  # Result is in TaskResult
+                logger.debug("Suppressed exception", exc_info=True)
 
         return self._tasks.get(task_id)
 

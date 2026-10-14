@@ -288,7 +288,7 @@ class CommunicationMixin:
             print("This function is only available for parent accounts.")
             return
 
-        if not self.auth.check_permission('group_messaging'):
+        if not self.auth.check_permission('parent_communication'):
             print("You don't have permission to send group messages.")
             return
 

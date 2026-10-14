@@ -321,14 +321,12 @@ def show_kb_statistics(support):
         print("="*50)
 
         conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
-        try:
-            cursor = conn.cursor()
+        cursor = conn.cursor()
 
-            # Check if kb_articles table exists
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='kb_articles'")
-            if not cursor.fetchone():
-                print("📭 No knowledge base data available.")
-        finally:
+        # Check if kb_articles table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='kb_articles'")
+        if not cursor.fetchone():
+            print("📭 No knowledge base data available.")
             conn.close()
             return
 

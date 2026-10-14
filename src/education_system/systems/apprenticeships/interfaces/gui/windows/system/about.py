@@ -12,8 +12,8 @@ import logging
 
 from education_system.systems.apprenticeships import SYSTEM_NAME, VERSION, config
 from education_system.systems.apprenticeships.interfaces.gui import widgets
-from education_system.systems.apprenticeships.interfaces.gui.controllers import (
-    apprenticeship_controller as controller,
+from education_system.systems.apprenticeships.interfaces.gui import (
+    session as controller,
 )
 
 logger = logging.getLogger(__name__)

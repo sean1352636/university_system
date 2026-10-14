@@ -109,7 +109,7 @@ class ResourceManager:
             query = """
                 SELECT rb.id, e.name
                 FROM resource_bookings rb
-                JOIN academic_calendar_events e ON rb.event_id = e.id
+                JOIN (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') e ON rb.event_id = e.id
                 WHERE rb.resource_id = ?
                 AND rb.status = 'confirmed'
                 AND NOT (rb.end_time <= ? OR rb.start_time >= ?)

@@ -1,17 +1,5 @@
-"""
-AI Study Companion Module
+"""Compatibility package — see study_hub."""
 
-Provides AI-powered study assistance including:
-- Personalized study plan generation
-- Spaced repetition flashcard system
-- AI-powered concept explainer
-"""
+from education_system.systems.university.domains.academics.domain.study_hub.services.planning import AIStudyService  # noqa: F401
 
-from education_system.systems.university.domains.academics.domain.ai_study.services.ai_study_service import AIStudyService
-from education_system.systems.university.domains.academics.interfaces.cli.ai_study.ai_study_cli import AIStudyCLI, display_ai_study_menu
-
-__all__ = [
-    'AIStudyService',
-    'AIStudyCLI',
-    'display_ai_study_menu',
-]
+__all__ = ["AIStudyService"]

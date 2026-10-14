@@ -3,7 +3,9 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
+from tkinter import ttk, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 
 
@@ -121,7 +123,7 @@ class StudentViewsMixin:
         assignment_id = item['values'][0]
 
         # Create details window
-        details_window = tk.Toplevel(self.root)
+        details_window = make_toplevel(self.root)
         details_window.title(_t('gui.academics.assignment_system.assignment_manager.student_views.windows.assignment_details', default="Assignment Details"))
         details_window.geometry("600x400")
 

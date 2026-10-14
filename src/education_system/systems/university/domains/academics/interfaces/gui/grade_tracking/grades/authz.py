@@ -173,11 +173,11 @@ def require_module_change(*, cursor, module_code) -> bool:
 
 def _deny_message() -> None:
     try:
-        from tkinter import messagebox
+        from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import messagebox
 
         messagebox.showerror("Access denied", "You are not authorised to change these records.")
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
 
 __all__ = [

@@ -89,52 +89,51 @@ class Database:
         """)
         self.conn.commit()
 
-    # ---------- Student CRUD ----------
-    def add_student(self, data):
-        """data = (student_id, first_name, last_name, course, cohort,
-        email, employer, supervisor, start_date, end_date)."""
-        sid, first, last, course, cohort, email, employer, supervisor, start, end = data
-        self.cursor.execute("""
-            INSERT INTO students (student_id, first_name, last_name, course, email_address)
-            VALUES (?, ?, ?, ?, ?)
-            ON CONFLICT(student_id) DO UPDATE SET
-                first_name=excluded.first_name,
-                last_name=excluded.last_name,
-                course=excluded.course,
-                email_address=excluded.email_address
-        """, (sid, first, last, course, email))
-        self.cursor.execute("""
-            INSERT INTO placement_profiles
-                (student_id, cohort, employer, supervisor, start_date, end_date)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ON CONFLICT(student_id) DO UPDATE SET
-                cohort=excluded.cohort,
-                employer=excluded.employer,
-                supervisor=excluded.supervisor,
-                start_date=excluded.start_date,
-                end_date=excluded.end_date
-        """, (sid, cohort, employer, supervisor, start, end))
-        self.conn.commit()
-        return sid
+    # ---------- Placement enrolment ----------
+    # ``students`` is the canonical person record, shared with the whole
+    # system. These methods touch ``placement_profiles`` only: enrolling a
+    # student on a placement must never create, rename or overwrite the
+    # person — which is what add_student/update_student did through their
+    # ON CONFLICT upserts.
 
-    def update_student(self, student_pk, data):
-        """student_pk is the original student_id (TEXT) being edited.
-        If the dialog renames the student_id, cascade-rename across the
-        three tables to keep the join key consistent."""
-        old_sid = student_pk
-        new_sid = data[0]
-        sid, first, last, course, cohort, email, employer, supervisor, start, end = data
-        if new_sid != old_sid:
-            self.cursor.execute("UPDATE students SET student_id=? WHERE student_id=?",
-                                (new_sid, old_sid))
-            self.cursor.execute("UPDATE placement_profiles SET student_id=? WHERE student_id=?",
-                                (new_sid, old_sid))
-            self.cursor.execute("UPDATE placement_hours_log SET student_id=? WHERE student_id=?",
-                                (new_sid, old_sid))
-        self.cursor.execute("""
-            UPDATE students SET first_name=?, last_name=?, course=?, email_address=?
-            WHERE student_id=?
-        """, (first, last, course, email, new_sid))
+    def list_enrollable_students(self, search=""):
+        """Students who exist but are not yet on a placement.
+
+        Shape: (student_id, first_name, last_name, course).
+        """
+        sql = """
+            SELECT s.student_id, s.first_name, s.last_name, s.course
+              FROM students s
+             WHERE s.student_id NOT IN (SELECT student_id FROM placement_profiles)
+        """
+        params = ()
+        if search:
+            q = f"%{search}%"
+            sql += (" AND (s.student_id LIKE ? OR s.first_name LIKE ? "
+                    "OR s.last_name LIKE ? OR s.course LIKE ?)")
+            params = (q, q, q, q)
+        sql += " ORDER BY s.last_name, s.first_name"
+        self.cursor.execute(sql, params)
+        return self.cursor.fetchall()
+
+    def student_exists(self, student_pk) -> bool:
+        self.cursor.execute("SELECT 1 FROM students WHERE student_id = ?", (student_pk,))
+        return self.cursor.fetchone() is not None
+
+    def save_placement(self, student_pk, cohort=None, employer=None,
+                       supervisor=None, start_date=None, end_date=None):
+        """Create or update a student's placement enrolment.
+
+        Raises ``ValueError`` if the student does not exist — a placement
+        cannot invent a person.
+        """
+        if not student_pk:
+            raise ValueError("A student must be selected.")
+        if not self.student_exists(student_pk):
+            raise ValueError(
+                f"No student with ID '{student_pk}' exists. "
+                "Students are managed in Student Records, not here."
+            )
         self.cursor.execute("""
             INSERT INTO placement_profiles
                 (student_id, cohort, employer, supervisor, start_date, end_date)
@@ -145,8 +144,9 @@ class Database:
                 supervisor=excluded.supervisor,
                 start_date=excluded.start_date,
                 end_date=excluded.end_date
-        """, (new_sid, cohort, employer, supervisor, start, end))
+        """, (student_pk, cohort, employer, supervisor, start_date, end_date))
         self.conn.commit()
+        return student_pk
 
     def delete_student(self, student_pk):
         """Remove placement enrollment for a student. The canonical
@@ -236,7 +236,7 @@ class Database:
         try:
             self.conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
 
 def export_summary_rows(db: Database) -> list[list]:

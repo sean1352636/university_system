@@ -172,6 +172,7 @@ class MentoringMatchingService:
                 if fields:
                     sets = ", ".join(f"{k} = ?" for k in fields)
                     params = list(fields.values()) + [now, mentor_id]
+                    # db-audit: ignore[DBW001] - f-string of literal parts
                     cur.execute(
                         f"UPDATE mentor_profiles SET {sets}, updated_at = ? "
                         f"WHERE mentor_id = ?",
@@ -220,6 +221,7 @@ class MentoringMatchingService:
                 if fields:
                     sets = ", ".join(f"{k} = ?" for k in fields)
                     params = list(fields.values()) + [now, mentee_id]
+                    # db-audit: ignore[DBW001] - f-string of literal parts
                     cur.execute(
                         f"UPDATE mentee_preferences SET {sets}, updated_at = ? "
                         f"WHERE mentee_id = ?",

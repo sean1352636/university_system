@@ -176,7 +176,7 @@ class NotificationsMixin:
     def _send_email_via_gui(self, to_email, subject, message):
         """Send email via email manager GUI"""
         try:
-            from education_system.systems.university.interfaces.gui.shell.email.email_gui import EmailManagerGUI
+            from education_system.systems.university.shell.gui.email.email_gui import EmailManagerGUI
             email_gui = EmailManagerGUI(self.root, auth=self.auth)
 
             if hasattr(email_gui, 'send_email'):

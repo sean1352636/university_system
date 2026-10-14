@@ -1,4 +1,7 @@
 """Main ParkingManagementGUI class assembled from mixins."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
@@ -185,7 +188,7 @@ class ParkingManagementGUI(
             if hasattr(self, "main_menu_button") and self.main_menu_button.winfo_exists():
                 return
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         self.main_menu_button = ttk.Button(
             self.root,
@@ -292,7 +295,7 @@ class ParkingManagementGUI(
                 self.root.destroy()
             else:
                 self.root.destroy()
-                from education_system.systems.university.interfaces.gui.shell.main import UnifiedManagementGUI
+                from education_system.systems.university.shell.gui.main import UnifiedManagementGUI
                 app = UnifiedManagementGUI(self.auth)
                 app.run()
         except Exception as e:

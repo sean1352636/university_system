@@ -55,7 +55,7 @@ def show_risks_for(parent: tk.Misc, reference_id: str,
     try:
         win.transient(parent.winfo_toplevel())
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
     header = ttk.Frame(win, padding=10)
     header.pack(fill="x")
@@ -108,7 +108,7 @@ def show_risks_for(parent: tk.Misc, reference_id: str,
         try:
             tv.tag_configure(status.lower(), foreground=color)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     ttk.Button(win, text="Close",
                command=win.destroy).pack(pady=8)

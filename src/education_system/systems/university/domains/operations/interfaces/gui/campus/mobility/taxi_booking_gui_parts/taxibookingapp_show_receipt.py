@@ -252,7 +252,7 @@ class TaxiBookingApp:
         """Display refunds management interface"""
         self.clear_content()
 
-        self.create_header(_t("taxi.refunds.title", default="Taxi Booking Refunds"),
+        self.create_header(_t("taxi.refunds.title", default="===== REFUNDS ====="),
                            _t("taxi.refunds.subtitle", default="Process refunds for taxi bookings"))
 
         # Table container

@@ -498,7 +498,7 @@ class ApplyTemplateDialog:
                     students.append(label)
                     self.student_map[label] = sid
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return students
 
     def create_widgets(self):

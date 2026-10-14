@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 import json
 import os
 import threading
@@ -110,7 +114,7 @@ def update_queue_status(self):
             if self.detector.realtime_processor.is_running:
                 self.root.after(5000, self.update_queue_status)  # Update every 5 seconds
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
 
 def create_federated_learning_view(self, parent):

@@ -13,8 +13,6 @@ from education_system.systems.university.domains.finance.interfaces.gui.financia
     clear_frame,
     get_auth,
     show_error,
-    get_current_user,
-    check_permission,
 )
 import logging
 
@@ -31,6 +29,11 @@ from education_system.systems.university.infrastructure.utils.gui_language_selec
 init_i18n()
 
 
+def _has_session(auth) -> bool:
+    """True when ``auth`` carries a logged-in user this GUI can key off."""
+    return isinstance(getattr(auth, "current_user", None), dict)
+
+
 class FinancialAidGUI:
     """Main coordinator for Financial Aid & Scholarships GUI"""
 
@@ -42,23 +45,45 @@ class FinancialAidGUI:
             auth_instance: Authentication instance
             parent: Parent window (optional)
         """
-        self.auth = auth_instance or get_auth()
+        # ``auth_instance or get_auth()`` was not enough: get_auth() returns
+        # whichever UserAuth was seeded at bootstrap, which is created before
+        # login and so can carry no current_user at all (and raises outright in
+        # a standalone launch). Only fall back to it when it actually holds a
+        # session, so a caller's live auth always wins.
+        self.auth = auth_instance if _has_session(auth_instance) else None
+        if self.auth is None:
+            try:
+                fallback = get_auth()
+            except Exception:
+                logger.debug("shared-context auth unavailable", exc_info=True)
+                fallback = None
+            self.auth = fallback if _has_session(fallback) else (auth_instance or fallback)
+
         self.parent = parent
         self.root = None
         self.main_frame = None
+        # Set before the auth gate: a refused __init__ still leaves an object
+        # the caller may call run() on, and half-built attributes turn a clean
+        # "please log in" into an AttributeError.
+        self.current_user = None
+        self.is_admin = False
+        self.student_portal = None
+        self.admin_portal = None
 
         # Check if user is logged in
-        if not self.auth or not self.auth.current_user:
+        if not _has_session(self.auth):
             show_error(_("financial_aid.errors.auth_required_title"), _("financial_aid.errors.auth_required_message"))
             return
 
-        # Get user info
-        self.current_user = get_current_user()
-        self.is_admin = check_permission('manage_financial_aid')
-
-        # Initialize portals
-        self.student_portal = None
-        self.admin_portal = None
+        # Get user info. Read from *this* instance rather than the module-level
+        # get_current_user()/check_permission() helpers, which go back to
+        # get_auth() and would ignore the auth we were handed.
+        self.current_user = self.auth.current_user
+        try:
+            self.is_admin = bool(self.auth.check_permission('manage_financial_aid'))
+        except Exception:
+            logger.debug("permission check failed; treating as non-admin", exc_info=True)
+            self.is_admin = False
 
     def run(self):
         """Run the Financial Aid GUI application"""
@@ -133,19 +158,14 @@ class FinancialAidGUI:
                               font=('Arial', 10))
         user_info.pack(pady=(0, 20))
 
-        # Navigation buttons
-        button_frame = ttk.Frame(header_frame)
-        button_frame.pack(pady=(0, 10))
-
-        ttk.Button(button_frame,
-                  text=_("financial_aid.buttons.close_window"),
-                  command=self.return_to_homepage,
-                  style='Primary.TButton').pack(side='left', padx=5)
-
-        ttk.Button(button_frame,
-                  text=_("financial_aid.buttons.change_language").format(lang=get_current_language_name()),
-                  command=self._on_language_change,
-                  style='Secondary.TButton').pack(side='left', padx=5)
+        # No Close Window / Change Language buttons in the header: the window
+        # closes with its own title-bar control, and language is set once for
+        # the whole application rather than per screen.
+        #
+        # ``return_to_homepage`` and ``_on_language_change`` are kept even
+        # though nothing calls them now: the first is this window's close
+        # path, worth having for a WM_DELETE_WINDOW binding or an embedding
+        # caller, and both are harmless.
 
         # Content frame
         content_frame = ttk.Frame(self.main_frame)
@@ -380,7 +400,7 @@ class FinancialAidGUI:
                 elif self.main_frame:
                     self.main_frame.destroy()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
 
 def launch_financial_aid_gui(parent=None, auth=None):
@@ -407,7 +427,7 @@ def launch_financial_aid_gui(parent=None, auth=None):
 
 def main():
     """Main entry point for standalone execution"""
-    from education_system.systems.university.interfaces.gui.shell.auth.launch_guard import (
+    from education_system.systems.university.shell.gui.auth.launch_guard import (
         require_launcher_auth,
     )
     if require_launcher_auth("Financial Aid GUI") is None:

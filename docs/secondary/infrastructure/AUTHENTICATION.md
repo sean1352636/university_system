@@ -187,7 +187,7 @@ The Education System platform provides a universal login window (`education_syst
 
 ### Flow
 
-1. User launches the application via `run.py`.
+1. User launches the application via `python -m education_system`.
 2. The Universal Login Window (`UniversalLoginWindow`) is displayed.
 3. User enters credentials (username + password).
 4. Shared auth module validates credentials against `auth.db`.

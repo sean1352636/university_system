@@ -16,7 +16,6 @@ from education_system.systems.university.infrastructure.database.schemas.health_
     init_health_system_db, init_mental_health_system_db,
     init_health_tables, init_wellness_tables
 )
-from education_system.systems.university.infrastructure.database.schemas.lms_schemas import init_lms_system_db
 from education_system.systems.university.infrastructure.database.schemas.attendance_warning_schemas import (
     init_attendance_system_db, init_early_warning_system_db,
     init_peer_support_tables
@@ -200,9 +199,6 @@ def create_performance_indexes():
             ('idx_student_clubs_club_id', 'student_clubs', 'club_id', False),
 
             # Union events indexes
-            ('idx_union_events_status', 'union_events', 'status', False),
-            ('idx_union_events_event_date', 'union_events', 'event_date', False),
-            ('idx_union_events_created_by', 'union_events', 'created_by', False),
 
             # General transactions indexes (finance)
             ('idx_transactions_student_id', 'transactions', 'student_id', False),
@@ -285,15 +281,6 @@ def initialize_all_schemas():
     init_health_system_db()
 
     # Phase 1: HIGH Priority Features
-    init_lms_system_db()
-    # Shared LMS tables (cross-system foundation)
-    try:
-        from education_system.platform.features.lms.schema import create_lms_tables
-        conn = get_connection()
-        create_lms_tables(conn)
-        conn.close()
-    except Exception as e:
-        print(f"Warning: shared LMS tables init: {e}")
     init_attendance_system_db()
     init_mental_health_system_db()
     init_early_warning_system_db()

@@ -10,23 +10,31 @@ without a parallel non-interactive service surface. New callers that
 only *read* module rows should use ``services/course_management``
 queries directly rather than duplicating SELECTs here.
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, filedialog
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import make_toplevel
 import tkinter.scrolledtext as scrolledtext
 from education_system.systems.university.infrastructure.database.db import sqlite3
 import os
 from pathlib import Path
 import csv
-import numpy as np
 import math
-from scipy import stats
 from datetime import datetime, timedelta
 import json
 from education_system import paths
 from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.utils import ensure_column_exists
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.utils import attr_alive
+from education_system.systems.university.infrastructure.database.schemas.modules_table import ensure_modules_table
+from education_system.systems.university.infrastructure.database.schemas.modules_table import ensure_student_modules_table
+from education_system.systems.university.infrastructure.database.schemas.students_table import ensure_students_table
+from education_system.systems.university.domains.academics.interfaces.gui._module_dialog import open_module_dialog
 
 # Use centralized path configuration
 DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
@@ -44,32 +52,6 @@ try:
 except ImportError:
     IMMUTABLE_AUDIT_AVAILABLE = False
 
-# Optional imports with fallbacks
-try:
-    import pandas as pd
-except ImportError:
-    pd = None
-
-try:
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    import matplotlib
-    matplotlib.use('TkAgg')
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-except ImportError:
-    plt = None
-    sns = None
-    FigureCanvasTkAgg = None
-
-try:
-    from reportlab.lib.pagesizes import letter
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-    from reportlab.lib import colors
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib.units import inch
-except ImportError:
-    # ReportLab not available - PDF features will be disabled
-    SimpleDocTemplate = None
 
 # Database connection setup
 
@@ -81,7 +63,7 @@ def _patched_sqlite3_connect_grade(database, *args, **kwargs):
         if not database or db_name in (str(DEFAULT_DB_PATH), "student_grading_system.db"):
             return _original_sqlite3_connect_grade(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return _original_sqlite3_connect_grade(database, *args, **kwargs)
 
 sqlite3.connect = _patched_sqlite3_connect_grade
@@ -146,48 +128,13 @@ def init_basic_database():
         cursor = conn.cursor()
 
         # Create students table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS students (
-        student_id TEXT PRIMARY KEY,
-        first_name TEXT NOT NULL,
-        middle_name TEXT,
-        last_name TEXT NOT NULL,
-        course TEXT NOT NULL,
-        email_address TEXT,
-        gender TEXT,
-        dob TEXT,
-        enrollment_date TEXT DEFAULT (date('now')),
-        status TEXT DEFAULT 'Active'
-        )
-        ''')
+        ensure_students_table(cursor)
 
         # Create modules table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS modules (
-        module_code TEXT PRIMARY KEY,
-        module_name TEXT NOT NULL,
-        module_type TEXT,
-        credits INTEGER DEFAULT 1,
-        description TEXT,
-        course TEXT,
-        semester TEXT,
-        year INTEGER
-        )
-        ''')
+        ensure_modules_table(cursor)
 
         # Create student_modules table (enrollment)
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS student_modules (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        student_id TEXT,
-        module_code TEXT,
-        enrollment_date TEXT DEFAULT (date('now')),
-        status TEXT DEFAULT 'Enrolled',
-        FOREIGN KEY (student_id) REFERENCES students (student_id),
-        FOREIGN KEY (module_code) REFERENCES modules (module_code),
-        UNIQUE(student_id, module_code)
-        )
-        ''')
+        ensure_student_modules_table(cursor)
 
         # Create assessments table
         cursor.execute('''
@@ -361,6 +308,32 @@ def safe_combo_update(obj, combo_attr, values):
 
 class ModuleManager:
     """Module/course management"""
+
+    def _display_report(self, title, sections, footer=None):
+        """Show a section report, using the analytics manager's renderer.
+
+        This class calls _display_report but never defined it, so
+        Student Progress, Competency Profile, At-Risk Student and Module
+        Grade reports all raised AttributeError on click. The renderer
+        lives on AnalyticsManager; rather than a third copy, delegate.
+        """
+        analytics = getattr(self.app, "analytics", None)
+        renderer = getattr(analytics, "_display_report", None)
+        if callable(renderer):
+            return renderer(title, sections, footer)
+        messagebox.showinfo(title, self._plain_report(title, sections, footer))
+
+    @staticmethod
+    def _plain_report(title, sections, footer=None):
+        """Last-resort text form if analytics is unavailable."""
+        lines = [title, "=" * len(title), ""]
+        for heading, content in sections or []:
+            lines.append((heading or "Details").strip())
+            lines += list(content) if content else ["No data available."]
+            lines.append("")
+        if footer:
+            lines.append(footer)
+        return "\n".join(lines).strip()
 
     def __init__(self, app):
         self.app = app
@@ -688,355 +661,29 @@ class ModuleManager:
             if conn:
                 conn.close()
 
+    # Add / edit both open the shared dialog. This module used to carry
+    # its own copy of the form; Module Scheduling carried another, and the
+    # two had drifted — see gui/_module_dialog.py.
+
     def add_module_dialog(self):
-        """Open dialog to add a new module"""
-        dialog = tk.Toplevel(self.root)
-        dialog.title(_t('gui.academics.grade_tracking.module_manager.windows.add_new_module', default="Add New Module"))
-        dialog.geometry("600x550")
-        dialog.transient(self.root)
-
-        # Create form
-        form_frame = ttk.Frame(dialog, padding="20")
-        form_frame.pack(fill='both', expand=True)
-
-        # Module Code (required, primary key)
-        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.module_code', default="Module Code*:")).grid(row=0, column=0, sticky='w', pady=5)
-        code_entry = ttk.Entry(form_frame, width=40)
-        code_entry.grid(row=0, column=1, sticky='ew', pady=5)
-
-        # Module Name (required)
-        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.module_name', default="Module Name*:")).grid(row=1, column=0, sticky='w', pady=5)
-        name_entry = ttk.Entry(form_frame, width=40)
-        name_entry.grid(row=1, column=1, sticky='ew', pady=5)
-
-        # Module Type
-        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.module_type', default="Module Type:")).grid(row=2, column=0, sticky='w', pady=5)
-        type_combo = ttk.Combobox(form_frame, width=38, values=[
-            'Core', 'Elective', 'Optional', 'Lab', 'Project', 'Seminar'
-        ])
-        type_combo.grid(row=2, column=1, sticky='ew', pady=5)
-
-        # Credits
-        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.credits', default="Credits:")).grid(row=3, column=0, sticky='w', pady=5)
-        credits_spinbox = ttk.Spinbox(form_frame, from_=1, to=20, width=38)
-        credits_spinbox.set(1)
-        credits_spinbox.grid(row=3, column=1, sticky='ew', pady=5)
-
-        # Course
-        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.course_program', default="Course/Program:")).grid(row=4, column=0, sticky='w', pady=5)
-        course_entry = ttk.Entry(form_frame, width=40)
-        course_entry.grid(row=4, column=1, sticky='ew', pady=5)
-
-        # Semester
-        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.semester', default="Semester:")).grid(row=5, column=0, sticky='w', pady=5)
-        semester_combo = ttk.Combobox(form_frame, width=38, values=[
-            'Fall', 'Spring', 'Summer', 'Winter', 'Year-long'
-        ])
-        semester_combo.grid(row=5, column=1, sticky='ew', pady=5)
-
-        # Year
-        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.academic_year', default="Academic Year:")).grid(row=6, column=0, sticky='w', pady=5)
-        year_spinbox = ttk.Spinbox(form_frame, from_=2020, to=2030, width=38)
-        year_spinbox.set(datetime.now().year)
-        year_spinbox.grid(row=6, column=1, sticky='ew', pady=5)
-
-        # Description (text area)
-        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.description', default="Description:")).grid(row=7, column=0, sticky='nw', pady=5)
-        desc_text = scrolledtext.ScrolledText(form_frame, width=40, height=8)
-        desc_text.grid(row=7, column=1, sticky='ew', pady=5)
-
-        # Configure column weights
-        form_frame.columnconfigure(1, weight=1)
-
-        # Button frame
-        btn_frame = ttk.Frame(dialog, padding="10")
-        btn_frame.pack(fill='x', side='bottom')
-
-        def save_module():
-            """Save the new module to database"""
-            # Validate required fields
-            module_code = code_entry.get().strip()
-            module_name = name_entry.get().strip()
-
-            if not module_code:
-                messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.validation_error', default="Validation Error"), _t('gui.academics.grade_tracking.module_manager.dialogs.module_code_is_required', default="Module Code is required"), parent=dialog)
-                code_entry.focus()
-                return
-
-            if not module_name:
-                messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.validation_error', default="Validation Error"), _t('gui.academics.grade_tracking.module_manager.dialogs.module_name_is_required', default="Module Name is required"), parent=dialog)
-                name_entry.focus()
-                return
-
-            # Get optional fields
-            module_type = type_combo.get().strip() or None
-            credits = int(credits_spinbox.get())
-            course = course_entry.get().strip() or None
-            semester = semester_combo.get().strip() or None
-            year = int(year_spinbox.get()) if year_spinbox.get() else None
-            description = desc_text.get('1.0', 'end-1c').strip() or None
-
-            conn = None
-            try:
-                conn = get_connection()
-                cursor = conn.cursor()
-
-                # Check if module code already exists
-                cursor.execute('SELECT module_code FROM modules WHERE module_code = ?', (module_code,))
-                if cursor.fetchone():
-                    messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.duplicate_error', default="Duplicate Error"),
-                                       f"Module code '{module_code}' already exists",
-                                       parent=dialog)
-                    return
-
-                # Insert new module
-                cursor.execute('''
-                    INSERT INTO modules (module_code, module_name, module_type, credits,
-                                       description, course, semester, year)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (module_code, module_name, module_type, credits, description,
-                     course, semester, year))
-
-                conn.commit()
-
-                if IMMUTABLE_AUDIT_AVAILABLE:
-                    user_id, session_id = get_gui_context()
-                    safe_log_security_event(
-                        action=AuditAction.RECORD_CREATE,
-                        user_id=user_id,
-                        resource_type='module',
-                        resource_id=module_code,
-                        session_id=session_id,
-                        details={
-                            'module_code': module_code,
-                            'module_name': module_name,
-                            'module_type': module_type,
-                            'credits': credits,
-                            'course': course,
-                            'semester': semester,
-                            'year': year,
-                        },
-                    )
-
-                messagebox.showinfo(_t('gui.academics.grade_tracking.module_manager.dialogs.success', default="Success"), f"Module '{module_code}' created successfully",
-                                  parent=dialog)
-
-                # Refresh the module list
-                self.refresh_modules()
-                dialog.destroy()
-
-            except sqlite3.Error as e:
-                if conn:
-                    conn.rollback()
-                messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.database_error', default="Database Error"), f"Failed to create module: {e}",
-                                   parent=dialog)
-            except Exception as e:
-                if conn:
-                    conn.rollback()
-                messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.error', default="Error"), f"Failed to create module: {e}",
-                                   parent=dialog)
-            finally:
-                if conn:
-                    conn.close()
-
-        ttk.Button(btn_frame, text=_t('gui.academics.grade_tracking.module_manager.buttons.save', default="Save"), command=save_module).pack(side='right', padx=5)
-        ttk.Button(btn_frame, text=_t('gui.academics.grade_tracking.module_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right')
-
-        # Set grab and focus
-        safe_grab_set(dialog)
-        code_entry.focus()
+        """Open the shared add-module dialog."""
+        open_module_dialog(self.root, mode="add",
+                           on_saved=lambda code: self.refresh_modules(),
+                           toplevel_factory=make_toplevel)
 
     def edit_module_dialog(self):
-        """Open dialog to edit an existing module"""
-        # Check if a module is selected
+        """Open the shared edit-module dialog for the selected row."""
         selected = self.module_tree.selection()
         if not selected:
-            messagebox.showwarning(_t('gui.academics.grade_tracking.module_manager.dialogs.no_selection', default="No Selection"), _t('gui.academics.grade_tracking.module_manager.dialogs.please_select_a_module_to_edit', default="Please select a module to edit"))
+            messagebox.showwarning(
+                _t('gui.academics.grade_tracking.module_manager.dialogs.no_selection', default="No Selection"),
+                _t('gui.academics.grade_tracking.module_manager.dialogs.please_select_a_module_to_edit', default="Please select a module to edit"))
             return
+        module_code = self.module_tree.item(selected[0])['values'][0]
+        open_module_dialog(self.root, mode="edit", module_code=module_code,
+                           on_saved=lambda code: self.refresh_modules(),
+                           toplevel_factory=make_toplevel)
 
-        # Get the module code from selected row
-        item = self.module_tree.item(selected[0])
-        module_code = item['values'][0]
-
-        # Load module data
-        conn = None
-        try:
-            conn = get_connection()
-            cursor = conn.cursor()
-
-            cursor.execute('''
-                SELECT module_code, module_name, module_type, credits,
-                       description, course, semester, year
-                FROM modules WHERE module_code = ?
-            ''', (module_code,))
-
-            module_data = cursor.fetchone()
-            if not module_data:
-                messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.module_manager.dialogs.module_not_found_in_database', default="Module not found in database"))
-                return
-
-            # Unpack module data
-            mod_code, mod_name, mod_type, mod_credits, mod_desc, mod_course, mod_semester, mod_year = module_data
-
-        except sqlite3.Error as e:
-            messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.database_error', default="Database Error"), f"Failed to load module: {e}")
-            return
-        finally:
-            if conn:
-                conn.close()
-
-        # Create dialog
-        dialog = tk.Toplevel(self.root)
-        dialog.title(f"Edit Module: {module_code}")
-        dialog.geometry("600x550")
-        dialog.transient(self.root)
-
-        # Create form
-        form_frame = ttk.Frame(dialog, padding="20")
-        form_frame.pack(fill='both', expand=True)
-
-        # Module Code (read-only - primary key)
-        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.module_code_variant_2', default="Module Code:")).grid(row=0, column=0, sticky='w', pady=5)
-        code_label = ttk.Label(form_frame, text=mod_code, font=('TkDefaultFont', 10, 'bold'))
-        code_label.grid(row=0, column=1, sticky='w', pady=5)
-
-        # Module Name (required)
-        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.module_name', default="Module Name*:")).grid(row=1, column=0, sticky='w', pady=5)
-        name_entry = ttk.Entry(form_frame, width=40)
-        name_entry.insert(0, mod_name or '')
-        name_entry.grid(row=1, column=1, sticky='ew', pady=5)
-
-        # Module Type
-        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.module_type', default="Module Type:")).grid(row=2, column=0, sticky='w', pady=5)
-        type_combo = ttk.Combobox(form_frame, width=38, values=[
-            'Core', 'Elective', 'Optional', 'Lab', 'Project', 'Seminar'
-        ])
-        if mod_type:
-            type_combo.set(mod_type)
-        type_combo.grid(row=2, column=1, sticky='ew', pady=5)
-
-        # Credits
-        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.credits', default="Credits:")).grid(row=3, column=0, sticky='w', pady=5)
-        credits_spinbox = ttk.Spinbox(form_frame, from_=1, to=20, width=38)
-        credits_spinbox.set(mod_credits or 1)
-        credits_spinbox.grid(row=3, column=1, sticky='ew', pady=5)
-
-        # Course
-        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.course_program', default="Course/Program:")).grid(row=4, column=0, sticky='w', pady=5)
-        course_entry = ttk.Entry(form_frame, width=40)
-        if mod_course:
-            course_entry.insert(0, mod_course)
-        course_entry.grid(row=4, column=1, sticky='ew', pady=5)
-
-        # Semester
-        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.semester', default="Semester:")).grid(row=5, column=0, sticky='w', pady=5)
-        semester_combo = ttk.Combobox(form_frame, width=38, values=[
-            'Fall', 'Spring', 'Summer', 'Winter', 'Year-long'
-        ])
-        if mod_semester:
-            semester_combo.set(mod_semester)
-        semester_combo.grid(row=5, column=1, sticky='ew', pady=5)
-
-        # Year
-        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.academic_year', default="Academic Year:")).grid(row=6, column=0, sticky='w', pady=5)
-        year_spinbox = ttk.Spinbox(form_frame, from_=2020, to=2030, width=38)
-        year_spinbox.set(mod_year or datetime.now().year)
-        year_spinbox.grid(row=6, column=1, sticky='ew', pady=5)
-
-        # Description (text area)
-        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.description', default="Description:")).grid(row=7, column=0, sticky='nw', pady=5)
-        desc_text = scrolledtext.ScrolledText(form_frame, width=40, height=8)
-        if mod_desc:
-            desc_text.insert('1.0', mod_desc)
-        desc_text.grid(row=7, column=1, sticky='ew', pady=5)
-
-        # Configure column weights
-        form_frame.columnconfigure(1, weight=1)
-
-        # Button frame
-        btn_frame = ttk.Frame(dialog, padding="10")
-        btn_frame.pack(fill='x', side='bottom')
-
-        def update_module():
-            """Update the module in database"""
-            # Validate required fields
-            module_name = name_entry.get().strip()
-
-            if not module_name:
-                messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.validation_error', default="Validation Error"), _t('gui.academics.grade_tracking.module_manager.dialogs.module_name_is_required', default="Module Name is required"), parent=dialog)
-                name_entry.focus()
-                return
-
-            # Get field values
-            module_type = type_combo.get().strip() or None
-            credits = int(credits_spinbox.get())
-            course = course_entry.get().strip() or None
-            semester = semester_combo.get().strip() or None
-            year = int(year_spinbox.get()) if year_spinbox.get() else None
-            description = desc_text.get('1.0', 'end-1c').strip() or None
-
-            conn = None
-            try:
-                conn = get_connection()
-                cursor = conn.cursor()
-
-                # Update module
-                cursor.execute('''
-                    UPDATE modules
-                    SET module_name = ?, module_type = ?, credits = ?,
-                        description = ?, course = ?, semester = ?, year = ?
-                    WHERE module_code = ?
-                ''', (module_name, module_type, credits, description,
-                     course, semester, year, module_code))
-
-                conn.commit()
-
-                if IMMUTABLE_AUDIT_AVAILABLE:
-                    user_id, session_id = get_gui_context()
-                    safe_log_security_event(
-                        action=AuditAction.RECORD_UPDATE,
-                        user_id=user_id,
-                        resource_type='module',
-                        resource_id=module_code,
-                        session_id=session_id,
-                        details={
-                            'module_code': module_code,
-                            'module_name': module_name,
-                            'module_type': module_type,
-                            'credits': credits,
-                            'course': course,
-                            'semester': semester,
-                            'year': year,
-                        },
-                    )
-
-                messagebox.showinfo(_t('gui.academics.grade_tracking.module_manager.dialogs.success', default="Success"), f"Module '{module_code}' updated successfully",
-                                  parent=dialog)
-
-                # Refresh the module list
-                self.refresh_modules()
-                dialog.destroy()
-
-            except sqlite3.Error as e:
-                if conn:
-                    conn.rollback()
-                messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.database_error', default="Database Error"), f"Failed to update module: {e}",
-                                   parent=dialog)
-            except Exception as e:
-                if conn:
-                    conn.rollback()
-                messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.error', default="Error"), f"Failed to update module: {e}",
-                                   parent=dialog)
-            finally:
-                if conn:
-                    conn.close()
-
-        ttk.Button(btn_frame, text=_t('gui.academics.grade_tracking.module_manager.buttons.update', default="Update"), command=update_module).pack(side='right', padx=5)
-        ttk.Button(btn_frame, text=_t('gui.academics.grade_tracking.module_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right')
-
-        # Set grab and focus
-        safe_grab_set(dialog)
-        name_entry.focus()
 
     def delete_module(self):
         """Delete a selected module"""
@@ -1162,7 +809,7 @@ class ModuleManager:
         module_name = item['values'][1]
 
         # Create dialog
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(f"Manage Enrollments: {module_code} - {module_name}")
         dialog.geometry("900x600")
         dialog.transient(self.root)
@@ -1425,7 +1072,7 @@ class ModuleManager:
                     if not override:
                         return
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             conn = None
             try:
@@ -1490,7 +1137,9 @@ class ModuleManager:
 
     def refresh_modules(self):
         """Refresh the modules list from database"""
-        if not hasattr(self, 'module_tree'):
+        # The tree is destroyed whenever the user navigates to another view;
+        # a stale reference here is normal, not an error.
+        if not attr_alive(self, 'module_tree'):
             return
 
         conn = None
@@ -1520,6 +1169,10 @@ class ModuleManager:
                     credits or 0,
                     display_desc
                 ))
+
+        except tk.TclError:
+            # Widget torn down mid-refresh (view switched / window closed).
+            return
 
         except sqlite3.Error as e:
             messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.database_error', default="Database Error"), f"Failed to load modules: {e}")

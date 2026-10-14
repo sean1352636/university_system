@@ -1,5 +1,8 @@
 """Split from equality_diversity/gui.py — assembled in package __init__.py."""
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -132,7 +135,7 @@ class _RecordsMixin:
                 cols = json.loads(row[0])
                 return [c for c in cols if c in SORTABLE_RECORD_COLUMNS]
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
         return list(SORTABLE_RECORD_COLUMNS)
 
     def _save_column_prefs(self, cols: list[str]):

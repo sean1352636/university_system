@@ -1,0 +1,100 @@
+{
+  "template_id": "apprenticeship_application_received",
+  "category": "academics",
+  "name": "Apprenticeship Application (Employer Notification)",
+  "description": "Sent to the employer's apprenticeship contact when a university student applies for one of their apprenticeship programmes",
+  "version": "1.0.0",
+  "subject": "New apprenticeship application — {programme_title} ({student_name})",
+  "body_text": "Dear {contact_name},\n\n{student_name} has applied for an apprenticeship with {employer_name} through {institution_name}.\n\n{separator}\nAPPLICATION\n{separator}\nReference:     {application_reference}\nApplicant:     {student_name} ({student_id})\nEmail:         {student_email}\nProgramme:     {programme_title}\nStandard ref:  {programme_reference}  (Level {programme_level})\nDuration:      {duration_months} months\nApplied on:    {applied_on}\nStatus:        {status}\n\nApplicant's notes:\n{notes}\n\n{separator}\n\nPlease review the application and respond through the apprenticeships system. If you are not the right person for apprenticeship recruitment at {employer_name}, let us know and we will update our records.\n\n{signature}",
+  "body_html": "<html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>New Apprenticeship Application</title></head><body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'><div style='max-width: 640px; margin: 0 auto; padding: 20px;'><h2 style='color: #2c5282; border-bottom: 2px solid #2c5282; padding-bottom: 10px;'>New Apprenticeship Application</h2><p>Dear <strong>{contact_name}</strong>,</p><p><strong>{student_name}</strong> has applied for an apprenticeship with <strong>{employer_name}</strong> through {institution_name}.</p><table style='width: 100%; border-collapse: collapse; background-color: #f7fafc; border: 1px solid #cbd5e0; border-radius: 4px; margin: 20px 0;'><tr><td style='padding: 10px 12px; color: #718096; width: 38%;'>Reference</td><td style='padding: 10px 12px;'>{application_reference}</td></tr><tr><td style='padding: 10px 12px; color: #718096;'>Applicant</td><td style='padding: 10px 12px;'><strong>{student_name}</strong> ({student_id})</td></tr><tr><td style='padding: 10px 12px; color: #718096;'>Email</td><td style='padding: 10px 12px;'>{student_email}</td></tr><tr><td style='padding: 10px 12px; color: #718096;'>Programme</td><td style='padding: 10px 12px;'><strong>{programme_title}</strong></td></tr><tr><td style='padding: 10px 12px; color: #718096;'>Standard</td><td style='padding: 10px 12px;'>{programme_reference} (Level {programme_level})</td></tr><tr><td style='padding: 10px 12px; color: #718096;'>Duration</td><td style='padding: 10px 12px;'>{duration_months} months</td></tr><tr><td style='padding: 10px 12px; color: #718096;'>Applied on</td><td style='padding: 10px 12px;'>{applied_on}</td></tr><tr><td style='padding: 10px 12px; color: #718096;'>Status</td><td style='padding: 10px 12px;'>{status}</td></tr></table><p style='color: #718096;'><strong>Applicant's notes:</strong><br>{notes}</p><p style='color: #718096; font-size: 0.9em; font-style: italic;'>Please review the application and respond through the apprenticeships system. If you are not the right person for apprenticeship recruitment at {employer_name}, let us know and we will update our records.</p><p style='margin-top: 30px;'>{signature}</p></div></body></html>",
+  "variables": {
+    "contact_name": {
+      "type": "string",
+      "description": "Name of the employer contact receiving the application",
+      "required": true
+    },
+    "employer_name": {
+      "type": "string",
+      "description": "Employer the application is for",
+      "required": true
+    },
+    "student_name": {
+      "type": "string",
+      "description": "Name of the applying student",
+      "required": true
+    },
+    "student_id": {
+      "type": "string",
+      "description": "The applicant's student id",
+      "required": true
+    },
+    "student_email": {
+      "type": "string",
+      "description": "Contact address for the applicant",
+      "required": false,
+      "default": "(not on file)"
+    },
+    "application_reference": {
+      "type": "string",
+      "description": "Reference for this application",
+      "required": true
+    },
+    "programme_title": {
+      "type": "string",
+      "description": "Title of the apprenticeship standard applied for",
+      "required": true
+    },
+    "programme_reference": {
+      "type": "string",
+      "description": "Standard reference, e.g. ST0116",
+      "required": false,
+      "default": "-"
+    },
+    "programme_level": {
+      "type": "string",
+      "description": "Apprenticeship level",
+      "required": false,
+      "default": "-"
+    },
+    "duration_months": {
+      "type": "string",
+      "description": "Programme duration in months",
+      "required": false,
+      "default": "-"
+    },
+    "applied_on": {
+      "type": "string",
+      "description": "Timestamp the application was submitted",
+      "required": true
+    },
+    "status": {
+      "type": "string",
+      "description": "Application status at submission",
+      "required": false,
+      "default": "Pending"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Anything the applicant added",
+      "required": false,
+      "default": "(none)"
+    },
+    "separator": {
+      "type": "string",
+      "description": "Visual separator for the text version",
+      "required": false,
+      "default": "----------------------------------------------------------------------"
+    },
+    "signature": {
+      "type": "string",
+      "description": "Email signature; supplied by the renderer when omitted",
+      "required": false
+    }
+  },
+  "tags": [
+    "apprenticeship",
+    "application",
+    "employer",
+    "progression"
+  ]
+}

@@ -1,4 +1,7 @@
 """Non-authenticated intent handlers and FAQ matching."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 import json
 import os
@@ -158,7 +161,7 @@ def handle_grades_query(chatbot, nlp_result: Dict, context: ConversationContext)
                         f"{len(r.get('components') or [])} components, "
                         f"{len(r.get('missing') or [])} missing.")
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
     # GPA fallback (legacy chatbot helper).
     try:
@@ -167,7 +170,7 @@ def handle_grades_query(chatbot, nlp_result: Dict, context: ConversationContext)
             return (f"Your current GPA is {gpa_info['gpa']} based on "
                     f"{gpa_info['total_credits']} credit hours.")
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return ("Tell me a module code (e.g. 'CS101') for a specific grade, "
             "or check the student portal for the full transcript.")
 
@@ -244,7 +247,7 @@ def _route_to_tools(chatbot, message: str,
             ]
             return "Recent postings:\n" + "\n".join(lines)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     # Cases.
     if any(k in text for k in ("misconduct case", "disciplinary",
@@ -431,6 +434,38 @@ def _route_to_tools(chatbot, message: str,
     return None
 
 
+# Command verbs, filler and the domain nouns themselves — none of these are
+# ever part of a person's name, role or department, so whatever survives is the
+# actual search term. Word-level (not substring) so "find" does not gut
+# "finance" and "office" does not gut "officer".
+_STAFF_QUERY_STOPWORDS = frozenset({
+    "a", "all", "am", "and", "any", "are", "at", "be", "can", "check", "contact",
+    "contacts", "details", "directory", "display", "do", "does", "employee",
+    "employees", "every", "everyone", "find", "for", "from", "get", "give",
+    "here", "i", "in", "info", "information", "is", "list", "me", "member",
+    "members", "my", "name", "names", "of", "office", "on", "our", "out",
+    "please", "search", "see", "show", "staff", "team", "tell", "that", "the",
+    "their", "there", "these", "they", "this", "to", "us", "view", "want",
+    "what", "which", "who", "whom", "with", "works", "you", "your",
+})
+
+
+def _staff_search_term(user_message: str) -> str:
+    """Reduce a natural-language staff query to the part worth searching for.
+
+    Returns "" when the message is a plain listing request ("list all staff
+    members"), which the caller treats as "show everyone".
+    """
+    cleaned = "".join(
+        c if (c.isalnum() or c.isspace() or c in "-'") else " "
+        for c in (user_message or "").lower()
+    )
+    kept = [w for w in cleaned.split() if w not in _STAFF_QUERY_STOPWORDS]
+    term = " ".join(kept).strip()
+    # A one- or two-character residue is noise, not a name.
+    return term if len(term) > 2 else ""
+
+
 def nlp_result_safe_module(text: str) -> Optional[str]:
     """Tiny regex-free extractor: the first uppercase-letter+digits token."""
     for tok in (text or "").upper().split():
@@ -559,7 +594,7 @@ def handle_academic_support_query(chatbot, nlp_result: Dict, context: Conversati
                     return f"{module} timetable:\n" + "\n".join(lines)
                 return f"No scheduled events on file for {module}."
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
         return "I can show your class timetable. Please use the 'View Schedule' quick action or ask 'Show my schedule'."
 
     # General academic support fallback
@@ -706,27 +741,38 @@ def handle_administrative_query(chatbot, nlp_result: Dict, context: Conversation
                 "  or contact facilities@university.ac.uk")
 
     # Staff directory
-    if any(kw in user_message for kw in ["staff", "directory", "contact", "department", "find", "office"]):
-        search_term = user_message
-        for prefix in ["find", "contact", "staff directory", "staff", "department", "who is"]:
-            search_term = search_term.replace(prefix, "").strip()
-        search_term = search_term.strip("? ")
-        if search_term and len(search_term) > 2:
-            results = chatbot.search_staff_directory(search_term)
-            if results:
-                response = f"Staff Directory Results for '{search_term}':\n\n"
-                for s in results:
-                    response += f"  {s['name']}\n"
-                    response += f"    Role: {s['role'] or 'N/A'}  |  Dept: {s['department'] or 'N/A'}\n"
-                    response += f"    Email: {s['email'] or 'N/A'}"
-                    if s.get('phone'):
-                        response += f"  |  Phone: {s['phone']}"
-                    if s.get('office'):
-                        response += f"  |  Office: {s['office']}"
-                    response += "\n\n"
-                return response
-            return f"No staff members found matching '{search_term}'."
-        return "I can search the staff directory. Who are you looking for?"
+    if any(kw in user_message for kw in ["staff", "directory", "contact", "department",
+                                         "find", "office", "employee", "who works"]):
+        search_term = _staff_search_term(user_message)
+        # "list all staff" is a listing request, not a search for the word
+        # "all". Previously the extractor stripped its known prefixes with a
+        # plain substring replace and handed the leftover filler to the query,
+        # so "show me the staff directory" searched for "show me the" and
+        # reported no matches. Now an empty residue means "list everyone".
+        listing = not search_term
+
+        results = chatbot.search_staff_directory(
+            search_term, limit=25 if listing else 10)
+
+        if results:
+            header = (f"Staff Directory ({len(results)}):"
+                      if listing
+                      else f"Staff Directory Results for '{search_term}':")
+            response = header + "\n\n"
+            for s in results:
+                response += f"  {s['name']}\n"
+                response += f"    Role: {s['role'] or 'N/A'}  |  Dept: {s['department'] or 'N/A'}\n"
+                response += f"    Email: {s['email'] or 'N/A'}"
+                if s.get('phone'):
+                    response += f"  |  Phone: {s['phone']}"
+                if s.get('office'):
+                    response += f"  |  Office: {s['office']}"
+                response += "\n\n"
+            return response
+
+        if listing:
+            return "There are no staff records in the directory yet."
+        return f"No staff members found matching '{search_term}'."
 
     # General administrative
     best_match = find_best_faq_match(chatbot, context.messages[-1]["user_message"])

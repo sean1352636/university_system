@@ -65,63 +65,82 @@ class DashboardTab(ModuleTab):
         for w in self.cards_frame.winfo_children():
             w.destroy()
 
+        this_year = str(date.today().year)
+        people_total = len(fetch_people(self.db))
+        outputs_total = self.db.query(
+            "SELECT COUNT(*) c FROM research_publications")[0]["c"]
+        outputs_this_year = self.db.query(
+            "SELECT COUNT(*) c FROM research_publications "
+            "WHERE substr(COALESCE(publication_date,''),1,4)=?",
+            (this_year,))[0]["c"]
+        projects = self.db.query(
+            "SELECT COUNT(*) c, COALESCE(SUM(total_budget),0) s "
+            "FROM research_projects")[0]
+        licensed = self.db.query(
+            "SELECT COUNT(*) c FROM ip_licenses "
+            "WHERE COALESCE(licensee_name,'') != ''")[0]["c"]
+
         stats = [
             ("Active ethics apps",
-             self.db.query("SELECT COUNT(*) c FROM research_ethics_applications "
-                           "WHERE status IN ('Submitted','Under Review',"
+             self.db.query("SELECT COUNT(*) c FROM ethics_reviews "
+                           "WHERE decision IN ('Submitted','Under Review','pending',"
                            "'Revisions Required')")[0]["c"],
+             "awaiting a decision",
              PALETTE["accent"]),
             ("Approved (current)",
-             self.db.query("SELECT COUNT(*) c FROM research_ethics_applications "
-                           "WHERE status='Approved'")[0]["c"],
+             self.db.query("SELECT COUNT(*) c FROM ethics_reviews "
+                           "WHERE decision='Approved'")[0]["c"],
+             "",
              PALETTE["success"]),
             ("Outputs (REF-tagged)",
-             self.db.query("SELECT COUNT(*) c FROM research_outputs "
+             self.db.query("SELECT COUNT(*) c FROM research_publications "
                            "WHERE ref_submitted=1")[0]["c"],
+             f"{outputs_total} total · {outputs_this_year} in {this_year}",
              PALETTE["accent"]),
             ("IP assets",
-             self.db.query("SELECT COUNT(*) c FROM research_ip_assets")[0]["c"],
-             PALETTE["header"]),
+             self.db.query("SELECT COUNT(*) c FROM ip_disclosures")[0]["c"],
+             f"{licensed} licensed",
+             # Not PALETTE["header"] — flattened to the page colour in
+             # 8.117.65, which drew this card's strip invisibly.
+             PALETTE["muted"]),
             ("Active theses",
-             self.db.query("SELECT COUNT(*) c FROM research_theses "
+             self.db.query("SELECT COUNT(*) c FROM student_supervisions "
                            "WHERE status IN ('Active','Submitted',"
                            "'Under Examination','Viva Scheduled',"
                            "'Minor Corrections','Major Corrections')")[0]["c"],
+             f"{people_total} people on the register",
              PALETTE["warn"]),
             ("IP revenue (total)",
-             f"£{self.db.query('SELECT COALESCE(SUM(revenue_to_date),0) s FROM research_ip_assets')[0]['s']:,.0f}",
+             money(self.db.query(
+                 "SELECT COALESCE(SUM(rv.total_revenue),0) s "
+                 "FROM ip_revenue_shares rv")[0]["s"]),
+             "to date",
              PALETTE["success"]),
+            # Funding lives on the grants side's research_projects; the
+            # portal reported none of it before.
+            ("Funded research",
+             money(projects["s"]),
+             f"across {projects['c']} project{'' if projects['c'] == 1 else 's'}",
+             PALETTE["accent"]),
         ]
 
-        for i, (lbl, val, colour) in enumerate(stats):
-            card = tk.Frame(self.cards_frame, bg=PALETTE["panel"],
-                            highlightbackground=PALETTE["border"],
-                            highlightthickness=1)
-            card.grid(row=0, column=i, sticky="nsew", padx=(0 if i == 0 else 10, 0))
+        for i, (lbl, val, note, colour) in enumerate(stats):
+            card = StatCard(self.cards_frame, lbl, val, note=note, colour=colour)
+            card.grid(row=0, column=i, sticky="nsew",
+                      padx=(0 if i == 0 else 10, 0))
             self.cards_frame.columnconfigure(i, weight=1, uniform="kpi")
-
-            strip = tk.Frame(card, bg=colour, height=4)
-            strip.pack(fill="x")
-
-            inner = tk.Frame(card, bg=PALETTE["panel"])
-            inner.pack(fill="both", expand=True, padx=16, pady=14)
-            tk.Label(inner, text=str(val), bg=PALETTE["panel"],
-                     fg=PALETTE["header"],
-                     font=("Segoe UI", 20, "bold")).pack(anchor="w")
-            tk.Label(inner, text=lbl, bg=PALETTE["panel"],
-                     fg=PALETTE["muted"],
-                     font=("Segoe UI", 9)).pack(anchor="w")
 
         # Upcoming & overdue milestones
         self.left_list.delete(0, "end")
         today = date.today().isoformat()
         rows = self.db.query("""
-            SELECT m.name, m.due_date, m.status, p.name AS student, t.title
-            FROM research_thesis_milestones m
-            JOIN research_theses t ON t.id = m.thesis_id
-            JOIN research_people p ON p.id = t.student_id
-            WHERE m.status='Pending' OR (m.status='Pending' AND m.due_date < ?)
-            ORDER BY COALESCE(m.due_date,'9999-12-31')
+            SELECT m.milestone_name AS name, m.target_date AS due_date,
+                   m.status, COALESCE(v.student_name,'—') AS student,
+                   v.thesis_title AS title
+            FROM research_milestones m
+            JOIN student_supervisions v ON v.supervision_id = m.thesis_id
+            WHERE m.status='Pending' OR (m.status='Pending' AND m.target_date < ?)
+            ORDER BY COALESCE(m.target_date,'9999-12-31')
             LIMIT 12
         """, (today,))
         if not rows:
@@ -140,30 +159,32 @@ class DashboardTab(ModuleTab):
         self.right_list.delete(0, "end")
         attention = []
         rows = self.db.query(
-            "SELECT reference,title,status FROM research_ethics_applications "
-            "WHERE status IN ('Revisions Required','Expired')")
+            "SELECT reference,title,decision AS status FROM ethics_reviews "
+            "WHERE decision IN ('Revisions Required','Expired')")
         for r in rows:
             attention.append(("Ethics", f"{r['reference']}: {r['status']}",
                               r["title"], PALETTE["danger"]))
 
         rows = self.db.query(
-            "SELECT reference,title,status FROM research_ethics_applications "
-            "WHERE status='Approved' AND approval_expiry IS NOT NULL "
-            "AND approval_expiry < date('now','+90 days')")
+            "SELECT reference,title,decision AS status FROM ethics_reviews "
+            "WHERE decision='Approved' AND approval_expiry_date IS NOT NULL "
+            "AND approval_expiry_date < date('now','+90 days')")
         for r in rows:
             attention.append(("Ethics",
                               f"{r['reference']}: approval expiring",
                               r["title"], PALETTE["warn"]))
 
         rows = self.db.query(
-            "SELECT t.title, p.name FROM research_theses t JOIN research_people p ON p.id=t.student_id "
-            "WHERE t.status='Minor Corrections' OR t.status='Major Corrections'")
+            "SELECT thesis_title AS title, COALESCE(student_name,'—') AS name "
+            "FROM student_supervisions "
+            "WHERE status IN ('Minor Corrections','Major Corrections')")
         for r in rows:
             attention.append(("Thesis", "Corrections outstanding",
                               f"{r['name']} — {r['title']}", PALETTE["warn"]))
 
         rows = self.db.query(
-            "SELECT reference,title FROM research_ip_assets WHERE status='Disclosed'")
+            "SELECT COALESCE(reference,'—') AS reference, title "
+            "FROM ip_disclosures WHERE status IN ('Disclosed','draft')")
         for r in rows:
             attention.append(("IP", f"{r['reference']}: awaiting evaluation",
                               r["title"], PALETTE["accent"]))

@@ -259,7 +259,12 @@ def enhanced_add_book():
     try:
         # Insert the book into the database
         cursor.execute('''
-        INSERT INTO books VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO books (
+                book_id, title, author, isbn, publisher, category,
+                year_published, description, location, status, added_date, last_updated,
+                reading_level, tags, cover_image_path, digital_copy_path, acquisition_cost,
+                barcode, qr_code_path, total_pages, language, edition, condition_notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             book_id, title, author, isbn, publisher, category,
             year_published, description, location, status, now, now,

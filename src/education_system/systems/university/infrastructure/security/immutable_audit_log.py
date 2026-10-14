@@ -97,7 +97,13 @@ class ImmutableAuditLog:
                        If neither available, generates a warning.
         """
         self._init_secret_key(secret_key)
-        self._ensure_table_exists()
+        # No table check here. This singleton is built lazily on the first
+        # audit write, which is normally inside a caller's open write
+        # transaction — and SQLite allows one writer, so opening a second
+        # one here blocked on a lock only the caller could release, spent
+        # the full retry window, then failed the audited operation with
+        # "database is locked". Every write ensures the schema on the
+        # connection it is about to insert on, so nothing is lost.
 
     def _init_secret_key(self, secret_key: Optional[str] = None) -> None:
         """Initialize the secret key for HMAC signatures."""
@@ -128,68 +134,85 @@ class ImmutableAuditLog:
                 )
                 ImmutableAuditLog._SECRET_KEY = os.urandom(32)
 
-    def _ensure_table_exists(self) -> None:
-        """Create immutable audit log table if it doesn't exist."""
+    def _create_schema(self, conn) -> None:
+        """Table, indexes and append-only triggers, on *conn*.
+
+        Split out so the same DDL runs whether this opens its own
+        transaction or joins a caller's. All statements are IF NOT
+        EXISTS, so running it per write is a cheap no-op.
+        """
+        # Create the immutable audit log table
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS immutable_audit_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT NOT NULL,
+                user_id TEXT,
+                action TEXT NOT NULL,
+                resource_type TEXT,
+                resource_id TEXT,
+                details TEXT,
+                ip_address TEXT,
+                user_agent TEXT,
+                session_id TEXT,
+                previous_hash TEXT,
+                current_hash TEXT NOT NULL,
+                hmac_signature TEXT NOT NULL,
+                UNIQUE(current_hash)
+            )
+        """)
+
+        # Create index for efficient hash chain verification
+        conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_audit_hash_chain
+            ON immutable_audit_log(id, previous_hash, current_hash)
+        """)
+
+        # Create index for common queries
+        conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_audit_user_action
+            ON immutable_audit_log(user_id, action, timestamp)
+        """)
+
+        # Create index for resource lookups
+        conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_audit_resource
+            ON immutable_audit_log(resource_type, resource_id, timestamp)
+        """)
+
+        # Enforce append-only at the database level. Without these the
+        # "immutable" claim was documentation only: any writer with a
+        # handle could UPDATE or DELETE a row and the hash chain would
+        # only reveal it if something bothered to verify it. Mirrors
+        # the sensitive_access_audit triggers in the auth schema.
+        conn.execute("""
+            CREATE TRIGGER IF NOT EXISTS prevent_immutable_audit_update
+            BEFORE UPDATE ON immutable_audit_log
+            BEGIN
+                SELECT RAISE(ABORT, 'immutable audit log records cannot be modified');
+            END
+        """)
+        conn.execute("""
+            CREATE TRIGGER IF NOT EXISTS prevent_immutable_audit_delete
+            BEFORE DELETE ON immutable_audit_log
+            BEGIN
+                SELECT RAISE(ABORT, 'immutable audit log records cannot be deleted');
+            END
+        """)
+        logger.debug("Immutable audit log schema ensured")
+
+    def _ensure_table_exists(self, conn=None) -> None:
+        """Create immutable audit log table if it doesn't exist.
+
+        With *conn* the DDL joins the caller's open transaction — opening
+        a second one here is what deadlocked a caller that already held
+        the single WAL write lock.
+        """
+        if conn is not None:
+            self._create_schema(conn)
+            return
         try:
             with transaction() as conn:
-                # Create the immutable audit log table
-                conn.execute("""
-                    CREATE TABLE IF NOT EXISTS immutable_audit_log (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        timestamp TEXT NOT NULL,
-                        user_id TEXT,
-                        action TEXT NOT NULL,
-                        resource_type TEXT,
-                        resource_id TEXT,
-                        details TEXT,
-                        ip_address TEXT,
-                        user_agent TEXT,
-                        session_id TEXT,
-                        previous_hash TEXT,
-                        current_hash TEXT NOT NULL,
-                        hmac_signature TEXT NOT NULL,
-                        UNIQUE(current_hash)
-                    )
-                """)
-
-                # Create index for efficient hash chain verification
-                conn.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_audit_hash_chain
-                    ON immutable_audit_log(id, previous_hash, current_hash)
-                """)
-
-                # Create index for common queries
-                conn.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_audit_user_action
-                    ON immutable_audit_log(user_id, action, timestamp)
-                """)
-
-                # Create index for resource lookups
-                conn.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_audit_resource
-                    ON immutable_audit_log(resource_type, resource_id, timestamp)
-                """)
-
-                # Enforce append-only at the database level. Without these the
-                # "immutable" claim was documentation only: any writer with a
-                # handle could UPDATE or DELETE a row and the hash chain would
-                # only reveal it if something bothered to verify it. Mirrors
-                # the sensitive_access_audit triggers in the auth schema.
-                conn.execute("""
-                    CREATE TRIGGER IF NOT EXISTS prevent_immutable_audit_update
-                    BEFORE UPDATE ON immutable_audit_log
-                    BEGIN
-                        SELECT RAISE(ABORT, 'immutable audit log records cannot be modified');
-                    END
-                """)
-                conn.execute("""
-                    CREATE TRIGGER IF NOT EXISTS prevent_immutable_audit_delete
-                    BEFORE DELETE ON immutable_audit_log
-                    BEGIN
-                        SELECT RAISE(ABORT, 'immutable audit log records cannot be deleted');
-                    END
-                """)
-
+                self._create_schema(conn)
                 logger.debug("Immutable audit log table initialized")
 
         except Exception as e:
@@ -277,6 +300,7 @@ class ImmutableAuditLog:
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None,
         session_id: Optional[str] = None,
+        conn: Optional[Any] = None,
     ) -> str:
         """
         Add an entry to the immutable audit log.
@@ -300,58 +324,57 @@ class ImmutableAuditLog:
         Raises:
             Exception: If entry creation fails
         """
+        # One write path, two ways in. With *conn* the entry joins the
+        # caller's transaction, so the record and its audit entry commit
+        # together — which is what the fail-closed contract needs, and
+        # avoids deadlocking against the caller's own write lock. Without
+        # it, a transaction is opened here as before.
         try:
-            with transaction() as conn:
-                # Get the hash of the previous entry (or genesis hash if first entry)
-                previous = conn.execute("""
-                    SELECT current_hash FROM immutable_audit_log
-                    ORDER BY id DESC LIMIT 1
-                """).fetchone()
-
-                # Genesis hash (64 zeros) for the first entry
-                previous_hash = previous['current_hash'] if previous else '0' * 64
-
-                # Create entry data
-                timestamp = datetime.utcnow().isoformat() + 'Z'
-                details_json = json.dumps(details or {}, sort_keys=True, separators=(',', ':'))
-
-                # Calculate the cryptographic hash
-                current_hash = self._calculate_hash(
-                    previous_hash=previous_hash,
-                    timestamp=timestamp,
-                    user_id=user_id,
-                    action=action,
-                    resource_type=resource_type,
-                    resource_id=resource_id,
-                    details_json=details_json,
-                    ip_address=ip_address,
-                    user_agent=user_agent,
-                    session_id=session_id,
-                )
-
-                # Calculate HMAC signature for the entire entry
-                hmac_data = f"{current_hash}|{timestamp}|{action}"
-                hmac_signature = self._calculate_hmac(hmac_data)
-
-                # Insert the entry
-                conn.execute("""
-                    INSERT INTO immutable_audit_log
-                    (timestamp, user_id, action, resource_type, resource_id,
-                     details, ip_address, user_agent, session_id,
-                     previous_hash, current_hash, hmac_signature)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    timestamp, user_id, action, resource_type, resource_id,
-                    details_json, ip_address, user_agent, session_id,
-                    previous_hash, current_hash, hmac_signature
-                ))
-
-                logger.debug(f"Audit log entry added: action={action}, hash={current_hash[:16]}...")
-                return current_hash
-
+            if conn is not None:
+                return self._write_entry(
+                    conn, user_id, action, resource_type, resource_id,
+                    details, ip_address, user_agent, session_id)
+            with transaction() as own_conn:
+                return self._write_entry(
+                    own_conn, user_id, action, resource_type, resource_id,
+                    details, ip_address, user_agent, session_id)
         except Exception as e:
             logger.error(f"Failed to add audit log entry: {e}")
             raise
+
+    def _write_entry(self, conn, user_id, action, resource_type, resource_id,
+                     details, ip_address, user_agent, session_id) -> str:
+        """Append one chained entry using an existing connection.
+
+        The caller owns the transaction: nothing here commits, so the
+        entry lands or rolls back with whatever the caller is writing.
+        """
+        self._ensure_table_exists(conn=conn)
+        previous = conn.execute(
+            "SELECT current_hash FROM immutable_audit_log ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+        previous_hash = (previous['current_hash'] if previous else '0' * 64)
+
+        timestamp = datetime.utcnow().isoformat() + 'Z'
+        details_json = json.dumps(details or {}, sort_keys=True, separators=(',', ':'))
+        current_hash = self._calculate_hash(
+            previous_hash=previous_hash, timestamp=timestamp, user_id=user_id,
+            action=action, resource_type=resource_type, resource_id=resource_id,
+            details_json=details_json, ip_address=ip_address,
+            user_agent=user_agent, session_id=session_id,
+        )
+        hmac_signature = self._calculate_hmac(f"{current_hash}|{timestamp}|{action}")
+        conn.execute(
+            """INSERT INTO immutable_audit_log
+               (timestamp, user_id, action, resource_type, resource_id,
+                details, ip_address, user_agent, session_id,
+                previous_hash, current_hash, hmac_signature)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (timestamp, user_id, action, resource_type, resource_id,
+             details_json, ip_address, user_agent, session_id,
+             previous_hash, current_hash, hmac_signature))
+        logger.debug("Audit log entry added on caller connection: action=%s", action)
+        return current_hash
 
     def verify_integrity(self, limit: Optional[int] = None) -> Dict[str, Any]:
         """
@@ -606,6 +629,7 @@ def log_security_event(
     ip_address: Optional[str] = None,
     user_agent: Optional[str] = None,
     session_id: Optional[str] = None,
+    conn: Optional[Any] = None,
 ) -> str:
     """
     Convenience function to log a security event.
@@ -632,6 +656,7 @@ def log_security_event(
         ip_address=ip_address,
         user_agent=user_agent,
         session_id=session_id,
+        conn=conn,
     )
 
 

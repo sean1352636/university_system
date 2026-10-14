@@ -106,4 +106,4 @@ class SettingsManager(
             elif hasattr(self.gui, 'update_status'):
                 self.gui.update_status(message)
         except Exception:
-            pass  # Silently ignore if status update fails
+            logger.debug("Suppressed exception", exc_info=True)

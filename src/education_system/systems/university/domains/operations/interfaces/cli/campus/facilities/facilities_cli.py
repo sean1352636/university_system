@@ -12,6 +12,9 @@ Asset Inventory, Energy Usage Tracking, and Space Utilization Reports.
 """
 
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from datetime import datetime
 from typing import Optional
@@ -86,7 +89,7 @@ def _current_username(auth) -> str:
         if isinstance(user, dict):
             return user.get("username") or user.get("name") or "cli-user"
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return "cli-user"
 
 

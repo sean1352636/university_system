@@ -827,7 +827,7 @@ class DonationsMixin:
 
         def update_donor_recognition_levels(self):
             """Configure donor recognition tiers"""
-            if not self.has_permission('admin') and not self.has_permission('manage_fundraising'):
+            if not self.has_permission('manage_campaigns'):
                 messagebox.showerror(_t('gui.learners.alumni.donations.dialogs.permission_denied', default="Permission Denied"),
                                    _t('gui.learners.alumni.donations.dialogs.you_don_t_have_permission_to_manage_donor_recognition_levels', default="You don't have permission to manage donor recognition levels."))
                 return

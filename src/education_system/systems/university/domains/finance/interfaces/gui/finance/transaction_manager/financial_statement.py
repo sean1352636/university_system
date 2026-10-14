@@ -1,4 +1,5 @@
 """Financial statement generation and display"""
+from education_system.systems.university.shell.gui import report_view as _rv
 
 from education_system.systems.university.domains.finance.interfaces.gui.finance.transaction_manager._imports import (
     tk, ttk, messagebox, filedialog, os, _, datetime, get_connection,
@@ -33,7 +34,7 @@ class FinancialStatementMixin:
         statement_frame = ttk.LabelFrame(dialog, text=_("finance_gui.transaction_manager.financial_statement_frame"), padding=15)
         statement_frame.pack(fill='both', expand=True, padx=20, pady=10)
 
-        statement_text = ScrolledText(statement_frame, height=25, width=100, font=('Courier', 10))
+        statement_text = _rv.TextReportView(statement_frame, height=25, width=100, font=('Courier', 10))
         statement_text.pack(fill='both', expand=True)
 
         # Export buttons

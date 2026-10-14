@@ -20,6 +20,8 @@ from education_system.systems.university.infrastructure.shared_context import ge
 
 from education_system.systems.university.infrastructure.i18n import get_text as get_translation
 
+from education_system.platform.delivery.gui.report_presentation import ReportPane
+
 try:
     from education_system.systems.university.domains.assessment.domain.grading.grade_calculation import (
         calculate_student_gpa, letter_to_gpa,

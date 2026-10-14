@@ -65,9 +65,13 @@ def test_dashboard_aggregates_linked_children(feature_db):
 def test_snapshot_excludes_no_extra_pii(feature_db):
     pp = feature_db.mods["parent_portal"]
     snap = pp.student_snapshot("S2")
-    # Only the safe, aggregated keys are present.
+    # Exact equality on purpose: this is a ratchet, not a spot check. The
+    # snapshot is the parent-facing surface, so a new key must be a
+    # deliberate decision to show guardians something new — adding one
+    # here is the moment to ask whether it belongs in front of them.
     assert set(snap) == {"student_id", "full_name", "status", "attendance_pct",
-                         "risk_band", "behaviour_30d", "subjects", "ucas"}
+                         "risk_band", "behaviour_30d", "subjects", "ucas",
+                         "coursework"}
 
 
 def test_unlink(feature_db):
@@ -77,3 +81,33 @@ def test_unlink(feature_db):
     assert len(pp.linked_students(aid)) == 1
     pp.unlink_student(aid, "S1")
     assert pp.linked_students(aid) == []
+
+
+def test_invalid_email_rejected_on_create(feature_db):
+    pp = feature_db.mods["parent_portal"]
+    with pytest.raises(pp.ValidationError):
+        pp.create_account(username="parent6", password="password1",
+                          full_name="Pat", email="not-an-address")
+
+
+def test_update_account_sets_and_clears_email(feature_db):
+    pp = feature_db.mods["parent_portal"]
+    aid = pp.create_account(username="parent7", password="password1", full_name="Pat")
+    assert pp.get_account(aid).email is None
+
+    acc = pp.update_account(aid, email=" pat@example.test ")
+    assert acc.email == "pat@example.test"
+    # Name untouched when only the email is passed.
+    assert acc.full_name == "Pat"
+
+    # Omitting the field keeps the address; passing "" removes it.
+    assert pp.update_account(aid, full_name="Patricia").email == "pat@example.test"
+    assert pp.update_account(aid, email="").email is None
+
+
+def test_update_account_rejects_invalid_email(feature_db):
+    pp = feature_db.mods["parent_portal"]
+    aid = pp.create_account(username="parent8", password="password1", full_name="Pat")
+    with pytest.raises(pp.ValidationError):
+        pp.update_account(aid, email="pat@@example")
+    assert pp.get_account(aid).email is None

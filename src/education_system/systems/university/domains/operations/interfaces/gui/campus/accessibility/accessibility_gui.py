@@ -77,7 +77,7 @@ class AccessibilityGUI:
         # Title
         title_label = ttk.Label(
             main_container,
-            text=_t("accessibility.title", default="Accessibility Services Portal"),
+            text=_t("accessibility.title", default="===== ACCESSIBILITY ====="),
             font=('Arial', 16, 'bold')
         )
         title_label.grid(row=0, column=0, pady=(0, 10), sticky=tk.W)
@@ -811,7 +811,7 @@ class AccessibilityGUI:
 
 def main():
     """Main entry point for the accessibility GUI."""
-    from education_system.systems.university.interfaces.gui.shell.auth.launch_guard import (
+    from education_system.systems.university.shell.gui.auth.launch_guard import (
         require_launcher_auth,
     )
     if require_launcher_auth("Accessibility GUI") is None:

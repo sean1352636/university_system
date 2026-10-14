@@ -12,8 +12,9 @@ from education_system.systems.university.infrastructure.database.db import (
     sqlite3,
     get_connection,
 )
-from education_system.systems.university.infrastructure.sql_safety import (
+from education_system.systems.university.infrastructure.sql_safety import (  # nosec B608
     safe_alter_table_add_column,
+    validate_identifier,
 )
 
 
@@ -27,6 +28,10 @@ def _relax_notnull_column(cursor, table, column, create_new_sql, tmp_name, colum
     preserving all existing rows. Guarded by PRAGMA table_info so it only
     runs when the column is still NOT NULL and is safe to run repeatedly.
     """
+    # db-audit: ignore[DBW001] - join over a code-controlled list; parameter passed through a validator
+    # Identifiers cannot be parameterised, so they are validated instead.
+    table = validate_identifier(table)
+    column = validate_identifier(column)
     info = cursor.execute(f"PRAGMA table_info({table})").fetchall()
     notnull = {row[1]: row[3] for row in info}
     # Skip if the table doesn't exist yet or the column is already nullable.
@@ -34,6 +39,7 @@ def _relax_notnull_column(cursor, table, column, create_new_sql, tmp_name, colum
         return
     col_list = ", ".join(columns)
     cursor.execute(create_new_sql)
+    # db-audit: ignore[DBW001] - join over a code-controlled list; parameter passed through a validator
     cursor.execute(
         f"INSERT INTO {tmp_name} ({col_list}) SELECT {col_list} FROM {table}"
     )
@@ -444,6 +450,7 @@ def _init_academic_schemas() -> None:
 
             for idx_name, table, columns in indexes:
                 try:
+                    # db-audit: ignore[DBW001] - literal collection
                     cursor.execute(f'CREATE INDEX IF NOT EXISTS {idx_name} ON {table}({columns})')
                 except sqlite3.Error:
                     pass  # Index may already exist

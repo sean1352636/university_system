@@ -1,7 +1,11 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, simpledialog
+from tkinter import ttk, filedialog, simpledialog
 import tkinter.font as tkFont
 from tkinter import scrolledtext
 from datetime import datetime, timedelta
@@ -54,9 +58,6 @@ try:
     )
     from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui.registration_dialogs import (
         RegisterForTripDialog
-    )
-    from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui.calendar_dialogs import (
-        CreateCalendarEventDialog
     )
     TRIP_GUI_AVAILABLE = True
 except ImportError:
@@ -117,6 +118,9 @@ from education_system.systems.university.domains.academics.interfaces.gui.academ
     ExportDialog, ImportCalendarDialog, CalendarSyncDialog,
     ImportHolidaysDialog, BulkOperationsDialog, HelpDialog, AboutDialog
 )
+# Message boxes parented to the window that raised them, not the main
+# GUI — see _dialogs.
+from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar._dialogs import messagebox
 
 # ============================================================================
 # MAIN CALENDAR GUI CLASS
@@ -217,14 +221,14 @@ class CalendarGUI(DashboardMixin, CalendarViewMixin, EventsViewMixin, AcademicVi
                     if hasattr(self, '_search_events'):
                         self._search_events()
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
             return False
         try:
             tree.selection_set(matches)
             tree.see(matches[0])
             tree.focus(matches[0])
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         # When exactly one event matches, jump straight to its details
         # dialog — the user clearly meant that one. For multi-match days
         # leave selection alone so they can pick.
@@ -232,7 +236,7 @@ class CalendarGUI(DashboardMixin, CalendarViewMixin, EventsViewMixin, AcademicVi
             try:
                 self._view_event_details()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
         return True
 
     def init_calendar_database():
@@ -553,8 +557,8 @@ class CalendarGUI(DashboardMixin, CalendarViewMixin, EventsViewMixin, AcademicVi
         if TRIP_GUI_AVAILABLE:
             nav_buttons.append(
                 (_("academic_calendar.nav.trip_manager", default="\U0001f3d5 Trip Manager"), self._open_trip_manager))
-            nav_buttons.append(
-                (_("academic_calendar.nav.trip_calendar_event", default="\U0001f517 Trip Calendar Event"), self._create_trip_calendar_event))
+            # No "Trip Calendar Event" button: trips are registered from a
+            # Trip-typed event in Add Event, not created from the trip side.
             nav_buttons.append(
                 (_("academic_calendar.nav.trip_links", default="\U0001f4cb Trip-Calendar Links"), self._view_trip_calendar_links))
 
@@ -675,10 +679,9 @@ class CalendarGUI(DashboardMixin, CalendarViewMixin, EventsViewMixin, AcademicVi
                 label=_("academic_calendar.menu.open_trip_manager", default="Open Trip Manager"),
                 command=self._open_trip_manager)
             trips_menu.add_separator()
-            if is_admin or is_staff:
-                trips_menu.add_command(
-                    label=_("academic_calendar.menu.create_trip_event", default="Create Calendar Event for Trip"),
-                    command=self._create_trip_calendar_event)
+            # "Create Calendar Event for Trip" removed: a trip now starts as a
+            # Trip-typed event in Add Event, which registers the trip itself.
+            # Creating the link from both ends produced duplicate events.
             trips_menu.add_command(
                 label=_("academic_calendar.menu.view_trip_links", default="View Trip-Calendar Links"),
                 command=self._view_trip_calendar_links)
@@ -1008,7 +1011,7 @@ class CalendarGUI(DashboardMixin, CalendarViewMixin, EventsViewMixin, AcademicVi
                     app = UnifiedManagementGUI(self.auth_manager)
                     app.run()
                 else:
-                    from tkinter import messagebox
+                    from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar._dialogs import messagebox
                     messagebox.showinfo(_("common.info"), _("academic_calendar.messages.no_main_menu_standalone"))
         except Exception as e:
             print(f"Error returning to main menu: {e}")

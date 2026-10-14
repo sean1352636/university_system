@@ -1,10 +1,13 @@
 import logging
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, filedialog
 import threading
 from typing import Any, Optional, List, Dict
 from education_system.systems.university.infrastructure.i18n import get_text as _
 from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar.utils import safe_grab_set
+# Message boxes parented to the window that raised them, not the main
+# GUI — see _dialogs.
+from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar._dialogs import messagebox
 
 gui_logger = logging.getLogger(__name__)
 
@@ -249,19 +252,6 @@ class MenuActionsMixin:
             self._show_error(_("academic_calendar.trips.open_error",
                               default="Error opening trip manager: {error}").format(error=e))
 
-    def _create_trip_calendar_event(self):
-        """Create a calendar event for a trip"""
-        try:
-            from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui.calendar_dialogs import CreateCalendarEventDialog
-            CreateCalendarEventDialog(
-                self.root, self.auth_manager, self.calendar_manager, self._refresh_current_view)
-        except ImportError:
-            self._show_error(_("academic_calendar.trips.not_available",
-                              default="Trip management module is not available."))
-        except Exception as e:
-            self._show_error(_("academic_calendar.trips.calendar_event_error",
-                              default="Error creating trip calendar event: {error}").format(error=e))
-
     def _view_trip_calendar_links(self):
         """View existing trip-calendar event links in a dialog"""
         try:
@@ -269,10 +259,11 @@ class MenuActionsMixin:
 
             def get_links(conn):
                 cursor = conn.cursor()
-                cursor.execute('''
+                from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar._calendar_events import CALENDAR_EVENTS
+                cursor.execute(f'''
                     SELECT t.trip_name, t.destination, t.start_date, t.end_date,
                            e.name as event_name, e.event_type, e.date_added as created_at
-                    FROM academic_calendar_events e
+                    FROM {CALENDAR_EVENTS} e
                     JOIN trips t ON e.trip_id = t.id
                     WHERE e.trip_id IS NOT NULL
                     ORDER BY t.start_date

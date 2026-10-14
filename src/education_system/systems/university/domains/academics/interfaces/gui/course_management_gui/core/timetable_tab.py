@@ -40,6 +40,19 @@ def _to_minutes(hhmm):
 class TimetableTabMixin:
     """Weekly timetable view + meeting-time editor."""
 
+    def _open_timetable_manager(self):
+        """Open the merged Timetable Manager on its Sections tab."""
+        try:
+            from education_system.systems.university.domains.academics.interfaces.gui.timetable_management import (
+                TimetableManagementGUI,
+            )
+            TimetableManagementGUI(self.root, auth=getattr(self, "auth", None),
+                                   initial_tab="sections")
+        except Exception as exc:
+            messagebox.showerror(
+                _t('gui.academics.course_management_gui.core.timetable_tab.dialogs.error', default="Error"),
+                f"Failed to open Timetable Manager: {exc}")
+
     def create_timetable_tab(self):
         if not self._ensure_extension_schema():
             return
@@ -59,6 +72,11 @@ class TimetableTabMixin:
                            command=self._manage_meetings).pack(side=tk.LEFT, padx=10)
             ttk.Button(bar, text=_("common.refresh", default="Refresh"),
                        command=self._reload_timetable).pack(side=tk.LEFT, padx=5)
+            # Every timetable view now also lives in one merged window. The
+            # section-meeting editor below stays here because it is built on
+            # this GUI's own dialog helpers; the merged window links back.
+            ttk.Button(bar, text=_t('gui.academics.course_management_gui.core.timetable_tab.buttons.open_timetable_manager', default="Open Timetable Manager…"),
+                       command=self._open_timetable_manager).pack(side=tk.RIGHT, padx=5)
 
             # Scrollable canvas for the grid.
             wrap = ttk.Frame(frame)
@@ -209,7 +227,35 @@ class TimetableTabMixin:
                 "WHERE term_id=? ORDER BY course_code, section_number", (term_id,))
             return [(sid, f"{code} · {sec}") for sid, code, sec in cur.fetchall()]
 
+    def _terms_with_sections(self):
+        """[(term_name, term_id)] for terms that actually have sections.
+
+        The term combo defaults to the newest term, which is often not where
+        the sections are — that mismatch is why "Manage Meeting Times…" could
+        look like it did nothing.
+        """
+        try:
+            with self._ext_db() as conn:
+                rows = conn.execute(
+                    "SELECT t.name, t.id, COUNT(s.id) AS n "
+                    "FROM academic_terms t "
+                    "JOIN course_sections s ON s.term_id = t.id "
+                    "GROUP BY t.id HAVING n > 0 "
+                    "ORDER BY t.academic_year DESC, t.name").fetchall()
+            return [(r[0], r[1]) for r in rows]
+        except Exception:
+            logger.debug("could not list terms with sections", exc_info=True)
+            return []
+
     def _manage_meetings(self):
+        """Add / edit / view / remove the meeting times of a section.
+
+        Every change is mirrored onto the academic calendar of the people who
+        have to attend — see
+        ``domains.academics.domain.services.section_meeting_calendar``. The
+        weekly timetable grid reads ``section_meetings`` directly, so it needs
+        no separate sync.
+        """
         if not self._ext_can_edit():
             return
         term_id = self._current_tt_term_id()
@@ -219,6 +265,21 @@ class TimetableTabMixin:
             return
         sections = self._term_sections(term_id)
         if not sections:
+            # Don't just refuse: the usual cause is that the combo defaulted to
+            # the newest term while the sections live in another one. Say which
+            # terms actually have sections, and offer to switch.
+            other = self._terms_with_sections()
+            if other:
+                names = ", ".join(name for name, _tid in other[:4])
+                if messagebox.askyesno(
+                        _("common.info", default="No sections in this term"),
+                        f"“{self._tt_term_combo.get()}” has no course sections.\n\n"
+                        f"Sections exist in: {names}.\n\n"
+                        "Switch to the first of those now?"):
+                    self._tt_term_combo.set(other[0][0])
+                    self._draw_timetable()
+                    self._manage_meetings()
+                return
             messagebox.showinfo(_("common.info", default="Info"),
                                 _t('gui.academics.course_management_gui.core.timetable_tab.dialogs.this_term_has_no_course_sections_yet_add_sections_in_the_terms_s', default="This term has no course sections yet. Add sections "
                                 "in the Terms & Sections tab first."))
@@ -226,7 +287,7 @@ class TimetableTabMixin:
 
         dlg = tk.Toplevel(self.root)
         dlg.title(f"Meeting Times — {self._tt_term_combo.get()}")
-        dlg.geometry("680x460")
+        dlg.geometry("860x560")
         dlg.transient(self.root)
         dlg.grab_set()
 
@@ -238,40 +299,24 @@ class TimetableTabMixin:
                                  values=list(sec_map.keys()))
         sec_combo.current(0)
         sec_combo.pack(side=tk.LEFT, padx=5)
+        status_var = tk.StringVar(value="")
+        ttk.Label(top, textvariable=status_var, foreground="#555555").pack(
+            side=tk.LEFT, padx=12)
 
-        tree = ttk.Treeview(dlg, columns=("ID", "Day", "Start", "End", "Location"),
-                            show="headings", height=12)
-        for c, w in (("ID", 45), ("Day", 110), ("Start", 80), ("End", 80),
-                     ("Location", 200)):
+        cols = ("ID", "Day", "Start", "End", "Room", "Location", "Calendar")
+        tree = ttk.Treeview(dlg, columns=cols, show="headings", height=13)
+        for c, w in (("ID", 45), ("Day", 100), ("Start", 70), ("End", 70),
+                     ("Room", 170), ("Location", 150), ("Calendar", 190)):
             tree.heading(c, text=c)
-            tree.column(c, width=w)
+            tree.column(c, width=w, anchor="w")
         tree.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
 
-        def load_meetings(*_a):
-            self._ext_clear_tree(tree)
-            sid = sec_map.get(sec_combo.get())
-            if sid is None:
-                return
-            try:
-                with self._ext_db() as conn:
-                    cur = conn.cursor()
-                    cur.execute(
-                        "SELECT id, day_of_week, start_time, end_time, location "
-                        "FROM section_meetings WHERE section_id=? "
-                        "ORDER BY day_of_week, start_time", (sid,))
-                    rows = cur.fetchall()
-                for row in rows:
-                    tree.insert("", tk.END, values=row)
-            except Exception as exc:
-                self._ext_report_error("load meeting times", exc)
-
-        sec_combo.bind("<<ComboboxSelected>>", load_meetings)
-
-        # Real rooms (shared with the module scheduler) so meetings can
-        # reference a room_id for precise cross-system clash detection. The
-        # free-text Location stays available for rooms not in the table.
+        # Rooms are shared with the module scheduler, so a meeting can carry a
+        # room_id for precise cross-system clash detection. Free-text Location
+        # stays available for spaces not in the rooms table.
         NO_ROOM = "(free text / no room)"
-        room_by_label = {}   # label -> (room_id, room_number)
+        room_by_label = {}      # label -> (room_id, room_number)
+        label_by_room_id = {}   # room_id -> label
         try:
             with self._ext_db() as conn:
                 cur = conn.cursor()
@@ -285,14 +330,81 @@ class TimetableTabMixin:
                         if cap:
                             label += f" (cap {cap})"
                         room_by_label[label] = (rid, rnum or "")
+                        label_by_room_id[rid] = label
         except Exception:
-            room_by_label = {}
+            room_by_label, label_by_room_id = {}, {}
         room_values = [NO_ROOM] + list(room_by_label.keys())
 
-        def add_meeting():
+        def _calendar_cell(meeting_id):
+            """How many calendar occurrences this meeting currently has."""
+            try:
+                from education_system.systems.university.domains.academics.domain.services.section_meeting_calendar import (
+                    calendar_summary,
+                )
+                info = calendar_summary(meeting_id)
+            except Exception:
+                logger.debug("calendar summary unavailable", exc_info=True)
+                return "—"
+            if not info["count"]:
+                return "not on calendar"
+            return f"{info['count']} × from {info['first']}"
+
+        def load_meetings(*_a):
+            self._ext_clear_tree(tree)
             sid = sec_map.get(sec_combo.get())
             if sid is None:
                 return
+            try:
+                with self._ext_db() as conn:
+                    cur = conn.cursor()
+                    cur.execute(
+                        "SELECT id, day_of_week, start_time, end_time, "
+                        "       location, room_id "
+                        "FROM section_meetings WHERE section_id=? "
+                        "ORDER BY day_of_week, start_time", (sid,))
+                    rows = cur.fetchall()
+            except Exception as exc:
+                self._ext_report_error("load meeting times", exc)
+                return
+            for mid, day, start, end, loc, room_id in rows:
+                tree.insert("", tk.END, values=(
+                    mid, day, start, end,
+                    label_by_room_id.get(room_id, "—"),
+                    loc or "—",
+                    _calendar_cell(mid),
+                ))
+            status_var.set(
+                f"{len(rows)} meeting time(s)" if rows
+                else "No meeting times yet — use Add Meeting.")
+
+        sec_combo.bind("<<ComboboxSelected>>", load_meetings)
+
+        def _sync_calendar(meeting_id, removed=False):
+            """Mirror one meeting to / from the academic calendar."""
+            try:
+                from education_system.systems.university.domains.academics.domain.services.section_meeting_calendar import (
+                    sync_meeting, unsync_meeting,
+                )
+                if removed:
+                    n = unsync_meeting(meeting_id)
+                    status_var.set(f"Removed {n} calendar entr(ies).")
+                else:
+                    n = sync_meeting(meeting_id)
+                    status_var.set(
+                        f"Synced {n} calendar occurrence(s)." if n else
+                        "Saved. No calendar entries — the term has already ended.")
+            except Exception:
+                # A calendar mirror failure must not lose the meeting itself.
+                logger.exception("calendar sync failed for meeting %s", meeting_id)
+                status_var.set("Saved, but the calendar sync failed (see log).")
+
+        def _meeting_form(existing=None):
+            """Shared add / edit form. *existing* is a tree row's values."""
+            sid = sec_map.get(sec_combo.get())
+            if sid is None:
+                return
+            editing = existing is not None
+            meeting_id = int(existing[0]) if editing else None
 
             def submit(values):
                 start_m = _to_minutes(values.get("start_time"))
@@ -305,18 +417,16 @@ class TimetableTabMixin:
                     messagebox.showerror(_("common.validation_error", default="Validation Error"),
                                          _t('gui.academics.course_management_gui.core.timetable_tab.dialogs.end_time_must_be_after_start_time', default="End time must be after start time."))
                     return False
-                # Resolve the chosen room; default the free-text location to the
-                # room number when a room is picked but no location was typed.
                 room_id, room_number = room_by_label.get(values.get("room", ""), (None, ""))
                 location = (values.get("location") or "").strip()
                 if not location and room_number:
                     location = room_number
-                # Cross-system room clash check: precise via room_id, with a
-                # location-text fallback. Catches both section and module clashes.
                 try:
                     clashes = find_timetable_conflicts(
                         values["day_of_week"], values["start_time"].strip(),
-                        values["end_time"].strip(), location=location, room_id=room_id)
+                        values["end_time"].strip(), location=location,
+                        room_id=room_id,
+                        exclude_section_meeting_id=meeting_id)
                 except Exception:
                     clashes = []
                 if clashes:
@@ -324,37 +434,77 @@ class TimetableTabMixin:
                     if not messagebox.askyesno(
                             _("common.warning", default="Possible room clash"),
                             "This meeting may clash with existing bookings:\n\n"
-                            f"{detail}\n\nAdd it anyway?"):
+                            f"{detail}\n\nSave it anyway?"):
                         return False
                 try:
                     with self._ext_db(write=True) as conn:
-                        conn.execute(
-                            "INSERT INTO section_meetings "
-                            "(section_id, day_of_week, start_time, end_time, "
-                            " location, room_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                            (sid, values["day_of_week"], values["start_time"].strip(),
-                             values["end_time"].strip(), location, room_id,
-                             self._ext_now()))
+                        if editing:
+                            conn.execute(
+                                "UPDATE section_meetings SET day_of_week=?, "
+                                "start_time=?, end_time=?, location=?, room_id=? "
+                                "WHERE id=?",
+                                (values["day_of_week"], values["start_time"].strip(),
+                                 values["end_time"].strip(), location, room_id,
+                                 meeting_id))
+                        else:
+                            cur = conn.execute(
+                                "INSERT INTO section_meetings "
+                                "(section_id, day_of_week, start_time, end_time, "
+                                " location, room_id, created_at) "
+                                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                (sid, values["day_of_week"],
+                                 values["start_time"].strip(),
+                                 values["end_time"].strip(), location, room_id,
+                                 self._ext_now()))
+                            self._new_meeting_id = cur.lastrowid
                 except Exception as exc:
-                    self._ext_report_error("add meeting time", exc)
+                    self._ext_report_error(
+                        "update meeting time" if editing else "add meeting time", exc)
                     return False
-                self._ext_audit("create", "section_meeting", section_id=sid,
+                saved_id = meeting_id if editing else getattr(self, "_new_meeting_id", None)
+                self._ext_audit("update" if editing else "create",
+                                "section_meeting", section_id=sid,
                                 day=values["day_of_week"])
+                if saved_id:
+                    _sync_calendar(saved_id)
                 load_meetings()
                 self._draw_timetable()
                 return True
 
+            if editing:
+                cur_room = existing[4] if existing[4] in room_by_label else NO_ROOM
+                defaults = {"day": existing[1], "start": existing[2],
+                            "end": existing[3], "room": cur_room,
+                            "location": "" if existing[5] == "—" else existing[5]}
+                title, label = "Edit Meeting Time", "Save"
+            else:
+                defaults = {"day": (DAYS_OF_WEEK or ["Monday"])[0],
+                            "start": "09:00", "end": "10:00",
+                            "room": NO_ROOM, "location": ""}
+                title, label = "Add Meeting Time", "Add"
+
             ExtFormDialog(
-                dlg, self, "Add Meeting Time",
+                dlg, self, title,
                 [("day_of_week", "Day:", {"type": "combo",
                                           "values": list(DAYS_OF_WEEK),
-                                          "default": (DAYS_OF_WEEK or ["Monday"])[0]}),
-                 ("start_time", "Start (HH:MM):", {"default": "09:00", "width": 12}),
-                 ("end_time", "End (HH:MM):", {"default": "10:00", "width": 12}),
+                                          "default": defaults["day"]}),
+                 ("start_time", "Start (HH:MM):", {"default": defaults["start"], "width": 12}),
+                 ("end_time", "End (HH:MM):", {"default": defaults["end"], "width": 12}),
                  ("room", "Room:", {"type": "combo", "values": room_values,
-                                    "default": NO_ROOM}),
-                 ("location", "Location (free text):", {"default": ""})],
-                submit, submit_label="Add", geometry="460x340")
+                                    "default": defaults["room"]}),
+                 ("location", "Location (free text):", {"default": defaults["location"]})],
+                submit, submit_label=label, geometry="460x340")
+
+        def add_meeting():
+            _meeting_form(None)
+
+        def edit_meeting():
+            vals = self._ext_selected_values(tree)
+            if not vals:
+                messagebox.showwarning(_("common.warning", default="Warning"),
+                                       "Select a meeting time to edit.")
+                return
+            _meeting_form(vals)
 
         def delete_meeting():
             vals = self._ext_selected_values(tree)
@@ -362,21 +512,50 @@ class TimetableTabMixin:
                 messagebox.showwarning(_("common.warning", default="Warning"),
                                        _t('gui.academics.course_management_gui.core.timetable_tab.dialogs.select_a_meeting_time_to_remove', default="Select a meeting time to remove."))
                 return
+            if not messagebox.askyesno(
+                    _("common.confirm", default="Confirm"),
+                    f"Remove {vals[1]} {vals[2]}–{vals[3]}?\n\n"
+                    "Its entries are removed from the academic calendar too."):
+                return
+            meeting_id = vals[0]
             try:
                 with self._ext_db(write=True) as conn:
-                    conn.execute("DELETE FROM section_meetings WHERE id=?", (vals[0],))
+                    conn.execute("DELETE FROM section_meetings WHERE id=?", (meeting_id,))
             except Exception as exc:
                 self._ext_report_error("remove meeting time", exc)
                 return
-            self._ext_audit("delete", "section_meeting", meeting_id=vals[0])
+            self._ext_audit("delete", "section_meeting", meeting_id=meeting_id)
+            _sync_calendar(meeting_id, removed=True)
             load_meetings()
             self._draw_timetable()
+
+        def resync_all():
+            """Re-mirror every meeting on this section (after enrolment changes)."""
+            sid = sec_map.get(sec_combo.get())
+            if sid is None:
+                return
+            try:
+                from education_system.systems.university.domains.academics.domain.services.section_meeting_calendar import (
+                    sync_section,
+                )
+                total = sync_section(sid)
+            except Exception:
+                logger.exception("section calendar re-sync failed")
+                status_var.set("Calendar re-sync failed (see log).")
+                return
+            status_var.set(f"Re-synced {total} calendar occurrence(s).")
+            load_meetings()
+
+        tree.bind("<Double-1>", lambda _e: edit_meeting())
 
         btns = ttk.Frame(dlg, padding=8)
         btns.pack(fill=tk.X)
         ttk.Button(btns, text=_t('gui.academics.course_management_gui.core.timetable_tab.buttons.add_meeting', default="Add Meeting"), command=add_meeting).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btns, text="Edit Meeting", command=edit_meeting).pack(side=tk.LEFT, padx=5)
         ttk.Button(btns, text=_("common.delete", default="Remove"),
                    command=delete_meeting).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btns, text="Re-sync Calendar",
+                   command=resync_all).pack(side=tk.LEFT, padx=15)
         ttk.Button(btns, text=_("common.close", default="Close"),
                    command=dlg.destroy).pack(side=tk.RIGHT, padx=5)
 

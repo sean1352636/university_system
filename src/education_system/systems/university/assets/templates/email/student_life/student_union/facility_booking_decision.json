@@ -1,0 +1,12 @@
+{
+    "subject": "$decision_emoji Facility booking $decision_headline - $facility_name",
+    "body": "Dear $student_name,\n\n$decision_message\n\n=== THE BOOKING ===\nFacility: $facility_name\nDate: $booking_date\nTime: $start_time - $end_time\nStatus: $status\nDecided On: $decided_on\n\n=== WHAT HAPPENS NEXT ===\n$next_steps\n\n=== IF SOMETHING IS WRONG ===\nIf any detail above is incorrect, or you did not make this request, contact the Students' Union.\n\n=== CONTACT ===\nStudents' Union: studentunion@university.edu\nPhone: (555) 123-4567\nOffice Hours: Monday-Friday, 9:00 AM - 5:00 PM\n\nBest regards,\nStudents' Union Facilities Team\n\n$signature",
+    "variables": {
+        "decision_emoji": {"default": "📋"},
+        "decision_headline": {"default": "updated"},
+        "decision_message": {"default": "There has been an update to your facility booking."},
+        "next_steps": {"default": "Contact the Students' Union if you have any questions."},
+        "start_time": {"default": "Not specified"},
+        "end_time": {"default": "Not specified"}
+    }
+}

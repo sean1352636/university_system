@@ -90,15 +90,11 @@ except ImportError:
     FINANCE_ACCOUNT_AVAILABLE = False
     print("Warning: Student finance account integration not available")
 
-# Import matplotlib for library finance charts
-try:
-    import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-    from matplotlib.figure import Figure
-    MATPLOTLIB_AVAILABLE = True
-except ImportError:
-    MATPLOTLIB_AVAILABLE = False
-    print("Warning: Matplotlib not available for library finance charts")
+# Matplotlib is imported lazily by finance_shared, the one module in this
+# package whose names are actually read (by the two chart dialogs under
+# finance_parts/). This module carried an identical eager copy of that import
+# and never used any of it — importing matplotlib.pyplot costs ~1.3s and was
+# paid by anything that touched the library package at all.
 
 # Import email service for library finance notifications
 try:
@@ -129,7 +125,15 @@ def load_loan_history(self):
 
             cursor = conn.cursor()
             history_type = self.loan_history_type.get()
-            search_term = self.loan_search_var.get().strip()
+            # The search value comes from whichever picker the mode shows;
+            # loan_search_var remains the fallback for callers that set it
+            # directly (the cross-link menu jumps in that way).
+            picker = {"user": getattr(self, "_loan_user_picker", None),
+                      "book": getattr(self, "_loan_book_picker", None)
+                      }.get(history_type)
+            search_term = picker.get() if picker is not None \
+                else self.loan_search_var.get().strip()
+            self.loan_search_var.set(search_term)
 
             if history_type == "all":
                 cursor.execute('''

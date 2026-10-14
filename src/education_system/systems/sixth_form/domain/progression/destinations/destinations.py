@@ -440,6 +440,36 @@ def students_missing_at(checkpoint: str) -> list[str]:
             if s.student_id not in have]
 
 
+# ── Lookups ──────────────────────────────────────────────────────
+
+#: Free-text columns whose previously-entered values are worth offering
+#: back as suggestions. Whitelisted rather than interpolated freely —
+#: the column name goes into the SQL.
+SUGGESTABLE_FIELDS: tuple[str, ...] = (
+    "institution", "course", "employer", "role",
+)
+
+
+def distinct_values(field: str) -> tuple[str, ...]:
+    """Previously-used values for *field*, for populating a dropdown.
+
+    Lets the capture form offer what has already been typed for other
+    students — most cohorts go to a handful of universities and
+    employers — while still allowing a new value to be typed.
+    """
+    if field not in SUGGESTABLE_FIELDS:
+        raise ValidationError(
+            f"Field must be one of: {', '.join(SUGGESTABLE_FIELDS)}")
+    init_db()
+    with _connect() as conn:
+        rows = conn.execute(
+            f"SELECT DISTINCT {field} AS v FROM dest_records "  # noqa: S608 - whitelisted above
+            f"WHERE {field} IS NOT NULL AND TRIM({field}) <> '' "
+            f"ORDER BY v COLLATE NOCASE"
+        ).fetchall()
+    return tuple(r["v"] for r in rows)
+
+
 # ── Summary ──────────────────────────────────────────────────────
 
 @dataclass

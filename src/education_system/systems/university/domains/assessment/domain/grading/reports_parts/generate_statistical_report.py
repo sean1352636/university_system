@@ -9,18 +9,18 @@ def generate_statistical_report():
     select_assessment, calculate_student_gpa, GRADE_SYSTEMS = _get_grading_imports()
     from education_system.systems.university.domains.assessment.domain.grading.grade_calculation.visualization import generate_assessment_stats_report
 
-    print("\n" + get_text("academics.reports.generate_statistical_report"))
+    print("\n" + get_text("academics.reports.generate_statistical_report", default="Generate Statistical Report"))
 
     try:
         conn = get_connection()
         cursor = conn.cursor()
 
         # Choose report type
-        print("\n" + get_text("academics.reports.report_type"))
-        print(get_text("academics.reports.option_assessment_statistics"))
-        print(get_text("academics.reports.option_module_statistics"))
-        print(get_text("academics.reports.option_course_statistics"))
-        print(get_text("academics.reports.option_comprehensive_statistics"))
+        print("\n" + get_text("academics.reports.report_type", default="Report Type"))
+        print(get_text("academics.reports.option_assessment_statistics", default="1. Assessment Statistics"))
+        print(get_text("academics.reports.option_module_statistics", default="2. Module Statistics"))
+        print(get_text("academics.reports.option_course_statistics", default="3. Course Statistics"))
+        print(get_text("academics.reports.option_comprehensive_statistics", default="4. Comprehensive Statistics"))
 
         report_type = input("Select report type (1-4): ")
 
@@ -53,11 +53,11 @@ def generate_statistical_report():
             modules = cursor.fetchall()
 
             if not modules:
-                print(get_text("academics.reports.no_modules_with_grades"))
+                print(get_text("academics.reports.no_modules_with_grades", default="No Modules With Grades."))
                 conn.close()
                 return
 
-            print("\n" + get_text("academics.reports.available_modules"))
+            print("\n" + get_text("academics.reports.available_modules", default="Available Modules"))
             for i, (code, name) in enumerate(modules):
                 print(f"{i+1}. {code} - {name}")
 

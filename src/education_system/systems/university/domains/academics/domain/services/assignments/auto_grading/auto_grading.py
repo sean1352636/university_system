@@ -1,10 +1,13 @@
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from datetime import datetime
-import subprocess
-import tempfile
+import logging
 import os
 import random
 import json
+
+from education_system.platform.kernel.untrusted_code import run_untrusted_python
+
+logger = logging.getLogger(__name__)
 
 
 class AutoGradingMixin:
@@ -560,7 +563,7 @@ class AutoGradingMixin:
         return SequenceMatcher(None, s1, s2).ratio()
 
     def auto_grade_coding(self, submission_id):
-        """Run student code against test cases in subprocess with timeout."""
+        """Run student code against test cases inside the code sandbox."""
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -601,49 +604,43 @@ class AutoGradingMixin:
             passed = 0
             total = len(test_cases)
             feedback_lines = []
+            refused = None
 
             for i, tc in enumerate(test_cases, 1):
                 tc_input = tc.get('input', '')
                 expected_output = tc.get('expected_output', '').strip()
 
-                try:
-                    # Write student code to temp file and run in subprocess
-                    with tempfile.NamedTemporaryFile(mode='w', suffix='.py',
-                                                     delete=False) as tmp:
-                        tmp.write(student_code)
-                        tmp_path = tmp.name
+                # Submitted code is attacker-controlled: it runs under the
+                # sandbox, never directly on this host. A refusal is not a
+                # failed test — it means the code was never run.
+                outcome = run_untrusted_python(student_code, tc_input, timeout=10)
 
-                    try:
-                        result = subprocess.run(  # nosec B603
-                            ['python3', tmp_path],
-                            input=tc_input,
-                            capture_output=True,
-                            text=True,
-                            timeout=10
-                        )
+                if not outcome.executed:
+                    refused = outcome.refused_reason
+                    break
 
-                        actual_output = result.stdout.strip()
-
-                        if result.returncode != 0:
-                            feedback_lines.append(
-                                f"Test {i}: RUNTIME ERROR - {result.stderr.strip()[:200]}")
-                        elif actual_output == expected_output:
-                            passed += 1
-                            feedback_lines.append(f"Test {i}: PASSED")
-                        else:
-                            feedback_lines.append(
-                                f"Test {i}: FAILED - Expected: '{expected_output}', "
-                                f"Got: '{actual_output}'")
-                    finally:
-                        os.unlink(tmp_path)
-
-                except subprocess.TimeoutExpired:
+                if outcome.timed_out:
                     feedback_lines.append(f"Test {i}: TIMEOUT (>10s)")
-                    # Clean up temp file on timeout
-                    if os.path.exists(tmp_path):
-                        os.unlink(tmp_path)
-                except Exception as e:
-                    feedback_lines.append(f"Test {i}: ERROR - {str(e)[:200]}")
+                elif outcome.exit_code != 0:
+                    feedback_lines.append(
+                        f"Test {i}: RUNTIME ERROR - {outcome.stderr.strip()[:200]}")
+                elif outcome.stdout.strip() == expected_output:
+                    passed += 1
+                    feedback_lines.append(f"Test {i}: PASSED")
+                else:
+                    feedback_lines.append(
+                        f"Test {i}: FAILED - Expected: '{expected_output}', "
+                        f"Got: '{outcome.stdout.strip()}'")
+
+            if refused:
+                # Leave the submission ungraded for a human rather than
+                # scoring an un-run program as zero.
+                self._save_coding_grade(
+                    cursor, conn, submission_id, 0.0, 0,
+                    f"Not auto-graded: {refused} Needs manual grading.")
+                logger.error("Coding submission %s not graded: %s", submission_id, refused)
+                print(f"  Coding #{submission_id}: NOT GRADED — {refused}")
+                return
 
             # Calculate proportional score
             earned = (passed / total) * points if total > 0 else 0.0

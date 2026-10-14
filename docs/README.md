@@ -31,7 +31,7 @@ All four systems share a unified authentication module and cross-system tooling:
 - [Universal Login](shared/UNIVERSAL_LOGIN.md) — cross-system login window and launcher
 - [Shared Infrastructure](shared/INFRASTRUCTURE.md) — webhooks, offline sync, notifications
 
-The unified launcher (`run.py`) provides system and mode selection for both CLI and GUI, with runtime system switching.
+The unified launcher (`python -m education_system`) provides system and mode selection for both CLI and GUI, with runtime system switching.
 
 ## Documentation Structure
 
@@ -171,10 +171,14 @@ docs/
 
 ## Changelog Archives
 
-The main [CHANGELOG.md](../../CHANGELOG.md) covers v6.0+. Older history is archived here:
+The main [CHANGELOG.md](../CHANGELOG.md) covers the current version 9 history.
+Earlier history is archived here:
 
 | Archive | Description |
 |---------|-------------|
+| [CHANGELOG-v8.md](changelogs/CHANGELOG-v8.md) | Version 8.x (300 releases) |
+| [CHANGELOG-v7.md](changelogs/CHANGELOG-v7.md) | Version 7.x (25 releases) |
+| [CHANGELOG-v6.md](changelogs/CHANGELOG-v6.md) | Version 6.x (29 releases) |
 | [CHANGELOG-v5.md](changelogs/CHANGELOG-v5.md) | Versions 0.x through 5.x (298 releases) |
 | [CHANGELOG-modules.md](changelogs/CHANGELOG-modules.md) | Module-specific changelogs (29 entries) |
 | [CHANGELOG-legacy-notes.md](changelogs/CHANGELOG-legacy-notes.md) | Legacy feature documentation and migration notes |

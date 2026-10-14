@@ -1,9 +1,14 @@
-"""Progress reviews, their targets, signatures and employer feedback."""
+"""Progress reviews, their targets (the action plan), signatures and employer feedback."""
 
 from __future__ import annotations
 
 from typing import Any
 
+from education_system.systems.apprenticeships.domain.reviews.action_plans import (
+    CARRIED_FORWARD,
+    ActionNote,
+    carry_payload,
+)
 from education_system.systems.apprenticeships.domain.reviews.progress_reviews import (
     EmployerFeedback,
     Review,
@@ -16,6 +21,7 @@ from education_system.systems.apprenticeships.infrastructure.persistence.reposit
     connect,
     init_db,
     to_bool,
+    to_int,
 )
 
 _REVIEW_FIELDS = (
@@ -26,6 +32,7 @@ _REVIEW_FIELDS = (
 
 _TARGET_FIELDS = (
     "review_id", "description", "due_date", "ksb_codes", "status", "outcome_note",
+    "owner", "priority", "completed_at", "carried_from", "carry_count",
 )
 
 _REVIEW_SELECT = """
@@ -36,6 +43,29 @@ _REVIEW_SELECT = """
       JOIN apprentices a ON a.apprentice_id = r.apprentice_id
       LEFT JOIN staff  s ON s.staff_id      = r.conducted_by
 """
+
+# Targets always come with the apprentice and review they belong to:
+# the action-plan screens list actions across reviews, and the service
+# checks ownership and scope against the apprentice.
+_TARGET_SELECT = """
+    SELECT t.*,
+           r.apprentice_id AS apprentice_id,
+           (a.given_name || ' ' || a.family_name) AS apprentice_name,
+           a.employer_id AS employer_id,
+           a.tutor_id    AS tutor_id,
+           COALESCE(r.held_date, r.scheduled_date) AS review_date,
+           r.status      AS review_status
+      FROM review_targets t
+      JOIN reviews     r ON r.review_id     = t.review_id
+      JOIN apprentices a ON a.apprentice_id = r.apprentice_id
+"""
+
+_TARGET_ORDER = "ORDER BY COALESCE(t.due_date, '9999'), t.target_id"
+
+# Where a review falls in an apprentice's sequence: the day it happened,
+# or the day it is booked for if it has not yet, with the id breaking a
+# tie between two on the same day.
+_REVIEW_KEY = "COALESCE(r.held_date, r.scheduled_date)"
 
 
 def _map(row: Any) -> Review:
@@ -71,8 +101,19 @@ def _map_target(row: Any) -> ReviewTarget:
         ksb_codes=col(row, "ksb_codes"),
         status=col(row, "status", "Open"),
         outcome_note=col(row, "outcome_note"),
+        owner=col(row, "owner") or "Apprentice",
+        priority=col(row, "priority") or "Normal",
+        completed_at=col(row, "completed_at"),
+        carried_from=col(row, "carried_from"),
+        carry_count=to_int(col(row, "carry_count")),
         created_at=col(row, "created_at", ""),
         updated_at=col(row, "updated_at", ""),
+        apprentice_id=col(row, "apprentice_id"),
+        apprentice_name=col(row, "apprentice_name", "") or "",
+        employer_id=col(row, "employer_id"),
+        tutor_id=col(row, "tutor_id"),
+        review_date=col(row, "review_date"),
+        review_status=col(row, "review_status"),
     )
 
 
@@ -83,6 +124,19 @@ def _map_signature(row: Any) -> ReviewSignature:
         signatory=row["signatory"],
         signed_by=row["signed_by"],
         signed_at=row["signed_at"],
+    )
+
+
+def _map_note(row: Any) -> ActionNote:
+    return ActionNote(
+        note_id=row["note_id"],
+        target_id=row["target_id"],
+        author=row["author"],
+        author_role=row["author_role"],
+        body=row["body"],
+        from_status=col(row, "from_status"),
+        to_status=col(row, "to_status"),
+        created_at=col(row, "created_at", ""),
     )
 
 
@@ -112,8 +166,7 @@ def get(review_id: int, *, with_children: bool = True) -> Review | None:
             review.targets = [
                 _map_target(r)
                 for r in conn.execute(
-                    "SELECT * FROM review_targets WHERE review_id = ? "
-                    "ORDER BY COALESCE(due_date, '9999'), target_id",
+                    f"{_TARGET_SELECT} WHERE t.review_id = ? {_TARGET_ORDER}",
                     (review_id,),
                 ).fetchall()
             ]
@@ -173,7 +226,7 @@ def list_reviews(
             placeholders = ", ".join("?" for _ in ids)
             by_id = {r.review_id: r for r in reviews}
             for row in conn.execute(
-                f"SELECT * FROM review_targets WHERE review_id IN ({placeholders})", ids
+                f"{_TARGET_SELECT} WHERE t.review_id IN ({placeholders}) {_TARGET_ORDER}", ids
             ).fetchall():
                 by_id[row["review_id"]].targets.append(_map_target(row))
             for row in conn.execute(
@@ -213,6 +266,32 @@ def delete(review_id: int) -> None:
     init_db()
     with connect() as conn:
         conn.execute("DELETE FROM reviews WHERE review_id = ?", (review_id,))
+
+
+def next_review_after(review_id: int) -> Review | None:
+    """The apprentice's next review still to be held or signed, after this one.
+
+    Complete and missed reviews are skipped: an action cannot be carried
+    onto a meeting that is over or did not happen.
+    """
+    init_db()
+    with connect() as conn:
+        anchor = conn.execute(
+            f"SELECT r.apprentice_id, {_REVIEW_KEY} AS k FROM reviews r WHERE r.review_id = ?",
+            (review_id,),
+        ).fetchone()
+        if anchor is None:
+            return None
+        row = conn.execute(
+            f"""{_REVIEW_SELECT}
+                 WHERE r.apprentice_id = ? AND r.review_id != ?
+                   AND r.status NOT IN ('Complete', 'Missed')
+                   AND ({_REVIEW_KEY} > ? OR ({_REVIEW_KEY} = ? AND r.review_id > ?))
+                 ORDER BY {_REVIEW_KEY}, r.review_id
+                 LIMIT 1""",
+            (anchor["apprentice_id"], review_id, anchor["k"], anchor["k"], review_id),
+        ).fetchone()
+    return _map(row) if row else None
 
 
 def count_overdue(*, tutor_id: int | None = None, employer_id: int | None = None) -> int:
@@ -273,33 +352,110 @@ def held_review_count(apprentice_id: int) -> int:
     return int(row["n"])
 
 
-# ── Targets ─────────────────────────────────────────────────────────
+# ── Targets (the action plan) ───────────────────────────────────────
 
-def list_targets(
-    review_id: int | None = None, *, apprentice_id: int | None = None,
+def _target_filters(
+    *,
+    review_id: int | None = None,
+    apprentice_id: int | None = None,
+    employer_id: int | None = None,
+    tutor_id: int | None = None,
+    status: str | None = None,
+    statuses: list[str] | None = None,
+    owner: str | None = None,
+    priority: str | None = None,
     open_only: bool = False,
-) -> list[ReviewTarget]:
-    init_db()
+    overdue_on: str | None = None,
+    due_from: str | None = None,
+    due_before: str | None = None,
+) -> QueryBuilder:
     qb = QueryBuilder()
     qb.add_if(review_id, "t.review_id = ?", review_id)
     qb.add_if(apprentice_id, "r.apprentice_id = ?", apprentice_id)
+    qb.add_if(employer_id, "a.employer_id = ?", employer_id)
+    qb.add_if(tutor_id, "a.tutor_id = ?", tutor_id)
+    qb.add_if(status, "t.status = ?", status)
+    qb.add_in("t.status", statuses)
+    qb.add_if(owner, "t.owner = ?", owner)
+    qb.add_if(priority, "t.priority = ?", priority)
     qb.add_if(open_only, "t.status = 'Open'")
+    # Overdue is judged against a date the caller passes rather than
+    # SQLite's date('now'), which is UTC: the domain's is_overdue uses the
+    # local date, and the list and the row colour must agree at midnight.
+    qb.add_if(
+        overdue_on,
+        "t.status = 'Open' AND t.due_date IS NOT NULL AND t.due_date < ?",
+        overdue_on,
+    )
+    qb.add_if(due_from, "t.due_date >= ?", due_from)
+    qb.add_if(due_before, "t.due_date <= ?", due_before)
+    return qb
+
+
+def list_targets(
+    review_id: int | None = None,
+    *,
+    apprentice_id: int | None = None,
+    employer_id: int | None = None,
+    tutor_id: int | None = None,
+    status: str | None = None,
+    statuses: list[str] | None = None,
+    owner: str | None = None,
+    priority: str | None = None,
+    open_only: bool = False,
+    overdue_on: str | None = None,
+    due_from: str | None = None,
+    due_before: str | None = None,
+    limit: int | None = None,
+) -> list[ReviewTarget]:
+    """Targets matching the filters, soonest due first.
+
+    ``apprentice_id`` / ``employer_id`` / ``tutor_id`` are the scope
+    filters ``access.apprentice_filters()`` yields, so "what is due or
+    overdue in my scope" is one call: ``open_only=True`` plus
+    ``due_before`` (due by then) or ``overdue_on`` (past due as of then).
+    """
+    init_db()
+    qb = _target_filters(
+        review_id=review_id, apprentice_id=apprentice_id, employer_id=employer_id,
+        tutor_id=tutor_id, status=status, statuses=statuses, owner=owner,
+        priority=priority, open_only=open_only, overdue_on=overdue_on,
+        due_from=due_from, due_before=due_before,
+    )
+    sql = f"{_TARGET_SELECT} {qb.where} {_TARGET_ORDER}"
+    args = qb.args
+    if limit:
+        sql += " LIMIT ?"
+        args = [*args, int(limit)]
     with connect() as conn:
-        rows = conn.execute(
-            f"""SELECT t.* FROM review_targets t
-                  JOIN reviews r ON r.review_id = t.review_id
-                  {qb.where}
-                 ORDER BY COALESCE(t.due_date, '9999'), t.target_id""",
-            qb.args,
-        ).fetchall()
+        rows = conn.execute(sql, args).fetchall()
     return [_map_target(r) for r in rows]
+
+
+def count_targets(**filters: Any) -> int:
+    """How many targets match — the same filters as :func:`list_targets`.
+
+    For dashboard tiles, which want the number without the rows.
+    """
+    init_db()
+    qb = _target_filters(**filters)
+    with connect() as conn:
+        row = conn.execute(
+            f"""SELECT COUNT(*) AS n
+                  FROM review_targets t
+                  JOIN reviews     r ON r.review_id     = t.review_id
+                  JOIN apprentices a ON a.apprentice_id = r.apprentice_id
+                  {qb.where}""",
+            qb.args,
+        ).fetchone()
+    return to_int(col(row, "n"))
 
 
 def get_target(target_id: int) -> ReviewTarget | None:
     init_db()
     with connect() as conn:
         row = conn.execute(
-            "SELECT * FROM review_targets WHERE target_id = ?", (target_id,)
+            f"{_TARGET_SELECT} WHERE t.target_id = ?", (target_id,)
         ).fetchone()
     return _map_target(row) if row else None
 
@@ -334,6 +490,144 @@ def delete_target(target_id: int) -> None:
     init_db()
     with connect() as conn:
         conn.execute("DELETE FROM review_targets WHERE target_id = ?", (target_id,))
+
+
+def record_status(
+    target_id: int,
+    *,
+    status: str,
+    completed_at: str | None,
+    from_status: str,
+    author: str,
+    author_role: str,
+    body: str,
+) -> int:
+    """Move an action's status and log the move in its history, together.
+
+    One transaction, so the action's status and the note explaining how
+    it got there cannot disagree.
+    """
+    init_db()
+    with connect() as conn:
+        conn.execute(
+            """UPDATE review_targets
+                  SET status = ?, completed_at = ?, updated_at = datetime('now')
+                WHERE target_id = ?""",
+            (status, completed_at, target_id),
+        )
+        cur = conn.execute(
+            """INSERT INTO action_notes
+                   (target_id, author, author_role, body, from_status, to_status)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (target_id, author, author_role, body, from_status, status),
+        )
+        return int(cur.lastrowid)
+
+
+def add_note(target_id: int, *, author: str, author_role: str, body: str) -> int:
+    init_db()
+    with connect() as conn:
+        cur = conn.execute(
+            """INSERT INTO action_notes (target_id, author, author_role, body)
+               VALUES (?, ?, ?, ?)""",
+            (target_id, author, author_role, body),
+        )
+        return int(cur.lastrowid)
+
+
+def list_notes(target_ids: list[int]) -> list[ActionNote]:
+    """The history of one or more actions, newest first."""
+    if not target_ids:
+        return []
+    init_db()
+    placeholders = ", ".join("?" for _ in target_ids)
+    with connect() as conn:
+        rows = conn.execute(
+            f"""SELECT * FROM action_notes WHERE target_id IN ({placeholders})
+                 ORDER BY created_at DESC, note_id DESC""",
+            list(target_ids),
+        ).fetchall()
+    return [_map_note(r) for r in rows]
+
+
+def carry_chain(target_id: int) -> list[int]:
+    """This action's id and every earlier copy it was carried from, newest first."""
+    init_db()
+    chain: list[int] = []
+    current: int | None = target_id
+    with connect() as conn:
+        # Bounded by the table size: a cycle is impossible (each copy
+        # points at an older row) but a guard costs nothing.
+        while current is not None and current not in chain:
+            chain.append(current)
+            row = conn.execute(
+                "SELECT carried_from FROM review_targets WHERE target_id = ?", (current,)
+            ).fetchone()
+            current = row["carried_from"] if row else None
+    return chain
+
+
+def _carry(conn: Any, target: ReviewTarget, to_review_id: int, note: str) -> int:
+    """Copy one open target onto a later review and close the original.
+
+    Runs inside the caller's transaction so a batch carries completely
+    or not at all.
+    """
+    data = carry_payload(target, to_review_id)
+    columns = [f for f in _TARGET_FIELDS if f in data]
+    cur = conn.execute(
+        f"INSERT INTO review_targets ({', '.join(columns)}) "
+        f"VALUES ({', '.join('?' for _ in columns)})",
+        [data[c] for c in columns],
+    )
+    conn.execute(
+        """UPDATE review_targets
+              SET status = ?, outcome_note = ?, completed_at = NULL,
+                  updated_at = datetime('now')
+            WHERE target_id = ?""",
+        (CARRIED_FORWARD, note, target.target_id),
+    )
+    return int(cur.lastrowid)
+
+
+def carry_target(target_id: int, to_review_id: int, *, note: str) -> int | None:
+    """Carry one target onto *to_review_id*. Returns the new copy's id,
+    or None if the target is no longer open (somebody got there first)."""
+    init_db()
+    with connect() as conn:
+        row = conn.execute(f"{_TARGET_SELECT} WHERE t.target_id = ?", (target_id,)).fetchone()
+        if row is None or row["status"] != "Open":
+            return None
+        return _carry(conn, _map_target(row), to_review_id, note)
+
+
+def carry_forward_into(review_id: int, *, note: str) -> list[tuple[int, int]]:
+    """Carry every open target from the apprentice's earlier reviews onto this one.
+
+    "Earlier" is by the date each review happened (or is booked for),
+    so targets on a later review are never pulled backwards. Returns
+    ``(old_id, new_id)`` pairs. Idempotent: a carried target is no longer
+    open, so running this twice carries nothing the second time.
+    """
+    init_db()
+    with connect() as conn:
+        anchor = conn.execute(
+            f"SELECT r.apprentice_id, {_REVIEW_KEY} AS k FROM reviews r WHERE r.review_id = ?",
+            (review_id,),
+        ).fetchone()
+        if anchor is None:
+            return []
+        rows = conn.execute(
+            f"""{_TARGET_SELECT}
+                 WHERE r.apprentice_id = ? AND t.review_id != ? AND t.status = 'Open'
+                   AND ({_REVIEW_KEY} < ? OR ({_REVIEW_KEY} = ? AND r.review_id < ?))
+                 ORDER BY t.target_id""",
+            (anchor["apprentice_id"], review_id, anchor["k"], anchor["k"], review_id),
+        ).fetchall()
+        return [
+            (target.target_id, _carry(conn, target, review_id, note))
+            for target in (_map_target(r) for r in rows)
+        ]
 
 
 # ── Signatures ──────────────────────────────────────────────────────

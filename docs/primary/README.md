@@ -80,10 +80,10 @@ The Primary School Management System is a comprehensive platform for managing al
 source venv/bin/activate
 
 # Launch the GUI
-python run.py --primary --gui
+python -m education_system --primary --gui
 
 # Launch the CLI
-python run.py --primary --cli
+python -m education_system --primary --cli
 ```
 
 ## Project Layout

@@ -1,4 +1,7 @@
 """Methods _add_team_member through _update_grant_decision."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -103,7 +106,7 @@ class ResearchGrantsGUI:
                 grants.append(f"#{row[0]} - {row[1]} ({row[2]})")
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return grants
 
     def _load_projects_list(self):
@@ -125,7 +128,7 @@ class ResearchGrantsGUI:
                 project_id_map[display] = row[0]
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return projects, project_id_map
 
     def _submit_grant(self):

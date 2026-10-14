@@ -1,48 +1,13 @@
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.domain.butcher`` (campus commerce plugin).
+
+A mirror, not an alias: an aliased package would resolve this package's
+submodules through the new ``__path__`` and load each one a second time.
+Submodules are aliased individually; this copies the package's names.
 """
-Butchers Shop Module
+# layout-shim: education_system.systems.university.plugins.campus_commerce.domain.butcher
+import importlib as _importlib
 
-Provides comprehensive butcher shop management including
-products, orders, inventory, and transaction management
-with email and finance integration.
-"""
-
-from education_system.systems.university.domains.operations.domain.commerce.butcher.services.butcher_core import (
-    ProductManager,
-    OrderManager,
-    TransactionManager,
-    ReportManager,
-    init_butcher_db,
-    MEAT_CATEGORIES,
-    ORDER_STATUSES
-)
-
-__all__ = [
-    'ButcherGUI',
-    'launch_butcher_gui',
-    'ProductManager',
-    'OrderManager',
-    'TransactionManager',
-    'ReportManager',
-    'init_butcher_db',
-    'MEAT_CATEGORIES',
-    'ORDER_STATUSES'
-]
-
-# The GUI classes live in the interfaces layer, which imports back into this
-# domain package, so an eager re-export here is a circular import. PEP 562
-# lazy lookup keeps these names on the package's public surface without the
-# cycle: the interfaces module is only imported on first attribute access.
-_LAZY_GUI_EXPORTS = {
-    "ButcherGUI": "education_system.systems.university.domains.operations.interfaces.gui.commerce.butcher.butcher_gui",
-    "launch_butcher_gui": "education_system.systems.university.domains.operations.interfaces.gui.commerce.butcher.butcher_gui",
-}
-
-
-def __getattr__(name: str):
-    module_path = _LAZY_GUI_EXPORTS.get(name)
-    if module_path is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    import importlib
-    value = getattr(importlib.import_module(module_path), name)
-    globals()[name] = value  # cache so subsequent access skips __getattr__
-    return value
+_new = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.domain.butcher")
+globals().update({k: v for k, v in vars(_new).items()
+                  if not (k.startswith("__") and k.endswith("__"))})
+del _importlib, _new

@@ -113,10 +113,27 @@ QUALIFICATION_GRADE_SCALE: dict[str, str] = {
 }
 
 # Grades that count as an achievement for the reporting service's pass rate.
-PASSING_GRADES = frozenset({
-    "Distinction*", "Distinction", "Merit", "Pass", "Competent",
-    "9", "8", "7", "6", "5", "4", "A*", "A", "B", "C", "D", "E",
-})
+PASSING_GRADES = frozenset(
+    {
+        "Distinction*",
+        "Distinction",
+        "Merit",
+        "Pass",
+        "Competent",
+        "9",
+        "8",
+        "7",
+        "6",
+        "5",
+        "4",
+        "A*",
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+    }
+)
 
 # ── Attendance ──────────────────────────────────────────────────────────────
 
@@ -153,7 +170,15 @@ FULL_TIME_TEACHING_HOURS = 24.0
 # ── Finance ─────────────────────────────────────────────────────────────────
 
 FEE_TYPES = ("Tuition", "Exam", "Registration", "Materials", "Trip", "Resit")
-PAYMENT_METHODS = ("Card", "Bank Transfer", "Cash", "Cheque", "Direct Debit", "Employer", "Student Loan")
+PAYMENT_METHODS = (
+    "Card",
+    "Bank Transfer",
+    "Cash",
+    "Cheque",
+    "Direct Debit",
+    "Employer",
+    "Student Loan",
+)
 FUNDING_SOURCES = (
     "ESFA 16-18",
     "ESFA Adult Skills Fund",
@@ -163,7 +188,14 @@ FUNDING_SOURCES = (
     "Bursary",
     "Higher Education (OfS)",
 )
-BURSARY_TYPES = ("Vulnerable Student", "Discretionary", "Free Meals", "Travel", "Childcare", "Equipment")
+BURSARY_TYPES = (
+    "Vulnerable Student",
+    "Discretionary",
+    "Free Meals",
+    "Travel",
+    "Childcare",
+    "Equipment",
+)
 
 # ── Pastoral ────────────────────────────────────────────────────────────────
 
@@ -223,7 +255,17 @@ PERIODS = (
     ("E3", "20:00", "21:00"),
 )
 
-ROOM_TYPES = ("Classroom", "IT Suite", "Workshop", "Laboratory", "Salon", "Kitchen", "Gym", "Studio", "Lecture Theatre")
+ROOM_TYPES = (
+    "Classroom",
+    "IT Suite",
+    "Workshop",
+    "Laboratory",
+    "Salon",
+    "Kitchen",
+    "Gym",
+    "Studio",
+    "Lecture Theatre",
+)
 
 # ── Interface ───────────────────────────────────────────────────────────────
 

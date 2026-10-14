@@ -141,6 +141,7 @@ NAV_CATEGORIES: list[tuple[str, list[tuple[str, str]]]] = [
         ("Custom Export", "open_export"),
     ]),
     ("Cross-System", [
+        ("Post-16 Destinations", "open_post16_destinations"),
         ("Student Journey", "open_student_journey"),
         ("Analytics Dashboard", "open_cross_analytics"),
         ("Cross-System Calendar", "open_cross_calendar"),
@@ -1244,6 +1245,10 @@ class SecondarySchoolMainGUI:
         )
         self._open_cross_frame(StudentJourneyFrame, "Student Journey")
 
+    def open_post16_destinations(self) -> None:
+        from education_system.platform.cross_system.secondary_post16_gui import render
+        render(self)
+
     def open_cross_analytics(self) -> None:
         from education_system.platform.features.analytics.analytics_gui import (
             AnalyticsDashboardFrame,
@@ -1345,7 +1350,7 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
     if shared_auth is None or not getattr(shared_auth, "current_user", None):
         logger.error("secondarysch GUI invoked without a shared_auth session")
         raise RuntimeError(
-            "secondarysch_system GUI must be launched via run.py — "
+            "secondarysch_system GUI must be launched via python -m education_system — "
             "no standalone login is available."
         )
     cu = shared_auth.current_user or {}
@@ -1358,5 +1363,5 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
 
 
 if __name__ == "__main__":
-    print("Launch via: python run.py --gui  (then choose Secondary School)")
+    print("Launch via: python -m education_system --gui  (then choose Secondary School)")
     raise SystemExit(2)

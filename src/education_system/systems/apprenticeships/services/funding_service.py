@@ -38,6 +38,7 @@ from education_system.systems.apprenticeships.domain.funding.funding_rules impor
 from education_system.systems.apprenticeships.domain.programmes.models import (
     validate_funding_band,
 )
+from education_system.systems.apprenticeships.domain.records import audit
 from education_system.systems.apprenticeships.infrastructure.persistence.repositories import (
     apprentice_repository,
     compliance_repository,
@@ -187,6 +188,8 @@ def set_funding(actor: Actor, apprentice_id: int, payload: dict[str, Any]) -> Fu
         "notes": _optional_text(payload.get("notes")),
     })
     instalments = _rebuild_schedule(apprentice, price)
+    record = funding_repository.get_record(apprentice_id)
+    assert record is not None
 
     compliance_repository.record(
         action="update" if existing else "create", entity="funding", entity_id=apprentice_id,
@@ -195,14 +198,15 @@ def set_funding(actor: Actor, apprentice_id: int, payload: dict[str, Any]) -> Fu
             f"{model}, band {band}, {config.CURRENCY_SYMBOL}{price:,.2f} "
             f"over {instalments} instalment(s)"
         ),
+        changes=audit.diff(existing, record, fields=(
+            "funding_model", "band", "negotiated_price", "employer_contribution",
+            "government_contribution", "additional_payments",
+        )),
     )
     logger.info(
         "Funding set for apprentice %s: %s band %s at %.2f by %s",
         apprentice_id, model, band, price, actor.username,
     )
-
-    record = funding_repository.get_record(apprentice_id)
-    assert record is not None
     return record
 
 

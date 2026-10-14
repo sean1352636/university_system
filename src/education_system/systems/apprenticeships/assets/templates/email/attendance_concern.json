@@ -1,0 +1,8 @@
+{
+  "subject": "Attendance at training — {{apprentice_name}}",
+  "body": "Dear {{recipient_name}},\n\n{{apprentice_name}}'s attendance at scheduled training is now {{attendance_rate}}, with {{unauthorised_absences}} unauthorised absence(s) recorded — the most recent on {{last_absence_date}}.\n\nTraining sessions are off-the-job time, so every missed session is hours the apprenticeship has to make up before gateway. When the reason given is work commitments, it usually means the apprentice is not being released for training, and that is something we need to find a way round together.\n\nCould we speak before {{review_date}} to understand what is getting in the way and agree a plan?\n\n{{tutor_name}}\n{{provider_name}}",
+  "from_name": "{{provider_name}}",
+  "from_address": "training@provider.ac.uk",
+  "category": "Off-the-Job",
+  "priority": "High"
+}

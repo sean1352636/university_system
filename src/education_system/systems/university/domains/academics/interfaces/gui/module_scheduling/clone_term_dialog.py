@@ -11,7 +11,8 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 
 import logging
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
+from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling._dialogs import messagebox
 from datetime import datetime
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -159,7 +160,7 @@ class CloneTermDialog:
             if self.gui and hasattr(self.gui, "_resolve_changed_by"):
                 changed_by = self.gui._resolve_changed_by()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         try:
             with sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0) as conn:

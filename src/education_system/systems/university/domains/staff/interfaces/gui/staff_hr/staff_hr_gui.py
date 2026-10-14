@@ -10,6 +10,9 @@ Main launcher that integrates all staff HR features:
 """
 
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -624,7 +627,7 @@ class StaffHRGUI:
                             'message': f"{travel_pending} travel request(s) awaiting approval"
                         })
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 # Check for sabbatical progress reports due
                 try:
@@ -639,14 +642,14 @@ class StaffHRGUI:
                             'message': f"You have {active_sabb} active sabbatical(s) - progress report may be due"
                         })
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 # Check for upcoming committee meetings
                 try:
                     cursor.execute('''
-                        SELECT COUNT(*) FROM committee_meetings
-                        WHERE status = 'scheduled'
-                        AND meeting_date BETWEEN date('now') AND date('now', '+7 days')
+                        SELECT COUNT(*) FROM unified_events
+                        WHERE source_type = 'committee' AND status = 'scheduled'
+                        AND event_date BETWEEN date('now') AND date('now', '+7 days')
                     ''')
                     upcoming_meetings = cursor.fetchone()[0]
                     if upcoming_meetings > 0:
@@ -655,7 +658,7 @@ class StaffHRGUI:
                             'message': f"{upcoming_meetings} committee meeting(s) scheduled this week"
                         })
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 # Check for pending cover requests
                 try:
@@ -670,7 +673,7 @@ class StaffHRGUI:
                             'message': f"{open_covers} open cover request(s) need volunteers"
                         })
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 # Check for equipment bookings needing check-in
                 try:
@@ -686,7 +689,7 @@ class StaffHRGUI:
                             'message': f"You have {checkins} equipment booking(s) to check in today"
                         })
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 # Check for upcoming mentoring sessions
                 try:
@@ -705,7 +708,7 @@ class StaffHRGUI:
                             'message': f"{upcoming_sessions} mentoring session(s) scheduled this week"
                         })
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 # Check for unread grant funding alerts
                 try:
@@ -720,7 +723,7 @@ class StaffHRGUI:
                             'message': f"{unread_alerts} unread grant funding alert(s)"
                         })
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 # Check for pending peer review assignments
                 try:
@@ -735,7 +738,7 @@ class StaffHRGUI:
                             'message': f"You have {pending_reviews} pending peer review assignment(s)"
                         })
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 # Check for open polls
                 try:
@@ -750,7 +753,7 @@ class StaffHRGUI:
                             'message': f"{open_polls} open poll(s) awaiting your vote"
                         })
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
                 # Check for teaching load overload
                 try:
@@ -766,10 +769,10 @@ class StaffHRGUI:
                             'message': "Teaching load overload detected for current period"
                         })
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         if not notifications:
             notifications.append({

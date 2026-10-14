@@ -294,25 +294,6 @@ def init_additional_missing_tables():
         )
         ''')
 
-        # breakout_rooms
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS breakout_rooms (
-            room_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            session_id INTEGER NOT NULL,
-            room_name TEXT NOT NULL,
-            room_number INTEGER,
-            participants TEXT,
-            facilitator_id INTEGER,
-            max_capacity INTEGER DEFAULT 10,
-            topic TEXT,
-            start_time TIMESTAMP,
-            end_time TIMESTAMP,
-            duration INTEGER,
-            is_active BOOLEAN DEFAULT 0,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (session_id) REFERENCES virtual_sessions(session_id) ON DELETE CASCADE
-        )
-        ''')
 
         # bulk_export_log
         cursor.execute('''
@@ -805,7 +786,10 @@ def init_additional_missing_tables():
         )
         ''')
 
-        # lms_settings
+        # lms_settings — credentials for syncing with an EXTERNAL LMS
+        # (Canvas / Moodle / Google Classroom), written by the attendance
+        # tracker's LMS Integration window. Nothing to do with the retired
+        # internal LMS despite the shared prefix.
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS lms_settings (
             id INTEGER PRIMARY KEY,
@@ -817,21 +801,6 @@ def init_additional_missing_tables():
             sync_grades INTEGER,
             bidirectional INTEGER,
             sync_frequency TEXT
-        )
-        ''')
-
-        # lms_student_enrollment
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS lms_student_enrollment (
-            enrollment_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            lms_course_id INTEGER NOT NULL,
-            student_id TEXT NOT NULL,
-            enrollment_date TEXT NOT NULL DEFAULT (datetime('now')),
-            last_accessed TEXT,
-            progress_percentage REAL DEFAULT 0.0,
-            is_active INTEGER DEFAULT 1,
-            FOREIGN KEY (lms_course_id) REFERENCES lms_courses(lms_course_id) ON DELETE CASCADE,
-            UNIQUE(lms_course_id, student_id)
         )
         ''')
 
@@ -1202,19 +1171,6 @@ def init_additional_missing_tables():
         )
         ''')
 
-        # poll_responses
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS poll_responses (
-            response_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            poll_id INTEGER NOT NULL,
-            user_id INTEGER NOT NULL,
-            option_index INTEGER NOT NULL,
-            responded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (poll_id) REFERENCES virtual_polls(poll_id) ON DELETE CASCADE,
-            FOREIGN KEY (user_id) REFERENCES users(user_id),
-            UNIQUE(poll_id, user_id)
-        )
-        ''')
 
         # realtime_notifications
         cursor.execute('''
@@ -1366,6 +1322,7 @@ def init_additional_missing_tables():
             ('resume_url', 'TEXT'),
         ):
             if _col not in _sa_cols:
+                # db-audit: ignore[DBW001] - loop over a literal table
                 cursor.execute(
                     f"ALTER TABLE scholarship_applications "
                     f"ADD COLUMN {_col} {_type}"
@@ -1614,21 +1571,6 @@ def init_additional_missing_tables():
         )
         ''')
 
-        # virtual_chat_messages
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS virtual_chat_messages (
-            message_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            session_id INTEGER NOT NULL,
-            user_id INTEGER NOT NULL,
-            message_text TEXT NOT NULL,
-            message_type TEXT DEFAULT 'text',
-            sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            is_private BOOLEAN DEFAULT 0,
-            recipient_id INTEGER,
-            FOREIGN KEY (session_id) REFERENCES virtual_sessions(session_id) ON DELETE CASCADE,
-            FOREIGN KEY (user_id) REFERENCES users(user_id)
-        )
-        ''')
 
         # virtual_classrooms
         cursor.execute('''
@@ -1646,23 +1588,6 @@ def init_additional_missing_tables():
         )
         ''')
 
-        # virtual_polls
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS virtual_polls (
-            poll_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            session_id INTEGER NOT NULL,
-            question TEXT NOT NULL,
-            options TEXT NOT NULL,
-            poll_type TEXT DEFAULT 'single_choice',
-            created_by INTEGER NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            closes_at TIMESTAMP,
-            is_anonymous BOOLEAN DEFAULT 0,
-            is_active BOOLEAN DEFAULT 1,
-            FOREIGN KEY (session_id) REFERENCES virtual_sessions(session_id) ON DELETE CASCADE,
-            FOREIGN KEY (created_by) REFERENCES users(user_id)
-        )
-        ''')
 
         # virtual_recordings
         cursor.execute('''

@@ -33,6 +33,9 @@ from education_system.systems.university.infrastructure.i18n import get_text
 from education_system.systems.university.infrastructure.utils.activity_logger import (
     log_menu_navigation, log_create, log_update, log_delete,
 )
+from education_system.systems.university.domains.academics.domain.services.academic_calendar.terms import (
+    ACADEMIC_TERMS_DDL,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -41,15 +44,10 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 _EXTENSION_DDL = (
-    """CREATE TABLE IF NOT EXISTS academic_terms (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL UNIQUE,
-        term_type TEXT NOT NULL DEFAULT 'Semester',
-        academic_year TEXT NOT NULL DEFAULT '',
-        start_date TEXT DEFAULT '', end_date TEXT DEFAULT '',
-        status TEXT NOT NULL DEFAULT 'Planned',
-        created_at TEXT NOT NULL DEFAULT (datetime('now')),
-        updated_at TEXT NOT NULL DEFAULT (datetime('now')))""",
+    # Imported from the academic-calendar terms service, which owns the table.
+    # It deliberately pulls in no GUI code, so the CLI still never imports
+    # tkinter — the reason this declaration was duplicated here originally.
+    ACADEMIC_TERMS_DDL,
     """CREATE TABLE IF NOT EXISTS course_sections (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         course_code TEXT NOT NULL, term_id INTEGER NOT NULL,
@@ -289,12 +287,15 @@ def manage_terms_and_sections(auth):
         return
     editable = _can_edit(auth)
     while True:
+        # Terms are created and deleted in the Academic Calendar, which owns
+        # academic years, semesters and terms. The "Add term" / "Delete term"
+        # options that used to sit here were a second, independent editor for
+        # academic_terms and have been removed; this menu now only reads them.
         print("\n--- TERMS & SECTIONS ---")
         print("1. List academic terms")
         print("2. List course sections")
         if editable:
-            print("3. Add term      4. Delete term")
-            print("5. Add section   6. Delete section")
+            print("3. Add section   4. Delete section")
         print("0. Back")
         choice = _prompt("Choice: ")
         if choice == "0":
@@ -304,12 +305,8 @@ def manage_terms_and_sections(auth):
         elif choice == "2":
             _run("list sections", _list_sections)
         elif choice == "3" and editable:
-            _run("add term", _add_term, auth)
-        elif choice == "4" and editable:
-            _run("delete term", _delete_term, auth)
-        elif choice == "5" and editable:
             _run("add section", _add_section, auth)
-        elif choice == "6" and editable:
+        elif choice == "4" and editable:
             _run("delete section", _delete_section, auth)
         else:
             print("Invalid choice.")
@@ -330,52 +327,6 @@ def _list_terms():
         print("-" * 67)
         for r in rows:
             print(f"{r[0]:<5}{(r[1] or ''):<24}{(r[2] or ''):<14}{(r[3] or ''):<12}{(r[4] or ''):<12}")
-    finally:
-        conn.close()
-
-
-@log_create(module="course_management", description="Adding academic term")
-def _add_term(auth):
-    name = _prompt("Term name (e.g. Fall 2026): ")
-    if not name:
-        print("Cancelled — name is required.")
-        return
-    term_type = _prompt("Type [Semester]: ") or "Semester"
-    year = _prompt("Academic year (e.g. 2026-27): ")
-    start = _prompt("Start date (YYYY-MM-DD, optional): ")
-    end = _prompt("End date (YYYY-MM-DD, optional): ")
-    status = _prompt("Status [Planned]: ") or "Planned"
-    conn = get_connection()
-    try:
-        conn.execute(
-            "INSERT INTO academic_terms (name, term_type, academic_year, start_date, "
-            "end_date, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (name, term_type, year, start, end, status, _now(), _now()))
-        conn.commit()
-        print(f"✅ Term '{name}' created.")
-    except sqlite3.IntegrityError:
-        print(f"❌ A term named '{name}' already exists.")
-    finally:
-        conn.close()
-
-
-@log_delete(module="course_management", description="Deleting academic term")
-def _delete_term(auth):
-    conn = get_connection()
-    try:
-        cur = conn.cursor()
-        term_id = _pick_term(cur, "Enter term ID to delete")
-        if term_id is None:
-            return
-        cur.execute("SELECT COUNT(*) FROM course_sections WHERE term_id=?", (term_id,))
-        n = cur.fetchone()[0]
-        if _prompt(f"Delete term and its {n} section(s)? (y/n): ").lower() != "y":
-            print("Cancelled.")
-            return
-        cur.execute("DELETE FROM course_sections WHERE term_id=?", (term_id,))
-        cur.execute("DELETE FROM academic_terms WHERE id=?", (term_id,))
-        conn.commit()
-        print("✅ Term deleted.")
     finally:
         conn.close()
 
@@ -1642,6 +1593,7 @@ def _promotion_action(code, *, commit, auth=None):
             return
         ids = [c[0] for c in plan]
         placeholders = ",".join("?" for _ in ids)
+        # db-audit: ignore[DBW001] - string literal
         cur.execute(f"UPDATE course_waitlist SET status='Promoted' "
                     f"WHERE id IN ({placeholders})", ids)
         cur.execute("UPDATE courses SET current_enrollment = "

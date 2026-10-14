@@ -7,6 +7,13 @@ signing is the completion condition rather than a formality, and an
 actor may only ever sign the line belonging to the party they actually
 are.
 
+The targets agreed at a review are the apprentice's action plan. Each
+has an owner, a priority and a due date, and anything still open when
+the next review begins is carried onto it: the meeting starts with the
+outstanding actions in front of it rather than an empty list. The
+owner-facing side of the plan — listing, status moves by the people who
+own the actions, progress notes — is ``action_plan_service``.
+
 Every function takes ``actor`` first. Reads are scoped to what the actor
 may see — an employer's review list is their own organisation's and
 nobody else's — and writes are refused outright.
@@ -15,11 +22,12 @@ nobody else's — and writes are refused outright.
 from __future__ import annotations
 
 import logging
-from datetime import date
+from datetime import UTC, date, datetime
 from typing import Any
 
 from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.domain.apprentices.models import ValidationError
+from education_system.systems.apprenticeships.domain.reviews import action_plans as action_rules
 from education_system.systems.apprenticeships.domain.reviews.progress_reviews import (
     EmployerFeedback,
     Review,
@@ -115,7 +123,12 @@ def schedule_review(
     scheduled_date: str,
     conducted_by: int | None = None,
 ) -> Review:
-    """Put a review in the diary."""
+    """Put a review in the diary.
+
+    Outstanding actions are not carried onto it yet: they are carried
+    when it starts, so that until then they stay on the review that set
+    them, where the plan for the current period is read from.
+    """
     require(actor, "review.conduct")
     apprentice = _apprentice(actor, apprentice_id)
 
@@ -164,7 +177,11 @@ def schedule_next(actor: Actor, apprentice_id: int) -> Review:
 # ═════════════════════════════════════════════════════════════════════
 
 def start_review(actor: Actor, review_id: int) -> Review:
-    """Open a scheduled review: the meeting is under way."""
+    """Open a scheduled review: the meeting is under way.
+
+    Every action still open from the apprentice's earlier reviews is
+    carried onto this one as it starts, so the meeting judges them.
+    """
     require(actor, "review.conduct")
     review = _load(actor, review_id)
     require_review_status(review.status, "In Progress")
@@ -175,6 +192,7 @@ def start_review(actor: Actor, review_id: int) -> Review:
         actor=actor.username, actor_role=actor.role, detail="Review started",
     )
     logger.info("Review %s started by %s", review_id, actor.username)
+    _carry_outstanding(actor, review_id)
     return _load(actor, review_id)
 
 
@@ -193,6 +211,10 @@ def record_review(actor: Actor, review_id: int, payload: dict[str, Any]) -> Revi
     require_review_status(review.status, "Awaiting Signatures")
 
     data = _validate_review(payload)
+    # Carried here as well as on start: a review started before carrying
+    # existed, or stepped through In Progress just above, still gets the
+    # outstanding actions. Idempotent, so a second pass carries nothing.
+    _carry_outstanding(actor, review_id)
     held = data.get("held_date") or review.held_date or date.today().isoformat()
     data["held_date"] = held
     if not data.get("next_review_date"):
@@ -319,7 +341,7 @@ def unsign_review(actor: Actor, review_id: int, signatory: str) -> Review:
 
 
 # ═════════════════════════════════════════════════════════════════════
-# Targets
+# Targets — the action plan
 # ═════════════════════════════════════════════════════════════════════
 
 def list_targets(
@@ -329,44 +351,40 @@ def list_targets(
     apprentice_id: int | None = None,
     open_only: bool = False,
 ) -> list[ReviewTarget]:
-    """Targets set at reviews *actor* may see."""
+    """Targets set at reviews *actor* may see.
+
+    The actor's own scope is applied last and wins, exactly as for
+    reviews; the richer action-plan filters are in
+    ``action_plan_service.list_actions``.
+    """
     require(actor, "review.view")
     if review_id is not None:
         _load(actor, review_id)
         return repo.list_targets(review_id, open_only=open_only)
     if apprentice_id is not None:
         _apprentice(actor, apprentice_id)
-        return repo.list_targets(apprentice_id=apprentice_id, open_only=open_only)
-    if actor.is_admin:
-        return repo.list_targets(open_only=open_only)
-
-    # The repository has no caseload or employer filter for targets, so
-    # an unfiltered call is answered from the reviews already scoped to
-    # the actor rather than by widening the query.
-    targets = [
-        target
-        for review in list_reviews(actor, with_children=True)
-        for target in review.targets
-        if not open_only or target.is_open
-    ]
-    targets.sort(key=lambda t: (t.due_date or "9999", t.target_id))
-    return targets
+    filters: dict[str, Any] = {"apprentice_id": apprentice_id, "open_only": open_only}
+    filters.update(apprentice_filters(actor))
+    return repo.list_targets(**filters)
 
 
 def add_target(actor: Actor, review_id: int, payload: dict[str, Any]) -> ReviewTarget:
-    """Agree a SMART target at a review."""
+    """Agree a SMART target — an action — at a review."""
     require(actor, "review.conduct")
     review = _load(actor, review_id)
     if review.is_complete:
         raise ValidationError("A complete review cannot take new targets")
 
     data = _validate_target(payload, existing=None)
-    data["review_id"] = review_id
+    # A new action starts open whatever the form posted: settling or
+    # carrying one is a separate, audited step.
+    data.update(review_id=review_id, status="Open", completed_at=None)
     target_id = repo.create_target(data)
     compliance_repository.record(
         action="create", entity="review_target", entity_id=target_id,
         actor=actor.username, actor_role=actor.role,
-        detail=f"Review {review_id}: {data['description'][:80]}",
+        detail=f"Review {review_id}: {data['description'][:80]} "
+               f"({data['owner']}, {data['priority']})",
     )
     logger.info("Target %s added to review %s by %s", target_id, review_id, actor.username)
 
@@ -376,11 +394,19 @@ def add_target(actor: Actor, review_id: int, payload: dict[str, Any]) -> ReviewT
 
 
 def update_target(actor: Actor, target_id: int, payload: dict[str, Any]) -> ReviewTarget:
-    """Edit a target's wording, due date or KSB mapping."""
+    """Edit a target's wording, owner, priority, due date or KSB mapping."""
     require(actor, "review.conduct")
     target = _load_target(actor, target_id)
 
     data = _validate_target(payload, existing=target)
+    if "status" in data:
+        if data["status"] == target.status:
+            data.pop("status")
+        else:
+            action_rules.require_action_status_move(target.status, data["status"])
+            data["completed_at"] = action_rules.completed_at_after(
+                target.status, data["status"], target.completed_at, _now()
+            )
     repo.update_target(target_id, data)
     compliance_repository.record(
         action="update", entity="review_target", entity_id=target_id,
@@ -396,15 +422,30 @@ def update_target(actor: Actor, target_id: int, payload: dict[str, Any]) -> Revi
 def close_target(
     actor: Actor, target_id: int, *, status: str, note: str | None = None
 ) -> ReviewTarget:
-    """Record how a target turned out."""
+    """Record how a target turned out.
+
+    "Carried Forward" is honoured by actually carrying it: a copy opens on
+    the apprentice's next review and this one is closed pointing at it.
+    With no later review to carry it onto, the request is refused rather
+    than leaving an action marked carried with nowhere to go.
+    """
     require(actor, "review.conduct")
-    _load_target(actor, target_id)
+    target = _load_target(actor, target_id)
 
     outcome = validate_target_status(status)
     if outcome == "Open":
         raise ValidationError("Closing a target needs an outcome, not 'Open'")
+    if outcome == action_rules.CARRIED_FORWARD:
+        return _carry_one(actor, target, note)
 
-    repo.update_target(target_id, {"status": outcome, "outcome_note": _optional_text(note)})
+    action_rules.require_action_status_move(target.status, outcome)
+    repo.update_target(target_id, {
+        "status": outcome,
+        "outcome_note": _optional_text(note),
+        "completed_at": action_rules.completed_at_after(
+            target.status, outcome, target.completed_at, _now()
+        ),
+    })
     compliance_repository.record(
         action="update", entity="review_target", entity_id=target_id,
         actor=actor.username, actor_role=actor.role, detail=f"Closed as {outcome}",
@@ -414,6 +455,26 @@ def close_target(
     closed = repo.get_target(target_id)
     assert closed is not None
     return closed
+
+
+def carry_forward(actor: Actor, review_id: int) -> list[ReviewTarget]:
+    """Bring every open action from earlier reviews onto this one, now.
+
+    Starting a review does this on its own. This is for the tutor who
+    wants the outstanding actions on a review before the meeting opens,
+    or for a review that was already under way when carrying began.
+    Returns the new copies.
+    """
+    require(actor, "review.conduct")
+    review = _load(actor, review_id)
+    if review.status in ("Complete", "Missed"):
+        raise ValidationError(
+            f"A {review.status.lower()} review cannot take actions. Carry them onto the "
+            "next review instead."
+        )
+    pairs = _carry_outstanding(actor, review_id)
+    new_ids = {new for _, new in pairs}
+    return [t for t in repo.list_targets(review_id) if t.target_id in new_ids]
 
 
 def delete_target(actor: Actor, target_id: int) -> None:
@@ -428,6 +489,64 @@ def delete_target(actor: Actor, target_id: int) -> None:
         detail=f"Deleted from review {target.review_id}: {target.description[:80]}",
     )
     logger.info("Target %s deleted by %s", target_id, actor.username)
+
+
+def _carry_outstanding(actor: Actor, review_id: int) -> list[tuple[int, int]]:
+    """Carry open actions from earlier reviews onto *review_id*, audited."""
+    review = repo.get(review_id, with_children=False)
+    if review is None:
+        return []
+    when = review.held_date or review.scheduled_date
+    pairs = repo.carry_forward_into(
+        review_id, note=f"Carried forward to the review of {when}"
+    )
+    for old_id, new_id in pairs:
+        compliance_repository.record(
+            action="update", entity="review_target", entity_id=old_id,
+            actor=actor.username, actor_role=actor.role,
+            detail=f"Carried forward to review {review_id} as target {new_id}",
+        )
+    if pairs:
+        logger.info(
+            "%s outstanding action(s) carried onto review %s by %s",
+            len(pairs), review_id, actor.username,
+        )
+    return pairs
+
+
+def _carry_one(actor: Actor, target: ReviewTarget, note: str | None) -> ReviewTarget:
+    if target.status == action_rules.CARRIED_FORWARD:
+        raise ValidationError("This action has already been carried forward")
+    if not target.is_open:
+        raise ValidationError(
+            f"Only an open action can be carried forward; this one is {target.status}"
+        )
+    destination = repo.next_review_after(target.review_id)
+    if destination is None:
+        raise ValidationError(
+            "There is no later review to carry this action onto. Schedule the next "
+            "review: open actions are carried onto it automatically when it starts."
+        )
+    when = destination.held_date or destination.scheduled_date
+    reason = _optional_text(note)
+    new_id = repo.carry_target(
+        target.target_id, destination.review_id,
+        note=f"Carried forward to the review of {when}" + (f": {reason}" if reason else ""),
+    )
+    if new_id is None:
+        raise ValidationError("This action is no longer open")
+    compliance_repository.record(
+        action="update", entity="review_target", entity_id=target.target_id,
+        actor=actor.username, actor_role=actor.role,
+        detail=f"Carried forward to review {destination.review_id} as target {new_id}",
+    )
+    logger.info(
+        "Target %s carried to review %s as %s by %s",
+        target.target_id, destination.review_id, new_id, actor.username,
+    )
+    carried = repo.get_target(target.target_id)
+    assert carried is not None
+    return carried
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -560,6 +679,11 @@ def _validate_review(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def _validate_target(payload: dict[str, Any], *, existing: ReviewTarget | None) -> dict[str, Any]:
+    """Normalise a target payload.
+
+    On create, owner and priority take their defaults when absent; on an
+    edit, only keys actually present are returned.
+    """
     data: dict[str, Any] = {}
     if existing is None or "description" in payload:
         data["description"] = _require_text(payload.get("description"), "Target", limit=500)
@@ -567,6 +691,10 @@ def _validate_target(payload: dict[str, Any], *, existing: ReviewTarget | None) 
         data["due_date"] = _validate_date(payload.get("due_date"), "Due date")
     if "ksb_codes" in payload:
         data["ksb_codes"] = _optional_text(payload.get("ksb_codes"))
+    if existing is None or "owner" in payload:
+        data["owner"] = action_rules.validate_owner(payload.get("owner"))
+    if existing is None or "priority" in payload:
+        data["priority"] = action_rules.validate_priority(payload.get("priority"))
     if "status" in payload:
         data["status"] = validate_target_status(payload.get("status"))
     if "outcome_note" in payload:
@@ -618,3 +746,9 @@ def _validate_id(value: Any, label: str) -> int | None:
         return int(value)
     except (TypeError, ValueError) as exc:
         raise ValidationError(f"{label} is not valid") from exc
+
+
+def _now() -> str:
+    """A timestamp in the format SQLite's ``datetime('now')`` writes, so
+    service-set stamps sort against repository-set ones."""
+    return datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")

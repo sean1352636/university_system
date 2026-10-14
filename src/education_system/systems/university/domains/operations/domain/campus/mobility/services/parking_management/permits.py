@@ -103,7 +103,7 @@ def create_parking_permit():
 
             user = cursor.fetchone()
             if not user:
-                print(_t("parking.error.user_profile_not_found"))
+                print(_t("parking.error.user_profile_not_found", default="User Profile Not Found"))
                 conn.close()
                 return
 
@@ -126,7 +126,7 @@ def create_parking_permit():
 
             vehicles = cursor.fetchall()
             if not vehicles:
-                print(_t("parking.msg.no_vehicles_for_user"))
+                print(_t("parking.msg.no_vehicles_for_user", default="No Vehicles For User."))
                 vehicle_choice = '2'  # Switch to new vehicle registration
             else:
                 print("\n" + _t("parking.section.available_vehicles") + ":")
@@ -139,7 +139,7 @@ def create_parking_permit():
                         raise ValueError
                     vehicle_id = vehicles[idx][0]
                 except (ValueError, IndexError):
-                    print(_t("common.invalid_selection_retry"))
+                    print(_t("common.invalid_selection_retry", default="Invalid Selection Retry."))
                     conn.close()
                     return
 
@@ -148,26 +148,26 @@ def create_parking_permit():
             try:
                 license_plate = input("Enter license plate: ").upper()
                 if not license_plate:
-                    print(_t("parking.error.license_plate_required"))
+                    print(_t("parking.error.license_plate_required", default="License Plate Required"))
                     conn.close()
                     return
 
                 # Check if license plate already exists
                 cursor.execute('SELECT COUNT(*) FROM vehicles WHERE license_plate = ?', (license_plate,))
                 if cursor.fetchone()[0] > 0:
-                    print(_t("parking.error.license_plate_exists"))
+                    print(_t("parking.error.license_plate_exists", default="License Plate Exists"))
                     conn.close()
                     return
 
                 make = input("Enter vehicle make: ")
                 if not make:
-                    print(_t("parking.error.make_required"))
+                    print(_t("parking.error.make_required", default="Make Required"))
                     conn.close()
                     return
 
                 model = input("Enter vehicle model: ")
                 if not model:
-                    print(_t("parking.error.model_required"))
+                    print(_t("parking.error.model_required", default="Model Required"))
                     conn.close()
                     return
 
@@ -182,7 +182,7 @@ def create_parking_permit():
                             print(_t("parking.error.year_range").format(max_year=current_year + 1))
                             year = None
                     except ValueError:
-                        print(_t("parking.error.year_must_be_number"))
+                        print(_t("parking.error.year_must_be_number", default="Year Must Be Number"))
 
                 color = input("Enter vehicle color: ")
 
@@ -199,7 +199,7 @@ def create_parking_permit():
 
                 registration_state = input("Enter registration state (e.g., NY): ").upper()
                 if not registration_state:
-                    print(_t("parking.error.registration_state_required"))
+                    print(_t("parking.error.registration_state_required", default="Registration State Required"))
                     conn.close()
                     return
 
@@ -210,7 +210,7 @@ def create_parking_permit():
 
                 # Insert vehicle (owner_id can be NULL for visitors)
                 cursor.execute(
-                    'INSERT INTO vehicles VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    'INSERT INTO vehicles (vehicle_id, license_plate, make, model, year, color, vehicle_type, owner_id, registration_state) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
                     (vehicle_id, license_plate, make, model, year, color, vehicle_type, user_id, registration_state)
                 )
 
@@ -244,7 +244,7 @@ def create_parking_permit():
             if user_id is None:  # Visitor
                 if zone in ['V', 'M']:
                     break
-                print(_t("parking.msg.visitors_zones_only"))
+                print(_t("parking.msg.visitors_zones_only", default="Visitors Zones Only"))
             else:
                 if zone in PARKING_ZONES:
                     break
@@ -263,7 +263,7 @@ def create_parking_permit():
             if user_id is None:  # Visitor
                 if permit_type in ['Daily', 'Temporary']:
                     break
-                print(_t("parking.msg.visitors_permits_only"))
+                print(_t("parking.msg.visitors_permits_only", default="Visitors Permits Only"))
             else:
                 if permit_type in PERMIT_TYPES:
                     break
@@ -286,10 +286,10 @@ def create_parking_permit():
                 try:
                     days = int(input("Enter number of days for temporary permit: "))
                     if days <= 0 or days > 30:
-                        print(_t("parking.error.days_range"))
+                        print(_t("parking.error.days_range", default="Days Range"))
                         days = None
                 except ValueError:
-                    print(_t("parking.error.enter_valid_number"))
+                    print(_t("parking.error.enter_valid_number", default="Enter Valid Number: "))
             end_date = start_date + timedelta(days=days)
 
         # Format dates for database
@@ -305,7 +305,7 @@ def create_parking_permit():
         # Insert permit
         try:
             cursor.execute(
-                'INSERT INTO parking_permits VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO parking_permits (permit_id, user_id, full_name, email, zone, permit_type, start_date, end_date, active_status, vehicle_id, issue_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 (permit_id, user_id, full_name, email, zone, permit_type,
                  start_date_str, end_date_str, 'Active', vehicle_id, issue_date_str)
             )
@@ -362,7 +362,7 @@ def create_parking_permit():
                         end_date=end_date_str,
                     )
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
             print("="*50)
 
@@ -378,7 +378,7 @@ def create_parking_permit():
     except Exception as e:
         logging.error(f"Unexpected error in create_parking_permit: {e}")
         print(f"An unexpected error occurred: {e}")
-        print(_t("common.try_again_or_contact_admin"))
+        print(_t("common.try_again_or_contact_admin", default="Try Again Or Contact Admin"))
 
 def view_parking_permit():
     auth = core.auth
@@ -532,7 +532,7 @@ def view_parking_permit():
                 permits = cursor.fetchall()
 
                 if not permits:
-                    print(_t("parking.msg.no_your_permits"))
+                    print(_t("parking.msg.no_your_permits", default="No Your Permits."))
                 else:
                     print("\n" + _t("parking.section.your_permits") + ":")
                     print("=" * 100)
@@ -555,7 +555,7 @@ def view_parking_permit():
                 permits = cursor.fetchall()
 
                 if not permits:
-                    print(_t("parking.msg.no_your_permits"))
+                    print(_t("parking.msg.no_your_permits", default="No Your Permits."))
                 else:
                     print("\n" + _t("parking.section.your_permits") + ":")
                     print("=" * 100)
@@ -660,7 +660,7 @@ def update_parking_permit():
                 return
 
             if not permits:
-                print(_t("parking.msg.no_permits_criteria"))
+                print(_t("parking.msg.no_permits_criteria", default="No Permits Criteria."))
                 conn.close()
                 return
 
@@ -682,7 +682,7 @@ def update_parking_permit():
                         raise ValueError
                     selected_permit = permits[idx]
                 except (ValueError, IndexError):
-                    print(_t("common.invalid_selection"))
+                    print(_t("common.invalid_selection", default="Invalid Selection."))
                     conn.close()
                     return
 
@@ -714,7 +714,7 @@ def update_parking_permit():
             permits = cursor.fetchall()
 
             if not permits:
-                print(_t("parking.msg.no_permits_to_update"))
+                print(_t("parking.msg.no_permits_to_update", default="No Permits To Update."))
                 conn.close()
                 return
 
@@ -729,7 +729,7 @@ def update_parking_permit():
                     raise ValueError
                 selected_permit = permits[idx]
             except (ValueError, IndexError):
-                print(_t("common.invalid_selection"))
+                print(_t("common.invalid_selection", default="Invalid Selection."))
                 conn.close()
                 return
 
@@ -757,7 +757,7 @@ def update_parking_permit():
             if option < 1 or option > max_option:
                 raise ValueError
         except ValueError:
-            print(_t("common.invalid_option"))
+            print(_t("common.invalid_option", default="Invalid Option."))
             conn.close()
             return
 
@@ -808,10 +808,10 @@ def update_parking_permit():
                     try:
                         days = int(input("Enter number of days for temporary permit: "))
                         if days <= 0 or days > 30:
-                            print(_t("parking.error.days_range"))
+                            print(_t("parking.error.days_range", default="Days Range"))
                             days = None
                     except ValueError:
-                        print(_t("parking.error.enter_valid_number"))
+                        print(_t("parking.error.enter_valid_number", default="Enter Valid Number: "))
                 end_date = start_date + timedelta(days=days)
 
             end_date_str = end_date.strftime('%Y-%m-%d')
@@ -836,7 +836,7 @@ def update_parking_permit():
                     end_date = datetime.strptime(new_end_date, '%Y-%m-%d')
 
                     if end_date <= start_date:
-                        print(_t("parking.error.end_date_after_start"))
+                        print(_t("parking.error.end_date_after_start", default="End Date After Start"))
                         continue
 
                     break
@@ -856,7 +856,7 @@ def update_parking_permit():
                 new_status = input("Enter new status (Active/Inactive): ")
                 if new_status in ['Active', 'Inactive']:
                     break
-                print(_t("parking.error.invalid_status"))
+                print(_t("parking.error.invalid_status", default="Invalid Status."))
 
             cursor.execute(
                 'UPDATE parking_permits SET active_status = ? WHERE permit_id = ?',
@@ -884,7 +884,7 @@ def update_parking_permit():
                 vehicles = cursor.fetchall()
 
                 if not vehicles:
-                    print(_t("parking.msg.no_vehicles_for_user_short"))
+                    print(_t("parking.msg.no_vehicles_for_user_short", default="No Vehicles For User Short."))
                     conn.close()
                     return
                 else:
@@ -906,7 +906,7 @@ def update_parking_permit():
                         updated_fields = {"Vehicle": f"{vehicles[idx][2]} {vehicles[idx][3]} ({vehicles[idx][1]})"}
 
                     except (ValueError, IndexError):
-                        print(_t("common.invalid_selection"))
+                        print(_t("common.invalid_selection", default="Invalid Selection."))
                         conn.close()
                         return
             else:
@@ -925,7 +925,7 @@ def update_parking_permit():
                     vehicle = cursor.fetchone()
 
                     if not vehicle:
-                        print(_t("parking.msg.vehicle_not_found"))
+                        print(_t("parking.msg.vehicle_not_found", default="Vehicle Not Found"))
                         conn.close()
                         return
 
@@ -943,7 +943,7 @@ def update_parking_permit():
                     vehicle = cursor.fetchone()
 
                     if not vehicle:
-                        print(_t("parking.msg.vehicle_not_found"))
+                        print(_t("parking.msg.vehicle_not_found", default="Vehicle Not Found"))
                         conn.close()
                         return
 
@@ -1003,7 +1003,7 @@ def delete_parking_permit():
 
     if not auth.check_permission('delete_any_permit'):
         logging.warning(f"User {auth.current_user['username']} attempted to delete permit without permission")
-        print(_t("parking.auth.no_permission"))
+        print(_t("parking.auth.no_permission", default="No Permission."))
         return
 
     # Backup before making changes
@@ -1037,7 +1037,7 @@ def delete_parking_permit():
         confirm = input("\nAre you sure you want to delete this permit? (y/n): ")
 
         if confirm.lower() != 'y':
-            print(_t("common.deletion_cancelled"))
+            print(_t("common.deletion_cancelled", default="Deletion Cancelled"))
             conn.close()
             return
 

@@ -2,6 +2,12 @@ from education_system.systems.university.domains.pastoral.domain.student_life.st
     datetime, sqlite3, get_connection,
 )
 import education_system.systems.university.domains.pastoral.domain.student_life.student_union.clubs.club_management._imports as _state
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.calendar_bridge import (
+    mirror as _mirror_to_calendar,
+)
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.identity import (
+    current_student_id as _current_student_id,
+)
 
 
 def manage_mentorship_system():
@@ -17,15 +23,13 @@ def manage_mentorship_system():
         cursor = conn.cursor()
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, auth)
 
-        if not result:
+        if not student_id:
             print("No student record is associated with your account.")
             conn.close()
             return
 
-        student_id = result[0]
 
         while True:
             print("\nMentorship System")
@@ -424,7 +428,18 @@ def schedule_mentorship_session(student_id, cursor, conn):
         ''', (relationship_id, session_date, duration, notes))
 
         conn.commit()
+        session_id = cursor.lastrowid
         print("Mentorship session scheduled successfully!")
+
+        if _mirror_to_calendar(
+            name=f"SU Mentorship session with {selected_relationship[1]}",
+            kind="mentorship_session", date=session_date,
+            description=notes or f"{duration} minute mentorship session",
+            created_by=student_id,
+            source_table="mentorship_sessions", source_id=session_id,
+            conn=conn,
+        ):
+            print("Added to the university academic calendar.")
 
     except sqlite3.Error as e:
         print(f"Database error: {e}")

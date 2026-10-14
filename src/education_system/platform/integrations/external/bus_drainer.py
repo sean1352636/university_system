@@ -25,7 +25,13 @@ import logging
 import threading
 
 from education_system.platform.integrations.external import cross_system_bus
-from education_system.platform.integrations.external.bus_consumers import register_consumers
+from education_system.platform.integrations.external.bus_consumers import (
+    PLATFORM_CONSUMER,
+    SHARED_HANDLER_NAMES,
+    intake_registrars,
+    register_consumers,
+    register_shared_consumers,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -35,12 +41,30 @@ DRAINER_THREAD_NAME = "CrossSystemBusDrainer"
 _DEFAULT_INTERVAL = 30.0
 
 
+def drain_platform_once(*, db_path: str | None = None) -> int:
+    """Run the shared consumers over every system's events, once.
+
+    A per-system drainer only sees events addressed to its own system, so a
+    transfer into the university would notify nobody until the university
+    was next launched. The platform drainer — run by the API server and the
+    superadmin console — closes that gap for the shared consumers only; the
+    intake handlers still run in their own system.
+    """
+    register_shared_consumers()
+    return cross_system_bus.poll_and_dispatch(
+        PLATFORM_CONSUMER, any_target=True,
+        handler_names=SHARED_HANDLER_NAMES, db_path=db_path)
+
+
 def drain_once(system: str, *, db_path: str | None = None) -> int:
     """Register ``system``'s consumers and dispatch any pending events once.
 
     Returns the number of (event, handler) dispatches. Safe to call
     repeatedly and concurrently with other systems' drainers.
+    ``system="platform"`` runs :func:`drain_platform_once`.
     """
+    if system == PLATFORM_CONSUMER:
+        return drain_platform_once(db_path=db_path)
     register_consumers(system)
     return cross_system_bus.poll_and_dispatch(system, db_path=db_path)
 
@@ -101,6 +125,38 @@ def start_background_drainer(system: str, *, interval: float = _DEFAULT_INTERVAL
     return drainer
 
 
+def start_platform_drainer(*, interval: float = _DEFAULT_INTERVAL,
+                           db_path: str | None = None) -> BackgroundDrainer | None:
+    """Start (once) the shared-consumer drainer. See :func:`drain_platform_once`."""
+    return start_background_drainer(PLATFORM_CONSUMER, interval=interval,
+                                    db_path=db_path)
+
+
+def drainer_alive(system: str) -> bool:
+    """Whether this process has a live drainer for *system*."""
+    drainer = _drainers.get(system)
+    return bool(drainer is not None and drainer.is_alive())
+
+
+def intake_status(system: str, *, db_path: str | None = None) -> dict:
+    """One system's intake health, for the system registry screen and API.
+
+    ``drainer_alive`` only describes *this* process; each system runs its
+    drainer in its own process, so False here does not mean nobody is
+    draining. The receipt counts are the cross-process truth.
+    """
+    status = {
+        "system": system,
+        "registrars": intake_registrars(system),
+        "drainer_alive": drainer_alive(system),
+    }
+    try:
+        status.update(cross_system_bus.delivery_backlog(system, db_path=db_path))
+    except Exception as exc:  # the auth DB may be absent on a fresh install
+        status["error"] = str(exc)
+    return status
+
+
 def _main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         description="Drain the cross-system event bus for a system.")
@@ -132,7 +188,11 @@ if __name__ == "__main__":  # pragma: no cover
 
 __all__ = [
     "drain_once",
+    "drain_platform_once",
+    "drainer_alive",
+    "intake_status",
     "BackgroundDrainer",
     "start_background_drainer",
+    "start_platform_drainer",
     "DRAINER_THREAD_NAME",
 ]

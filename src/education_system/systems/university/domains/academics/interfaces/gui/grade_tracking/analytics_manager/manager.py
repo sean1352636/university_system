@@ -7,9 +7,12 @@ from education_system.systems.university.domains.academics.interfaces.gui.grade_
 from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.analytics_manager.reports import ReportsMixin
 from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.analytics_manager.exports import ExportsMixin
 from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.analytics_manager.predictions import PredictionsMixin
+from education_system.systems.university.domains.academics.interfaces.gui._report_presentation import SectionReportMixin
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.utils import widget_alive
 
 
 class AnalyticsManager(
+    SectionReportMixin,
     TabsMixin,
     CompetencyMixin,
     RiskMixin,
@@ -32,3 +35,11 @@ class AnalyticsManager(
         if hasattr(self.app, 'layout') and hasattr(self.app.layout, 'content_frame'):
             return self.app.layout.content_frame
         return None
+
+    def _widget_exists(self, widget):
+        """Return True if widget exists and is not destroyed.
+
+        The competency/risk refreshes call this before touching a cached
+        tree; without it they raised AttributeError on the live widget.
+        """
+        return widget_alive(widget)

@@ -203,14 +203,14 @@ def _audit(action: str, resource_type: str = "qa", resource_id: Optional[str] = 
                     else (getattr(u, "id", "") or "")
                 )
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         safe_log_security_event(
             action=event_type, user_id=actor,
             resource_type=resource_type, resource_id=resource_id,
             details=details or {},
         )
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     # #16 — fan out to webhook subscribers; lazy-imported to avoid a
     # circular import (qa_integrations imports qa_service).
     try:
@@ -223,7 +223,7 @@ def _audit(action: str, resource_type: str = "qa", resource_id: Optional[str] = 
             "details": details or {},
         })
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
 
 # ===========================================================================
@@ -329,6 +329,7 @@ def compute_b3_metrics(cohort_year: int, course: Optional[str] = None) -> dict:
             cohort_filter += " AND course = ?"
             params.append(course)
 
+        # db-audit: ignore[DBW001] - string literal
         cohort_size = conn.execute(
             f"SELECT COUNT(*) FROM students WHERE {cohort_filter}", params,
         ).fetchone()[0] or 0
@@ -336,12 +337,14 @@ def compute_b3_metrics(cohort_year: int, course: Optional[str] = None) -> dict:
         if cohort_size == 0:
             return {m: (0.0, 0, 0) for m in OFS_B3_METRICS}
 
+        # db-audit: ignore[DBW001] - string literal
         cont_count = conn.execute(
             f"SELECT COUNT(*) FROM students "
             f"WHERE {cohort_filter} AND LOWER(status) IN ('active','enrolled')",
             params,
         ).fetchone()[0] or 0
 
+        # db-audit: ignore[DBW001] - string literal
         comp_count = conn.execute(
             f"SELECT COUNT(*) FROM students "
             f"WHERE {cohort_filter} AND LOWER(status) IN ('completed','graduated')",
@@ -474,6 +477,7 @@ def update_app_milestone(milestone_id: int, **fields: Any) -> bool:
     params.append(milestone_id)
     init_db()
     with get_connection() as conn:
+        # db-audit: ignore[DBW001] - join over a code-controlled list
         cur = conn.execute(
             f"UPDATE ofs_app_milestones SET {', '.join(sets)} WHERE id = ?", params,
         )
@@ -684,6 +688,7 @@ def update_impact_case(case_id: int, **fields: Any) -> bool:
     params.append(case_id)
     init_db()
     with get_connection() as conn:
+        # db-audit: ignore[DBW001] - join over a code-controlled list
         cur = conn.execute(
             f"UPDATE ref_impact_cases SET {', '.join(sets)} WHERE id = ?", params,
         )

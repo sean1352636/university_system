@@ -13,7 +13,7 @@ from education_system.systems.university.domains.academics.interfaces.gui.module
 from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling import conflicts_tab
 from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling import management_tab
 from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling import settings_tab
-from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling import modules_tab
+from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling import lesson_plans_tab
 from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling import scheduling_engine
 from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling import notifications
 from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling import exports

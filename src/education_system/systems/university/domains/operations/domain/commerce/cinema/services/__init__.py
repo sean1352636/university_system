@@ -1,12 +1,13 @@
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.domain.cinema.services`` (campus commerce plugin).
+
+A mirror, not an alias: an aliased package would resolve this package's
+submodules through the new ``__path__`` and load each one a second time.
+Submodules are aliased individually; this copies the package's names.
 """
-Cinema domain service layer.
+# layout-shim: education_system.systems.university.plugins.campus_commerce.domain.cinema.services
+import importlib as _importlib
 
-Provides reusable business-logic and data-access functions that are independent
-of any GUI framework (tkinter, Flask, CLI, etc.).
-"""
-
-from education_system.systems.university.domains.operations.domain.commerce.cinema.services.cinema_service import (
-    CinemaService,
-)
-
-__all__ = ["CinemaService"]
+_new = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.domain.cinema.services")
+globals().update({k: v for k, v in vars(_new).items()
+                  if not (k.startswith("__") and k.endswith("__"))})
+del _importlib, _new

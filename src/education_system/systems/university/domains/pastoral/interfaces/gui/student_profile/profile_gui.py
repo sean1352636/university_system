@@ -52,6 +52,7 @@ class StudentProfileGUI:
             with get_connection() as conn:
                 for col_name, col_def in columns_to_add:
                     try:
+                        # db-audit: ignore[DBW001] - literal collection
                         conn.execute(
                             f"ALTER TABLE students ADD COLUMN {col_name} {col_def}"
                         )
@@ -59,7 +60,7 @@ class StudentProfileGUI:
                         logger.info("Added column %s to students table", col_name)
                     except Exception:
                         # Column already exists — that is fine
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
         except Exception as exc:
             logger.warning("Could not ensure profile columns: %s", exc)
 

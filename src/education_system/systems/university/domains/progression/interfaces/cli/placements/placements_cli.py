@@ -7,11 +7,20 @@ Wired to the ``Database`` and helper functions in
 (``placement_tracker.py``) uses. Anything created here is visible in the
 GUI and vice-versa.
 
-Covers: Students (add/edit/delete/list), placement hours
-(log/edit/delete), export summary, and "Submit as APL evidence".
+Covers placement hours (log/edit/delete), export summary, and "Submit as
+APL evidence". Student records are deliberately not managed here — the
+university already has a student CRUD, and a second one only created a
+competing copy.
+
+Usually reached through the combined Work-Based Learning menu
+(``work_based_learning.run_work_based_learning_menu``), which puts these
+options alongside apprenticeships.
 """
 
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 import csv
 from datetime import date, datetime
@@ -87,120 +96,12 @@ def _current_username(auth) -> str:
         if isinstance(user, dict):
             return user.get("username") or user.get("name") or "cli-user"
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return "cli-user"
 
 
 # --------------------------------------------------------------------------- #
-# 1. Students
-# --------------------------------------------------------------------------- #
-def _list_students(db: Database) -> None:
-    search = _prompt("Search id/name/course/employer (optional)")
-    students = db.get_all_students(search)
-    if not students:
-        print("\nNo students enrolled in placements yet.")
-        return
-    print(f"\n{'Student ID':<14}{'Name':<26}{'Course':<22}{'Cohort':<12}Employer")
-    print("-" * 86)
-    for s in students:
-        _pk, sid, fn, ln, course, cohort, employer = s
-        print(f"{(sid or '')[:13]:<14}{(f'{ln}, {fn}')[:25]:<26}"
-              f"{(course or '')[:21]:<22}{(cohort or '-')[:11]:<12}"
-              f"{employer or '-'}")
-
-
-def _student_data_from_prompts(default_sid: str = "") -> Optional[tuple]:
-    student_id = _prompt("Student ID", default=default_sid)
-    first = _prompt("First name")
-    last = _prompt("Last name")
-    course = _prompt("Course")
-    if not all([student_id, first, last, course]):
-        print("Student ID, first name, last name and course are required.")
-        return None
-    cohort = _prompt("Cohort (optional)")
-    email = _prompt("Email (optional)")
-    employer = _prompt("Employer (optional)")
-    supervisor = _prompt("Supervisor (optional)")
-    start = _prompt_date("Start date (YYYY-MM-DD, optional)")
-    end = _prompt_date("End date (YYYY-MM-DD, optional)")
-    return (student_id, first, last, course, cohort or None, email or None,
-            employer or None, supervisor or None, start, end)
-
-
-def _add_student(db: Database) -> None:
-    data = _student_data_from_prompts()
-    if not data:
-        return
-    try:
-        sid = db.add_student(data)
-        print(f"\n✓ Enrolled student '{data[1]} {data[2]}' (id={sid}) in placements.")
-    except Exception as e:
-        print(f"\n✗ {e}")
-
-
-def _edit_student(db: Database) -> None:
-    old_id = _prompt("Student ID to edit")
-    if not old_id:
-        print("Student ID is required.")
-        return
-    existing = db.get_student(old_id)
-    if not existing:
-        print(f"\nNo student with id {old_id}.")
-        return
-    print("(Enter new values; Student ID defaults to the current one.)")
-    data = _student_data_from_prompts(default_sid=old_id)
-    if not data:
-        return
-    try:
-        db.update_student(old_id, data)
-        print(f"\n✓ Updated placement student {old_id}.")
-    except Exception as e:
-        print(f"\n✗ {e}")
-
-
-def _delete_student(db: Database) -> None:
-    sid = _prompt("Student ID to remove from placements")
-    if not sid:
-        print("Student ID is required.")
-        return
-    if not _prompt_bool("Remove placement enrollment and all hours logs? "
-                        "(central student record is kept)", default=False):
-        print("Cancelled.")
-        return
-    try:
-        db.delete_student(sid)
-        print(f"\n✓ Removed placement enrollment for {sid}.")
-    except Exception as e:
-        print(f"\n✗ {e}")
-
-
-def _students_menu(db: Database, auth) -> None:
-    while True:
-        _header("Placement Students")
-        print("[1] List students")
-        print("[2] Add student")
-        print("[3] Edit student")
-        print("[4] Delete student (remove from placements)")
-        print("[0] Back")
-        choice = input("\nChoice: ").strip()
-        if choice == "1":
-            _list_students(db)
-        elif choice == "2":
-            _add_student(db)
-        elif choice == "3":
-            _edit_student(db)
-        elif choice == "4":
-            _delete_student(db)
-        elif choice == "0":
-            return
-        else:
-            print("Invalid choice.")
-            continue
-        _pause()
-
-
-# --------------------------------------------------------------------------- #
-# 2. Hours log
+# Hours log
 # --------------------------------------------------------------------------- #
 def _show_progress(db: Database, student_pk: str) -> None:
     total = db.get_total_hours(student_pk)
@@ -396,31 +297,28 @@ def run_placements_menu(auth) -> None:
             print("    PLACEMENT HOURS TRACKER")
             print(f"    (T-Level requirement: {REQUIRED_HOURS} hours)")
             print("=" * 50)
-            print("1. Students")
-            print("2. Placement Hours")
-            print("3. Export Summary")
-            print("4. Submit as APL evidence")
-            print("5. Return to Main Menu")
+            print("1. Placement Hours")
+            print("2. Export Summary")
+            print("3. Submit as APL evidence")
+            print("4. Return to Main Menu")
             print("=" * 50)
 
             try:
-                choice = input("\nEnter your choice (1-5): ").strip()
+                choice = input("\nEnter your choice (1-4): ").strip()
             except (KeyboardInterrupt, EOFError):
                 print()
                 return
 
             try:
                 if choice == "1":
-                    _students_menu(db, auth)
-                elif choice == "2":
                     _hours_menu(db, auth)
-                elif choice == "3":
+                elif choice == "2":
                     _export_summary(db)
                     _pause()
-                elif choice == "4":
+                elif choice == "3":
                     _submit_apl(db)
                     _pause()
-                elif choice == "5":
+                elif choice == "4":
                     print("Returning to main menu...")
                     return
                 else:

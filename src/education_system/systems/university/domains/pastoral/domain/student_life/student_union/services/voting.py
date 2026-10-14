@@ -7,6 +7,9 @@ from education_system.systems.university.domains.pastoral.domain.student_life.st
 from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.communications import send_confirmation_email
 
 from education_system.systems.university.infrastructure.email.template_utils import render_template
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.identity import (
+    current_student_id as _current_student_id,
+)
 
 # Initialize logger
 logger = logging.getLogger(__name__)
@@ -118,9 +121,10 @@ def ranked_choice_voting(cursor, conn):
     try:
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (ctx.auth.current_user['id'],))
-        result = cursor.fetchone()
-        student_id = result[0]
+        student_id = _current_student_id(cursor, ctx.auth)
+        if not student_id:
+            print("You must be logged in to do that.")
+            return
 
         # Get elections available for voting
         current_date = datetime.now().strftime('%Y-%m-%d')

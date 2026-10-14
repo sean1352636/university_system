@@ -109,7 +109,7 @@ def overdue_screenings(auth):
 
     cursor.execute('''
     SELECT ss.id, s.student_id, s.first_name, s.last_name, ss.screening_type,
-           ss.due_date, ss.provider
+           ss.due_date, ss.provider, s.email_address
     FROM screening_schedules ss
     JOIN students s ON ss.student_id = s.student_id
     WHERE ss.due_date < ? AND ss.status = 'due'
@@ -125,12 +125,16 @@ def overdue_screenings(auth):
 
     print("\n===== Overdue Screenings =====")
 
-    for screen_id, student_id, first_name, last_name, screening_type, due_date, provider in overdue:
+    students = []
+    without_email = 0
+    for (screen_id, student_id, first_name, last_name, screening_type,
+         due_date, provider, email) in overdue:
         due_datetime = datetime.strptime(due_date, '%Y-%m-%d')
         days_overdue = (datetime.now() - due_datetime).days
+        name = f"{first_name or ''} {last_name or ''}".strip() or student_id
 
         print(f"\n🔴 OVERDUE - ID: {screen_id}")
-        print(f"Patient: {first_name} {last_name} (ID: {student_id})")
+        print(f"Patient: {name} (ID: {student_id})")
         print(f"Screening: {screening_type}")
         print(f"Due Date: {due_date}")
         print(f"Overdue by: {days_overdue} days")
@@ -138,16 +142,49 @@ def overdue_screenings(auth):
 
         if days_overdue > 90:
             print("⚠️ CRITICAL: Over 90 days overdue")
+        if not email:
+            without_email += 1
+            print("(no email address on file — cannot be notified)")
+
+        students.append({
+            'screening_id': screen_id, 'student_id': student_id,
+            'student_name': name, 'screening_type': screening_type,
+            'due_date': due_date, 'days_overdue': days_overdue,
+            'provider': provider, 'email': email,
+        })
 
     print(f"\nTotal overdue screenings: {len(overdue)}")
+    if without_email:
+        print(f"{without_email} of them have no email address on file.")
 
-    # Option to send reminders
-    send_reminders = input("\nSend reminder notifications? (y/n): ").lower()
-    if send_reminders == 'y':
-        print("Reminder notifications sent to patients and providers.")
-        log_audit_event(auth.current_user['id'], 'send_screening_reminders', 'screening', len(overdue))
+    # This used to print "Reminder notifications sent to patients and
+    # providers." without sending anything at all.
+    send_reminders = input(
+        f"\nEmail the {len(students) - without_email} student(s) who can be "
+        "reached? (y/n): ").strip().lower()
 
+    # Close before sending: the email service opens its own connection to the
+    # same database, and one writer at a time avoids the lock.
     conn.close()
+
+    if send_reminders != 'y':
+        print("Notification cancelled. Nothing has been sent.")
+        return
+
+    from education_system.systems.university.domains.pastoral.domain.health.records.screening.reminders import (
+        notify_screening_overdue,
+    )
+
+    sent = failed = 0
+    for student in students:
+        if notify_screening_overdue(student):
+            sent += 1
+        else:
+            failed += 1
+
+    print(f"\nOverdue notices: {sent} sent, {failed} not sent.")
+    log_audit_event(auth.current_user['id'], 'send_overdue_screening_notices',
+                    'screening', sent, f"{sent} sent, {failed} failed")
 
 
 

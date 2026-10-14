@@ -64,11 +64,16 @@ def _search(service):
     print(f"\n{'#':<4} {'System':<20} {'ID':<12} {'Name':<25} {'Year':<10} {'Status'}")
     print("-" * 85)
     for i, r in enumerate(results, 1):
-        sys_label = SYSTEM_LABELS.get(r["system"], r["system"])
+        # `.get(key, '')` still yields None when the column exists but is NULL,
+        # and formatting None with a width spec raises TypeError — coerce first.
+        def field(key):
+            return str(r.get(key) or "")
+
+        sys_label = SYSTEM_LABELS.get(r.get("system")) or str(r.get("system") or "")
         print(
-            f"{i:<4} {sys_label:<20} {r.get('student_id',''):<12} "
-            f"{r.get('name',''):<25} {r.get('year_group',''):<10} "
-            f"{r.get('status','')}"
+            f"{i:<4} {sys_label:<20} {field('student_id'):<12} "
+            f"{field('name'):<25} {field('year_group'):<10} "
+            f"{field('status')}"
         )
 
     sel = input("\nSelect # (or Enter to skip): ").strip()

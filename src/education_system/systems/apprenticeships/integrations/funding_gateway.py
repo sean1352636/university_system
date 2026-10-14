@@ -1,1 +1,0 @@
-"""Funding Gateway module."""

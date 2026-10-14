@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import json
 import os
@@ -110,7 +114,7 @@ class AIDetectorGUI:
             from education_system.systems.university.infrastructure.database.schemas.ai_features_schemas import init_ai_features_system_db
             init_ai_features_system_db()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         self.setup_window()
         self.setup_styles()
@@ -169,21 +173,19 @@ class AIDetectorGUI:
     def setup_window(self):
         """Setup main window properties"""
         self.root.title(_t('gui.academics.ai_detector.main.windows.ultimate_ai_detector_academic_integrity_suite', default="Ultimate AI Detector - Academic Integrity Suite"))
-        self.root.geometry("1400x900")
-        self.root.minsize(1200, 700)
 
-        # Center window on screen
-        screen_width = self.root.winfo_screenwidth()
-        screen_height = self.root.winfo_screenheight()
-        x = (screen_width - 1400) // 2
-        y = (screen_height - 900) // 2
-        self.root.geometry(f"1400x900+{x}+{y}")
+        # Centre from the size actually applied. This used to compute the
+        # offsets from a hard-coded 1400x900, which on a 1366x768 display is
+        # larger than the screen and gives negative offsets — putting the
+        # title bar above the top edge.
+        from education_system.platform.delivery.gui.window_sizing import center
+        center(self.root, 1400, 900, minsize=(1200, 700))
 
         # Configure window icon (if available)
         try:
             self.root.iconbitmap('ai_detector_icon.ico')
         except Exception:
-            pass  # Icon file not found, continue without it
+            logger.debug("Suppressed exception", exc_info=True)
 
 
     def setup_styles(self):
@@ -439,7 +441,7 @@ class AIDetectorGUI:
             else:
                 # Running standalone, need to create main GUI
                 self.root.destroy()
-                from education_system.systems.university.interfaces.gui.shell.main import UnifiedManagementGUI
+                from education_system.systems.university.shell.gui.main import UnifiedManagementGUI
                 app = UnifiedManagementGUI(self.auth)
                 app.run()
         except Exception as e:
@@ -457,12 +459,12 @@ class AIDetectorGUI:
                     self.root.update_idletasks()
                 return
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         # Fallback (e.g., if UI didn’t finish building)
         try:
             print(f"[status] {message}")
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
 
     def show_progress(self, show=True):
@@ -478,7 +480,7 @@ class AIDetectorGUI:
                 bar.stop()
                 bar.pack_forget()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
 
     def run(self):
@@ -805,7 +807,7 @@ class GUILauncher:
 
                     except Exception:
 
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
 
                     # Esc to exit fullscreen
 
@@ -813,7 +815,7 @@ class GUILauncher:
 
                 except Exception as _:
 
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
 
 

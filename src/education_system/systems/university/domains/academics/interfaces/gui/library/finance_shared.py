@@ -86,6 +86,13 @@ from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
 DATABASE_FILE = str(UNIVERSITY_DEFAULT_DB_PATH)
 
+# finance_parts/get_db_connection.py takes its globals from this module and
+# still uses the pre-consolidation name. Same breakage as the student-union
+# elections hub: it only fires on the fallback branch (when the standalone
+# `library` package is unavailable), so it has been latent rather than loud.
+# Keep the alias — do not delete it.
+DEFAULT_DB_PATH = UNIVERSITY_DEFAULT_DB_PATH
+
 try:
     from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
         process_student_finance_account_payment,
@@ -100,14 +107,56 @@ except ImportError:
     FINANCE_ACCOUNT_AVAILABLE = False
     print("Warning: Student finance account integration not available")
 
-try:
-    import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-    from matplotlib.figure import Figure
-    MATPLOTLIB_AVAILABLE = True
-except ImportError:
-    MATPLOTLIB_AVAILABLE = False
-    print("Warning: Matplotlib not available for library finance charts")
+# Matplotlib, resolved on first use rather than at import.
+#
+# Two chart dialogs under finance_parts/ are the only readers of these names in
+# the whole package, and they are opened by hand. Importing matplotlib.pyplot
+# costs ~1.3s, and this module is reached from library/__init__, so that was
+# paid by anything that touched the library package — including the Student
+# Records window, which embeds LibrarySummaryFrame and draws no charts at all.
+#
+# Access these through the module (``_shared.Figure``), never as a bare global
+# after the finance_parts globals() splice: PEP 562's __getattr__ is only
+# consulted for attribute access, and the splice copies __dict__ before these
+# names exist. The two readers were updated to do exactly that.
+_MATPLOTLIB_NAMES = {
+    "plt": ("matplotlib.pyplot", None),
+    "FigureCanvasTkAgg": ("matplotlib.backends.backend_tkagg", "FigureCanvasTkAgg"),
+    "Figure": ("matplotlib.figure", "Figure"),
+}
+
+
+def _resolve_matplotlib() -> None:
+    """Bind plt / FigureCanvasTkAgg / Figure, or None for all three if absent.
+
+    All-or-nothing, mirroring the try/except block this replaced:
+    MATPLOTLIB_AVAILABLE stays the single flag callers check.
+    """
+    import importlib
+
+    resolved: dict[str, object] = {}
+    try:
+        for name, (module_name, attr) in _MATPLOTLIB_NAMES.items():
+            module = importlib.import_module(module_name)
+            resolved[name] = module if attr is None else getattr(module, attr)
+    except (ImportError, AttributeError):
+        resolved = dict.fromkeys(_MATPLOTLIB_NAMES, None)
+        resolved["MATPLOTLIB_AVAILABLE"] = False
+        print("Warning: Matplotlib not available for library finance charts")
+    else:
+        resolved["MATPLOTLIB_AVAILABLE"] = True
+    globals().update(resolved)
+
+
+def __getattr__(name: str):
+    if name in _MATPLOTLIB_NAMES or name == "MATPLOTLIB_AVAILABLE":
+        _resolve_matplotlib()
+        return globals()[name]
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__() -> list[str]:
+    return sorted(set(globals()) | set(_MATPLOTLIB_NAMES) | {"MATPLOTLIB_AVAILABLE"})
 
 try:
     from education_system.systems.university.infrastructure.email.email_service import send_email_as_system

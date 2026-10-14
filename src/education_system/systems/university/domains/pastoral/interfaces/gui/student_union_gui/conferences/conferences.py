@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
@@ -161,7 +165,7 @@ class AcademicConferencesDialog:
                 if row and row[0]:
                     return row[0]
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return None
 
     def _register_for_conference(self):
@@ -186,7 +190,7 @@ class AcademicConferencesDialog:
                     "Thank you for registering!"
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
         messagebox.showinfo(_t('gui.pastoral.student_union_gui.conferences.conferences.dialogs.success', default="Success"),
                            f"You have been registered for '{conf_name}'.\n"
                            "A confirmation email has been sent.")
@@ -236,7 +240,7 @@ class AcademicConferencesDialog:
                     "Thank you for your submission!"
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         messagebox.showinfo(_t('gui.pastoral.student_union_gui.conferences.conferences.dialogs.success', default="Success"),
                            f"Paper '{title}' submitted successfully.\n"

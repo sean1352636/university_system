@@ -78,7 +78,7 @@ class ScholarshipManagerGUI:
                 ):
                     return self.parent_frame
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Parent frame doesn't exist, create standalone window
         if self.standalone_window is None or not self.standalone_window.winfo_exists():

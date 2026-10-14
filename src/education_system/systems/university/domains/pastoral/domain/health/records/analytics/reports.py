@@ -5,12 +5,25 @@ from education_system.systems.university.domains.pastoral.domain.health.records.
 from education_system.systems.university.domains.pastoral.domain.health.records.db.schema import ensure_student_dob_compat
 
 
+# Where the real report generator lives. This used to import
+# 'src.services.health_misc', a path that stopped existing when the code moved
+# under education_system.systems — so the menu option only ever printed
+# "Custom report generator unavailable: No module named 'src.services'".
+# The module import is done lazily to avoid an import cycle: dashboards pulls
+# in report builders that live alongside this one.
+_REPORT_GENERATOR_MODULE = (
+    "education_system.systems.university.domains.pastoral.domain.health"
+    ".services.dashboards"
+)
+
+
 def generate_custom_report(auth):
-    """Delegate to health_misc.generate_custom_report with lazy import.
-       If the DB is missing expected columns, auto-migrate and retry once.
+    """Delegate to the health dashboards report generator.
+
+    If the DB is missing expected columns, auto-migrate and retry once.
     """
     try:
-        hm = importlib.import_module('src.services.health_misc')
+        hm = importlib.import_module(_REPORT_GENERATOR_MODULE)
         return hm.generate_custom_report(auth)
     except sqlite3.OperationalError as e:
         msg = str(e)
@@ -18,7 +31,7 @@ def generate_custom_report(auth):
             # Heal schema and retry once
             ensure_student_dob_compat()
             try:
-                hm = importlib.import_module('src.services.health_misc')
+                hm = importlib.import_module(_REPORT_GENERATOR_MODULE)
                 return hm.generate_custom_report(auth)
             except Exception as e2:
                 print(f"Custom report generator unavailable after schema fix: {e2}")

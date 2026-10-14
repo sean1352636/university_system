@@ -19,9 +19,9 @@ class DuplicatesMixin:
         fixed_records = []
 
         for i, error_record in enumerate(error_records, 1):
-            print(f"\n--- {_t('shared.utils.batch_operations.error_number', current=i, total=len(error_records))} ---")
-            print(f"{_t('shared.utils.batch_operations.row')} {error_record['row']}: {error_record['data'].get('first_name', 'N/A')} {error_record['data'].get('last_name', 'N/A')}")
-            print(f"{_t('shared.utils.batch_operations.errors')}: {'; '.join(error_record['errors'])}")
+            print(f"\n--- {_t('shared.utils.batch_operations.error_number', current=i, total=len(error_records), default='Error Number. {current} {total}')} ---")
+            print(f"{_t('shared.utils.batch_operations.row', default='Row')} {error_record['row']}: {error_record['data'].get('first_name', 'N/A')} {error_record['data'].get('last_name', 'N/A')}")
+            print(f"{_t('shared.utils.batch_operations.errors', default='Errors')}: {'; '.join(error_record['errors'])}")
 
             print("\n" + _t("shared.utils.batch_operations.options"))
             print(_t("shared.utils.batch_operations.option_fix_record"))
@@ -65,7 +65,7 @@ class DuplicatesMixin:
         # Validate fixed record
         errors = self.validate_student_data(fixed_record)
         if errors:
-            print("\n" + _t("shared.utils.batch_operations.still_has_errors", errors='; '.join(errors)))
+            print("\n" + _t("shared.utils.batch_operations.still_has_errors", errors='; '.join(errors), default="Still Has Errors {errors}"))
             retry = input(_t("shared.utils.batch_operations.prompt_try_fixing"))
             if retry.lower() == 'y':
                 return self.fix_record_interactive(fixed_record)
@@ -209,7 +209,7 @@ class DuplicatesMixin:
             cursor.execute("SELECT * FROM students ORDER BY last_name, first_name")
             students = cursor.fetchall()
 
-            print(_t("shared.utils.batch_operations.analyzing_for_duplicates", count=len(students)))
+            print(_t("shared.utils.batch_operations.analyzing_for_duplicates", count=len(students), default="Analyzing For Duplicates {count}"))
 
             duplicates = []
 
@@ -246,23 +246,23 @@ class DuplicatesMixin:
                             'confidence': confidence
                         })
 
-            print("\n" + _t("shared.utils.batch_operations.found_duplicate_pairs", count=len(duplicates)))
+            print("\n" + _t("shared.utils.batch_operations.found_duplicate_pairs", count=len(duplicates), default="Found Duplicate Pairs {count}"))
 
             if duplicates:
                 print("\n" + _t("shared.utils.batch_operations.potential_duplicates"))
                 for i, dup in enumerate(duplicates[:10], 1):
                     print(f"{i}. {dup['student1']['name']} (ID: {dup['student1']['id']}) "
                           f"<-> {dup['student2']['name']} (ID: {dup['student2']['id']}) "
-                          f"- {_t('shared.utils.batch_operations.confidence')}: {dup['confidence']:.0%}")
+                          f"- {_t('shared.utils.batch_operations.confidence', default='Confidence')}: {dup['confidence']:.0%}")
 
                 if len(duplicates) > 10:
-                    print(_t("shared.utils.batch_operations.and_more_duplicates", count=len(duplicates) - 10))
+                    print(_t("shared.utils.batch_operations.and_more_duplicates", count=len(duplicates) - 10, default="And More Duplicates {count}"))
 
                 # Export duplicates report
                 filename = f"duplicate_students_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
                 with open(filename, 'w') as f:
                     json.dump(duplicates, f, indent=2, default=str)
-                print(_t("shared.utils.batch_operations.duplicates_report_saved", filename=filename))
+                print(_t("shared.utils.batch_operations.duplicates_report_saved", filename=filename, default="Duplicates Report Saved {filename}"))
 
                 # Offer to merge duplicates
                 merge_choice = input("\n" + _t("shared.utils.batch_operations.prompt_merge_duplicates"))
@@ -272,7 +272,7 @@ class DuplicatesMixin:
                 print(_t("shared.utils.batch_operations.no_duplicates"))
 
         except sqlite3.Error as e:
-            print(_t("shared.utils.batch_operations.database_error", error=str(e)))
+            print(_t("shared.utils.batch_operations.database_error", error=str(e), default="Database Error {error}"))
         finally:
             conn.close()
 
@@ -281,12 +281,12 @@ class DuplicatesMixin:
         print("\n" + _t("shared.utils.batch_operations.title_duplicate_merger"))
 
         for i, dup in enumerate(duplicates, 1):
-            print(f"\n--- {_t('shared.utils.batch_operations.duplicate_pair', current=i, total=len(duplicates))} ---")
-            print(f"{_t('shared.utils.batch_operations.student')} 1: {dup['student1']['name']} (ID: {dup['student1']['id']})")
+            print(f"\n--- {_t('shared.utils.batch_operations.duplicate_pair', current=i, total=len(duplicates), default='Duplicate Pair {current} {total}')} ---")
+            print(f"{_t('shared.utils.batch_operations.student', default='Student')} 1: {dup['student1']['name']} (ID: {dup['student1']['id']})")
             print(f"           Email: {dup['student1']['email']}, DOB: {dup['student1']['dob']}")
-            print(f"{_t('shared.utils.batch_operations.student')} 2: {dup['student2']['name']} (ID: {dup['student2']['id']})")
+            print(f"{_t('shared.utils.batch_operations.student', default='Student')} 2: {dup['student2']['name']} (ID: {dup['student2']['id']})")
             print(f"           Email: {dup['student2']['email']}, DOB: {dup['student2']['dob']}")
-            print(f"{_t('shared.utils.batch_operations.confidence')}: {dup['confidence']:.0%}")
+            print(f"{_t('shared.utils.batch_operations.confidence', default='Confidence')}: {dup['confidence']:.0%}")
 
             print("\n" + _t("shared.utils.batch_operations.options"))
             print(_t("shared.utils.batch_operations.option_keep_student_1"))

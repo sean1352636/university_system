@@ -27,7 +27,7 @@ def get_user_student_id(auth):
     return None
 
 def update_emergency_contact(auth):
-    if not (auth.check_permission('manage_health_records') or auth.check_permission('update_insurance_info')):
+    if not (auth.check_permission('manage_health_records') or auth.check_permission('view_own_health_record')):
         print(_t("health_misc.contacts.no_permission_update"))
         return
 
@@ -115,7 +115,7 @@ def update_emergency_contact(auth):
     conn.close()
 
 def delete_emergency_contact(auth):
-    if not (auth.check_permission('manage_health_records') or auth.check_permission('update_insurance_info')):
+    if not (auth.check_permission('manage_health_records') or auth.check_permission('view_own_health_record')):
         print(_t("health_misc.contacts.no_permission_delete"))
         return
 
@@ -170,7 +170,7 @@ def delete_emergency_contact(auth):
     conn.close()
 
 def manage_contact_hierarchy(auth):
-    if not (auth.check_permission('manage_health_records') or auth.check_permission('update_insurance_info')):
+    if not (auth.check_permission('manage_health_records') or auth.check_permission('view_own_health_record')):
         print(_t("health_misc.contacts.no_permission_manage"))
         return
 
@@ -302,7 +302,7 @@ def manage_emergency_contacts(auth):
             print(_t("health_misc.contacts.invalid_choice"))
 
 def add_emergency_contact(auth):
-    if not (auth.check_permission('manage_health_records') or auth.check_permission('update_insurance_info')):
+    if not (auth.check_permission('manage_health_records') or auth.check_permission('view_own_health_record')):
         print(_t("health_misc.contacts.no_permission_add"))
         return
 

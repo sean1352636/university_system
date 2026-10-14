@@ -44,13 +44,13 @@ def consume_eqa_context(app, label: str = "",
     try:
         app._last_academic_context = None
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     if not ctx:
         return None
     try:
         app._active_eqa_context = ctx
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     if target is not None:
         try:
             target.eqa_context = ctx

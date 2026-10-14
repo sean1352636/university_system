@@ -804,285 +804,285 @@ class PrimarySchoolMainGUI:
 
     # Pastoral
     def open_behaviour(self) -> None:
-        from education_system.systems.primary.domain.pastoral.behaviour import behaviour_views
+        from education_system.systems.primary.interfaces.gui.pastoral.behaviour import behaviour_views
         behaviour_views.open_behaviour(self)
 
     def open_safeguarding(self) -> None:
-        from education_system.systems.primary.domain.safeguarding import safeguarding_views
+        from education_system.systems.primary.interfaces.gui.safeguarding import safeguarding_views
         safeguarding_views.open_safeguarding(self)
 
     def open_send(self) -> None:
-        from education_system.systems.primary.domain.pastoral.send import send_views
+        from education_system.systems.primary.interfaces.gui.pastoral.send import send_views
         send_views.open_send(self)
 
     def open_pupil_premium(self) -> None:
-        from education_system.systems.primary.domain.finance.pupil_premium import pupil_premium_views
+        from education_system.systems.primary.interfaces.gui.finance.pupil_premium import pupil_premium_views
         pupil_premium_views.open_pupil_premium(self)
 
     def open_accessibility(self) -> None:
-        from education_system.systems.primary.domain.pastoral.accessibility import accessibility_views
+        from education_system.systems.primary.interfaces.gui.pastoral.accessibility import accessibility_views
         accessibility_views.open_accessibility(self)
 
     def open_wellbeing(self) -> None:
-        from education_system.systems.primary.domain.pastoral.wellbeing import wellbeing_views
+        from education_system.systems.primary.interfaces.gui.pastoral.wellbeing import wellbeing_views
         wellbeing_views.open_wellbeing(self)
 
     def open_pupil_support(self) -> None:
-        from education_system.systems.primary.domain.pastoral.pupil_support import pupil_support_views
+        from education_system.systems.primary.interfaces.gui.pastoral.pupil_support import pupil_support_views
         pupil_support_views.open_pupil_support(self)
 
     def open_attendance_concerns(self) -> None:
-        from education_system.systems.primary.domain.pastoral.attendance_concerns import attendance_concerns_views
+        from education_system.systems.primary.interfaces.gui.pastoral.attendance_concerns import attendance_concerns_views
         attendance_concerns_views.open_attendance_concerns(self)
 
     def open_absence_requests(self) -> None:
-        from education_system.systems.primary.domain.pastoral.absence_requests import absence_requests_views
+        from education_system.systems.primary.interfaces.gui.pastoral.absence_requests import absence_requests_views
         absence_requests_views.open_absence_requests(self)
 
     def open_first_aid(self) -> None:
-        from education_system.systems.primary.domain.pastoral.health.first_aid import first_aid_views
+        from education_system.systems.primary.interfaces.gui.pastoral.health.first_aid import first_aid_views
         first_aid_views.open_first_aid(self)
 
     def open_emergency(self) -> None:
-        from education_system.systems.primary.domain.pastoral.emergency import emergency_views
+        from education_system.systems.primary.interfaces.gui.pastoral.emergency import emergency_views
         emergency_views.open_emergency(self)
 
     def open_prevent_duty(self) -> None:
-        from education_system.systems.primary.domain.safeguarding.prevent_duty import prevent_duty_views
+        from education_system.systems.primary.interfaces.gui.safeguarding.prevent_duty import prevent_duty_views
         prevent_duty_views.open_prevent_duty(self)
 
     def open_equality_diversity(self) -> None:
-        from education_system.systems.primary.domain.pastoral.equality_diversity import equality_diversity_views
+        from education_system.systems.primary.interfaces.gui.pastoral.equality_diversity import equality_diversity_views
         equality_diversity_views.open_equality_diversity_window(self)
 
     def open_complaints(self) -> None:
-        from education_system.systems.primary.domain.pastoral.complaints import complaints_views
+        from education_system.systems.primary.interfaces.gui.pastoral.complaints import complaints_views
         complaints_views.open_complaints_window(self)
 
     def open_feedback(self) -> None:
-        from education_system.systems.primary.domain.pastoral.feedback import feedback_views
+        from education_system.systems.primary.interfaces.gui.pastoral.feedback import feedback_views
         feedback_views.open_feedback_window(self)
 
     def open_surveys(self) -> None:
-        from education_system.systems.primary.domain.pastoral.surveys import surveys_views
+        from education_system.systems.primary.interfaces.gui.pastoral.surveys import surveys_views
         surveys_views.open_surveys_window(self)
 
     def open_school_council(self) -> None:
-        from education_system.systems.primary.domain.pastoral.school_council import school_council_views
+        from education_system.systems.primary.interfaces.gui.pastoral.school_council import school_council_views
         school_council_views.open_school_council_window(self)
 
     def open_transport(self) -> None:
-        from education_system.systems.primary.domain.pastoral.transport import transport_views
+        from education_system.systems.primary.interfaces.gui.pastoral.transport import transport_views
         transport_views.open_transport_window(self)
 
     # Academics
     def open_academic_year(self) -> None:
-        from education_system.systems.primary.domain.academics.academic_year import academic_year_views
+        from education_system.systems.primary.interfaces.gui.academics.academic_year import academic_year_views
         academic_year_views.open_academic_year_window(self)
 
     def open_calendar(self) -> None:
-        from education_system.systems.primary.domain.academics.calendar import calendar_views
+        from education_system.systems.primary.interfaces.gui.academics.calendar import calendar_views
         calendar_views.open_calendar_window(self)
 
     def open_subjects(self) -> None:
-        from education_system.systems.primary.domain.academics.subjects import subjects_views
+        from education_system.systems.primary.interfaces.gui.academics.subjects import subjects_views
         subjects_views.open_subjects(self)
 
     def open_timetable(self) -> None:
-        from education_system.systems.primary.domain.academics.timetable import timetable_views
+        from education_system.systems.primary.interfaces.gui.academics.timetable import timetable_views
         timetable_views.open_timetable(self)
 
     def open_attendance(self) -> None:
-        from education_system.systems.primary.domain.academics.attendance import attendance_views
+        from education_system.systems.primary.interfaces.gui.academics.attendance import attendance_views
         attendance_views.open_attendance(self)
 
     def open_lesson_plans(self) -> None:
-        from education_system.systems.primary.domain.academics.lesson_plans import lesson_plans_views
+        from education_system.systems.primary.interfaces.gui.academics.lesson_plans import lesson_plans_views
         lesson_plans_views.open_lesson_plans(self)
 
     def open_cover(self) -> None:
-        from education_system.systems.primary.domain.staff.cover import cover_views
+        from education_system.systems.primary.interfaces.gui.staff.cover import cover_views
         cover_views.open_cover(self)
 
     def open_homework(self) -> None:
-        from education_system.systems.primary.domain.academics.homework import homework_views
+        from education_system.systems.primary.interfaces.gui.academics.homework import homework_views
         homework_views.open_homework(self)
 
     def open_library(self) -> None:
-        from education_system.systems.primary.domain.academics.library import library_views
+        from education_system.systems.primary.interfaces.gui.academics.library import library_views
         library_views.open_library(self)
 
     def open_year_groups(self) -> None:
-        from education_system.systems.primary.domain.academics.year_groups import year_groups_views
+        from education_system.systems.primary.interfaces.gui.academics.year_groups import year_groups_views
         year_groups_views.open_year_groups(self)
 
     # Assessment
     def open_intervention_tracking(self) -> None:
-        from education_system.systems.primary.domain.assessment.intervention_tracking import intervention_tracking_views
+        from education_system.systems.primary.interfaces.gui.assessment.intervention_tracking import intervention_tracking_views
         intervention_tracking_views.open_intervention_tracking(self)
 
     def open_early_warning(self) -> None:
-        from education_system.systems.primary.domain.assessment.early_warning import early_warning_views
+        from education_system.systems.primary.interfaces.gui.assessment.early_warning import early_warning_views
         early_warning_views.open_early_warning(self)
 
     def open_observations(self) -> None:
-        from education_system.systems.primary.domain.assessment.observations import observations_views
+        from education_system.systems.primary.interfaces.gui.assessment.observations import observations_views
         observations_views.open_observations(self)
 
     # Staff & comms
     def open_staff(self) -> None:
-        from education_system.systems.primary.domain.staff import staff_views
+        from education_system.systems.primary.interfaces.gui.staff import staff_views
         staff_views.open_directory(self)
 
     def open_staff_hr(self) -> None:
-        from education_system.systems.primary.domain.staff.staff_hr import staff_hr_views
+        from education_system.systems.primary.interfaces.gui.staff.staff_hr import staff_hr_views
         staff_hr_views.open_staff_hr_window(self)
 
     def open_staff_absence(self) -> None:
-        from education_system.systems.primary.domain.staff.staff_absence import staff_absence_views
+        from education_system.systems.primary.interfaces.gui.staff.staff_absence import staff_absence_views
         staff_absence_views.open_staff_absence_window(self)
 
     def open_staff_wellbeing(self) -> None:
-        from education_system.systems.primary.domain.staff.staff_wellbeing import staff_wellbeing_views
+        from education_system.systems.primary.interfaces.gui.staff.staff_wellbeing import staff_wellbeing_views
         staff_wellbeing_views.open_staff_wellbeing_window(self)
 
     def open_recruitment(self) -> None:
-        from education_system.systems.primary.domain.staff.recruitment import recruitment_views
+        from education_system.systems.primary.interfaces.gui.staff.recruitment import recruitment_views
         recruitment_views.open_recruitment_window(self)
 
     def open_appraisals(self) -> None:
-        from education_system.systems.primary.domain.staff.appraisals import appraisals_views
+        from education_system.systems.primary.interfaces.gui.staff.appraisals import appraisals_views
         appraisals_views.open_appraisals_window(self)
 
     def open_cpd(self) -> None:
-        from education_system.systems.primary.domain.staff.cpd import cpd_views
+        from education_system.systems.primary.interfaces.gui.staff.cpd import cpd_views
         cpd_views.open_cpd_window(self)
 
     def open_dbs_checks(self) -> None:
-        from education_system.systems.primary.domain.staff.dbs_checks import dbs_checks_views
+        from education_system.systems.primary.interfaces.gui.staff.dbs_checks import dbs_checks_views
         dbs_checks_views.open_dbs_checks_window(self)
 
     def open_visitors(self) -> None:
-        from education_system.systems.primary.domain.operations.visitors import visitors_views
+        from education_system.systems.primary.interfaces.gui.operations.visitors import visitors_views
         visitors_views.open_visitors_window(self)
 
     def open_parents(self) -> None:
-        from education_system.systems.primary.domain.operations.communications.parent_contacts import parent_contacts_views
+        from education_system.systems.primary.interfaces.gui.operations.communications.parent_contacts import parent_contacts_views
         parent_contacts_views.open_directory(self)
 
     def open_parents_evenings(self) -> None:
-        from education_system.systems.primary.domain.operations.communications.parents_evenings import parents_evenings_views
+        from education_system.systems.primary.interfaces.gui.operations.communications.parents_evenings import parents_evenings_views
         parents_evenings_views.open_parents_evenings_window(self)
 
     def open_announcements(self) -> None:
-        from education_system.systems.primary.domain.operations.communications.announcements import announcements_views
+        from education_system.systems.primary.interfaces.gui.operations.communications.announcements import announcements_views
         announcements_views.open_announcements_window(self)
 
     def open_notifications(self) -> None:
-        from education_system.systems.primary.domain.operations.communications.notifications import notifications_views
+        from education_system.systems.primary.interfaces.gui.operations.communications.notifications import notifications_views
         notifications_views.open_notifications_window(self)
 
     def open_activity_feed(self) -> None:
-        from education_system.systems.primary.domain.operations.communications.activity_feed import activity_feed_views
+        from education_system.systems.primary.interfaces.gui.operations.communications.activity_feed import activity_feed_views
         activity_feed_views.open_activity_feed_window(self)
 
     def open_messaging(self) -> None:
-        from education_system.systems.primary.domain.operations.communications.messages import messages_views
+        from education_system.systems.primary.interfaces.gui.operations.communications.messages import messages_views
         messages_views.open_messages_window(self)
 
     def open_letter_templates(self) -> None:
-        from education_system.systems.primary.domain.operations.communications.letter_templates import letter_templates_views
+        from education_system.systems.primary.interfaces.gui.operations.communications.letter_templates import letter_templates_views
         letter_templates_views.open_letter_templates_window(self)
 
     def open_document_hub(self) -> None:
-        from education_system.systems.primary.domain.operations.document_hub import document_hub_views
+        from education_system.systems.primary.interfaces.gui.operations.document_hub import document_hub_views
         document_hub_views.open_document_hub_window(self)
 
     def open_attachments(self) -> None:
-        from education_system.systems.primary.domain.operations.attachments import attachments_views
+        from education_system.systems.primary.interfaces.gui.operations.attachments import attachments_views
         attachments_views.open_attachments_window(self)
 
     # Finance
     def open_trips_payments(self) -> None:
-        from education_system.systems.primary.domain.finance.trips import trips_views
+        from education_system.systems.primary.interfaces.gui.finance.trips import trips_views
         trips_views.open_trips_window(self)
 
     def open_receipts(self) -> None:
-        from education_system.systems.primary.domain.finance.receipts import receipts_views
+        from education_system.systems.primary.interfaces.gui.finance.receipts import receipts_views
         receipts_views.open_receipts_window(self)
 
     def open_expense_claims(self) -> None:
-        from education_system.systems.primary.domain.finance.expense_claims import expense_claims_views
+        from education_system.systems.primary.interfaces.gui.finance.expense_claims import expense_claims_views
         expense_claims_views.open_expense_claims_window(self)
 
     def open_funding(self) -> None:
-        from education_system.systems.primary.domain.finance.funding import funding_views
+        from education_system.systems.primary.interfaces.gui.finance.funding import funding_views
         funding_views.open_funding_window(self)
 
     def open_census(self) -> None:
-        from education_system.systems.primary.domain.governance.compliance.census import census_views
+        from education_system.systems.primary.interfaces.gui.governance.compliance.census import census_views
         census_views.open_census_window(self)
 
     # Reports
     def open_kpi_dashboard(self) -> None:
-        from education_system.systems.primary.domain.operations.reporting.kpi_dashboard import kpi_dashboard_views
+        from education_system.systems.primary.interfaces.gui.operations.reporting.kpi_dashboard import kpi_dashboard_views
         kpi_dashboard_views.open_kpi_dashboard_window(self)
 
     def open_data_dashboard(self) -> None:
-        from education_system.systems.primary.domain.operations.reporting.data_dashboard import data_dashboard_views
+        from education_system.systems.primary.interfaces.gui.operations.reporting.data_dashboard import data_dashboard_views
         data_dashboard_views.open_data_dashboard_window(self)
 
     def open_mobile_dashboard(self) -> None:
-        from education_system.systems.primary.domain.operations.reporting.mobile_dashboard import mobile_dashboard_views
+        from education_system.systems.primary.interfaces.gui.operations.reporting.mobile_dashboard import mobile_dashboard_views
         mobile_dashboard_views.open_mobile_dashboard_window(self)
 
     def open_audit_reports(self) -> None:
-        from education_system.systems.primary.domain.governance.audit.audit_reports import audit_reports_views
+        from education_system.systems.primary.interfaces.gui.governance.audit.audit_reports import audit_reports_views
         audit_reports_views.open_audit_reports_window(self)
 
     def open_data_export(self) -> None:
-        from education_system.systems.primary.domain.operations.reporting.data_export import data_export_views
+        from education_system.systems.primary.interfaces.gui.operations.reporting.data_export import data_export_views
         data_export_views.open_data_export_window(self)
 
     def open_export(self) -> None:
-        from education_system.systems.primary.domain.operations.reporting.custom_export import custom_export_views
+        from education_system.systems.primary.interfaces.gui.operations.reporting.custom_export import custom_export_views
         custom_export_views.open_custom_export_window(self)
 
     # System / Governance
     def open_compliance(self) -> None:
-        from education_system.systems.primary.domain.governance.compliance import compliance_views
+        from education_system.systems.primary.interfaces.gui.governance.compliance import compliance_views
         compliance_views.open_compliance_window(self)
 
     def open_governance(self) -> None:
-        from education_system.systems.primary.domain.governance import governance_views
+        from education_system.systems.primary.interfaces.gui.governance import governance_views
         governance_views.open_governance_window(self)
 
     def open_policies(self) -> None:
-        from education_system.systems.primary.domain.governance.policies import policies_views
+        from education_system.systems.primary.interfaces.gui.governance.policies import policies_views
         policies_views.open_policies_window(self)
 
     def open_gdpr(self) -> None:
-        from education_system.systems.primary.domain.governance.gdpr import gdpr_views
+        from education_system.systems.primary.interfaces.gui.governance.gdpr import gdpr_views
         gdpr_views.open_gdpr_window(self)
 
     def open_risk_management(self) -> None:
-        from education_system.systems.primary.domain.governance.risk_management import risk_management_views
+        from education_system.systems.primary.interfaces.gui.governance.risk_management import risk_management_views
         risk_management_views.open_risk_management_window(self)
 
     def open_health_safety(self) -> None:
-        from education_system.systems.primary.domain.governance.health_safety import health_safety_views
+        from education_system.systems.primary.interfaces.gui.governance.health_safety import health_safety_views
         health_safety_views.open_health_safety_window(self)
 
     def open_assets(self) -> None:
-        from education_system.systems.primary.domain.operations.assets import assets_views
+        from education_system.systems.primary.interfaces.gui.operations.assets import assets_views
         assets_views.open_assets_window(self)
 
     def open_todo(self) -> None:
-        from education_system.systems.primary.domain.operations.todo import todo_views
+        from education_system.systems.primary.interfaces.gui.operations.todo import todo_views
         todo_views.open_todo_window(self)
 
     def open_user_management(self) -> None:
-        from education_system.systems.primary.domain.governance.user_management import user_management_views
+        from education_system.systems.primary.interfaces.gui.governance.user_management import user_management_views
         user_management_views.open_user_management_window(self)
 
     # Shared
@@ -1154,7 +1154,7 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
     if shared_auth is None or not getattr(shared_auth, "current_user", None):
         logger.error("primarysch GUI invoked without a shared_auth session")
         raise RuntimeError(
-            "primarysch_system GUI must be launched via run.py — "
+            "primarysch_system GUI must be launched via python -m education_system — "
             "no standalone login is available."
         )
     cu = shared_auth.current_user or {}
@@ -1167,5 +1167,5 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
 
 
 if __name__ == "__main__":
-    print("Launch via: python run.py --gui  (then choose Primary School)")
+    print("Launch via: python -m education_system --gui  (then choose Primary School)")
     raise SystemExit(2)

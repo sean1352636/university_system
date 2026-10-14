@@ -27,7 +27,7 @@ _SHORTCUTS: tuple[tuple[str, str, str], ...] = (
     ("Log off-the-job hours", "apprentice.off_the_job_hours", "Off-the-Job Hours"),
     ("My portfolio", "apprentice.portfolio", "Portfolio"),
     ("My reviews", "apprentice.reviews", "Progress Reviews"),
-    ("Training plan", "apprentice.training_plan", "Training Plan"),
+    ("Learning plan", "shared.learning_plan", "Learning Plan"),
     ("Gateway", "apprentice.gateway", "Gateway"),
     ("End-point assessment", "apprentice.epa", "End-Point Assessment"),
 )
@@ -50,7 +50,10 @@ def render(gui: Any) -> None:
 
     body = widgets.scrollable(frame)
     widgets.kpi_row(body, data.get("kpis") or [])
+    _degree(body, data.get("academic_progress"), data.get("degree_link"),
+            data.get("reconciliation_warning"))
     _off_the_job(body, data["hours"])
+    _attendance(body, data.get("attendance"))
     _portfolio(body, data.get("portfolio"))
     _functional_skills(body, data.get("functional_skills") or [])
     _reviews(body, data.get("next_review"), data.get("open_targets") or [])
@@ -65,6 +68,31 @@ def render(gui: Any) -> None:
 
 def _opener(gui: Any, module: str, label: str) -> Any:
     return lambda: gui.show(module, label)
+
+
+def _degree(parent: Any, academic: dict[str, Any] | None, link: Any,
+            warning: str | None) -> None:
+    if link is None:
+        return
+    box = widgets.section(parent, "My degree apprenticeship")
+    if warning:
+        widgets.empty_state(box, f"Your provider is checking this record: {warning}.")
+    if academic is None:
+        widgets.empty_state(
+            box, "Your university registration is linked. Academic progress is waiting "
+                 "for the next university update.",
+        )
+        return
+    widgets.field_grid(box, [
+        ("Registered degree", academic.get("degree_program_name") or
+         academic.get("degree_program_code") or "Linked degree"),
+        ("Credits", f"{academic.get('credits_earned', 0):g} / "
+         f"{academic.get('credits_required', 0):g}"),
+        ("Modules completed", academic.get("modules_completed", 0)),
+        ("Academic standing", academic.get("academic_standing") or "Not reported"),
+        ("Degree outcome", academic.get("degree_outcome") or "Not awarded"),
+        ("Registration", academic.get("registration_status") or "Not reported"),
+    ], columns=3)
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -101,6 +129,29 @@ def _pace(hours: Any) -> str:
     if hours.is_on_track:
         return f"{logged} — {weekly}, on track"
     return f"{logged} — {weekly}, {hours.hours_behind:,.1f} hrs behind today's pace"
+
+
+def _attendance(parent: Any, attendance: Any) -> None:
+    box = widgets.section(parent, "Attendance at training")
+    if attendance is None or attendance.total == 0:
+        widgets.empty_state(box, "No training session registers have been marked for you yet.")
+        return
+    attended = attendance.present + attendance.late
+    countable = attended + attendance.absent
+    widgets.progress_row(
+        box, "Sessions attended", attendance.attendance_rate,
+        detail=attendance.concern_reason
+        or f"{attended} of {countable} sessions — excused absences are not counted",
+        rag=attendance.rag or "Amber",
+    )
+    widgets.field_grid(box, [
+        ("Present", attendance.present),
+        ("Late", attendance.late),
+        ("Punctuality", widgets.percent(attendance.punctuality_rate)),
+        ("Unauthorised absences", attendance.unauthorised),
+        ("Excused absences", attendance.authorised),
+        ("Sickness", attendance.sickness),
+    ], columns=3)
 
 
 def _portfolio(parent: Any, portfolio: Any) -> None:

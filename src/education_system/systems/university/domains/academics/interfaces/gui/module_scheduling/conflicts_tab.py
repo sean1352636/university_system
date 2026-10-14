@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection, transaction  # injected
 from education_system.systems.university.infrastructure.exceptions import (
@@ -34,7 +38,8 @@ except ImportError:
     show_gui_language_selector = lambda parent=None: "en"
 
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling._dialogs import messagebox
 from tkinter.font import Font
 import os
 import sys
@@ -64,6 +69,7 @@ except ImportError:
         class ModuleScheduler: pass
 
 from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling.main_gui import ModuleSchedulingGUI
+import tkinter.simpledialog  # noqa: F401 - registers tk.simpledialog
 
 def create_conflicts_tab(self):
     """Create the conflicts management tab"""
@@ -78,6 +84,9 @@ def create_conflicts_tab(self):
               command=self.detect_all_conflicts).pack(side=tk.LEFT, padx=5)
     ttk.Button(controls_frame, text=_t("scheduling.resolve_selected"),
               command=self.resolve_selected_conflict).pack(side=tk.LEFT, padx=5)
+    ttk.Button(controls_frame,
+              text=_t("scheduling.resolve_all", default="Resolve All"),
+              command=self.resolve_all_conflicts).pack(side=tk.LEFT, padx=5)
     ttk.Button(controls_frame, text=_t("common.refresh"),
               command=self.refresh_conflicts).pack(side=tk.LEFT, padx=5)
 
@@ -177,33 +186,213 @@ def detect_all_conflicts(self):
 
 ModuleSchedulingGUI.detect_all_conflicts = detect_all_conflicts
 
+def _conflict_row(self, conflict_id):
+    """The stored conflict, with its affected schedule ids decoded."""
+    import json
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT id, conflict_type, description, affected_schedules "
+            "  FROM schedule_conflicts WHERE id = ?", (conflict_id,)).fetchone()
+    if not row:
+        return None
+    try:
+        affected = json.loads(row[3]) if row[3] else []
+    except (TypeError, ValueError):
+        affected = []
+    return {"id": row[0], "type": row[1], "description": row[2],
+            "affected": [a for a in affected if a is not None]}
+
+
+def _find_replacement_room(self, conn, schedule_id, min_capacity=0):
+    """A room free for this session's day and time, big enough for it.
+
+    Returns ``(room_id, label)`` or ``(None, None)``. "Free" means no other
+    session overlaps it in that room on that day.
+    """
+    session = conn.execute(
+        "SELECT day_of_week, start_time, end_time, room_id, enrolled "
+        "  FROM module_schedule WHERE id = ?", (schedule_id,)).fetchone()
+    if not session:
+        return None, None
+    day, start, end, current_room, enrolled = session
+    needed = max(int(min_capacity or 0), int(enrolled or 0))
+
+    candidates = conn.execute(
+        """SELECT r.id, r.building, r.room_number, r.capacity
+             FROM rooms r
+            WHERE COALESCE(r.is_active, 1) = 1
+              AND r.id <> COALESCE(?, -1)
+              AND COALESCE(r.capacity, 0) >= ?
+              AND NOT EXISTS (
+                    SELECT 1 FROM module_schedule ms
+                     WHERE ms.room_id = r.id
+                       AND ms.day_of_week = ?
+                       AND ms.id <> ?
+                       AND ms.start_time < ?
+                       AND ms.end_time > ?)
+            ORDER BY COALESCE(r.capacity, 0)""",
+        (current_room, needed, day, schedule_id, end, start)).fetchall()
+    if not candidates:
+        return None, None
+    room_id, building, number, capacity = candidates[0]
+    return room_id, f"{building}-{number} (capacity {capacity})"
+
+
+def _auto_resolve_conflict(self, conflict):
+    """Actually change the schedule so the conflict stops existing.
+
+    Marking a conflict "resolved" with a note left the double-booking in
+    place — the row was hidden, the clash was not fixed, and the next
+    detection run found it again.
+
+    Room double-bookings and over-capacity rooms have a well-defined fix:
+    move one session into a room that is free at that time and big enough.
+    Instructor and student clashes are a timetabling decision with no single
+    right answer, so those are reported rather than guessed at.
+
+    Returns ``(resolved, note)``.
+    """
+    kind = (conflict.get("type") or "").lower()
+    affected = conflict.get("affected") or []
+
+    if kind not in ("room_conflict", "capacity_conflict") or not affected:
+        return False, ""
+
+    # For a double-booking move the later session; for a capacity problem
+    # there is only one session to move.
+    schedule_id = affected[-1]
+    try:
+        with transaction() as conn:
+            min_capacity = 0
+            if kind == "capacity_conflict":
+                row = conn.execute(
+                    "SELECT COALESCE(enrolled, 0) FROM module_schedule WHERE id = ?",
+                    (schedule_id,)).fetchone()
+                min_capacity = row[0] if row else 0
+
+            room_id, label = self._find_replacement_room(conn, schedule_id, min_capacity)
+            if not room_id:
+                return False, ""
+
+            before = conn.execute(
+                "SELECT module_code, day_of_week, start_time FROM module_schedule "
+                " WHERE id = ?", (schedule_id,)).fetchone()
+            conn.execute(
+                "UPDATE module_schedule SET room_id = ?, "
+                "       modified_date = CURRENT_TIMESTAMP WHERE id = ?",
+                (room_id, schedule_id))
+    except Exception as exc:
+        logger.warning("auto-resolve failed for conflict %s: %s",
+                       conflict.get("id"), exc)
+        return False, ""
+
+    module = before[0] if before else schedule_id
+    when = f"{before[1]} {before[2]}" if before else ""
+    return True, f"Moved {module} ({when}) to room {label}."
+
+
 def resolve_selected_conflict(self):
-    """Resolve the selected conflict"""
+    """Resolve the selected conflict, changing the schedule where it can."""
     selected = self.conflicts_tree.selection()
     if not selected:
         messagebox.showwarning(_t('gui.academics.module_scheduling.conflicts_tab.dialogs.warning', default="Warning"), _t('gui.academics.module_scheduling.conflicts_tab.dialogs.please_select_a_conflict_to_resolve', default="Please select a conflict to resolve."), parent=self.root)
         return
 
-    conflict_data = self.conflicts_tree.item(selected[0])['values']
-    conflict_id = conflict_data[0]
+    conflict_id = self.conflicts_tree.item(selected[0])['values'][0]
+    conflict = self._conflict_row(conflict_id)
+    if not conflict:
+        messagebox.showerror(_t('gui.academics.module_scheduling.conflicts_tab.dialogs.error', default="Error"),
+                             "That conflict no longer exists.", parent=self.root)
+        return
 
-    # Show resolution dialog
-    resolution_notes = tk.simpledialog.askstring("Resolve Conflict",
-                                                "Enter resolution notes:",
-                                                parent=self.root)
+    resolved, note = self._auto_resolve_conflict(conflict)
 
-    if resolution_notes:
-        try:
-            self.scheduler.resolve_conflict(conflict_id, resolution_notes)
-            self.refresh_conflicts()
-            self.refresh_dashboard()
-            self.update_activity_log(f"Resolved conflict {conflict_id}")
-            messagebox.showinfo(_t('gui.academics.module_scheduling.conflicts_tab.dialogs.success', default="Success"), _t('gui.academics.module_scheduling.conflicts_tab.dialogs.conflict_resolved_successfully', default="Conflict resolved successfully."), parent=self.root)
+    if not resolved:
+        # Nothing safe to change automatically — fall back to recording how a
+        # person dealt with it, which is what this always used to do.
+        note = tk.simpledialog.askstring(
+            "Resolve Conflict",
+            "This conflict needs a scheduling decision that cannot be made "
+            "automatically.\n\nDescribe how it was resolved:",
+            parent=self.root)
+        if not note:
+            return
 
-        except Exception as e:
-            messagebox.showerror(_t('gui.academics.module_scheduling.conflicts_tab.dialogs.error', default="Error"), f"Failed to resolve conflict: {str(e)}", parent=self.root)
+    try:
+        self.scheduler.resolve_conflict(conflict_id, note)
+        self.detect_all_conflicts()
+        self.refresh_dashboard()
+        self.update_activity_log(f"Resolved conflict {conflict_id}: {note}")
+        messagebox.showinfo(_t('gui.academics.module_scheduling.conflicts_tab.dialogs.success', default="Success"),
+                            note, parent=self.root)
+    except Exception as e:
+        messagebox.showerror(_t('gui.academics.module_scheduling.conflicts_tab.dialogs.error', default="Error"), f"Failed to resolve conflict: {str(e)}", parent=self.root)
 
+ModuleSchedulingGUI._conflict_row = _conflict_row
+ModuleSchedulingGUI._find_replacement_room = _find_replacement_room
+ModuleSchedulingGUI._auto_resolve_conflict = _auto_resolve_conflict
 ModuleSchedulingGUI.resolve_selected_conflict = resolve_selected_conflict
+
+
+def resolve_all_conflicts(self):
+    """Fix every conflict that can be fixed automatically."""
+    import json
+    try:
+        with get_connection() as conn:
+            rows = conn.execute(
+                "SELECT id, conflict_type, description, affected_schedules "
+                "  FROM schedule_conflicts WHERE resolved = 0 ORDER BY id").fetchall()
+    except Exception as exc:
+        messagebox.showerror(_t('gui.academics.module_scheduling.conflicts_tab.dialogs.error', default="Error"),
+                             f"Could not read conflicts: {exc}", parent=self.root)
+        return
+
+    if not rows:
+        messagebox.showinfo(_t('gui.academics.module_scheduling.conflicts_tab.dialogs.info', default="Info"),
+                            "There are no unresolved conflicts.", parent=self.root)
+        return
+
+    if not messagebox.askyesno(
+            _t('gui.academics.module_scheduling.conflicts_tab.dialogs.resolve_all', default="Resolve All"),
+            f"Attempt to resolve {len(rows)} conflict(s)?\n\n"
+            f"Room double-bookings and over-capacity rooms are fixed by moving "
+            f"a session to a free, large-enough room. Instructor and student "
+            f"clashes need a person and will be left for you.",
+            parent=self.root):
+        return
+
+    fixed, skipped = [], []
+    for row in rows:
+        try:
+            affected = json.loads(row[3]) if row[3] else []
+        except (TypeError, ValueError):
+            affected = []
+        conflict = {"id": row[0], "type": row[1], "description": row[2],
+                    "affected": [a for a in affected if a is not None]}
+        resolved, note = self._auto_resolve_conflict(conflict)
+        if resolved:
+            try:
+                self.scheduler.resolve_conflict(row[0], note)
+                fixed.append(note)
+            except Exception as exc:
+                skipped.append(f"{row[2]} — could not record: {exc}")
+        else:
+            skipped.append(row[2])
+
+    self.detect_all_conflicts()
+    self.refresh_dashboard()
+    self.update_activity_log(f"Resolve all: fixed {len(fixed)}, left {len(skipped)}")
+
+    lines = [f"Fixed {len(fixed)} of {len(rows)} conflict(s)."]
+    if fixed:
+        lines += [""] + [f"  \u2713 {n}" for n in fixed[:10]]
+    if skipped:
+        lines += ["", f"Left for a person ({len(skipped)}):"]
+        lines += [f"  \u2014 {n}" for n in skipped[:10]]
+    messagebox.showinfo(_t('gui.academics.module_scheduling.conflicts_tab.dialogs.resolve_all', default="Resolve All"),
+                        "\n".join(lines), parent=self.root)
+
+ModuleSchedulingGUI.resolve_all_conflicts = resolve_all_conflicts
 
 def _detect_room_conflicts(self):
     """Detect room scheduling conflicts"""

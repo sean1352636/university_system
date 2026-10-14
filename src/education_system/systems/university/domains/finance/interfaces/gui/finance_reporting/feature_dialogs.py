@@ -1,3 +1,8 @@
+from education_system.systems.university.shell.gui import report_view as _rv
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
@@ -410,7 +415,7 @@ def show_revenue_optimization_dialog(self):
         conn.close()
 
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
     # Recommendations
     recommendations_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.optimization_recommendations', default="Optimization Recommendations"), padding="10")
@@ -685,7 +690,11 @@ def generate_regulatory_report(self, parent_window, tree_widget):
 
         # Get selected report type
         selected_item = tree_widget.item(selection[0])
-        report_name = selected_item['text'].lstrip('✓ ⚠ ✗ ')
+        # Rows are inserted as f"{status_icon} {report_type}" - drop that one
+        # icon and its space, not every leading icon character.
+        _row_text = selected_item['text']
+        report_name = (_row_text.split(' ', 1)[1]
+                       if _row_text[:1] in ('✓', '⚠', '✗') else _row_text)
 
         # Create report window
         report_window = tk.Toplevel(parent_window)
@@ -697,7 +706,7 @@ def generate_regulatory_report(self, parent_window, tree_widget):
         ttk.Label(report_window, text=f"Generating: {report_name}",
                  font=('Arial', 12, 'bold')).pack(pady=20)
 
-        report_text = scrolledtext.ScrolledText(report_window, height=20, wrap=tk.WORD,
+        report_text = _rv.TextReportView(report_window, height=20, wrap=tk.WORD,
                                                 font=('Courier', 10))
         report_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
@@ -881,7 +890,7 @@ def generate_regulatory_report(self, parent_window, tree_widget):
             log_activity('generate', 'regulatory_report',
                        details={'report_type': report_name})
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     except Exception as e:
         messagebox.showerror(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.error', default="Error"),

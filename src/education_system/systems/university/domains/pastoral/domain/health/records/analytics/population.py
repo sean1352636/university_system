@@ -3,6 +3,39 @@ from datetime import datetime, timedelta
 from education_system.systems.university.domains.pastoral.domain.health.records.db.audit import log_audit_event
 
 
+def _dob_column(cursor):
+    """Name of the students date-of-birth column on this database.
+
+    The column is ``dob`` on the university schema, but some installs carry
+    ``date_of_birth`` instead — the reason ``ensure_student_dob_compat`` in
+    records/db/schema.py exists. These reports hardcoded ``date_of_birth`` and
+    so died with "no such column: date_of_birth" on any database using the
+    other name.
+
+    Detecting beats migrating here: the compat helper's fix is to ADD the
+    missing column and copy the values across, which leaves two columns
+    holding the same fact and free to drift the moment anything writes one and
+    not the other. Reading whichever exists needs no schema change at all.
+    Returns ``None`` when neither is present, so callers can degrade instead
+    of raising.
+    """
+    try:
+        cursor.execute("PRAGMA table_info(students)")
+        cols = {row[1] for row in cursor.fetchall()}
+    except Exception:
+        return None
+    for candidate in ("dob", "date_of_birth"):
+        if candidate in cols:
+            return candidate
+    return None
+
+
+def _dob_select(cursor, alias="dob"):
+    """SQL select-list fragment for the DOB column, or a NULL placeholder."""
+    column = _dob_column(cursor)
+    return f"{column} AS {alias}" if column else f"NULL AS {alias}"
+
+
 def show_population_health_metrics(auth):
     """Show overall population health metrics"""
     conn = get_connection()
@@ -208,10 +241,10 @@ def generate_student_health_summary_report(auth, start_date, end_date):
     report_content.append("")
 
     # Student demographics
-    cursor.execute('''
-        SELECT first_name, last_name, date_of_birth, gender, email_address
-        FROM students WHERE student_id = ?
-    ''', (student_id,))
+    cursor.execute(
+        "SELECT first_name, last_name, " + _dob_select(cursor)
+        + ", gender, email_address FROM students WHERE student_id = ?",
+        (student_id,))
     student = cursor.fetchone()
 
     if not student:
@@ -253,11 +286,12 @@ def generate_student_health_summary_report(auth, start_date, end_date):
     report_content.append("")
 
     # Active medical conditions
+    # The column is diagnosed_date, not diagnosis_date.
     cursor.execute('''
-        SELECT condition_name, diagnosis_date, status, severity
+        SELECT condition_name, diagnosed_date, status, severity
         FROM medical_conditions
         WHERE student_id = ?
-        ORDER BY diagnosis_date DESC
+        ORDER BY diagnosed_date DESC
     ''', (student_id,))
     conditions = cursor.fetchall()
 
@@ -274,11 +308,13 @@ def generate_student_health_summary_report(auth, start_date, end_date):
     report_content.append("")
 
     # Vaccination records
+    # The table is vaccination_records; there is no 'vaccinations' table and
+    # no dose_number column. vaccine_type is the nearest equivalent detail.
     cursor.execute('''
-        SELECT vaccine_name, vaccination_date, dose_number, administered_by
-        FROM vaccinations
+        SELECT vaccine_name, administered_date, vaccine_type, administered_by
+        FROM vaccination_records
         WHERE student_id = ?
-        ORDER BY vaccination_date DESC
+        ORDER BY administered_date DESC
     ''', (student_id,))
     vaccinations = cursor.fetchall()
 
@@ -286,7 +322,7 @@ def generate_student_health_summary_report(auth, start_date, end_date):
     report_content.append("-" * 20)
     if vaccinations:
         for vax in vaccinations:
-            dose_str = f" (Dose {vax[2]})" if vax[2] else ""
+            dose_str = f" ({vax[2]})" if vax[2] else ""
             report_content.append(f"  {vax[0]}{dose_str} - {vax[1] or 'N/A'} by {vax[3] or 'N/A'}")
     else:
         report_content.append("  No vaccination records found.")
@@ -294,9 +330,10 @@ def generate_student_health_summary_report(auth, start_date, end_date):
     report_content.append("")
 
     # Appointments in date range
+    # The table is health_appointments.
     cursor.execute('''
         SELECT appointment_date, appointment_type, provider, status
-        FROM appointments
+        FROM health_appointments
         WHERE student_id = ? AND appointment_date BETWEEN ? AND ?
         ORDER BY appointment_date DESC
     ''', (student_id, start_date, end_date))
@@ -340,10 +377,10 @@ def generate_student_health_summary(auth):
     student_id = input("Enter student ID: ")
 
     # Verify student exists
-    cursor.execute('''
-    SELECT student_id, first_name, last_name, gender, date_of_birth, age
-    FROM students WHERE student_id = ?
-    ''', (student_id,))
+    cursor.execute(
+        "SELECT student_id, first_name, last_name, gender, " + _dob_select(cursor)
+        + ", age FROM students WHERE student_id = ?",
+        (student_id,))
 
     student = cursor.fetchone()
     if not student:

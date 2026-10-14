@@ -23,8 +23,19 @@ class MFAIntegration:
     Integration layer for MFA in existing authentication system
     """
 
-    def __init__(self):
-        self.mfa_service = MFAService()
+    def __init__(self, db_path: str = None):
+        """*db_path* selects the MFA store; ``None`` keeps the legacy
+        university database. Pass the shared ``auth.db`` only together with
+        shared-auth user ids — the two id spaces are not interchangeable."""
+        if db_path is None:
+            # Spelled out rather than left to MFAService's default, which
+            # now resolves to the shared auth.db. The bare
+            # ``MFAIntegration()`` calls below are the deliberate
+            # *university-local* fallback and must keep that store.
+            from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+
+            db_path = str(UNIVERSITY_DEFAULT_DB_PATH)
+        self.mfa_service = MFAService(db_path)
 
     def check_mfa_requirement(self, user_id: int, role: str) -> Dict:
         """
@@ -150,16 +161,20 @@ class MFAIntegration:
 
 # Integration helper functions for existing authentication code
 
-def integrate_mfa_check(user_id: int, role: str, device_id: str = None, trust_token: str = None) -> Dict:
+def integrate_mfa_check(user_id: int, role: str, device_id: str = None,
+                        trust_token: str = None, username: str = None) -> Dict:
     """
     Complete MFA check for login flow
     Call this after successful password authentication
 
     Args:
-        user_id: User ID
+        user_id: University-local user ID
         role: User role
         device_id: Optional device identifier
         trust_token: Optional device trust token
+        username: Used to resolve *user_id* to its shared-auth counterpart,
+            since MFA is stored once in the shared ``auth.db`` and the two
+            databases number their users independently
 
     Returns:
         Dict with:
@@ -167,7 +182,17 @@ def integrate_mfa_check(user_id: int, role: str, device_id: str = None, trust_to
             - message: str - Message to display to user
             - data: dict - Additional data for the action
     """
-    integration = MFAIntegration()
+    # MFA now lives in the shared auth database. Resolve this login to its
+    # shared account; if there is no counterpart the user simply has no
+    # shared enrolment, so fall back to the legacy university store rather
+    # than blocking a login that would otherwise succeed.
+    shared_id = MFAService.resolve_shared_user_id(user_id, username)
+    if shared_id is not None:
+        from education_system import paths
+        integration = MFAIntegration(str(paths.PLATFORM_AUTH_DB))
+        user_id = shared_id
+    else:
+        integration = MFAIntegration()
 
     # Check if locked
     is_locked, lock_reason = integration.is_mfa_locked(user_id)

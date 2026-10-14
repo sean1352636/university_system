@@ -177,6 +177,40 @@ class PhaseAdapter(abc.ABC):
             f"{self.system} cannot yet close enrolments "
             f"({type(self).__name__}.close_enrolment)")
 
+    # ── Learner logins ──────────────────────────────────────────────
+    #
+    # Optional, and deliberately outside the four-method transition
+    # contract (so ``capabilities()`` keeps its shape). Implemented, it
+    # lets ``cross_system.login_links`` link a learner's own login to their
+    # platform learner record without the platform knowing how this
+    # system pairs the two.
+
+    #: ``user_systems`` roles in this system that are a learner's *own*
+    #: login. Never a parent, guardian or staff role: a login holding one
+    #: of these is linked to whichever learner record it resolves to.
+    learner_login_roles: tuple[str, ...] = ()
+
+    def learner_ids_for_login(self, account: dict) -> list[str]:
+        """Local student ids this login belongs to — normally one.
+
+        *account* is the platform ``users`` row (``id``, ``username``,
+        ``email``, ``display_name``). Answer with the rule this system's own
+        sign-in uses to find the learner, so the platform link can never
+        disagree with what the login actually sees, and return ids in the
+        journey-slot id space (what ``identity_service.find_by_student``
+        takes). Return every match: two learners behind one login is a data
+        problem the caller must see, not have hidden by a ``LIMIT 1``.
+        """
+        raise AdapterNotImplemented(
+            f"{self.system} cannot pair logins with learners "
+            f"({type(self).__name__}.learner_ids_for_login)")
+
+    def pairs_logins(self) -> bool:
+        """Does this adapter implement :meth:`learner_ids_for_login`?"""
+        own = getattr(type(self), "learner_ids_for_login", None)
+        return (bool(self.learner_login_roles)
+                and own is not PhaseAdapter.learner_ids_for_login)
+
     # ── Capability reporting ────────────────────────────────────────
 
     def capabilities(self) -> dict[str, bool]:

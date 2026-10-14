@@ -112,23 +112,36 @@ class TestSuggestSlots:
 class TestTermChecks:
 
     @pytest.fixture
-    def term(self, caldb, tmp_path, monkeypatch):
-        """A configured Autumn term with one INSET day."""
-        from education_system.systems.sixth_form.domain.academics.attendance import (  # noqa: E501
-            attendance as att_core,
-            attendance_calendar as att_cal,
+    def term(self, caldb):
+        """A configured Autumn term with one INSET day.
+
+        Seeded in the academic year, which owns term dates. The
+        ``caldb`` fixture has already pointed it at a temp file.
+        """
+        from education_system.systems.sixth_form.domain.academics.academic_year import (  # noqa: E501
+            academic_year as year_core,
         )
-        db = str(tmp_path / "att.db")
-        for mod in (att_core, att_cal):
-            monkeypatch.setattr(mod, "DB_PATH", db, raising=False)
-            monkeypatch.setattr(mod, "_DB_READY", False,
-                                raising=False)
-        att_cal.init_db()
-        att_cal.add_term("Autumn Term", "2026-09-07", "2026-12-18",
-                         academic_year="2026/27")
-        att_cal.add_day("2026-10-02", kind="INSET",
-                        name="Staff training")
-        return att_cal
+        year = year_core.create_year({
+            "name": "2026/27",
+            "start_date": "2026-09-01",
+            "end_date": "2027-07-31",
+            "status": "Active",
+            "is_current": True,
+        })
+        year_core.create_term({
+            "year_id": year.year_id,
+            "name": "Autumn Term",
+            "start_date": "2026-09-07",
+            "end_date": "2026-12-18",
+        })
+        year_core.create_break({
+            "year_id": year.year_id,
+            "name": "Staff training",
+            "start_date": "2026-10-02",
+            "end_date": "2026-10-02",
+            "type": "INSET",
+        })
+        return year_core
 
     def test_week_label_speaks_the_college_dialect(self, term):
         assert terms.week_label("2026-09-09") == \

@@ -373,7 +373,7 @@ class LeaveManager:
                         source="leave",
                     )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Best-effort notification — pulls remaining balance + leave type name.
             try:

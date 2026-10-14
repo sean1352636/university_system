@@ -543,6 +543,7 @@ def restore_partial_tables(backup_path, tables):
             validate_table_name(table, backup_conn)
 
             # Drop existing table - table name validated above, use bracket quoting
+            # db-audit: ignore[DBW001] - parameter passed through a validator
             main_conn.execute(f"DROP TABLE IF EXISTS [{table}]")
 
             # Get table schema - using parameterized query

@@ -7,7 +7,7 @@ Launchers are exposed via PEP 562 lazy ``__getattr__`` so that importing
 this package (e.g. via ``_event_bus`` from the cross-domain bus modules
 during launcher startup) does not pull in the entire AI-detector view
 tree, ``docx``, ``textract`` etc. before any user has opened a GUI.
-Eager imports here added ~3.8s to ``run.py --gui`` startup.
+Eager imports here added ~3.8s to ``python -m education_system --gui`` startup.
 """
 
 from __future__ import annotations

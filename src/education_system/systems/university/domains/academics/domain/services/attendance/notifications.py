@@ -69,7 +69,7 @@ class EnhancedNotificationSystem:
 
             # Get student contact info
             cursor.execute('''
-            SELECT email_address, phone_number FROM students WHERE student_id = ?
+            SELECT email_address, phone FROM students WHERE student_id = ?
             ''', (student_id,))
 
             student_info = cursor.fetchone()

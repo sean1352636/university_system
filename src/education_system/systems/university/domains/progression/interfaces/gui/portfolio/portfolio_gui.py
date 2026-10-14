@@ -4,6 +4,9 @@ Portfolio GUI Interface - Achievement & Portfolio System
 Professional Tkinter-based GUI for managing student portfolios,
 achievements, badges, skills, endorsements, and resumes.
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -14,6 +17,30 @@ from datetime import datetime
 
 from education_system.systems.university.domains.progression.domain.portfolio.services.portfolio_service import PortfolioService
 from education_system.systems.university.infrastructure.shared_context import get_auth
+
+
+def _has_session(auth) -> bool:
+    """True when ``auth`` carries a logged-in user this GUI can key off."""
+    return isinstance(getattr(auth, "current_user", None), dict)
+
+
+def _resolve_auth(auth=None):
+    """Prefer the caller's session; fall back to the process-wide one.
+
+    ``get_auth()`` is not a session: it hands back whichever ``UserAuth`` was
+    seeded at bootstrap, which is created *before* login and so can carry no
+    ``current_user`` at all — and in a subprocess launch it raises outright.
+    Taking it as gospel is what made this screen report "Please log in first"
+    to a user who was plainly logged in.
+    """
+    if _has_session(auth):
+        return auth
+    try:
+        fallback = get_auth()
+    except Exception:
+        logger.debug("shared-context auth unavailable", exc_info=True)
+        fallback = None
+    return fallback if _has_session(fallback) else (auth or fallback)
 
 
 class PortfolioGUI:
@@ -30,10 +57,10 @@ class PortfolioGUI:
     - Statistics dashboard
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, auth=None):
         """Initialize GUI."""
         self.service = PortfolioService()
-        self.auth = get_auth()
+        self.auth = _resolve_auth(auth)
 
         # When ``parent`` is a workspace tab Frame (passed by
         # ``open_in_workspace``), embed inside it. Frames have no
@@ -441,12 +468,12 @@ class PortfolioGUI:
 
     def load_data(self):
         """Load student data and portfolio."""
-        if not self.auth.current_user:
+        if not _has_session(self.auth):
             messagebox.showerror(_t('gui.progression.portfolio.portfolio.dialogs.error', default="Error"), _t('gui.progression.portfolio.portfolio.dialogs.please_log_in_first', default="Please log in first"))
             self.root.destroy()
             return
 
-        user = self.auth.get_current_user()
+        user = self.auth.current_user
         # Try multiple possible keys for user ID
         self.student_id = user.get('user_id') or user.get('id') or user.get('username')
 
@@ -1009,7 +1036,7 @@ class PortfolioGUI:
             # Best-effort: notify the endorser through the email service.
             try:
                 from education_system.systems.university.infrastructure.email.email_service import send_email
-                user = self.auth.get_current_user() or {}
+                user = (getattr(self.auth, "current_user", None) or {})
                 requester = user.get('name') or user.get('username') or self.student_id
                 subject = f"Endorsement request: {skill['skill_name']}"
                 body = (
@@ -1023,7 +1050,7 @@ class PortfolioGUI:
                 if "@" in endorser:
                     send_email(endorser, subject, body)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             messagebox.showinfo(_t('gui.progression.portfolio.portfolio.dialogs.sent', default="Sent"), message, parent=dialog)
             dialog.destroy()

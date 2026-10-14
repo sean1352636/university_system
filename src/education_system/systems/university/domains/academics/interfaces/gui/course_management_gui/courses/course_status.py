@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 # gui_course_management.py
 import tkinter as tk
@@ -36,7 +40,7 @@ def _patched_sqlite_connect(database, *args, **kwargs):
         if not database or db_name in (str(DEFAULT_DB_PATH), "courses.db"):
             return _original_sqlite_connect(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return _original_sqlite_connect(database, *args, **kwargs)
 
 sqlite3.connect = _patched_sqlite_connect
@@ -48,23 +52,12 @@ from typing import List, Dict, Optional, Tuple
 import threading
 import logging
 
-# Import chart generation utility
-try:
-    import matplotlib
-    matplotlib.use('TkAgg')
-    import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-    from matplotlib.figure import Figure
-    import seaborn as sns
-    import numpy as np
-    CHARTS_AVAILABLE = True
-except ImportError:
-    CHARTS_AVAILABLE = False
-    plt = None
-    Figure = None
-    FigureCanvasTkAgg = None
-    sns = None
-    np = None
+# Chart generation utilities — deferred, see _lazy_charts. Importing seaborn
+# here pulled matplotlib, pandas and scipy (~4.7s) into every Course Management
+# open, for charts only the analytics dialogs draw.
+from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui._lazy_charts import (
+    CHARTS_AVAILABLE, plt, Figure, FigureCanvasTkAgg, sns, np,
+)
 
 # Import email service
 try:
@@ -163,7 +156,7 @@ def manage_course_status_gui(self):
     ttk.Label(status_frame, text=_t('gui.academics.course_management_gui.courses.course_status.labels.new_status', default="New Status:")).grid(row=0, column=0, sticky=tk.W, pady=5)
     status_var = tk.StringVar()
     status_combo = ttk.Combobox(status_frame, textvariable=status_var,
-                               values=["Active", "Inactive", "Archived", "Cancelled"],
+                               values=["active", "inactive", "archived", "cancelled"],
                                state='readonly', width=25)
     status_combo.grid(row=0, column=1, sticky=tk.W, pady=5, padx=5)
 
@@ -222,20 +215,31 @@ def manage_course_status_gui(self):
         if messagebox.askyesno(_t('gui.academics.course_management_gui.courses.course_status.dialogs.confirm_status_change', default="Confirm Status Change"),
                               f"Change course status from {current} to {new}?"):
             try:
-                course_id = int(course_var.get().split("ID: ")[1].rstrip(")"))
+                # courses.id is TEXT (the course code, e.g. "CS"), so the old
+                # int() cast raised ValueError on every real row and the bare
+                # except below swallowed it - the status silently never changed.
+                course_id = course_var.get().split("ID: ")[1].rstrip(")").strip()
 
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-                cursor = conn.cursor()
+                from education_system.systems.university.application.course_lifecycle_service import (
+                    CourseLifecycleService,
+                    CourseValidationError,
+                )
+                actor = str((getattr(self, 'auth', None)
+                             and getattr(self.auth, 'current_user', {}) or {}).get('id', 'unknown'))
+                try:
+                    result = CourseLifecycleService().set_status(
+                        course_id, new, actor_id=actor,
+                        reason="Status changed in Course Management",
+                    )
+                except CourseValidationError as exc:
+                    messagebox.showerror(
+                        _("common.validation_error"),
+                        "\n".join(f"{field}: {message}"
+                                   for field, message in exc.errors.items()))
+                    return
 
-                cursor.execute("""
-                    UPDATE courses SET status = ?, updated_at = ?
-                    WHERE id = ?
-                """, (new, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), course_id))
-
-                conn.commit()
-                conn.close()
-
-                messagebox.showinfo(_("common.success"), f"Course status updated to {new}")
+                messagebox.showinfo(_("common.success"),
+                                    f"Course status updated to {result.status}")
                 self.update_status(f"Course status changed to {new}")
                 dialog.destroy()
 
@@ -438,7 +442,7 @@ class ManageCourseStatusDialog:
         ttk.Label(controls_frame, text=_t('gui.academics.course_management_gui.courses.course_status.labels.new_status', default="New Status:")).pack(side=tk.LEFT)
         self.status_var = tk.StringVar()
         status_combo = ttk.Combobox(controls_frame, textvariable=self.status_var,
-                                   values=["Active", "Inactive", "Archived", "Cancelled"])
+                                   values=["active", "inactive", "archived", "cancelled"])
         status_combo.pack(side=tk.LEFT, padx=5)
 
         ttk.Label(controls_frame, text=_t('gui.academics.course_management_gui.courses.course_status.labels.reason', default="Reason:")).pack(side=tk.LEFT, padx=(20,5))
@@ -461,7 +465,7 @@ class ManageCourseStatusDialog:
         Library window opens (or surfaces) inside the host
         UnifiedManagementGUI process."""
         try:
-            from education_system.systems.university.interfaces.gui.shell.main.features.academic_link_bar import (
+            from education_system.systems.university.shell.gui.main.features.academic_link_bar import (
                 request_open as _request_open,
             )
         except Exception:
@@ -495,12 +499,12 @@ class ManageCourseStatusDialog:
                 finally:
                     menu.grab_release()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
         try:
             tree.bind("<Button-3>", _show, add="+")
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def load_courses(self):
         try:
@@ -550,13 +554,31 @@ class ManageCourseStatusDialog:
 
         if messagebox.askyesno(_t('gui.academics.course_management_gui.courses.course_status.dialogs.confirm_change', default="Confirm Change"), f"Change status from '{current_status}' to '{new_status}'?"):
             try:
+                # The status write itself belongs to the service, which
+                # normalises casing; the history row below stays here because
+                # it is this screen's own audit trail.
+                from education_system.systems.university.application.course_lifecycle_service import (
+                    CourseLifecycleService,
+                    CourseValidationError,
+                )
+                actor = str((getattr(self.auth, 'current_user', {}) or {}).get('id', 'unknown'))
+                try:
+                    applied = CourseLifecycleService().set_status(
+                        course_id, new_status, actor_id=actor,
+                        reason="Status changed in Course Management",
+                    )
+                except CourseValidationError as exc:
+                    messagebox.showerror(
+                        _("common.validation_error"),
+                        "\n".join(f"{field}: {message}"
+                                   for field, message in exc.errors.items()))
+                    return
+                new_status = applied.status
+
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
 
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-                cursor.execute("UPDATE courses SET status = ? WHERE id = ?",
-                              (new_status, course_id))
 
                 # Log in history
                 changed_by = self.auth.current_user.get('username', 'System') if isinstance(self.auth.current_user, dict) else str(self.auth.current_user)

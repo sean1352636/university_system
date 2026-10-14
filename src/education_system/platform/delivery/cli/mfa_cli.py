@@ -17,52 +17,58 @@ from education_system.platform.identity.auth.exceptions import AuthError
 logger = logging.getLogger(__name__)
 
 
-def _lookup_user_email(user_id: int, auth_db_path: str | None = None) -> tuple[str | None, str | None]:
-    """Look up user's email and username from shared auth DB.
+def _lookup_user_email(user_id: int, auth_db_path: str | None = None,
+                       current_user: dict | None = None) -> tuple[str | None, str | None]:
+    """Resolve the address to send the current user's OTP to.
 
-    Also checks the university mfa_methods table for a configured email.
-    Returns (email, username).
+    Starts from the account being logged in — ``current_user`` is the dict
+    ``UserAuth.login`` returned for this attempt — and falls back to the
+    shared auth DB when a detail is missing. Returns (email, username).
     """
-    conn = connect(auth_db_path)
-    try:
-        row = conn.execute(
-            "SELECT username, email FROM users WHERE id = ?", (user_id,)
-        ).fetchone()
-        username = row["username"] if row else None
-        user_email = row["email"] if row else None
-    finally:
-        conn.close()
+    details = current_user or {}
+    username = details.get("username")
+    user_email = details.get("email")
 
-    # Try university mfa_methods for a configured email address
+    if not (username and user_email):
+        conn = connect(auth_db_path)
+        try:
+            row = conn.execute(
+                "SELECT username, email FROM users WHERE id = ?", (user_id,)
+            ).fetchone()
+            username = username or (row["username"] if row else None)
+            user_email = user_email or (row["email"] if row else None)
+        finally:
+            conn.close()
+
+    # Try university mfa_methods for a configured email address.
+    #
+    # ``user_id`` is a **shared auth.db** id and must never be used to read
+    # the university's tables: the two are different id spaces, and they
+    # collide. ``admin`` is 19 in auth.db, and university ``users.id`` 19 is
+    # a student — so looking the shared id up here routed the admin's login
+    # OTP through that student's MFA row. Resolve by username instead, the
+    # same way ``shared_mfa_identity`` and ``session_user.build_session_user``
+    # cross the boundary.
     if username:
         try:
             from education_system.systems.university.infrastructure.database.db import get_connection
             uconn = get_connection()
             try:
-                for uid_val in (user_id, None):
-                    if uid_val is not None:
-                        mrow = uconn.execute(
-                            "SELECT method_identifier FROM mfa_methods "
-                            "WHERE user_id = ? AND method_type = 'email' "
-                            "AND is_enabled = 1 AND method_identifier IS NOT NULL "
-                            "ORDER BY id DESC LIMIT 1",
-                            (uid_val,),
-                        ).fetchone()
-                    else:
-                        urow = uconn.execute(
-                            "SELECT id FROM user_accounts WHERE username = ?",
-                            (username,),
-                        ).fetchone()
-                        if not urow:
-                            break
-                        ua_id = urow[0] if isinstance(urow, tuple) else urow["id"]
-                        mrow = uconn.execute(
-                            "SELECT method_identifier FROM mfa_methods "
-                            "WHERE user_id = ? AND method_type = 'email' "
-                            "AND is_enabled = 1 AND method_identifier IS NOT NULL "
-                            "ORDER BY id DESC LIMIT 1",
-                            (ua_id,),
-                        ).fetchone()
+                for table in ("users", "user_accounts"):
+                    urow = uconn.execute(
+                        f"SELECT id FROM {table} WHERE username = ?",  # nosec B608 - fixed table names
+                        (username,),
+                    ).fetchone()
+                    if not urow:
+                        continue
+                    local_id = urow[0] if isinstance(urow, tuple) else urow["id"]
+                    mrow = uconn.execute(
+                        "SELECT method_identifier FROM mfa_methods "
+                        "WHERE user_id = ? AND method_type = 'email' "
+                        "AND is_enabled = 1 AND method_identifier IS NOT NULL "
+                        "ORDER BY id DESC LIMIT 1",
+                        (local_id,),
+                    ).fetchone()
                     if mrow:
                         mfa_email = mrow[0] if isinstance(mrow, tuple) else mrow["method_identifier"]
                         if mfa_email:
@@ -73,7 +79,7 @@ def _lookup_user_email(user_id: int, auth_db_path: str | None = None) -> tuple[s
         except ImportError:
             pass
         except Exception:
-            pass
+            logger.debug("University MFA email lookup failed for %r", username, exc_info=True)
 
     return user_email, username
 
@@ -86,11 +92,16 @@ def _mask_email(email: str) -> str:
     return email
 
 
-def cli_mfa_verify(user_id: int, auth: UserAuth) -> dict | None:
+def cli_mfa_verify(user_id: int, auth: UserAuth,
+                   current_user: dict | None = None) -> dict | None:
     """Handle MFA verification in a CLI context.
 
     Sends an email OTP (with on-screen fallback), then prompts the user
     for a code.  Accepts the email OTP, a TOTP code, or a recovery code.
+
+    ``current_user`` is the details of the account being logged in, so the
+    code is addressed to that user rather than to whoever an id lookup
+    happens to land on.
 
     Returns the user_info dict on success, or None on failure.
     """
@@ -98,7 +109,7 @@ def cli_mfa_verify(user_id: int, auth: UserAuth) -> dict | None:
     pending_otp = None  # (hash, expiry)
 
     try:
-        user_email, username = _lookup_user_email(user_id)
+        user_email, username = _lookup_user_email(user_id, current_user=current_user)
 
         if user_email and username:
             code = "".join(str(secrets.randbelow(10)) for _ in range(6))

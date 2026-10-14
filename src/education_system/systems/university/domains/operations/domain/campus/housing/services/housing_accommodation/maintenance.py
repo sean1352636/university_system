@@ -213,6 +213,20 @@ def create_maintenance_request():
             timestamp, timestamp
         ))
 
+        # Collect the context both emails need while the connection is open.
+        cursor.execute('''
+        SELECT b.building_name, r.room_number, r.floor_number, r.room_type
+        FROM housing_rooms r
+        JOIN housing_buildings b ON r.building_id = b.building_id
+        WHERE r.room_id = ?
+        ''', (room_id,))
+        room_row = cursor.fetchone()
+
+        cursor.execute('''
+        SELECT first_name, last_name, email_address FROM students WHERE student_id = ?
+        ''', (student_id,))
+        student_row = cursor.fetchone()
+
         conn.commit()
         print("\n" + get_text("housing.maintenance.request_created"))
         print(get_text("housing.maintenance.request_id_display", id=request_id))
@@ -223,6 +237,48 @@ def create_maintenance_request():
             print(get_text("housing.maintenance.emergency_call"))
 
         conn.close()
+
+        # Notify after the commit, so nothing is acknowledged that rolled back.
+        request = {
+            'request_id': request_id,
+            'issue_type': issue_type,
+            'description': description,
+            'priority': priority,
+            'status': 'Open',
+            'request_date': timestamp,
+            'submitted_by': (auth.current_user.get('username', 'housing')
+                             if auth.current_user else 'housing'),
+            'student_id': student_id,
+            'student_name': (f"{student_row[0] or ''} {student_row[1] or ''}".strip()
+                             if student_row else student_id),
+            'student_email': student_row[2] if student_row else None,
+            'building_name': room_row[0] if room_row else '',
+            'room_number': room_row[1] if room_row else '',
+            'floor_number': room_row[2] if room_row else '-',
+            'room_type': room_row[3] if room_row else '-',
+        }
+
+        if _common.send_maintenance_student_email(request):
+            print(_common.housing_text(
+                "housing.maintenance.student_email_sent",
+                default="Confirmation emailed to {email}.",
+                email=request['student_email']))
+        else:
+            print(_common.housing_text(
+                "housing.maintenance.student_email_failed",
+                default="Note: the confirmation email to the student could not be sent."))
+
+        admin_sent, admin_failed = _common.send_maintenance_admin_emails(request)
+        if admin_sent:
+            print(_common.housing_text(
+                "housing.maintenance.admin_email_sent",
+                default="Housing admin alerted ({sent} email(s), {failed} failed).",
+                sent=admin_sent, failed=admin_failed))
+        else:
+            print(_common.housing_text(
+                "housing.maintenance.admin_email_none",
+                default=("Note: no admin email address is configured, so no "
+                         "admin alert was sent.")))
 
     except sqlite3.Error as e:
         print(get_text("housing.common.database_error", error=str(e)))
@@ -365,7 +421,7 @@ def view_maintenance_requests():
                 }
 
                 if status_choice not in status_map:
-                    print(get_text("housing.common.invalid_choice"))
+                    print(get_text("housing.common.invalid_choice", default="Invalid Choice."))
                     conn.close()
                     return
 
@@ -456,7 +512,7 @@ def view_maintenance_requests():
                 }
 
                 if priority_choice not in priority_map:
-                    print(get_text("housing.common.invalid_choice"))
+                    print(get_text("housing.common.invalid_choice", default="Invalid Choice."))
                     conn.close()
                     return
 

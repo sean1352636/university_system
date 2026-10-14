@@ -60,6 +60,7 @@ def _resolve_semester_span(conn, semester: Optional[str],
         candidates = {str(year), f"{year}-{int(year) + 1}",
                       f"{year}/{int(year) + 1}"}
         placeholders = ",".join(["?"] * len(candidates))
+        # db-audit: ignore[DBW001] - join of placeholders
         row = conn.execute(
             f"SELECT start_date, end_date FROM semesters "  # nosec B608
             f"WHERE name = ? AND academic_year_id IN ({placeholders}) "
@@ -69,7 +70,7 @@ def _resolve_semester_span(conn, semester: Optional[str],
         if row and row[0] and row[1]:
             return row[0], row[1]
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return today.isoformat(), fallback_end.isoformat()
 
 
@@ -156,24 +157,21 @@ def sync_lecture_to_calendar(module_schedule_id: int) -> bool:
 
             now = datetime.now().isoformat()
             existing = conn.execute(
-                "SELECT 1 FROM academic_calendar_events WHERE id = ?",
+                "SELECT 1 FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') WHERE id = ?",
                 (event_id,),
             ).fetchone()
             if existing:
                 conn.execute(
-                    """UPDATE academic_calendar_events
-                       SET name = ?, date_start = ?, date_end = ?,
+                    """UPDATE unified_events SET title = ?, start_datetime = ?, end_datetime = ?,
                            description = ?, event_type = 'Lecture',
-                           last_modified = ?
-                       WHERE id = ?""",
+                           updated_at = ? WHERE source_type = 'academic_calendar' AND (source_event_id = ?)""",
                     (name, date_start, date_end, description, now, event_id),
                 )
             else:
                 conn.execute(
-                    """INSERT INTO academic_calendar_events
-                       (id, name, date_start, date_end, description,
-                        event_type, date_added, last_modified)
-                       VALUES (?, ?, ?, ?, ?, 'Lecture', ?, ?)""",
+                    """INSERT INTO unified_events (
+                    source_event_id, title, start_datetime, end_datetime, description, event_type, created_at, updated_at, source_type
+                ) VALUES (?, ?, ?, ?, ?, 'Lecture', ?, ?, 'academic_calendar')""",
                     (event_id, name, date_start, date_end, description,
                      now, now),
                 )
@@ -189,7 +187,7 @@ def sync_lecture_to_calendar(module_schedule_id: int) -> bool:
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
 
 def remove_lecture_from_calendar(module_schedule_id: int) -> bool:
@@ -200,7 +198,7 @@ def remove_lecture_from_calendar(module_schedule_id: int) -> bool:
     try:
         with conn:
             conn.execute(
-                "DELETE FROM academic_calendar_events WHERE id = ?",
+                "DELETE FROM unified_events WHERE source_type = 'academic_calendar' AND (source_event_id = ?)",
                 (_calendar_event_id(module_schedule_id),),
             )
         return True
@@ -211,4 +209,4 @@ def remove_lecture_from_calendar(module_schedule_id: int) -> bool:
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)

@@ -45,8 +45,8 @@ pip install -r requirements.lock
 Databases are auto-created on first run. Default accounts are seeded automatically.
 
 ```bash
-python run.py --gui    # GUI mode
-python run.py --cli    # CLI mode
+python -m education_system --gui    # GUI mode
+python -m education_system --cli    # CLI mode
 ```
 
 ### 3. Change Default Passwords
@@ -259,7 +259,7 @@ SMTP_PASSWORD=your-password
 ### Starting the Server
 
 ```bash
-python run.py --api
+python -m education_system --api
 ```
 
 The unified server runs on port 5000 and serves all 4 systems.
@@ -312,7 +312,7 @@ git pull
 pip install -r requirements.lock
 
 # 4. Run database migrations (auto-applied on startup)
-python run.py --cli  # Start and stop to trigger migrations
+python -m education_system --cli  # Start and stop to trigger migrations
 
 # 5. Verify
 make test

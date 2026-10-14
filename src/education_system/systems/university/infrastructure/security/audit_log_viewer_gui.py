@@ -2,20 +2,20 @@
 DEPRECATED: Audit Log Viewer GUI has been moved to modules/shared/gui/security/
 
 This module provides backward compatibility for existing imports.
-New code should import from education_system.systems.university.interfaces.gui.shell.security.audit_log_viewer_gui instead.
+New code should import from education_system.systems.university.shell.gui.security.audit_log_viewer_gui instead.
 """
 
 import warnings
 
 warnings.warn(
     "Importing from education_system.systems.university.infrastructure.security.audit_log_viewer_gui is deprecated. "
-    "Please import from education_system.systems.university.interfaces.gui.shell.security.audit_log_viewer_gui instead.",
+    "Please import from education_system.systems.university.shell.gui.security.audit_log_viewer_gui instead.",
     DeprecationWarning,
     stacklevel=2
 )
 
 # Re-export from new location for backward compatibility
-from education_system.systems.university.interfaces.gui.shell.security.audit_log_viewer_gui import (
+from education_system.systems.university.shell.gui.security.audit_log_viewer_gui import (
     AuditLogViewerGUI,
     AnomalyDetector,
     show_audit_log_viewer,

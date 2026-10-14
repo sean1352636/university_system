@@ -3,6 +3,7 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 from .. import progress_gui_shared as _shared
+import tkinter.simpledialog  # noqa: F401 - registers tk.simpledialog
 globals().update({name: value for name, value in _shared.__dict__.items() if not name.startswith("__")})
 
 
@@ -26,7 +27,7 @@ class AcademicProgressGUI:
                   command=self.resolve_warning_gui).pack(side=tk.LEFT, padx=5)
 
         # Warnings display
-        self.warnings_text = scrolledtext.ScrolledText(warnings_tab, height=30, wrap=tk.WORD)
+        self.warnings_text = ReportPane(warnings_tab, title=_t('academic_progress.tabs.warnings_title', default="Academic Warnings"))
         self.warnings_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Auto-load warnings
@@ -221,7 +222,7 @@ class AcademicProgressGUI:
                   command=self.generate_forecast).pack(side=tk.LEFT, padx=5)
 
         # Results
-        self.forecast_text = scrolledtext.ScrolledText(forecast_tab, height=30, wrap=tk.WORD)
+        self.forecast_text = ReportPane(forecast_tab, title=_t('academic_progress.tabs.forecast_title', default="Graduation Forecast"))
         self.forecast_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     def generate_forecast(self):
@@ -410,8 +411,8 @@ class AcademicProgressGUI:
         ttk.Label(header, text=_t('gui.assessment.academic_progress.progress_gui_parts.academicprogressgui_create_warnings_tab.labels.academic_transcript', default="Academic Transcript"), font=('Arial', 14, 'bold')).pack(side='left')
         ttk.Button(header, text=_t('gui.assessment.academic_progress.progress_gui_parts.academicprogressgui_create_warnings_tab.buttons.export', default="Export"), command=self._export_transcript).pack(side='right')
 
-        self._transcript_text = scrolledtext.ScrolledText(
-            tab, wrap='word', font=('Courier', 10), state='disabled',
+        self._transcript_text = ReportPane(
+            tab, title=_t('academic_progress.tabs.transcript_title', default="Academic Transcript"),
         )
         self._transcript_text.pack(fill='both', expand=True, padx=10, pady=10)
 

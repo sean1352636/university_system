@@ -4,6 +4,8 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 
 from .. import admin_tools_manager_shared as _shared
 globals().update({name: value for name, value in _shared.__dict__.items() if not name.startswith("__")})
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
+from education_system.systems.university.domains.academics.interfaces.gui._field_pickers import attach_picker
 
 
 class AdminToolsManager:
@@ -52,11 +54,11 @@ class AdminToolsManager:
 
     def create_integrity_case(self):
         """Form to create new integrity case"""
-        if not self._check_permission('manage_integrity'):
+        if not self._check_permission('manage_plagiarism_system'):
             messagebox.showerror(_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_load_integrity_cases.dialogs.access_denied', default="Access Denied"), _t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_load_integrity_cases.dialogs.you_do_not_have_permission_to_create_integrity_cases', default="You do not have permission to create integrity cases."))
             return
 
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_load_integrity_cases.windows.new_academic_integrity_case', default="New Academic Integrity Case"))
         dialog.geometry("550x600")
         dialog.transient(self.root)
@@ -70,12 +72,14 @@ class AdminToolsManager:
         # Student ID
         ttk.Label(main_frame, text=_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_load_integrity_cases.labels.student_id', default="Student ID:")).pack(anchor='w', pady=(5, 2))
         student_var = tk.StringVar()
-        ttk.Entry(main_frame, textvariable=student_var, width=40).pack(anchor='w')
+        attach_picker(main_frame, 'student', id_var=student_var,
+                      width=44).pack(anchor='w')
 
         # Assignment ID
         ttk.Label(main_frame, text=_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_load_integrity_cases.labels.assignment_id_optional', default="Assignment ID (optional):")).pack(anchor='w', pady=(10, 2))
         assignment_var = tk.StringVar()
-        ttk.Entry(main_frame, textvariable=assignment_var, width=40).pack(anchor='w')
+        attach_picker(main_frame, 'assignment', id_var=assignment_var,
+                      width=44).pack(anchor='w')
 
         # Case type
         ttk.Label(main_frame, text=_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_load_integrity_cases.labels.case_type', default="Case Type:")).pack(anchor='w', pady=(10, 2))
@@ -153,7 +157,7 @@ class AdminToolsManager:
 
     def review_integrity_case(self, case_id):
         """Review/update an integrity case"""
-        if not self._check_permission('manage_integrity'):
+        if not self._check_permission('manage_plagiarism_system'):
             messagebox.showerror(_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_load_integrity_cases.dialogs.access_denied', default="Access Denied"), _t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_load_integrity_cases.dialogs.you_do_not_have_permission_to_review_integrity_cases', default="You do not have permission to review integrity cases."))
             return
 
@@ -174,7 +178,7 @@ class AdminToolsManager:
             messagebox.showerror(_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_load_integrity_cases.dialogs.error', default="Error"), f"Failed to load case: {e}")
             return
 
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(f"Integrity Case #{case_id}")
         dialog.geometry("550x650")
         dialog.transient(self.root)
@@ -262,7 +266,7 @@ class AdminToolsManager:
 
     def show_grade_audit_log(self):
         """View grade change audit trail with filters"""
-        if not self._check_permission('view_audit_log'):
+        if not self._check_permission('view_audit_logs'):
             messagebox.showerror(_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_load_integrity_cases.dialogs.access_denied', default="Access Denied"), _t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_load_integrity_cases.dialogs.you_do_not_have_permission_to_view_the_audit_log', default="You do not have permission to view the audit log."))
             return
 
@@ -278,11 +282,13 @@ class AdminToolsManager:
 
         ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_load_integrity_cases.labels.student_id', default="Student ID:")).pack(side='left', padx=(0, 5))
         self.audit_student_var = tk.StringVar()
-        ttk.Entry(filter_frame, textvariable=self.audit_student_var, width=15).pack(side='left', padx=5)
+        attach_picker(filter_frame, 'student', id_var=self.audit_student_var,
+                      width=28).pack(side='left', padx=5)
 
         ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_load_integrity_cases.labels.assignment_id', default="Assignment ID:")).pack(side='left', padx=(15, 5))
         self.audit_assignment_var = tk.StringVar()
-        ttk.Entry(filter_frame, textvariable=self.audit_assignment_var, width=10).pack(side='left', padx=5)
+        attach_picker(filter_frame, 'assignment', id_var=self.audit_assignment_var,
+                      width=26).pack(side='left', padx=5)
 
         ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_load_integrity_cases.labels.changed_by', default="Changed By:")).pack(side='left', padx=(15, 5))
         self.audit_changed_by_var = tk.StringVar()

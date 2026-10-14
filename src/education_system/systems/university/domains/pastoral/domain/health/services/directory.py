@@ -6,7 +6,7 @@ from education_system.systems.university.domains.pastoral.domain.health.services
 
 def specialist_directory(auth):
     """Specialist directory"""
-    print(f"\n{_t('health_misc.directory.specialist_directory_title')}")
+    print(f"\n{_t('health_misc.directory.specialist_directory_title', default='===== SPECIALIST DIRECTORY =====')}")
 
     # Mock specialist directory
     specialists = [
@@ -18,7 +18,7 @@ def specialist_directory(auth):
 
     specialty_filter = input(_t("health_misc.directory.filter_by_specialty_prompt")).strip()
 
-    print(f"\n{_t('health_misc.directory.column_name'):<15} {_t('health_misc.directory.column_specialty'):<15} {_t('health_misc.directory.column_phone'):<15} {_t('health_misc.directory.column_location'):<20}")
+    print(f"\n{_t('health_misc.directory.column_name', default='Name'):<15} {_t('health_misc.directory.column_specialty', default='Specialty'):<15} {_t('health_misc.directory.column_phone', default='Phone'):<15} {_t('health_misc.directory.column_location', default='Location'):<20}")
     print("-" * 70)
 
     for specialist in specialists:
@@ -31,7 +31,7 @@ def emergency_information(auth):
     conn = get_connection()
     cursor = conn.cursor()
 
-    print(f"\n{_t('health_misc.directory.emergency_information_title')}")
+    print(f"\n{_t('health_misc.directory.emergency_information_title', default='===== EMERGENCY INFORMATION =====')}")
 
     print(_t("health_misc.directory.emergency_contacts_header"))
     print(_t("health_misc.directory.campus_emergency"))
@@ -51,12 +51,12 @@ def emergency_information(auth):
     personal_contacts = cursor.fetchall()
 
     if personal_contacts:
-        print(f"\n{_t('health_misc.directory.your_emergency_contacts_header')}")
+        print(f"\n{_t('health_misc.directory.your_emergency_contacts_header', default='Your Emergency Contacts:')}")
         for name, relationship, phone, medical_dm in personal_contacts:
-            dm_indicator = f" {_t('health_misc.directory.medical_decision_maker')}" if medical_dm else ""
+            dm_indicator = f" {_t('health_misc.directory.medical_decision_maker', default='Medical decision maker: {name}')}" if medical_dm else ""
             print(f"   • {name} ({relationship}): {phone}{dm_indicator}")
     else:
-        print(f"\n{_t('health_misc.directory.no_emergency_contacts')}")
+        print(f"\n{_t('health_misc.directory.no_emergency_contacts', default='No emergency contacts on record.')}")
         print(_t("health_misc.directory.add_contacts_prompt"))
 
     # Show critical medical information
@@ -68,7 +68,7 @@ def emergency_information(auth):
     critical_allergies = cursor.fetchall()
 
     if critical_allergies:
-        print(f"\n{_t('health_misc.directory.critical_allergies_header')}")
+        print(f"\n{_t('health_misc.directory.critical_allergies_header', default='Critical Allergies:')}")
         for allergen, severity in critical_allergies:
             print(f"   • {allergen} ({severity})")
 
@@ -81,7 +81,7 @@ def emergency_information(auth):
     conditions = cursor.fetchall()
 
     if conditions:
-        print(f"\n{_t('health_misc.directory.active_conditions_header')}")
+        print(f"\n{_t('health_misc.directory.active_conditions_header', default='Active Conditions:')}")
         for condition, severity in conditions:
             print(f"   • {condition} ({severity})")
 

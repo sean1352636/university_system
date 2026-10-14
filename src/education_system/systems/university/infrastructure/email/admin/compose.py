@@ -9,6 +9,8 @@ from education_system.systems.university.infrastructure.email.admin._imports imp
     handle_exception,
     log_event,
     logger,
+    _out,
+    _err,
     queue_email,
     schedule_send,
     wait_for_email_queue,
@@ -24,7 +26,7 @@ class _ComposeMixin:
     def send_email_to_role(self, role, subject, body):
         """Send email to all users with a specific role"""
         if not self.auth or not self.auth.current_user:
-            logger.info("You must be logged in to send emails.")
+            _out("You must be logged in to send emails.")
             return False
 
         def _send_to_role(cursor):
@@ -39,19 +41,19 @@ class _ComposeMixin:
             users = cursor.fetchall()
 
             if not users:
-                logger.info(f"No users found with role '{role}'.")
+                _out(f"No users found with role '{role}'.")
                 return False
 
-            logger.info(f"Found {len(users)} users with role '{role}':")
+            _out(f"Found {len(users)} users with role '{role}':")
             for user in users[:5]:  # Show first 5
-                logger.info(f"  - {user[2]} {user[3]} ({user[1]})")
+                _out(f"  - {user[2]} {user[3]} ({user[1]})")
 
             if len(users) > 5:
-                logger.info(f"  ... and {len(users) - 5} more")
+                _out(f"  ... and {len(users) - 5} more")
 
             confirm = input(f"\nSend email to all {len(users)} {role}s? (y/n): ")
             if confirm.lower() != 'y':
-                logger.info("Email cancelled.")
+                _out("Email cancelled.")
                 return False
 
             # Send emails
@@ -70,9 +72,9 @@ class _ComposeMixin:
                     failure_count += 1
 
             if config.get('database_only_mode', True):
-                logger.error(f"\nEmails stored in database: {success_count} successful, {failure_count} failed")
+                _err(f"\nEmails stored in database: {success_count} successful, {failure_count} failed")
             else:
-                logger.error(f"\nEmails queued: {success_count} successful, {failure_count} failed")
+                _err(f"\nEmails queued: {success_count} successful, {failure_count} failed")
 
             # Log the bulk send
             current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -99,30 +101,30 @@ class _ComposeMixin:
     def compose_email_with_user_selection(self):
         """Enhanced email composition with user selection interface"""
         if not self.auth or not self.auth.current_user:
-            logger.info("You must be logged in to send emails.")
+            _out("You must be logged in to send emails.")
             return False
 
-        logger.info("\nCompose New Email")
-        logger.info("=================")
+        _out("\nCompose New Email")
+        _out("=================")
 
         # Get recipients using the selection interface
         recipients = self.display_user_selection_menu()
 
         if not recipients:
-            logger.info("Email composition cancelled.")
+            _out("Email composition cancelled.")
             return False
 
-        logger.info(f"\nComposing email for {len(recipients)} recipient(s):")
+        _out(f"\nComposing email for {len(recipients)} recipient(s):")
         for recipient in recipients:
-            logger.info(f"  - {recipient['full_name']} ({recipient['email']})")
+            _out(f"  - {recipient['full_name']} ({recipient['email']})")
 
         # Get email details
         subject = input("\nEmail Subject: ").strip()
         if not subject:
-            logger.info("Subject cannot be empty.")
+            _out("Subject cannot be empty.")
             return False
 
-        logger.info("\nEmail Body (type 'END' on a new line to finish):")
+        _out("\nEmail Body (type 'END' on a new line to finish):")
         body_lines = []
         while True:
             line = input()
@@ -132,11 +134,11 @@ class _ComposeMixin:
 
         body = "\n".join(body_lines)
         if not body:
-            logger.info("Email body cannot be empty.")
+            _out("Email body cannot be empty.")
             return False
 
         # Ask for email options
-        logger.info("\nEmail Options:")
+        _out("\nEmail Options:")
         send_immediately = input("Send immediately? (y/n, default: y): ").strip().lower()
         send_immediately = send_immediately != 'n'
 
@@ -147,17 +149,17 @@ class _ComposeMixin:
         bcc_list = [email.strip() for email in bcc_emails.split(',') if email.strip()] if bcc_emails else None
 
         # Confirm sending
-        logger.info("\nEmail Summary:")
-        logger.info(f"Subject: {subject}")
-        logger.info(f"Recipients: {len(recipients)}")
-        logger.info(f"CC: {len(cc_list) if cc_list else 0}")
-        logger.info(f"BCC: {len(bcc_list) if bcc_list else 0}")
-        logger.info(f"Mode: {'Database Storage' if config.get('database_only_mode', True) else 'SMTP Sending'}")
-        logger.info(f"Send immediately: {'Yes' if send_immediately else 'No'}")
+        _out("\nEmail Summary:")
+        _out(f"Subject: {subject}")
+        _out(f"Recipients: {len(recipients)}")
+        _out(f"CC: {len(cc_list) if cc_list else 0}")
+        _out(f"BCC: {len(bcc_list) if bcc_list else 0}")
+        _out(f"Mode: {'Database Storage' if config.get('database_only_mode', True) else 'SMTP Sending'}")
+        _out(f"Send immediately: {'Yes' if send_immediately else 'No'}")
 
         if not send_immediately:
             # Get scheduling details
-            logger.info("\nSchedule Email:")
+            _out("\nSchedule Email:")
             try:
                 year = int(input("Year (YYYY): "))
                 month = int(input("Month (MM): "))
@@ -168,17 +170,17 @@ class _ComposeMixin:
                 scheduled_date = datetime(year, month, day, hour, minute)
 
                 if scheduled_date <= datetime.now():
-                    logger.info("Scheduled date must be in the future.")
+                    _out("Scheduled date must be in the future.")
                     return False
 
-                logger.info(f"Scheduled for: {scheduled_date}")
+                _out(f"Scheduled for: {scheduled_date}")
             except ValueError:
-                logger.info("Invalid date/time format.")
+                _out("Invalid date/time format.")
                 return False
 
         confirm = input("\nSend this email? (y/n): ").strip().lower()
         if confirm != 'y':
-            logger.info("Email cancelled.")
+            _out("Email cancelled.")
             return False
 
         # Send the emails
@@ -205,15 +207,15 @@ class _ComposeMixin:
                     failure_count += 1
 
             if config.get('database_only_mode', True):
-                logger.error(f"\nEmails stored in database: {success_count} successful, {failure_count} failed")
+                _err(f"\nEmails stored in database: {success_count} successful, {failure_count} failed")
             else:
-                logger.error(f"\nEmails queued: {success_count} successful, {failure_count} failed")
+                _err(f"\nEmails queued: {success_count} successful, {failure_count} failed")
 
                 if success_count > 0:
                     wait_choice = input("Wait for all emails to be sent? (y/n): ")
                     if wait_choice.lower() == 'y':
                         wait_for_email_queue()
-                        logger.info("All emails have been sent.")
+                        _out("All emails have been sent.")
         else:
             # Schedule emails
             recipient_emails = [r['email'] for r in recipients]
@@ -227,8 +229,8 @@ class _ComposeMixin:
             # Schedule the emails
             result = schedule_send(scheduled_date, recipient_emails, template_name)
 
-            logger.error(f"\nEmails scheduled: {result['success']} successful, {result['failure']} failed")
-            logger.info(f"Scheduled for: {scheduled_date}")
+            _err(f"\nEmails scheduled: {result['success']} successful, {result['failure']} failed")
+            _out(f"Scheduled for: {scheduled_date}")
 
         # Log the activity
         try:
@@ -265,16 +267,16 @@ class _ComposeMixin:
         search_term = None
 
         while True:
-            logger.info("\n" + "="*80)
-            logger.info("SELECT EMAIL RECIPIENTS")
-            logger.info("="*80)
+            _out("\n" + "="*80)
+            _out("SELECT EMAIL RECIPIENTS")
+            _out("="*80)
 
             # Show current selections
             if selected_recipients:
-                logger.info(f"Selected Recipients ({len(selected_recipients)}):")
+                _out(f"Selected Recipients ({len(selected_recipients)}):")
                 for i, recipient in enumerate(selected_recipients, 1):
-                    logger.info(f"  {i}. {recipient['full_name']} ({recipient['username']}) - {recipient['email']}")
-                logger.info("-" * 80)
+                    _out(f"  {i}. {recipient['full_name']} ({recipient['username']}) - {recipient['email']}")
+                _out("-" * 80)
 
             # Get users to display
             if search_term:
@@ -290,7 +292,7 @@ class _ComposeMixin:
                 users_result = list_all_users(self.auth, page, limit, role_filter)
 
             if users_result['total_count'] == 0:
-                logger.info("No users found.")
+                _out("No users found.")
             else:
                 # Display filter info
                 filter_info = []
@@ -300,11 +302,11 @@ class _ComposeMixin:
                     filter_info.append(f"Search: {search_term}")
 
                 if filter_info:
-                    logger.info(f"Filters: {', '.join(filter_info)}")
+                    _out(f"Filters: {', '.join(filter_info)}")
 
-                logger.info(f"\nUsers (Page {users_result['page']} of {users_result['total_pages']}):")
-                logger.info(f"{'#':<3}{'Name':<25}{'Username':<15}{'Email':<30}{'Role':<10}{'Selected'}")
-                logger.info("-" * 80)
+                _out(f"\nUsers (Page {users_result['page']} of {users_result['total_pages']}):")
+                _out(f"{'#':<3}{'Name':<25}{'Username':<15}{'Email':<30}{'Role':<10}{'Selected'}")
+                _out("-" * 80)
 
                 for i, user in enumerate(users_result['users'], 1):
                     # Check if user is already selected
@@ -316,21 +318,21 @@ class _ComposeMixin:
                     username = user['username'][:14] if len(user['username']) > 14 else user['username']
                     email = user['email'][:29] if len(user['email']) > 29 else user['email']
 
-                    logger.info(f"{i:<3}{name:<25}{username:<15}{email:<30}{user['role']:<10}{selected_mark}")
+                    _out(f"{i:<3}{name:<25}{username:<15}{email:<30}{user['role']:<10}{selected_mark}")
 
             # Menu options
-            logger.info("\nOptions:")
-            logger.info("1. Select user by number")
-            logger.info("2. Remove selected recipient")
-            logger.info("3. Next page") if users_result['page'] < users_result['total_pages'] else None
-            logger.info("4. Previous page") if users_result['page'] > 1 else None
-            logger.info("5. Filter by role")
-            logger.info("6. Search users")
-            logger.info("7. Clear filters")
-            logger.info("8. Select all on page")
-            logger.info("9. Clear all selected")
-            logger.info("10. Continue to compose email") if selected_recipients else None
-            logger.info("0. Cancel")
+            _out("\nOptions:")
+            _out("1. Select user by number")
+            _out("2. Remove selected recipient")
+            _out("3. Next page") if users_result['page'] < users_result['total_pages'] else None
+            _out("4. Previous page") if users_result['page'] > 1 else None
+            _out("5. Filter by role")
+            _out("6. Search users")
+            _out("7. Clear filters")
+            _out("8. Select all on page")
+            _out("9. Clear all selected")
+            _out("10. Continue to compose email") if selected_recipients else None
+            _out("0. Cancel")
 
             choice = input("\nEnter your choice: ").strip()
 
@@ -345,35 +347,35 @@ class _ComposeMixin:
                         if any(r['id'] == selected_user['id'] for r in selected_recipients):
                             # Remove from selection
                             selected_recipients = [r for r in selected_recipients if r['id'] != selected_user['id']]
-                            logger.info(f"Removed {selected_user['full_name']} from selection.")
+                            _out(f"Removed {selected_user['full_name']} from selection.")
                         else:
                             # Add to selection
                             selected_recipients.append(selected_user)
-                            logger.info(f"Added {selected_user['full_name']} to selection.")
+                            _out(f"Added {selected_user['full_name']} to selection.")
                     else:
-                        logger.info("Invalid user number.")
+                        _out("Invalid user number.")
                 except ValueError:
-                    logger.info("Please enter a valid number.")
+                    _out("Please enter a valid number.")
 
             elif choice == '2':
                 # Remove selected recipient
                 if not selected_recipients:
-                    logger.info("No recipients selected.")
+                    _out("No recipients selected.")
                     continue
 
-                logger.info("\nSelected Recipients:")
+                _out("\nSelected Recipients:")
                 for i, recipient in enumerate(selected_recipients, 1):
-                    logger.info(f"{i}. {recipient['full_name']} ({recipient['email']})")
+                    _out(f"{i}. {recipient['full_name']} ({recipient['email']})")
 
                 try:
                     remove_num = int(input("Enter number to remove: "))
                     if 1 <= remove_num <= len(selected_recipients):
                         removed = selected_recipients.pop(remove_num - 1)
-                        logger.info(f"Removed {removed['full_name']} from selection.")
+                        _out(f"Removed {removed['full_name']} from selection.")
                     else:
-                        logger.info("Invalid number.")
+                        _out("Invalid number.")
                 except ValueError:
-                    logger.info("Please enter a valid number.")
+                    _out("Please enter a valid number.")
 
             elif choice == '3' and users_result['page'] < users_result['total_pages']:
                 # Next page
@@ -385,13 +387,13 @@ class _ComposeMixin:
 
             elif choice == '5':
                 # Filter by role
-                logger.info("\nFilter by role:")
-                logger.info("1. Students")
-                logger.info("2. Staff")
-                logger.info("3. Instructors")
-                logger.info("4. Admins")
-                logger.info("5. Parents")
-                logger.info("6. Clear role filter")
+                _out("\nFilter by role:")
+                _out("1. Students")
+                _out("2. Staff")
+                _out("3. Instructors")
+                _out("4. Admins")
+                _out("5. Parents")
+                _out("6. Clear role filter")
 
                 role_choice = input("Enter choice: ").strip()
 
@@ -414,7 +416,7 @@ class _ComposeMixin:
                     role_filter = None
                     page = 1
                 else:
-                    logger.info("Invalid choice.")
+                    _out("Invalid choice.")
 
             elif choice == '6':
                 # Search users
@@ -428,14 +430,14 @@ class _ComposeMixin:
                 role_filter = None
                 search_term = None
                 page = 1
-                logger.info("Filters cleared.")
+                _out("Filters cleared.")
 
             elif choice == '8':
                 # Select all on page
                 for user in users_result['users']:
                     if not any(r['id'] == user['id'] for r in selected_recipients):
                         selected_recipients.append(user)
-                logger.info(f"Added {len(users_result['users'])} users to selection.")
+                _out(f"Added {len(users_result['users'])} users to selection.")
 
             elif choice == '9':
                 # Clear all selected
@@ -443,9 +445,9 @@ class _ComposeMixin:
                     confirm = input(f"Clear all {len(selected_recipients)} selected recipients? (y/n): ")
                     if confirm.lower() == 'y':
                         selected_recipients = []
-                        logger.info("All selections cleared.")
+                        _out("All selections cleared.")
                 else:
-                    logger.info("No recipients selected.")
+                    _out("No recipients selected.")
 
             elif choice == '10' and selected_recipients:
                 # Continue to compose email
@@ -461,4 +463,4 @@ class _ComposeMixin:
                     return None
 
             else:
-                logger.info("Invalid choice.")
+                _out("Invalid choice.")

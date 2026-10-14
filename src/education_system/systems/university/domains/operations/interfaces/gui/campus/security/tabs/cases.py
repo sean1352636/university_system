@@ -1,4 +1,7 @@
 """Cases management tab mixin."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
@@ -172,7 +175,7 @@ class CasesMixin:
                         location=case.get('location'),
                     )
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
             # Send email to assigned officer
             if case.get('officer'):

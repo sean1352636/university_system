@@ -74,7 +74,7 @@ from education_system.systems.university.infrastructure.ai.ai_detector.integrati
 from education_system.systems.university.infrastructure.ai.ai_detector.detector import AIDetector
 
 # CLI functions
-from education_system.systems.university.interfaces.cli.shell.ai.ai_detector import (
+from education_system.systems.university.shell.cli.ai.ai_detector import (
     integrate_ai_detector_with_main,
     create_minimal_ai_detector,
     display_ai_detector_menu_from_main,

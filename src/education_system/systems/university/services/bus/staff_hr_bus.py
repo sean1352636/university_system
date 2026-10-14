@@ -224,6 +224,7 @@ def update_instructor(instructor_id: int, **fields: Any) -> bool:
     ]
     try:
         with get_connection() as conn:
+            # db-audit: ignore[DBW001] - filtered against a literal allow-list
             conn.execute(
                 f"UPDATE instructors SET {set_clause}, updated_at = ? "
                 f"WHERE id = ?",

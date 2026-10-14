@@ -50,16 +50,20 @@ class ProductivityService:
             return
         ph = ",".join("?" * len(mine))
         try:
+            # db-audit: ignore[DBW001] - join of placeholders
             sessions = self.ctx.db.cur.execute(
                 f"""SELECT COUNT(DISTINCT date) FROM attendance
                     WHERE module_code IN ({ph})""", mine).fetchone()[0]
+            # db-audit: ignore[DBW001] - join of placeholders
             rolls = self.ctx.db.cur.execute(
                 f"""SELECT COUNT(*) FROM attendance
                     WHERE module_code IN ({ph})""", mine).fetchone()[0]
+            # db-audit: ignore[DBW001] - join of placeholders
             pending = self.ctx.db.cur.execute(
                 f"""SELECT COUNT(*) FROM absence_requests
                     WHERE module_code IN ({ph}) AND status='pending'""",
                 mine).fetchone()[0]
+            # db-audit: ignore[DBW001] - join of placeholders
             decided = self.ctx.db.cur.execute(
                 f"""SELECT AVG(julianday('now') - julianday(submitted_at))
                     FROM absence_requests

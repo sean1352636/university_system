@@ -25,6 +25,14 @@ from tkinter import messagebox, simpledialog, ttk
 
 from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
+# The split modules under election_gui_parts/ pick their globals up from this
+# module wholesale, and they were written against the pre-consolidation name.
+# The paths consolidation renamed it to UNIVERSITY_DEFAULT_DB_PATH and updated
+# the import here but not the consumer, so election_gui_parts/database.py died
+# with "NameError: name 'DEFAULT_DB_PATH' is not defined" the moment the
+# elections hub was opened. Keep the alias — do not delete it.
+DEFAULT_DB_PATH = UNIVERSITY_DEFAULT_DB_PATH
+
 PRIMARY = "#1e3a8a"
 
 ACCENT = "#3b82f6"

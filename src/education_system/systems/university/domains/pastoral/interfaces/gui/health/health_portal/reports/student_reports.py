@@ -50,7 +50,7 @@ class StudentReportsMixin:
     def generate_selected_report(self):
         """Generate the selected type of health report"""
         is_admin = self.auth.current_user and self.auth.current_user.get('role') == 'admin'
-        has_permission = self.auth.check_permission('view_health_records')
+        has_permission = self.auth.check_permission('view_any_health_record')
 
         if not (is_admin or has_permission):
             messagebox.showerror(_t('gui.pastoral.health.health_portal.reports.student_reports.dialogs.access_denied', default="Access Denied"), _t('gui.pastoral.health.health_portal.reports.student_reports.dialogs.you_don_t_have_permission_to_generate_health_reports', default="You don't have permission to generate health reports."))

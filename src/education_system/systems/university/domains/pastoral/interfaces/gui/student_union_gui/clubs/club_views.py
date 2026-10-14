@@ -91,7 +91,7 @@ def _render_clubs_tab(self, parent_frame):
               command=self.refresh_clubs_list).pack(side=tk.LEFT, padx=2)
     ttk.Button(club_buttons_frame, text=_t("student_union.clubs.join_club"),
               command=self.join_selected_club).pack(side=tk.LEFT, padx=2)
-    ttk.Button(club_buttons_frame, text=_t("student_union.clubs.create_club"),
+    ttk.Button(club_buttons_frame, text=_t("student_union.clubs.create_club", default="Create Club"),
               command=self.create_club_dialog).pack(side=tk.LEFT, padx=2)
     # Right panel - Club details
     right_panel = ttk.Frame(clubs_paned)
@@ -108,7 +108,7 @@ def show_clubs_tab(self):
     """Legacy method for backwards compatibility - creates tab in notebook if exists"""
     if hasattr(self, 'notebook') and self.notebook:
         clubs_frame = ttk.Frame(self.notebook)
-        self.notebook.add(clubs_frame, text=_t("student_union.clubs.tab_title"))
+        self.notebook.add(clubs_frame, text=_t("student_union.clubs.tab_title", default="===== TAB ====="))
         self._render_clubs_tab(clubs_frame)
     else:
         # Fall back to content display
@@ -137,10 +137,10 @@ def refresh_clubs_list(self):
             self.clubs_listbox.insert(tk.END, display_text)
 
         conn.close()
-        self.update_status(_t("student_union.clubs.loaded_clubs", count=len(clubs)))
+        self.update_status(_t("student_union.clubs.loaded_clubs", count=len(clubs), default="Loaded Clubs {count}"))
 
     except sqlite3.Error as e:
-        messagebox.showerror(_t("common.database_error"), _t("student_union.clubs.load_failed", error=str(e)))
+        messagebox.showerror(_t("common.database_error"), _t("student_union.clubs.load_failed", error=str(e), default="Load Failed {error}"))
 
 
 def on_club_select(self, event):
@@ -187,38 +187,38 @@ def on_club_select(self, event):
         conn.close()
 
     except sqlite3.Error as e:
-        messagebox.showerror(_t("common.database_error"), _t("student_union.clubs.load_details_failed", error=str(e)))
+        messagebox.showerror(_t("common.database_error"), _t("student_union.clubs.load_details_failed", error=str(e), default="Load Details Failed {error}"))
 
 
 def create_clubs_tab(self):
     """Create clubs management tab"""
     clubs_frame = ttk.Frame(self.notebook)
-    self.notebook.add(clubs_frame, text=_t("student_union.clubs.clubs_societies"))
+    self.notebook.add(clubs_frame, text=_t("student_union.clubs.clubs_societies", default="Clubs Societies"))
     # Left panel - Actions
-    left_panel = ttk.LabelFrame(clubs_frame, text=_t("student_union.clubs.club_actions"))
+    left_panel = ttk.LabelFrame(clubs_frame, text=_t("student_union.clubs.club_actions", default="Club Actions"))
     left_panel.pack(side='left', fill='y', padx=5, pady=5, ipadx=5, ipady=5)
     # Buttons
-    ttk.Button(left_panel, text=_t("student_union.clubs.view_all_clubs"),
+    ttk.Button(left_panel, text=_t("student_union.clubs.view_all_clubs", default="View All Clubs"),
               command=self.view_clubs).pack(fill='x', pady=2)
     ttk.Button(left_panel, text=_t("student_union.clubs.my_clubs"),
               command=self.view_my_clubs).pack(fill='x', pady=2)
     ttk.Button(left_panel, text=_t("student_union.clubs.join_club"),
               command=self.join_club_gui).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text=_t("student_union.clubs.create_club"),
+    ttk.Button(left_panel, text=_t("student_union.clubs.create_club", default="Create Club"),
               command=self.create_club_gui).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text=_t("student_union.clubs.manage_club"),
+    ttk.Button(left_panel, text=_t("student_union.clubs.manage_club", default="Manage Club"),
               command=self.manage_club_gui).pack(fill='x', pady=2)
     ttk.Separator(left_panel, orient='horizontal').pack(fill='x', pady=10)
-    ttk.Button(left_panel, text=_t("student_union.clubs.club_directory"),
+    ttk.Button(left_panel, text=_t("student_union.clubs.club_directory", default="Club Directory"),
               command=self.club_member_directory).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text=_t("student_union.clubs.club_discussions"),
+    ttk.Button(left_panel, text=_t("student_union.clubs.club_discussions", default="Club Discussions"),
               command=self.manage_club_discussions).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text=_t("student_union.clubs.club_media"),
+    ttk.Button(left_panel, text=_t("student_union.clubs.club_media", default="Club Media"),
               command=self.manage_club_media).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text=_t("student_union.clubs.book_clubs"),
+    ttk.Button(left_panel, text=_t("student_union.clubs.book_clubs", default="Book Clubs"),
               command=self.manage_book_clubs).pack(fill='x', pady=2)
     # Right panel - Display area
-    right_panel = ttk.LabelFrame(clubs_frame, text=_t("student_union.clubs.club_information"))
+    right_panel = ttk.LabelFrame(clubs_frame, text=_t("student_union.clubs.club_information", default="Club Information"))
     right_panel.pack(side='right', fill='both', expand=True, padx=5, pady=5)
     # Scrollable text area for displaying results
     self.clubs_text = scrolledtext.ScrolledText(right_panel, wrap=tk.WORD,
@@ -228,22 +228,22 @@ def create_clubs_tab(self):
 
 def view_clubs(self):
     """GUI wrapper for viewing clubs"""
-    self.update_status(_t("student_union.clubs.loading_clubs"))
+    self.update_status(_t("student_union.clubs.loading_clubs", default="Loading Clubs"))
 
     def callback(output, result):
         self.display_result(self.clubs_text, output)
-        self.update_status(_t("student_union.clubs.clubs_loaded"))
+        self.update_status(_t("student_union.clubs.clubs_loaded", default="Clubs Loaded"))
 
     self.run_in_thread(student_union_cli.view_clubs, callback)
 
 
 def view_my_clubs(self):
     """GUI wrapper for viewing my clubs"""
-    self.update_status(_t("student_union.clubs.loading_my_clubs"))
+    self.update_status(_t("student_union.clubs.loading_my_clubs", default="Loading My Clubs"))
 
     def callback(output, result):
         self.display_result(self.clubs_text, output)
-        self.update_status(_t("student_union.clubs.my_clubs_loaded"))
+        self.update_status(_t("student_union.clubs.my_clubs_loaded", default="My Clubs Loaded"))
 
     self.run_in_thread(student_union_cli.view_my_clubs, callback)
 

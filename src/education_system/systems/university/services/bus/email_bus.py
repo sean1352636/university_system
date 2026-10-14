@@ -147,7 +147,7 @@ def get_prefs(user_id: str | int) -> dict[str, bool]:
             ).fetchall():
                 out[r["event_kind"]] = bool(r["enabled"])
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return out
 
 
@@ -269,7 +269,7 @@ def _resolve_recipient_email(user_id: str | int) -> str | None:
                 if row and row[0]:
                     return row[0]
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return None
 
 
@@ -356,7 +356,7 @@ def send_templated(user_id: str | int, event_kind: str,
                 event_kind=event_kind, msg_id=msg_id,
             )
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     try:
         from education_system.systems.university.infrastructure.event_bus import (
@@ -367,7 +367,7 @@ def send_templated(user_id: str | int, event_kind: str,
                 event_kind=event_kind, recipient=recipient,
                 delivered=delivered, related_to=related_to)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return msg_id
 
 
@@ -428,7 +428,7 @@ def register_subscribers() -> None:
         try:
             subscribe(evt, _make_handler(evt))
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
     _subscribed = True
 
 

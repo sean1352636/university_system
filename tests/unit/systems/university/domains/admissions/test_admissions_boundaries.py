@@ -33,10 +33,17 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = {
         "domain/services/admissions_lifecycle.py",
         "education_system.systems.university.domains.learners.domain.student_lifecycle",
     ),
-    # Sixth-form intake reads Pastoral health records directly. Medical data is
-    # meant to stay private to Pastoral and be reached through a port.
+    # Applicant conversion reads Pastoral health records directly, to carry a
+    # sixth-form medical record onto the new student. Medical data is meant to
+    # stay private to Pastoral and be reached through a port.
+    #
+    # This sat on domain/sixthform_intake.py until the helper there was found
+    # to be unreachable — the import needs a university student id and the
+    # intake only ever creates an applicant, so it had never once run. The
+    # reach moved to the conversion step, where a student id exists; the
+    # target design is unchanged.
     (
-        "domain/sixthform_intake.py",
+        "domain/services/admissions_lifecycle.py",
         "education_system.systems.university.domains.pastoral.domain.health.records",
     ),
 }

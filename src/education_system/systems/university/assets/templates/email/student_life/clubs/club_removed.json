@@ -1,0 +1,10 @@
+{
+    "subject": "📕 $club_name is closing",
+    "body": "Dear $student_name,\n\nWe are writing to let you know that $club_name is being closed and removed from the Students' Union club list. You are receiving this because you were a member.\n\n=== THE CLUB ===\nClub: $club_name\nCategory: $category\nClosed On: $closed_date\nClosed By: $closed_by\n\n=== WHY ===\n$reason\n\n=== WHAT THIS MEANS FOR YOU ===\n- Your membership has ended. You do not need to do anything.\n- The club will no longer appear when you view your memberships.\n- Any club events still in the calendar will not go ahead.\n- If you paid a membership fee for the current year, contact the Students' Union about a refund.\n\n=== IF YOU WANT TO KEEP IT GOING ===\nClubs usually close because nobody is available to run them. If you would be willing to take it on, get in touch — restarting an existing club is normally easier than founding a new one.\n\n=== FINDING SOMETHING ELSE ===\nThere are plenty of other clubs and societies looking for members. Browse them under Club Management → View Available Clubs, or come and talk to us about starting your own.\n\n=== CONTACT ===\nStudents' Union: studentunion@university.edu\nPhone: (555) 123-4567\nOffice Hours: Monday-Friday, 9:00 AM - 5:00 PM\n\nThank you for having been part of it.\n\nBest regards,\nThe Students' Union\n\n$signature",
+    "variables": {
+        "category": {"default": "Not specified"},
+        "reason": {"default": "No reason was recorded."},
+        "closed_by": {"default": "the Students' Union"},
+        "student_name": {"default": "Student"}
+    }
+}

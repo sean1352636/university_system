@@ -1,4 +1,5 @@
 """Student credit management GUI"""
+from education_system.systems.university.shell.gui import report_view as _rv
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -101,7 +102,7 @@ class StudentCreditsMixin:
         ttk.Button(input_frame, text=_("finance_gui.transaction_manager.btn_view_history"), command=show_history).pack(side='left', padx=10)
 
         # History display
-        history_text = ScrolledText(dialog, height=20, width=80, font=('Courier', 10))
+        history_text = _rv.TextReportView(dialog, height=20, width=80, font=('Courier', 10))
         history_text.pack(fill='both', expand=True, padx=10, pady=10)
 
 
@@ -145,7 +146,7 @@ class StudentCreditsMixin:
         ttk.Button(input_frame, text=_("finance_gui.transaction_manager.btn_view_credits"), command=show_credits).pack(side='left', padx=10)
 
         # Credits display
-        credits_text = ScrolledText(dialog, height=20, width=70, font=('Courier', 10))
+        credits_text = _rv.TextReportView(dialog, height=20, width=70, font=('Courier', 10))
         credits_text.pack(fill='both', expand=True, padx=10, pady=10)
 
 

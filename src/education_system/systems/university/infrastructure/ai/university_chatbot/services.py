@@ -68,10 +68,10 @@ class CourseRecommendationEngine:
                     SELECT
                         module_code,
                         COUNT(*) as enrollments,
-                        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completions,
+                        SUM(CASE WHEN LOWER(status) = 'completed' THEN 1 ELSE 0 END) as completions,
                         AVG(CASE WHEN grade IS NOT NULL THEN grade ELSE 0 END) as avg_grade
                     FROM student_modules
-                    WHERE status IN ('completed', 'enrolled', 'failed')
+                    WHERE LOWER(status) IN ('completed', 'enrolled', 'failed')
                     GROUP BY module_code
                 """)
 
@@ -95,7 +95,7 @@ class CourseRecommendationEngine:
                     SELECT
                         m.module_code,
                         m.prerequisites,
-                        COUNT(CASE WHEN sm.status = 'completed' THEN 1 END) as successful_students
+                        COUNT(CASE WHEN LOWER(sm.status) = 'completed' THEN 1 END) as successful_students
                     FROM modules m
                     LEFT JOIN student_modules sm ON m.module_code = sm.module_code
                     WHERE m.prerequisites IS NOT NULL AND m.prerequisites != ''
@@ -119,7 +119,7 @@ class CourseRecommendationEngine:
                         AVG(s.cumulative_gpa) as avg_student_gpa
                     FROM students s
                     JOIN student_modules sm ON s.student_id = sm.student_id
-                    WHERE sm.status = 'completed'
+                    WHERE LOWER(sm.status) = 'completed'
                     GROUP BY s.course, sm.module_code
                 """)
 

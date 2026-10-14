@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
 from education_system.systems.university.infrastructure.email import send_alumni_welcome_email
@@ -292,7 +296,7 @@ def register_alumni():
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
 
 def view_alumni():
@@ -487,7 +491,7 @@ def view_alumni():
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
 
 def view_alumni_details(alumni_id, cursor):

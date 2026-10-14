@@ -2,11 +2,14 @@
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
-from tkinter import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import messagebox
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.utils import ensure_column_exists
 from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.analytics_manager.constants import get_connection
+from education_system.systems.university.infrastructure.database.schemas.modules_table import ensure_modules_table
+from education_system.systems.university.infrastructure.database.schemas.modules_table import ensure_student_modules_table
+from education_system.systems.university.infrastructure.database.schemas.students_table import ensure_students_table
 
 
 def init_basic_database():
@@ -16,48 +19,13 @@ def init_basic_database():
         cursor = conn.cursor()
 
         # Create students table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS students (
-        student_id TEXT PRIMARY KEY,
-        first_name TEXT NOT NULL,
-        middle_name TEXT,
-        last_name TEXT NOT NULL,
-        course TEXT NOT NULL,
-        email_address TEXT,
-        gender TEXT,
-        dob TEXT,
-        enrollment_date TEXT DEFAULT (date('now')),
-        status TEXT DEFAULT 'Active'
-        )
-        ''')
+        ensure_students_table(cursor)
 
         # Create modules table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS modules (
-        module_code TEXT PRIMARY KEY,
-        module_name TEXT NOT NULL,
-        module_type TEXT,
-        credits INTEGER DEFAULT 1,
-        description TEXT,
-        course TEXT,
-        semester TEXT,
-        year INTEGER
-        )
-        ''')
+        ensure_modules_table(cursor)
 
         # Create student_modules table (enrollment)
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS student_modules (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        student_id TEXT,
-        module_code TEXT,
-        enrollment_date TEXT DEFAULT (date('now')),
-        status TEXT DEFAULT 'Enrolled',
-        FOREIGN KEY (student_id) REFERENCES students (student_id),
-        FOREIGN KEY (module_code) REFERENCES modules (module_code),
-        UNIQUE(student_id, module_code)
-        )
-        ''')
+        ensure_student_modules_table(cursor)
 
         # Create assessments table
         cursor.execute('''

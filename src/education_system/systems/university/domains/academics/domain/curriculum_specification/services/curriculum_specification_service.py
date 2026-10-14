@@ -170,6 +170,7 @@ class CurriculumSpecificationService:
         values = [kwargs.get(c) for c in cols]
         placeholders = ", ".join("?" for _ in cols)
         with transaction() as conn:
+            # db-audit: ignore[DBW001] - join over a code-controlled list; literal collection
             cursor = conn.execute(
                 f"INSERT INTO curr_programmes ({', '.join(cols)}) VALUES ({placeholders})",
                 values,
@@ -207,6 +208,7 @@ class CurriculumSpecificationService:
         from education_system.platform.kernel.database.sql_safety import validate_identifier  # nosec B608
         sets = ", ".join(f"{validate_identifier(k)} = ?" for k in kwargs)
         with transaction() as conn:
+            # db-audit: ignore[DBW001] - f-string of literal parts
             conn.execute(
                 f"UPDATE curr_programmes SET {sets} WHERE id = ?",
                 (*kwargs.values(), programme_id),
@@ -252,6 +254,7 @@ class CurriculumSpecificationService:
         values = [kwargs.get(c) for c in cols]
         placeholders = ", ".join("?" for _ in cols)
         with transaction() as conn:
+            # db-audit: ignore[DBW001] - join over a code-controlled list; literal collection
             cursor = conn.execute(
                 f"INSERT INTO curr_module_descriptors ({', '.join(cols)}) VALUES ({placeholders})",
                 values,
@@ -285,6 +288,7 @@ class CurriculumSpecificationService:
         from education_system.platform.kernel.database.sql_safety import validate_identifier  # nosec B608
         sets = ", ".join(f"{validate_identifier(k)} = ?" for k in kwargs)
         with transaction() as conn:
+            # db-audit: ignore[DBW001] - f-string of literal parts
             conn.execute(
                 f"UPDATE curr_module_descriptors SET {sets} WHERE id = ?",
                 (*kwargs.values(), descriptor_id),

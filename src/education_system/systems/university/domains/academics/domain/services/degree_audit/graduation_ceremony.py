@@ -206,6 +206,7 @@ class CeremonyManager:
             return False
         params.append(ceremony_id)
         with transaction() as conn:
+            # db-audit: ignore[DBW001] - join over a code-controlled list
             cur = conn.execute(
                 f"UPDATE graduation_ceremonies SET {', '.join(sets)} WHERE ceremony_id = ?",
                 params,

@@ -1,9 +1,11 @@
-"""Extracted function implementation."""
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.interfaces.gui.nailbar.nailbar_gui_parts.launch_nailbar_gui`` (campus commerce plugin).
 
-from .. import nailbar_gui_shared as _shared
-globals().update({name: value for name, value in _shared.__dict__.items() if not name.startswith("__")})
+The old name *is* the new module object, so ``mock.patch`` and
+``monkeypatch`` targets still act on the real code. Delete once nothing
+imports the old path.
+"""
+# layout-shim: education_system.systems.university.plugins.campus_commerce.interfaces.gui.nailbar.nailbar_gui_parts.launch_nailbar_gui
+import importlib as _importlib
+import sys as _sys
 
-
-def launch_nailbar_gui(parent=None, auth=None):
-    """Launch the Nail Bar GUI"""
-    return NailBarGUI(parent, auth)
+_sys.modules[__name__] = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.interfaces.gui.nailbar.nailbar_gui_parts.launch_nailbar_gui")

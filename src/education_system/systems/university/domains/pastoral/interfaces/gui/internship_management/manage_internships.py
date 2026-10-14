@@ -233,7 +233,13 @@ class ManageInternshipsMixin:
             conn.close()
 
             # Send announcement email to all students
-            self.send_new_internship_announcement(internship_id)
+            self.send_new_internship_announcement(
+                internship_id,
+                self.title_entry.get().strip(),
+                self.company_entry.get().strip(),
+                description,
+                requirements,
+            )
 
             messagebox.showinfo(_t('gui.pastoral.internship_management.manage_internships.dialogs.success', default="Success"), f"Internship created successfully! ID: {internship_id}")
             self.show_internships()

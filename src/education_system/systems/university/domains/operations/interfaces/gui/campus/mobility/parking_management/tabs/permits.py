@@ -181,7 +181,7 @@ class PermitsMixin:
 
         # Insert permit
         cursor.execute('''
-        INSERT INTO parking_permits VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO parking_permits (permit_id, user_id, full_name, email, zone, permit_type, start_date, end_date, active_status, vehicle_id, issue_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             permit_id,
             data.get('user_id'),

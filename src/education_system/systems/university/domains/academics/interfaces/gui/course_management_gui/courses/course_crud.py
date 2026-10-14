@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 # gui_course_management.py
 import tkinter as tk
@@ -36,7 +40,7 @@ def _patched_sqlite_connect(database, *args, **kwargs):
         if not database or db_name in (str(DEFAULT_DB_PATH), "courses.db"):
             return _original_sqlite_connect(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return _original_sqlite_connect(database, *args, **kwargs)
 
 sqlite3.connect = _patched_sqlite_connect
@@ -48,23 +52,12 @@ from typing import List, Dict, Optional, Tuple
 import threading
 import logging
 
-# Import chart generation utility
-try:
-    import matplotlib
-    matplotlib.use('TkAgg')
-    import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-    from matplotlib.figure import Figure
-    import seaborn as sns
-    import numpy as np
-    CHARTS_AVAILABLE = True
-except ImportError:
-    CHARTS_AVAILABLE = False
-    plt = None
-    Figure = None
-    FigureCanvasTkAgg = None
-    sns = None
-    np = None
+# Chart generation utilities — deferred, see _lazy_charts. Importing seaborn
+# here pulled matplotlib, pandas and scipy (~4.7s) into every Course Management
+# open, for charts only the analytics dialogs draw.
+from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui._lazy_charts import (
+    CHARTS_AVAILABLE, plt, Figure, FigureCanvasTkAgg, sns, np,
+)
 
 # Import email service
 try:
@@ -151,22 +144,34 @@ def delete_selected_course(self):
     # Enhanced delete confirmation with impact analysis
     if self.confirm_course_deletion(course_id, course_code, course_name):
         try:
+            # Reassignment stays here: it is this screen's own behaviour and
+            # the service deliberately does not move students between courses.
+            # It must run BEFORE the delete, while the course still exists.
             with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
-                cursor = conn.cursor()
-
-                # Handle student reassignment before deleting course
-                self.reassign_students_from_deleted_course(cursor, course_code)
-
-                # Delete related records first
-                cursor.execute("DELETE FROM course_prerequisites WHERE course_id = ? OR prerequisite_course_id = ?", (course_id, course_id))
-                cursor.execute("DELETE FROM course_schedule WHERE course_id = ?", (course_id,))
-                cursor.execute("DELETE FROM course_waitlist WHERE course_id = ?", (course_id,))
-                cursor.execute("DELETE FROM course_history WHERE course_id = ?", (course_id,))
-
-                # Delete the course
-                cursor.execute("DELETE FROM courses WHERE id = ?", (course_id,))
-
+                self.reassign_students_from_deleted_course(conn.cursor(), course_code)
                 conn.commit()
+
+            # The cascade itself is the service's, shared with the CLI and the
+            # API. confirm_course_deletion() already showed the impact and got
+            # an explicit confirmation, which is what acknowledged_impact
+            # records here.
+            from education_system.systems.university.application.course_lifecycle_service import (
+                CourseLifecycleService,
+                CourseValidationError,
+            )
+            actor = str((getattr(self.auth, 'current_user', {}) or {}).get('id', 'unknown'))
+            try:
+                CourseLifecycleService().delete(
+                    course_id, actor_id=actor,
+                    reason="Deleted in Course Management",
+                    acknowledged_impact=True,
+                )
+            except CourseValidationError as exc:
+                messagebox.showerror(
+                    _("common.error"),
+                    "\n".join(f"{field}: {message}"
+                               for field, message in exc.errors.items()))
+                return
 
             self.refresh_course_list()
             self.update_status(_("course_management.status.course_deleted").format(course=course_code))
@@ -195,7 +200,7 @@ def reassign_students_from_deleted_course(self, cursor, course_code):
         # Get available alternative courses (excluding the one being deleted)
         cursor.execute('''
             SELECT course_code FROM courses
-            WHERE (status = 'Active' OR status = 'active') AND course_code != ?
+            WHERE LOWER(COALESCE(status, 'active')) = 'active' AND course_code != ?
             AND course_code IS NOT NULL AND course_code != ''
             AND max_enrollment > current_enrollment
         ''')
@@ -492,61 +497,71 @@ class CourseCreateDialog:
             lab_required = self.lab_required.get()
             online_available = self.online_available.get()
 
-            import uuid
-            conn = None
+            # Canonical write. The catalogue rules — unique code, both the
+            # legacy and modern column families, the change event — live in
+            # the application service so this dialog, the CLI and the API
+            # cannot drift apart. The service also owns the code-format rule.
+            from education_system.systems.university.application.course_lifecycle_service import (
+                CourseCommand,
+                CourseLifecycleService,
+                CourseValidationError,
+            )
+            actor = str((getattr(self.auth, 'current_user', {}) or {}).get('id', 'unknown'))
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0)
-                cursor = conn.cursor()
-
-                # Check for duplicate code
-                cursor.execute(
-                    "SELECT COALESCE(course_code, code) FROM courses WHERE UPPER(COALESCE(course_code, code)) = ?",
-                    (course_code,)
+                result = CourseLifecycleService().create(
+                    CourseCommand(
+                        course_code=course_code, course_name=course_name,
+                        credit_hours=int(credit_hours), description=description,
+                        level=level, department=department,
+                        max_enrollment=max_enrollment, course_type=course_type,
+                        course_fee=course_fee,
+                        lab_required=bool(lab_required),
+                        online_available=bool(online_available),
+                    ),
+                    actor_id=actor,
                 )
-                if cursor.fetchone():
-                    messagebox.showerror(_("common.duplicate_error"), f"Course code '{course_code}' already exists.")
-                    return
+            except CourseValidationError as exc:
+                messagebox.showerror(
+                    _("common.validation_error"),
+                    "\n".join(f"{field}: {message}"
+                               for field, message in exc.errors.items()))
+                return
 
-                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                course_id = str(uuid.uuid4())
-
-                cursor.execute('''
-                INSERT INTO courses (
-                    id, code, name, credits, date_added,
-                    course_code, course_name, description, level, department,
-                    credit_hours, max_enrollment, course_type, course_fee,
-                    lab_required, online_available, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (course_id, course_code, course_name, int(credit_hours), timestamp,
-                      course_code, course_name, description, level, department,
-                      credit_hours, max_enrollment, course_type, course_fee,
-                      lab_required, online_available, timestamp, timestamp))
-
-                conn.commit()
-
-                # Notify open sibling GUIs that a course changed.
-                try:
-                    from education_system.systems.university.infrastructure.event_bus import (
-                        publish, EVENT_COURSE_CHANGED,
-                    )
-                    publish(EVENT_COURSE_CHANGED,
-                            course_code=course_code, action="create")
-                except Exception:
-                    pass
-
-                messagebox.showinfo(_("common.success"), f"Course '{course_code} - {course_name}' created successfully.")
-                self.result = f"{course_code} - {course_name}"
-                self.dialog.destroy()
-
-            finally:
-                if conn:
-                    conn.close()
+            messagebox.showinfo(
+                _("common.success"),
+                f"Course '{result.course_code} - {course_name}' created successfully.")
+            self.result = f"{result.course_code} - {course_name}"
+            self.dialog.destroy()
 
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to create course: {e}")
 
 
 class CourseEditDialog:
+    def _snapshot_version(self, conn, cursor):
+        """Record the current catalogue entry as a version before editing it.
+
+        Best-effort: a versioning failure must never lose the user's edit.
+        """
+        try:
+            from education_system.systems.university.services.bus.course_versions import (
+                snapshot_course,
+            )
+            cursor.execute(
+                "SELECT COALESCE(NULLIF(TRIM(course_code), ''), code) FROM courses "
+                "WHERE id = ?", (self.course_id,))
+            row = cursor.fetchone()
+            if not row or not row[0]:
+                return
+            user = (getattr(self.auth, 'current_user', None) or {})
+            snapshot_course(
+                row[0], change_reason="Edited in Course Management",
+                created_by=user.get('username'), conn=conn,
+            )
+        except Exception:
+            logging.getLogger(__name__).warning(
+                "could not record a course catalogue version", exc_info=True)
+
     def __init__(self, parent, auth, course_id):
         self.parent = parent
         self.auth = auth
@@ -600,7 +615,11 @@ class CourseEditDialog:
 
         ttk.Label(basic_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.course_code', default="Course Code:")).grid(row=0, column=0, sticky=tk.W)
         self.code_var = tk.StringVar(value=str(self._get("course_code", "code")))
-        ttk.Entry(basic_frame, textvariable=self.code_var, width=15).grid(row=0, column=1, sticky=tk.W, padx=5)
+        # Read-only: students.course references the code by value, so a
+        # rename here would orphan every enrolment on this course. Changing
+        # a code needs a migration, not an edit box.
+        ttk.Entry(basic_frame, textvariable=self.code_var, width=15,
+                  state='readonly').grid(row=0, column=1, sticky=tk.W, padx=5)
 
         ttk.Label(basic_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.course_name', default="Course Name:")).grid(row=1, column=0, sticky=tk.W)
         self.name_var = tk.StringVar(value=str(self._get("course_name", "name")))
@@ -712,36 +731,42 @@ class CourseEditDialog:
             finally:
                 conn.close()
 
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0)
+            # Canonical write. The service versions the outgoing entry,
+            # mirrors course_name/credit_hours onto the legacy name/credits
+            # columns and publishes course.changed — all of which this dialog
+            # used to do by hand, and the CLI did slightly differently.
+            #
+            # course_code is NOT sent: students.course stores the code by
+            # value, so renaming one here would orphan every enrolment on it.
+            # The field is shown read-only for that reason.
+            from education_system.systems.university.application.course_lifecycle_service import (
+                CourseLifecycleService,
+                CourseValidationError,
+            )
+            actor = str((getattr(self.auth, 'current_user', {}) or {}).get('id', 'unknown'))
+            changes = {
+                "course_name": course_name,
+                "description": description,
+                "department": self.dept_var.get().strip(),
+                "level": self.level_var.get().strip(),
+                "credit_hours": credit_hours,
+                "max_enrollment": max_enrollment,
+                "course_type": self.type_var.get(),
+                "course_fee": course_fee,
+                "lab_required": int(self.lab_required.get()),
+                "online_available": int(self.online_available.get()),
+            }
             try:
-                conn.execute("PRAGMA journal_mode=WAL")
-                cursor = conn.cursor()
-                # Build UPDATE dynamically — only touch columns that exist on this DB.
-                fields = {
-                    "course_code": course_code,
-                    "course_name": course_name,
-                    "description": description,
-                    "department": self.dept_var.get().strip(),
-                    "level": self.level_var.get().strip(),
-                    "credit_hours": credit_hours,
-                    "max_enrollment": max_enrollment,
-                    "course_type": self.type_var.get(),
-                    "course_fee": course_fee,
-                    "lab_required": int(self.lab_required.get()),
-                    "online_available": int(self.online_available.get()),
-                    "updated_at": timestamp,
-                }
-                set_cols = [c for c in fields if c in self._course_columns]
-                if not set_cols:
-                    messagebox.showerror(_("common.error"), _t('gui.academics.course_management_gui.courses.course_crud.dialogs.no_editable_columns_found_on_courses_table', default="No editable columns found on courses table."))
-                    return
-                set_sql = ", ".join(f"{c} = ?" for c in set_cols)
-                values = [fields[c] for c in set_cols] + [self.course_id]
-                cursor.execute(f"UPDATE courses SET {set_sql} WHERE id = ?", values)
-                conn.commit()
-            finally:
-                conn.close()
+                CourseLifecycleService().update(
+                    self.course_id, changes, actor_id=actor,
+                    reason="Edited in Course Management",
+                )
+            except CourseValidationError as exc:
+                messagebox.showerror(
+                    _("common.validation_error"),
+                    "\n".join(f"{field}: {message}"
+                               for field, message in exc.errors.items()))
+                return
 
             self.result = True
             self.dialog.destroy()

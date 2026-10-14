@@ -1,4 +1,7 @@
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 import csv
 import json
@@ -52,7 +55,7 @@ def import_templates_from_path(auth, source_path: str | None = None):
     try:
         ensure_templates_schema()
     except Exception as e:
-        print(get_text("health.templates.import_aborted_schema", error=e))
+        print(get_text("health.templates.import_aborted_schema", error=e, default="Import Aborted Schema: {error}"))
         return
 
     # Ask for a path if none provided
@@ -62,7 +65,7 @@ def import_templates_from_path(auth, source_path: str | None = None):
         except Exception:
             source_path = ""
     if not source_path:
-        print(get_text("health.templates.import_cancelled"))
+        print(get_text("health.templates.import_cancelled", default="Import cancelled."))
         return
 
     ext = os.path.splitext(source_path)[1].lower()
@@ -87,14 +90,14 @@ def import_templates_from_path(auth, source_path: str | None = None):
                 for row in reader:
                     records.append(_normalize_template_dict(row))
         else:
-            print(get_text("health.templates.unsupported_file_type", ext=ext))
+            print(get_text("health.templates.unsupported_file_type", ext=ext, default="Unsupported File Type: {ext}"))
             return
     except Exception as e:
-        print(get_text("health.templates.failed_to_read", path=source_path, error=e))
+        print(get_text("health.templates.failed_to_read", path=source_path, error=e, default="Failed To Read: {error} {path}"))
         return
 
     if not records:
-        print(get_text("health.templates.no_templates_to_import"))
+        print(get_text("health.templates.no_templates_to_import", default="No Templates To Import."))
         return
 
     # Upsert into DB
@@ -172,31 +175,31 @@ def import_templates_from_path(auth, source_path: str | None = None):
                         updated += c.rowcount
                 except Exception as ie:
                     skipped += 1
-                    print(get_text("health.templates.skipping_template", name=r.get('name'), error=ie))
+                    print(get_text("health.templates.skipping_template", name=r.get('name'), error=ie, default="Skipping Template: {error} {name}"))
             conn.commit()
 
         # If we used the UPSERT path, we can't distinguish insert/update per rowcount reliably.
         if updated == 0 and skipped == 0 and inserted > 0:
-            print(get_text("health.templates.imported_processed", count=inserted))
+            print(get_text("health.templates.imported_processed", count=inserted, default="Imported Processed: {count}"))
         else:
-            print(get_text("health.templates.imported_summary", inserted=inserted, updated=updated, skipped=skipped))
+            print(get_text("health.templates.imported_summary", inserted=inserted, updated=updated, skipped=skipped, default="Imported Summary: {inserted} {skipped} {updated}"))
     except Exception as e:
         try:
             conn.rollback()
         except Exception:
-            pass
-        print(get_text("health.templates.import_failed", error=e))
+            logger.debug("Suppressed exception", exc_info=True)
+        print(get_text("health.templates.import_failed", error=e, default="Import Failed: {error}"))
     finally:
         try:
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
 def import_templates(auth):
     """Import templates from CSV: columns name,category,body."""
     path = input("Path to CSV/JSON: ").strip()
     if not path or not os.path.exists(path):
-        print(get_text("health.templates.file_not_found"))
+        print(get_text("health.templates.file_not_found", default="File not found."))
         return
     import_templates_from_path(auth, path)
 
@@ -206,7 +209,7 @@ def shared_templates(auth):
     try:
         c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='templates'")
         if not c.fetchone():
-            print(get_text("health.templates.no_templates_table")); return
+            print(get_text("health.templates.no_templates_table", default="No Templates Table.")); return
         # Check for 'shared' column
         c.execute("PRAGMA table_info(templates)")
         cols = [r[1] for r in c.fetchall()]

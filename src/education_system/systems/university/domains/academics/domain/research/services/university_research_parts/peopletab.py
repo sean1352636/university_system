@@ -5,74 +5,115 @@ globals().update({name: value for name, value in _shared.__dict__.items() if not
 
 
 class PeopleTab(TableModule):
-    title = "People Directory"
-    subtitle = "Staff, students and external examiners."
-    table_name = "people"
+    """Read-only directory over the university's own registers.
 
-    ROLES = ["staff", "student", "examiner", "external"]
+    Staff come from ``staff`` (+ ``staff_profiles`` for department),
+    research-degree students from ``students``, and external examiners from
+    ``external_examiners``. The portal no longer keeps a people table of its
+    own, so rows are addressed by a composite key such as ``"staff:12"``.
+
+    Deliberately not editable here: creating a member of staff means
+    creating a login, which belongs to Staff HR. The New/Edit/Delete buttons
+    are removed rather than left to fail on click.
+    """
+
+    title = "People Directory"
+    subtitle = "Staff, students and external examiners — read from the university registers."
+    table_name = ""      # a union of three tables; TableModule must not guess
+    pk = "key"
 
     def get_columns(self):
         cols = ("name", "role", "department", "email")
-        heads = ("Name", "Role", "Department", "Email")
-        widths = (220, 110, 200, 260)
+        heads = ("Name", "Source", "Department / institution", "Email")
+        widths = (220, 110, 220, 260)
         return cols, heads, widths
 
+    def _build(self):
+        super()._build()
+        # Records are owned by Staff HR / Student Records / the examiner
+        # register, so drop the mutating buttons entirely.
+        for child in self.walk_buttons():
+            if child.cget("text") in ("+ New", "Edit", "Delete"):
+                child.destroy()
+
+    def walk_buttons(self, parent=None):
+        parent = self if parent is None else parent
+        found = []
+        for child in parent.winfo_children():
+            if isinstance(child, ttk.Button):
+                found.append(child)
+            found.extend(self.walk_buttons(child))
+        return found
+
     def fetch_rows(self, search):
-        q = f"%{search.lower()}%" if search else None
-        if q:
-            return self.db.query("""SELECT * FROM research_people
-                WHERE LOWER(name) LIKE ? OR LOWER(COALESCE(email,'')) LIKE ?
-                   OR LOWER(COALESCE(department,'')) LIKE ?
-                   OR LOWER(role) LIKE ?
-                ORDER BY name""", (q, q, q, q))
-        return self.db.query("SELECT * FROM research_people ORDER BY name")
+        needle = (search or "").strip().lower()
+        rows = []
+        for key, name, role, dept, email in fetch_people(self.db):
+            if needle and needle not in " ".join(
+                    (name or "", role or "", dept or "", email or "")).lower():
+                continue
+            rows.append({"key": key, "name": name, "role": role,
+                         "department": dept, "email": email})
+        return rows
 
     def row_to_tree_values(self, row):
         return (row["name"], row["role"],
                 row["department"] or "—", row["email"] or "—")
 
-    def get_field_specs(self, record=None):
-        return [
-            FieldSpec("name", "Full name", required=True),
-            FieldSpec("email", "Email"),
-            FieldSpec("role", "Role", kind="combo",
-                      choices=self.ROLES, required=True),
-            FieldSpec("department", "Department"),
-        ]
+    def _fetch_one(self, pk_val):
+        # Overridden: the pk is a composite string key, not an integer, and
+        # there is no single table to SELECT from.
+        for row in self.fetch_rows(""):
+            if row["key"] == str(pk_val):
+                return row
+        return None
+
+    def on_select(self):
+        sel = self.tree.selection()
+        if not sel:
+            return
+        row = self._fetch_one(sel[0])
+        if row is None:
+            self._show_detail_error()
+            return
+        self.detail_text.configure(state="normal")
+        self.detail_text.delete("1.0", "end")
+        self.render_detail(row)
+        self.detail_text.configure(state="disabled")
 
     def render_detail(self, row):
+        key = row["key"]
         self.detail_text.insert("end", f"{row['name']}\n", ("section",))
         self.detail_text.insert("end", f"{row['role']}\n\n", ("muted",))
         self._write_detail([
             ("Email", row.get("email")),
-            ("Department", row.get("department")),
-            ("Created", fmt_date(row.get("created_at"))),
+            ("Department / institution", row.get("department")),
+            ("Record", key),
         ])
 
-        # Quick links — what this person is involved in
-        pid = row["id"]
         ethics = self.db.query(
-            "SELECT reference,title FROM research_ethics_applications "
-            "WHERE principal_investigator_id=?", (pid,))
+            "SELECT reference, title FROM ethics_reviews "
+            "WHERE principal_investigator_id=?", (key,))
         outputs = self.db.query(
-            "SELECT title FROM research_outputs WHERE lead_author_id=?",
-            (pid,))
+            "SELECT title FROM research_publications WHERE lead_author_id=?",
+            (key,))
         ip = self.db.query(
-            "SELECT reference,title FROM research_ip_assets WHERE inventor_id=?",
-            (pid,))
+            "SELECT reference, title FROM ip_disclosures WHERE inventor_id=?",
+            (key,))
         theses = self.db.query(
-            "SELECT title FROM research_theses WHERE student_id=? "
-            "OR primary_supervisor_id=? OR secondary_supervisor_id=? "
+            "SELECT thesis_title AS title FROM student_supervisions "
+            "WHERE student_id=? OR supervisor_id=? OR secondary_supervisor_id=? "
             "OR internal_examiner_id=? OR external_examiner_id=?",
-            (pid, pid, pid, pid, pid))
+            (key, key, key, key, key))
 
         self.detail_text.insert("end", "Involvement\n", ("section",))
         for label, items in [
-            ("Ethics (as PI)", [f"{r['reference']} — {r['title']}" for r in ethics]),
+            ("Ethics (as PI)",
+             [f"{r['reference'] or '—'} — {r['title'] or '(untitled)'}" for r in ethics]),
             ("Outputs (as lead)", [r["title"] for r in outputs]),
             ("IP (as inventor)",
-             [f"{r['reference']} — {r['title']}" for r in ip]),
-            ("Theses", [r["title"] for r in theses]),
+             [f"{r['reference'] or '—'} — {r['title']}" for r in ip]),
+            ("Theses", [r["title"] or "(untitled)" for r in theses]),
         ]:
             self.detail_text.insert("end", f"\n{label}\n", ("label",))
             if not items:
@@ -84,14 +125,23 @@ class PeopleTab(TableModule):
                     self.detail_text.insert(
                         "end", f"  … and {len(items) - 6} more\n", ("muted",))
 
-    def insert_sql(self, d):
-        self.db.execute("""INSERT INTO research_people(name,email,role,department,created_at)
-            VALUES(?,?,?,?,?)""",
-            (d.get("name"), d.get("email"), d.get("role"),
-             d.get("department"), datetime.now().isoformat()))
+    # -- mutation is owned elsewhere ---------------------------------------
+    def _refuse(self):
+        messagebox.showinfo(
+            "Managed elsewhere",
+            "People are read from the staff, student and external-examiner "
+            "registers. Add or change them in Staff HR, Student Records, or "
+            "the external examiner register.",
+            parent=self)
 
-    def update_sql(self, d, pk):
-        self.db.execute("""UPDATE research_people SET name=?,email=?,role=?,department=?
-            WHERE id=?""",
-            (d.get("name"), d.get("email"), d.get("role"),
-             d.get("department"), pk))
+    def get_field_specs(self, record=None):
+        return []
+
+    def on_new(self):
+        self._refuse()
+
+    def on_edit(self):
+        self._refuse()
+
+    def on_delete(self):
+        self._refuse()

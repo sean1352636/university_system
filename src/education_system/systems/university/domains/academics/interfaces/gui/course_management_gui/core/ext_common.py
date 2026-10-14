@@ -25,6 +25,10 @@ from contextlib import contextmanager
 from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core._imports import (
     _, tk, ttk, messagebox, sqlite3, DEFAULT_DB_PATH, datetime, logging,
 )
+from education_system.systems.university.infrastructure.database.db import get_connection
+from education_system.systems.university.domains.academics.domain.services.academic_calendar.terms import (
+    ACADEMIC_TERMS_DDL,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -56,19 +60,12 @@ except Exception:  # pragma: no cover
 # fallback created the database.
 _EXTENSION_TABLES = (
     # --- Feature 1: Academic terms ------------------------------------
-    """
-    CREATE TABLE IF NOT EXISTS academic_terms (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL UNIQUE,
-        term_type TEXT NOT NULL DEFAULT 'Semester',
-        academic_year TEXT NOT NULL DEFAULT '',
-        start_date TEXT DEFAULT '',
-        end_date TEXT DEFAULT '',
-        status TEXT NOT NULL DEFAULT 'Planned',
-        created_at TEXT NOT NULL DEFAULT (datetime('now')),
-        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-    )
-    """,
+    # Imported, not repeated. This declaration used to be duplicated here and
+    # in services/course_management/curriculum_extensions.py; two copies of a
+    # CREATE TABLE IF NOT EXISTS drift silently, because whichever runs first
+    # wins and the other quietly becomes a no-op. The academic calendar owns
+    # terms, so the declaration lives with that owner. It imports no GUI code.
+    ACADEMIC_TERMS_DDL,
     # --- Feature 1: Course sections (offerings) -----------------------
     """
     CREATE TABLE IF NOT EXISTS course_sections (
@@ -328,10 +325,17 @@ class ExtCommonMixin:
         rolls back, logs, and re-raises so the calling handler can surface the
         error to the user. The connection is always closed.
         """
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0)
+        # get_connection() rather than a raw sqlite3.connect(): it applies the
+        # same WAL/foreign-keys pragmas, and it lets this helper share a
+        # connection when the caller has opened a reuse_connection() block.
+        # Building the window called this 52 times, and each fresh connection
+        # cost ~60ms on its first statement (opening the file and parsing the
+        # schema) — about 3.3s of the window's construction.
+        #
+        # row_factory=False keeps rows as plain tuples, exactly as
+        # sqlite3.connect returned them, so callers are unaffected.
+        conn = get_connection(DEFAULT_DB_PATH, row_factory=False, timeout=30.0)
         try:
-            conn.execute("PRAGMA journal_mode=WAL")
-            conn.execute("PRAGMA foreign_keys=ON")
             yield conn
             if write:
                 conn.commit()

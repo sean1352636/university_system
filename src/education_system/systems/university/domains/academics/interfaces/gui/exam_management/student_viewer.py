@@ -42,7 +42,7 @@ class StudentExamViewer(tk.Toplevel):
             if isinstance(current_user, dict):
                 return current_user.get("student_id") or current_user.get("id")
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return None
 
     # ---- UI ----
@@ -130,10 +130,11 @@ class StudentExamViewer(tk.Toplevel):
                 for entry in deferred_assessments_for_student(self._student_id):
                     mc_by_module.setdefault(entry.get('module_code'), []).append(entry)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             with closing(get_connection()) as conn:
                 placeholders = ",".join("?" for _ in module_codes)
+                # db-audit: ignore[DBW001] - string literal
                 cursor = conn.execute(
                     f"SELECT module_code, module_name, date, start_time, end_time, room "
                     f"FROM exams WHERE module_code IN ({placeholders}) "

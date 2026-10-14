@@ -3,10 +3,13 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
+from tkinter import ttk, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
 import json
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
+from education_system.platform.kernel.untrusted_code import run_untrusted_python
+from education_system.systems.university.domains.academics.interfaces.gui._field_pickers import attach_picker
 
 
 class AutoGradingManager:
@@ -196,9 +199,8 @@ class AutoGradingManager:
 
         ttk.Label(form_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.labels.module_code', default="Module Code:")).grid(row=1, column=0, sticky='w', pady=5)
         self.bank_module_var = tk.StringVar()
-        ttk.Entry(form_frame, textvariable=self.bank_module_var, width=20).grid(
-            row=1, column=1, sticky='w', pady=5, padx=(10, 0),
-        )
+        attach_picker(form_frame, 'module', id_var=self.bank_module_var,
+                      width=34).grid(row=1, column=1, sticky='w', pady=5, padx=(10, 0))
 
         ttk.Label(form_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.labels.description', default="Description:")).grid(row=2, column=0, sticky='nw', pady=5)
         self.bank_desc_text = scrolledtext.ScrolledText(form_frame, height=3, width=50)
@@ -838,44 +840,23 @@ class AutoGradingManager:
 
     @staticmethod
     def _run_code_sandbox(code, stdin_input):
-        """Execute student code in a restricted subprocess and capture output.
+        """Execute student code under the code sandbox and capture output.
 
-        Returns (stdout, error_message).  The process is killed after 10
-        seconds to prevent infinite loops.
+        Returns ``(stdout, error_message)``. Despite its name this used to run
+        the submission directly on the host with only a timeout — it had the
+        grader's filesystem, database and network. It now goes through
+        :func:`run_untrusted_python`, which refuses outright unless an
+        isolation backend is configured.
         """
-        import subprocess
-        import tempfile
-        import os
+        outcome = run_untrusted_python(code or '', stdin_input or '', timeout=10)
 
-        try:
-            with tempfile.NamedTemporaryFile(
-                mode='w', suffix='.py', delete=False,
-            ) as tmp:
-                tmp.write(code or '')
-                tmp_path = tmp.name
-
-            result = subprocess.run(
-                ['python3', tmp_path],
-                input=stdin_input,
-                capture_output=True,
-                text=True,
-                timeout=10,
-            )
-
-            os.unlink(tmp_path)
-
-            if result.returncode != 0:
-                return '', result.stderr.strip()
-            return result.stdout, ''
-
-        except subprocess.TimeoutExpired:
-            try:
-                os.unlink(tmp_path)
-            except OSError:
-                pass
+        if not outcome.executed:
+            return '', outcome.refused_reason
+        if outcome.timed_out:
             return '', 'Execution timed out (10s limit)'
-        except Exception as exc:
-            return '', str(exc)
+        if outcome.exit_code != 0:
+            return '', outcome.stderr.strip()
+        return outcome.stdout,''
 
     # ------------------------------------------------------------------ #
     #  Batch Auto-Grading
@@ -967,6 +948,7 @@ class AutoGradingManager:
             cursor = conn.cursor()
             placeholders = ','.join('?' * len(sa_ids))
             # Map answer-id → (student_id, module_code) via the question's bank.
+            # db-audit: ignore[DBW001] - join of placeholders
             cursor.execute(
                 f"""
                 SELECT DISTINCT sa.student_id, qb.module_code

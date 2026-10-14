@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import json
 import os
@@ -40,6 +44,24 @@ except ImportError:
     PYTHON_DOCX_AVAILABLE = False
 
 from education_system.systems.university.infrastructure.i18n import get_text, _
+
+
+def _post(widget, callback):
+    """Run *callback* on the Tk main loop, from any thread.
+
+    Mining runs on a worker thread so the window keeps painting, but Tk is
+    single-threaded: setting a progress variable, configuring a label,
+    destroying the progress window or opening a messagebox from that thread
+    is undefined behaviour. Widget work has to be handed back through
+    after(); dropped if the window has already gone.
+    """
+    try:
+        if widget.winfo_exists():
+            widget.after(0, callback)
+    except (tk.TclError, RuntimeError):
+        # Widget gone, or the main loop already exited: nothing to update.
+        pass
+
 
 def create_adversarial_detection_tab(self):
     """Create adversarial detection tab"""
@@ -260,23 +282,46 @@ def mine_blockchain_block(self):
                 status_label = ttk.Label(progress_window, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.initializing_mining_process', default="Initializing mining process..."))
                 status_label.pack(pady=10)
 
+                STAGES = {
+                    0: _t('gui.academics.ai_detector.blockchain_adversarial_view.text.validating_transactions', default="Validating transactions..."),
+                    25: _t('gui.academics.ai_detector.blockchain_adversarial_view.text.calculating_proof_of_work', default="Calculating proof of work..."),
+                    50: _t('gui.academics.ai_detector.blockchain_adversarial_view.text.computing_hash', default="Computing hash..."),
+                    75: _t('gui.academics.ai_detector.blockchain_adversarial_view.text.finalizing_block', default="Finalizing block..."),
+                    100: _t('gui.academics.ai_detector.blockchain_adversarial_view.text.block_mined_successfully', default="Block mined successfully!"),
+                }
+
+                def tick(i):
+                    """Main loop only."""
+                    if i in STAGES:
+                        status_label.config(text=STAGES[i])
+                    progress_var.set(i)
+
+                def finish(error=None):
+                    """Close the progress window and report. Main loop only."""
+                    try:
+                        if progress_window.winfo_exists():
+                            progress_window.grab_release()
+                            progress_window.destroy()
+                    except tk.TclError:
+                        pass  # already gone
+
+                    if error is not None:
+                        messagebox.showerror(_t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.mining_error', default="Mining Error"), f"Failed to mine block: {str(error)}")
+                        return
+
+                    self.update_blockchain_display()
+                    messagebox.showinfo(_t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.mining_success', default="Mining Success"),
+                                      _t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.block_mined_successfully_new_block_added_to_the_chain_pending_tr', default="Block mined successfully!\n"
+                                      "New block added to the chain.\n"
+                                      "Pending transactions processed."))
+
                 def mine_with_progress():
+                    # Worker thread: the mining itself. Every widget touch is
+                    # posted back to the main loop.
                     try:
                         # Simulate mining process with progress updates
                         for i in range(101):
-                            if i == 0:
-                                status_label.config(text=_t('gui.academics.ai_detector.blockchain_adversarial_view.text.validating_transactions', default="Validating transactions..."))
-                            elif i == 25:
-                                status_label.config(text=_t('gui.academics.ai_detector.blockchain_adversarial_view.text.calculating_proof_of_work', default="Calculating proof of work..."))
-                            elif i == 50:
-                                status_label.config(text=_t('gui.academics.ai_detector.blockchain_adversarial_view.text.computing_hash', default="Computing hash..."))
-                            elif i == 75:
-                                status_label.config(text=_t('gui.academics.ai_detector.blockchain_adversarial_view.text.finalizing_block', default="Finalizing block..."))
-                            elif i == 100:
-                                status_label.config(text=_t('gui.academics.ai_detector.blockchain_adversarial_view.text.block_mined_successfully', default="Block mined successfully!"))
-
-                            progress_var.set(i)
-                            progress_window.update()
+                            _post(progress_window, lambda pct=i: tick(pct))
                             time.sleep(0.02)  # Small delay for visual effect
 
                         # Actual mining logic
@@ -301,18 +346,10 @@ def mine_blockchain_block(self):
                             blockchain.pending_transactions.clear()
 
                         time.sleep(0.5)  # Final pause
-                        progress_window.destroy()
-
-                        # Update displays and show success
-                        self.update_blockchain_display()
-                        messagebox.showinfo(_t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.mining_success', default="Mining Success"),
-                                          _t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.block_mined_successfully_new_block_added_to_the_chain_pending_tr', default="Block mined successfully!\n"
-                                          "New block added to the chain.\n"
-                                          "Pending transactions processed."))
+                        _post(self.root, finish)
 
                     except Exception as e:
-                        progress_window.destroy()
-                        messagebox.showerror(_t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.mining_error', default="Mining Error"), f"Failed to mine block: {str(e)}")
+                        _post(self.root, lambda err=e: finish(error=err))
 
                 # Start mining in a separate thread to prevent GUI freezing
                 import threading
@@ -391,11 +428,27 @@ def verify_blockchain_integrity(self):
             scrollbar.pack(side='right', fill='y')
             results_text.config(yscrollcommand=scrollbar.set)
 
+            def append(text):
+                """Main loop only."""
+                results_text.insert(tk.END, text)
+                results_text.see(tk.END)
+
+            def emit(text):
+                """Stream a line of output from the worker thread."""
+                _post(verify_window, lambda t=text: append(t))
+
+            def clear():
+                _post(verify_window, lambda: results_text.delete(1.0, tk.END))
+
+            def progress(pct):
+                _post(verify_window, lambda p=pct: progress_var.set(p))
+
             def run_verification():
+                # Worker thread: verification logic only. Text and progress
+                # are streamed to the main loop through emit()/progress().
                 try:
-                    results_text.delete(1.0, tk.END)
-                    results_text.insert(tk.END, "Starting blockchain integrity verification...\n\n")
-                    verify_window.update()
+                    clear()
+                    emit("Starting blockchain integrity verification...\n\n")
 
                     verification_results = {
                         'total_blocks': 0,
@@ -412,17 +465,14 @@ def verify_blockchain_integrity(self):
                         chain = blockchain.chain
                         verification_results['total_blocks'] = len(chain)
 
-                        results_text.insert(tk.END, f"Found {len(chain)} blocks in the chain.\n")
-                        results_text.insert(tk.END, "Verifying each block...\n\n")
-                        verify_window.update()
+                        emit(f"Found {len(chain)} blocks in the chain.\n")
+                        emit("Verifying each block...\n\n")
 
                         # Verify each block
                         for i, block in enumerate(chain):
-                            progress_var.set((i / len(chain)) * 100)
-                            verify_window.update()
+                            progress((i / len(chain)) * 100)
 
-                            results_text.insert(tk.END, f"Verifying Block {i + 1}...")
-                            verify_window.update()
+                            emit(f"Verifying Block {i + 1}...")
 
                             block_valid = True
                             block_issues = []
@@ -454,56 +504,55 @@ def verify_blockchain_integrity(self):
 
                             if block_valid:
                                 verification_results['valid_blocks'] += 1
-                                results_text.insert(tk.END, " ✅ VALID\n")
+                                emit(" ✅ VALID\n")
                             else:
                                 verification_results['invalid_blocks'] += 1
-                                results_text.insert(tk.END, " ❌ INVALID\n")
+                                emit(" ❌ INVALID\n")
                                 for issue in block_issues:
-                                    results_text.insert(tk.END, f"    • {issue}\n")
+                                    emit(f"    • {issue}\n")
                                     verification_results['issues'].append(f"Block {i + 1}: {issue}")
 
-                            verify_window.update()
                             time.sleep(0.1)  # Small delay for visual effect
 
                     else:
                         # Empty or missing chain
-                        results_text.insert(tk.END, "No blockchain data found.\n")
-                        results_text.insert(tk.END, "This could mean:\n")
-                        results_text.insert(tk.END, "• The blockchain hasn't been initialized\n")
-                        results_text.insert(tk.END, "• No blocks have been mined yet\n")
-                        results_text.insert(tk.END, "• The blockchain data structure is not properly configured\n")
+                        emit("No blockchain data found.\n")
+                        emit("This could mean:\n")
+                        emit("• The blockchain hasn't been initialized\n")
+                        emit("• No blocks have been mined yet\n")
+                        emit("• The blockchain data structure is not properly configured\n")
 
-                    progress_var.set(100)
+                    progress(100)
 
                     # Display summary
-                    results_text.insert(tk.END, "\n" + "="*50 + "\n")
-                    results_text.insert(tk.END, "VERIFICATION SUMMARY\n")
-                    results_text.insert(tk.END, "="*50 + "\n")
-                    results_text.insert(tk.END, f"Total Blocks: {verification_results['total_blocks']}\n")
-                    results_text.insert(tk.END, f"Valid Blocks: {verification_results['valid_blocks']}\n")
-                    results_text.insert(tk.END, f"Invalid Blocks: {verification_results['invalid_blocks']}\n")
-                    results_text.insert(tk.END, f"Hash Mismatches: {verification_results['hash_mismatches']}\n")
-                    results_text.insert(tk.END, f"Timestamp Errors: {verification_results['timestamp_errors']}\n")
+                    emit("\n" + "="*50 + "\n")
+                    emit("VERIFICATION SUMMARY\n")
+                    emit("="*50 + "\n")
+                    emit(f"Total Blocks: {verification_results['total_blocks']}\n")
+                    emit(f"Valid Blocks: {verification_results['valid_blocks']}\n")
+                    emit(f"Invalid Blocks: {verification_results['invalid_blocks']}\n")
+                    emit(f"Hash Mismatches: {verification_results['hash_mismatches']}\n")
+                    emit(f"Timestamp Errors: {verification_results['timestamp_errors']}\n")
 
                     # Overall status
                     if verification_results['total_blocks'] == 0:
-                        results_text.insert(tk.END, "\nStatus: ⚠️ NO DATA - Blockchain is empty\n")
+                        emit("\nStatus: ⚠️ NO DATA - Blockchain is empty\n")
                     elif verification_results['invalid_blocks'] == 0:
-                        results_text.insert(tk.END, "\nStatus: ✅ INTEGRITY VERIFIED - All blocks are valid\n")
+                        emit("\nStatus: ✅ INTEGRITY VERIFIED - All blocks are valid\n")
                     else:
-                        results_text.insert(tk.END, f"\nStatus: ❌ INTEGRITY COMPROMISED - {verification_results['invalid_blocks']} invalid blocks found\n")
+                        emit(f"\nStatus: ❌ INTEGRITY COMPROMISED - {verification_results['invalid_blocks']} invalid blocks found\n")
 
                     if verification_results['issues']:
-                        results_text.insert(tk.END, "\nIssues Found:\n")
+                        emit("\nIssues Found:\n")
                         for issue in verification_results['issues'][:10]:  # Show max 10 issues
-                            results_text.insert(tk.END, f"• {issue}\n")
+                            emit(f"• {issue}\n")
                         if len(verification_results['issues']) > 10:
-                            results_text.insert(tk.END, f"• ... and {len(verification_results['issues']) - 10} more issues\n")
+                            emit(f"• ... and {len(verification_results['issues']) - 10} more issues\n")
 
-                    results_text.insert(tk.END, f"\nVerification completed at: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+                    emit(f"\nVerification completed at: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
 
                 except Exception as e:
-                    results_text.insert(tk.END, f"\nError during verification: {str(e)}\n")
+                    emit(f"\nError during verification: {str(e)}\n")
 
             # Control buttons
             button_frame = ttk.Frame(verify_window)
@@ -579,7 +628,7 @@ def update_blockchain_display(self):
             self.chain_length_label.config(text=f"Chain Length: {chain_length}")
             self.pending_transactions_label.config(text=f"Pending Transactions: {pending_count}")
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
 
 def create_benchmarking_tab(self):

@@ -1,8 +1,11 @@
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import common as _common
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common import (
-    sqlite3, datetime, get_text, get_connection, generate_id,
+    sqlite3, datetime, get_text, housing_text, get_connection, generate_id,
     log_create, log_read, log_update, log_delete,
 )
+# Imported lazily inside the deleting functions: assignments.py imports
+# applications.py, which would otherwise make this a circular import at
+# module load.
 
 # Building Management Functions
 @log_create(module="housing", description="Creating new building")
@@ -289,7 +292,7 @@ def view_building():
 
         while True:
             try:
-                choice = int(input("\n" + get_text("housing.common.select_prompt") + " "))
+                choice = int(input("\n" + get_text("housing.common.select_prompt", default="Select: ") + " "))
                 if 1 <= choice <= len(buildings):
                     building_id = buildings[choice - 1][0]
                     break
@@ -410,7 +413,7 @@ def update_building():
 
         while True:
             try:
-                choice = int(input("\n" + get_text("housing.common.select_prompt") + " "))
+                choice = int(input("\n" + get_text("housing.common.select_prompt", default="Select: ") + " "))
                 if 1 <= choice <= len(buildings):
                     building_id = buildings[choice - 1][0]
                     break
@@ -551,6 +554,10 @@ def delete_building():
         print(get_text("housing.auth.permission_denied", action=get_text("housing.building.delete")))
         return
 
+    from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.assignments import (
+        apply_relocations, describe_move, notify_relocated_residents, plan_relocations,
+    )
+
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -572,7 +579,7 @@ def delete_building():
 
         while True:
             try:
-                choice = int(input("\n" + get_text("housing.common.select_prompt") + " "))
+                choice = int(input("\n" + get_text("housing.common.select_prompt", default="Select: ") + " "))
                 if 1 <= choice <= len(buildings):
                     building_id = buildings[choice - 1][0]
                     building_name = buildings[choice - 1][1]
@@ -582,23 +589,64 @@ def delete_building():
             except ValueError:
                 print(get_text("housing.common.error_valid_number"))
 
-        # Check for any assigned rooms
-        cursor.execute('SELECT COUNT(*) FROM housing_rooms WHERE building_id = ? AND status != "Available"', (building_id,))
-        occupied_count = cursor.fetchone()[0]
+        # Residents are no longer a blocker: plan a move into the remaining
+        # buildings first, and only refuse if there is genuinely nowhere for
+        # someone to go.
+        cursor.execute('SELECT room_id FROM housing_rooms WHERE building_id = ?', (building_id,))
+        room_ids = [row[0] for row in cursor.fetchall()]
 
-        if occupied_count > 0:
-            print("\n" + get_text("housing.building.cannot_delete_occupied", name=building_name, count=occupied_count))
-            print(get_text("housing.building.reassign_occupants"))
+        moves, unplaced = plan_relocations(cursor, room_ids,
+                                           exclude_building_ids=[building_id])
+
+        if unplaced:
+            print("\n" + housing_text(
+                "housing.building.cannot_delete_no_space",
+                default=("Cannot delete '{name}': {count} resident(s) have nowhere "
+                         "to go - every other building is full."),
+                name=building_name, count=len(unplaced),
+            ))
+            for row in unplaced:
+                print(f"  - {row['student_name']} ({row['student_id']}) in "
+                      f"room {row['old_room_number']}")
+            print(get_text(
+                "housing.building.free_up_space",
+                default="Add rooms to another building (or free some up), then try again.",
+            ))
             conn.close()
             return
+
+        if moves:
+            print("\n" + housing_text(
+                "housing.building.relocation_preview",
+                default="{count} resident(s) will be moved automatically:",
+                count=len(moves),
+            ))
+            for move in moves:
+                print("  - " + describe_move(move))
+            print(get_text(
+                "housing.building.relocation_rent_note",
+                default="Their rent and contract dates are unchanged. Each will be emailed their new room.",
+            ))
 
         # Confirm deletion
         confirm = input("\n" + get_text("housing.building.delete_confirm_rooms", name=building_name) + " (y/n): ").lower()
 
         if confirm != 'y':
-            print(get_text("housing.common.operation_cancelled"))
+            print(housing_text("housing.common.operation_cancelled", default="Operation cancelled."))
             conn.close()
             return
+
+        # Move the residents first, in the same transaction as the deletion,
+        # so a failure anywhere leaves both the building and its residents
+        # exactly as they were.
+        if moves:
+            actor = auth.current_user.get('username') if auth.current_user else 'housing'
+            apply_relocations(
+                cursor, moves,
+                reason=(f"The building you were living in, {building_name}, "
+                        f"has been taken out of service."),
+                actor=actor,
+            )
 
         # Delete all rooms in this building
         cursor.execute('DELETE FROM housing_rooms WHERE building_id = ?', (building_id,))
@@ -608,9 +656,183 @@ def delete_building():
 
         conn.commit()
         print("\n" + get_text("housing.building.delete_success_with_rooms", name=building_name))
+
+        # Notify only after the commit: an email promising a new room must
+        # never go out for a move that was rolled back.
+        if moves:
+            sent, failed = notify_relocated_residents(moves)
+            print(housing_text(
+                "housing.building.relocation_emails_sent",
+                default="Relocation emails: {sent} sent, {failed} failed.",
+                sent=sent, failed=failed,
+            ))
+
         conn.close()
 
     except sqlite3.Error as e:
         print(get_text("housing.common.database_error", error=str(e)))
     except Exception as e:
         print(get_text("housing.building.error_deleting", error=str(e)))
+
+
+@log_delete(module="housing", description="Deleting room")
+def delete_room():
+    """Delete a single room, relocating whoever lives in it first."""
+    auth = _common.auth
+
+    # Check permissions
+    if not auth or not auth.current_user:
+        print(get_text("housing.auth.login_required", action=get_text("housing.room.delete", default="delete a room")))
+        return
+
+    if not auth.check_permission('manage_accommodations'):
+        print(get_text("housing.auth.permission_denied", action=get_text("housing.room.delete", default="delete a room")))
+        return
+
+    from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.assignments import (
+        apply_relocations, describe_move, notify_relocated_residents, plan_relocations,
+    )
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Pick the building
+        cursor.execute('SELECT building_id, building_name FROM housing_buildings ORDER BY building_name')
+        buildings = cursor.fetchall()
+
+        if not buildings:
+            print(get_text("housing.building.no_buildings"))
+            conn.close()
+            return
+
+        print("\n" + get_text("housing.building.select") + ":")
+        print("=" * 24)
+        for i, (bid, bname) in enumerate(buildings, 1):
+            print(f"{i}. {bname}")
+
+        while True:
+            try:
+                choice = int(input("\n" + get_text("housing.common.select_prompt", default="Select: ") + " "))
+                if 1 <= choice <= len(buildings):
+                    building_id = buildings[choice - 1][0]
+                    building_name = buildings[choice - 1][1]
+                    break
+                print(get_text("housing.common.error_range", min=1, max=len(buildings)))
+            except ValueError:
+                print(get_text("housing.common.error_valid_number"))
+
+        # Pick the room
+        cursor.execute('''
+        SELECT room_id, room_number, floor_number, room_type, current_occupants, status
+        FROM housing_rooms
+        WHERE building_id = ?
+        ORDER BY floor_number, room_number
+        ''', (building_id,))
+        rooms = cursor.fetchall()
+
+        if not rooms:
+            print(get_text("housing.room.no_rooms", default="This building has no rooms."))
+            conn.close()
+            return
+
+        print("\n" + get_text("housing.room.room_list_title") + ":")
+        print("=" * 24)
+        for i, room in enumerate(rooms, 1):
+            print(f"{i}. Room {room[1]} (floor {room[2]}, {room[3]}) - "
+                  f"{room[4]} occupant(s), {room[5]}")
+
+        while True:
+            try:
+                choice = int(input("\n" + get_text("housing.common.select_prompt", default="Select: ") + " "))
+                if 1 <= choice <= len(rooms):
+                    room_id = rooms[choice - 1][0]
+                    room_number = rooms[choice - 1][1]
+                    break
+                print(get_text("housing.common.error_range", min=1, max=len(rooms)))
+            except ValueError:
+                print(get_text("housing.common.error_valid_number"))
+
+        # Residents move into a room in one of the *other* buildings, matching
+        # what happens when a whole building goes.
+        moves, unplaced = plan_relocations(cursor, [room_id],
+                                           exclude_building_ids=[building_id])
+
+        if unplaced:
+            print("\n" + housing_text(
+                "housing.room.cannot_delete_no_space",
+                default=("Cannot delete room {room}: {count} resident(s) have nowhere "
+                         "to go - every other building is full."),
+                room=room_number, count=len(unplaced),
+            ))
+            print(get_text(
+                "housing.building.free_up_space",
+                default="Add rooms to another building (or free some up), then try again.",
+            ))
+            conn.close()
+            return
+
+        if moves:
+            print("\n" + housing_text(
+                "housing.room.relocation_preview",
+                default="{count} resident(s) will be moved automatically:",
+                count=len(moves),
+            ))
+            for move in moves:
+                print("  - " + describe_move(move))
+
+        confirm = input("\n" + housing_text(
+            "housing.room.delete_confirm",
+            default="Delete room {room} from {building}?",
+            room=room_number, building=building_name,
+        ) + " (y/n): ").lower()
+
+        if confirm != 'y':
+            print(housing_text("housing.common.operation_cancelled", default="Operation cancelled."))
+            conn.close()
+            return
+
+        if moves:
+            actor = auth.current_user.get('username') if auth.current_user else 'housing'
+            apply_relocations(
+                cursor, moves,
+                reason=(f"The room you were living in, room {room_number} in "
+                        f"{building_name}, has been taken out of service."),
+                actor=actor,
+            )
+
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        cursor.execute('DELETE FROM housing_rooms WHERE room_id = ?', (room_id,))
+
+        # Recount rather than decrement: apply_relocations may already have
+        # adjusted this building's counters.
+        cursor.execute('''
+        UPDATE housing_buildings
+        SET total_rooms = (SELECT COUNT(*) FROM housing_rooms WHERE building_id = ?),
+            available_rooms = (SELECT COUNT(*) FROM housing_rooms
+                               WHERE building_id = ? AND status = 'Available'),
+            updated_at = ?
+        WHERE building_id = ?
+        ''', (building_id, building_id, timestamp, building_id))
+
+        conn.commit()
+        print("\n" + housing_text(
+            "housing.room.delete_success",
+            default="Room {room} deleted from {building}.",
+            room=room_number, building=building_name,
+        ))
+
+        if moves:
+            sent, failed = notify_relocated_residents(moves)
+            print(housing_text(
+                "housing.building.relocation_emails_sent",
+                default="Relocation emails: {sent} sent, {failed} failed.",
+                sent=sent, failed=failed,
+            ))
+
+        conn.close()
+
+    except sqlite3.Error as e:
+        print(get_text("housing.common.database_error", error=str(e)))
+    except Exception as e:
+        print(housing_text("housing.room.error_deleting", default="Error deleting room: {error}", error=str(e)))

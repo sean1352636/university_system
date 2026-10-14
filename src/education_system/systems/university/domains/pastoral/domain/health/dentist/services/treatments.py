@@ -216,9 +216,58 @@ class TreatmentServiceMixin:
             if not treatment_type or treatment_type not in TREATMENT_TYPES:
                 messagebox.showerror(_t("dentist.window_title"), _t("dentist.errors.invalid_treatment"))
                 return
-            result = TreatmentManager.record_treatment(patient_id=patient['patient_id'], dentist_id='STAFF', dentist_name=self.user_id, treatment_type=treatment_type, treatment_date=datetime.now().strftime('%Y-%m-%d'))
-            if result:
-                messagebox.showinfo(_t("dentist.window_title"), _t("dentist.messages.treatment_recorded"))
+            diagnosis = simpledialog.askstring(
+                _t("dentist.window_title"), "Diagnosis (what was found):") or ''
+            procedure_notes = simpledialog.askstring(
+                _t("dentist.window_title"), "Procedure notes (what was done):") or ''
+
+            result = TreatmentManager.record_treatment(
+                patient_id=patient['patient_id'], dentist_id='STAFF',
+                dentist_name=self.user_id, treatment_type=treatment_type,
+                treatment_date=datetime.now().strftime('%Y-%m-%d'),
+                # record_treatment stores these as description/notes.
+                description=diagnosis or None,
+                notes=procedure_notes or None)
+            if not result:
+                messagebox.showerror(_t("dentist.window_title"),
+                                     _t("dentist.errors.treatment_failed",
+                                        default="Failed to record the treatment."))
+                return
+
+            # Send the patient their treatment summary. Recording a treatment
+            # used to tell them nothing, so they left with no written record of
+            # their own care — what was found, what it cost, or what to watch
+            # for afterwards.
+            treatment = TREATMENT_TYPES.get(treatment_type, {})
+            fee = result.get('fee', treatment.get('fee', 0))
+            note = ""
+            try:
+                subject, body = render_template(
+                    'finance_commerce/commerce/dentist/treatment_summary', {
+                        'patient_name': patient.get('user_name') or 'Patient',
+                        'appointment_ref': str(result.get('treatment_id', '')),
+                        'treatment_date': datetime.now().strftime('%Y-%m-%d'),
+                        'treatment_type': treatment.get('name', treatment_type),
+                        'dentist_name': self.user_id or 'your dentist',
+                        'diagnosis': diagnosis or 'No diagnosis was recorded.',
+                        'procedure_notes': procedure_notes or 'No procedure notes were recorded.',
+                        'fee': f"{float(fee or 0):.2f}",
+                        'payment_status': 'pending',
+                        'payment_note': ("Please settle the balance through the "
+                                         "Finance Portal or at reception."),
+                    })
+            except Exception:
+                subject, body = None, None
+
+            if subject and body and _send_dentist_email(patient.get('user_email'), subject, body):
+                note = "\n\nTreatment summary emailed to the patient."
+            elif patient.get('user_email'):
+                note = "\n\nNote: the treatment summary could not be emailed."
+            else:
+                note = "\n\nNo email address on file, so no summary was sent."
+
+            messagebox.showinfo(_t("dentist.window_title"),
+                                _t("dentist.messages.treatment_recorded") + note)
 
         def process_treatment_payment(self):
             """Function 13: Process payment for a treatment."""

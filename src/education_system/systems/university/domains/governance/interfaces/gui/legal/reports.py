@@ -21,7 +21,7 @@ class ReportsMixin:
         self.notebook.add(tab, text=_t("legal.tabs.reports", default="Reports & Analytics"))
 
         # Report options
-        options_frame = ttk.LabelFrame(tab, text=_t("legal.reports.title", default="Report Options"), padding="10")
+        options_frame = ttk.LabelFrame(tab, text=_t("legal.reports.title", default="===== REPORTS ====="), padding="10")
         options_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Date range

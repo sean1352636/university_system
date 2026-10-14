@@ -17,7 +17,9 @@ import subprocess
 import sys
 import tkinter as tk
 from pathlib import Path
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 
 logger = logging.getLogger(__name__)
 
@@ -161,14 +163,14 @@ def _extract_text(file_path: str):
 
 
 def _show_text_window(parent, title: str, file_path: str, text: str) -> None:
-    win = tk.Toplevel(parent)
+    win = make_toplevel(parent)
     win.title(f"{title} — {os.path.basename(file_path)}")
     win.geometry('900x700')
     win.minsize(520, 360)
     try:
         win.transient(parent)
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
     header = ttk.Frame(win, padding=(10, 8))
     header.pack(fill='x')

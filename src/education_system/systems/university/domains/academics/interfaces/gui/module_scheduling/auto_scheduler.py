@@ -12,12 +12,16 @@ Wires eight features onto ``ModuleSchedulingGUI``:
   4 optimization-goal selector   8 forecast-aware capacity
 """
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import math
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
+from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling._dialogs import messagebox
 
 from education_system.systems.university.infrastructure.database.db import (
     get_connection, transaction,
@@ -506,7 +510,7 @@ def show_auto_scheduler_dialog(self):
         try:
             self.refresh_all_data()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         messagebox.showinfo(
             _t('gui.academics.module_scheduling.auto_scheduler.dialogs.commit_complete', default="Commit complete"),
             f"Committed {committed} session(s) as {status}."
@@ -527,7 +531,7 @@ def show_auto_scheduler_dialog(self):
         try:
             self.refresh_all_data()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         messagebox.showinfo(_t('gui.academics.module_scheduling.auto_scheduler.dialogs.sandbox_cleared', default="Sandbox cleared"), f"Removed {removed} draft row(s).",
                             parent=dialog)
 

@@ -327,11 +327,9 @@ class SecurityTrainingSimulation:
             if not table:
                 raise SimulationError("The canonical calendar is not available")
             conn.execute(
-                """INSERT INTO academic_calendar_events
-                   (id, name, date, date_start, date_end, description, event_type,
-                    date_added, last_modified, created_by, location, audience,
-                    participants, status, is_active)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)""",
+                """INSERT INTO unified_events (
+                    source_event_id, title, event_date, start_datetime, end_datetime, description, event_type, created_at, updated_at, created_by, location, audience, participants, status, is_active, source_type
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'academic_calendar')""",
                 (event_id, course_name, training_date,
                  f"{training_date}T{training_time}:00", f"{training_date}T{training_time}:00",
                  "ICT security-awareness training invitation", "Training", now, now,

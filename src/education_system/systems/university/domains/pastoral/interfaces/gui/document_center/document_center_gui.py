@@ -67,7 +67,7 @@ class DocumentCenterGUI:
                 if row:
                     return int(row[0])
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return None
 
     def _ensure_tables(self):

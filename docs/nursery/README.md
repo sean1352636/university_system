@@ -20,15 +20,15 @@ docs/nursery/
 pip install -r requirements.lock
 
 # Launch directly
-python run.py --nursery --gui      # Nursery GUI
-python run.py --nursery --cli      # Nursery CLI
-# ...or run `python run.py` and choose "Nursery" from the interactive menu
+python -m education_system --nursery --gui      # Nursery GUI
+python -m education_system --nursery --cli      # Nursery CLI
+# ...or run `python -m education_system` and choose "Nursery" from the interactive menu
 
 # Run the Nursery tests
 python -m pytest education_system/nursery_system/tests/
 ```
 
-> **Note:** The Nursery system launches directly via `python run.py --nursery --gui`
+> **Note:** The Nursery system launches directly via `python -m education_system --nursery --gui`
 > (or `--cli`), or from the interactive launcher menu. It is fully integrated into
 > the shared launcher, authentication, and cross-system switching.
 
@@ -64,11 +64,11 @@ nursery / pre-school setting (ages 0-5). It provides:
 
 ```bash
 # Launch Nursery directly
-python run.py --nursery --gui
-python run.py --nursery --cli
+python -m education_system --nursery --gui
+python -m education_system --nursery --cli
 
 # Run the Nursery test suite
-python run.py --nursery --test
+python -m education_system --nursery --test
 # ...or directly with pytest
 python -m pytest education_system/nursery_system/tests/
 ```

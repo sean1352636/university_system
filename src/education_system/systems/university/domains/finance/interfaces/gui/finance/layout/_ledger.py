@@ -1,4 +1,7 @@
 """General Ledger tabs: Trial Balance + Journals."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -315,7 +318,7 @@ class LedgerMixin:
                 if auth and getattr(auth, 'current_user', None):
                     return auth.current_user.get('username', 'admin')
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             return 'admin'
 
         def reload_periods(*_a):

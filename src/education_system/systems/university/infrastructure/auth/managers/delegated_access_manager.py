@@ -1118,6 +1118,7 @@ class DelegatedAccessManager:
 
                 # Expire them
                 placeholders = ', '.join('?' for _ in expired_ids)
+                # db-audit: ignore[DBW001] - string literal
                 cursor.execute(f'''
                     UPDATE delegated_access
                     SET status = 'expired', updated_at = ?

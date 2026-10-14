@@ -71,7 +71,7 @@ def view_all_checkouts(cursor):
                     print(f"{item[0][:25]:<25} {borrower[:20]:<20} {item[3]:<12} {int(item[4]):<12}")
 
     except sqlite3.Error as e:
-        print(_t("common.database_error_msg", error=str(e)))
+        print(_t("common.database_error_msg", error=str(e), default="Database Error Msg {error}"))
     except Exception as e:
         print(_t("common.error_occurred", error=str(e)))
 
@@ -135,7 +135,7 @@ def view_leaderboard(cursor):
                 print(f"{i:<6} {name[:25]:<25} {entry[2]:<8}")
 
     except sqlite3.Error as e:
-        print(_t("common.database_error_msg", error=str(e)))
+        print(_t("common.database_error_msg", error=str(e), default="Database Error Msg {error}"))
     except Exception as e:
         print(_t("common.error_occurred", error=str(e)))
 
@@ -170,7 +170,7 @@ def view_point_opportunities(cursor):
         # Show upcoming events that award points
         cursor.execute('''
         SELECT e.event_name, c.club_name, e.event_date
-        FROM union_events e
+        FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e
         JOIN student_clubs c ON e.organizer_id = c.club_id
         WHERE e.event_date >= date('now') AND e.status = 'upcoming'
         ORDER BY e.event_date
@@ -188,7 +188,7 @@ def view_point_opportunities(cursor):
                 print(f"{event[0][:30]:<30} {event[1][:20]:<20} {event[2]:<12}")
 
     except sqlite3.Error as e:
-        print(_t("common.database_error_msg", error=str(e)))
+        print(_t("common.database_error_msg", error=str(e), default="Database Error Msg {error}"))
     except Exception as e:
         print(_t("common.error_occurred", error=str(e)))
 
@@ -261,7 +261,7 @@ def award_points_to_student(cursor, conn):
         check_and_award_badges(student_id, cursor)
 
     except sqlite3.Error as e:
-        print(_t("common.database_error_msg", error=str(e)))
+        print(_t("common.database_error_msg", error=str(e), default="Database Error Msg {error}"))
     except Exception as e:
         print(_t("common.error_occurred", error=str(e)))
 

@@ -1,5 +1,12 @@
 """Module Discussion Forums GUI (Feature 39).
 
+Stores in ``module_forums`` / ``module_forum_posts``, keyed on
+``module_code``. These used to be ``lms_discussion_forums`` /
+``lms_discussion_posts``, whose foreign key pointed at ``lms_courses``
+— so opening a forum on a module with no LMS course silently created
+an LMS course row just to satisfy the constraint. The LMS is retired
+and the module is what a module forum was always about.
+
 Provides a forum interface for module discussions, including threaded posts,
 topic creation, replies, and likes. Organised by enrolled modules.
 """
@@ -27,7 +34,6 @@ class CourseForumsGUI:
             auth.current_user.get('username', '') if auth and auth.current_user else ''
         )
         self.selected_module_code = None
-        self.selected_lms_course_id = None
         self.selected_forum_id = None
         self.selected_post_id = None
 
@@ -49,20 +55,20 @@ class CourseForumsGUI:
         try:
             with transaction() as conn:
                 conn.execute(
-                    """CREATE TABLE IF NOT EXISTS lms_discussion_forums (
+                    """CREATE TABLE IF NOT EXISTS module_forums (
                         forum_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        lms_course_id INTEGER NOT NULL,
+                        module_code TEXT NOT NULL,
                         topic TEXT NOT NULL,
                         description TEXT,
                         created_by TEXT NOT NULL,
                         is_pinned INTEGER DEFAULT 0,
                         is_locked INTEGER DEFAULT 0,
                         created_at TEXT NOT NULL DEFAULT (datetime('now')),
-                        FOREIGN KEY (lms_course_id) REFERENCES lms_courses(lms_course_id) ON DELETE CASCADE
+                        FOREIGN KEY (module_code) REFERENCES modules(module_code)
                     )"""
                 )
                 conn.execute(
-                    """CREATE TABLE IF NOT EXISTS lms_discussion_posts (
+                    """CREATE TABLE IF NOT EXISTS module_forum_posts (
                         post_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         forum_id INTEGER,
                         user_id TEXT,
@@ -100,6 +106,11 @@ class CourseForumsGUI:
         )
         self.module_combo.pack(side=tk.LEFT, padx=(0, 10))
         self.module_combo.bind('<<ComboboxSelected>>', lambda e: self._on_module_selected())
+
+        # Says whose modules these are, so an empty or unexpected list
+        # explains itself instead of just looking broken.
+        self._module_scope_label = ttk.Label(top_frame, text="", foreground="#7f8c8d")
+        self._module_scope_label.pack(side=tk.LEFT, padx=(4, 0))
 
         # Internal mapping: combo index -> module_code
         self._module_codes = []
@@ -191,30 +202,64 @@ class CourseForumsGUI:
     # Data loading
     # ------------------------------------------------------------------
 
+    def _is_staff(self):
+        """True for a role that should see every module, not just enrolments."""
+        user = getattr(self.auth, "current_user", None) if self.auth else None
+        role = str((user or {}).get("role", "")).strip().lower()
+        return role in ("admin", "superadmin", "staff", "instructor",
+                        "teacher", "lecturer")
+
     def _load_modules(self):
-        """Load enrolled modules into the combo box."""
+        """Load the modules this user can hold a discussion on.
+
+        Previously this listed only ``student_modules`` rows for the signed-in
+        username, so anyone who is not a student — an admin, a lecturer —
+        matched nothing and the module dropdown came up empty, which made the
+        whole screen look broken. Staff now get the full module list; students
+        keep their enrolments.
+        """
         self.module_combo.set('')
         self._module_codes.clear()
         values = []
+        scope = ""
 
         try:
             with get_connection() as conn:
-                rows = conn.execute(
-                    """SELECT m.module_code, m.module_name
-                       FROM student_modules sm
-                       JOIN modules m ON sm.module_code = m.module_code
-                       WHERE sm.student_id = ?
-                       ORDER BY m.module_name""",
-                    (self.student_id,),
-                ).fetchall()
+                rows = []
+                if not self._is_staff():
+                    rows = conn.execute(
+                        """SELECT m.module_code, m.module_name
+                           FROM student_modules sm
+                           JOIN modules m ON sm.module_code = m.module_code
+                           WHERE sm.student_id = ?
+                           ORDER BY m.module_name""",
+                        (self.student_id,),
+                    ).fetchall()
+                    scope = "Your enrolled modules"
+
+                if not rows:
+                    # Staff, or a student with no enrolments recorded: show the
+                    # full catalogue rather than an empty box with no
+                    # explanation for why.
+                    rows = conn.execute(
+                        """SELECT module_code, module_name
+                             FROM modules
+                            WHERE COALESCE(TRIM(module_code), '') <> ''
+                              AND COALESCE(is_active, 1) = 1
+                            ORDER BY module_name""").fetchall()
+                    scope = ("All modules" if self._is_staff()
+                             else "All modules (you have no enrolments recorded)")
 
             for module_code, module_name in rows:
                 self._module_codes.append(module_code)
-                values.append(f"{module_code} - {module_name}")
+                values.append(f"{module_code} - {module_name or module_code}")
         except Exception as exc:
             logger.error("Failed to load modules: %s", exc)
 
         self.module_combo['values'] = values
+        label = getattr(self, "_module_scope_label", None)
+        if label is not None:
+            label.config(text=f"{scope} — {len(values)} module(s)")
 
     def _on_module_selected(self):
         """Handle module selection from the combo box."""
@@ -222,43 +267,17 @@ class CourseForumsGUI:
         if idx < 0 or idx >= len(self._module_codes):
             return
         self.selected_module_code = self._module_codes[idx]
-        self.selected_lms_course_id = self._resolve_lms_course_id(self.selected_module_code)
         self.selected_forum_id = None
         self.selected_post_id = None
         self._load_forums()
         self._clear_posts()
-
-    def _resolve_lms_course_id(self, module_code):
-        """Return the integer lms_course_id for a module, creating a row if needed.
-
-        The lms_discussion_forums FK points at lms_courses(lms_course_id), not
-        modules. If this module has no lms_courses row yet, create a minimal one
-        so forums can attach.
-        """
-        try:
-            with transaction() as conn:
-                row = conn.execute(
-                    "SELECT lms_course_id FROM lms_courses WHERE module_code = ?",
-                    (module_code,),
-                ).fetchone()
-                if row:
-                    return row[0]
-                cursor = conn.execute(
-                    "INSERT INTO lms_courses (module_code, instructor_id, course_description) "
-                    "VALUES (?, ?, ?)",
-                    (module_code, self.student_id or 'system', ''),
-                )
-                return cursor.lastrowid
-        except Exception as exc:
-            logger.error("Failed to resolve lms_course_id for %s: %s", module_code, exc)
-            return None
 
     def _load_forums(self):
         """Load forums for the selected module."""
         self.forum_tree.delete(*self.forum_tree.get_children())
         self._forum_map.clear()
 
-        if not self.selected_lms_course_id:
+        if not self.selected_module_code:
             return
 
         try:
@@ -267,11 +286,11 @@ class CourseForumsGUI:
                     """SELECT f.forum_id, f.topic,
                               COUNT(p.post_id) AS posts,
                               MAX(p.created_at) AS last_activity
-                       FROM lms_discussion_forums f
-                       LEFT JOIN lms_discussion_posts p ON f.forum_id = p.forum_id
-                       WHERE f.lms_course_id = ? AND f.is_locked = 0
+                       FROM module_forums f
+                       LEFT JOIN module_forum_posts p ON f.forum_id = p.forum_id
+                       WHERE f.module_code = ? AND f.is_locked = 0
                        GROUP BY f.forum_id""",
-                    (self.selected_lms_course_id,),
+                    (self.selected_module_code,),
                 ).fetchall()
 
             for forum_id, title, posts_count, last_activity in rows:
@@ -312,7 +331,7 @@ class CourseForumsGUI:
                 rows = conn.execute(
                     """SELECT post_id, parent_post_id, user_id, content,
                               created_at, likes_count
-                       FROM lms_discussion_posts
+                       FROM module_forum_posts
                        WHERE forum_id = ?
                        ORDER BY created_at ASC""",
                     (self.selected_forum_id,),
@@ -385,7 +404,7 @@ class CourseForumsGUI:
 
     def _new_topic(self):
         """Create a new forum topic for the selected module."""
-        if not self.selected_lms_course_id:
+        if not self.selected_module_code:
             messagebox.showwarning(
                 _t('gui.academics.course_forums.course_forums.dialogs.no_module', default="No Module"), _t('gui.academics.course_forums.course_forums.dialogs.please_select_a_module_first', default="Please select a module first."), parent=self.window
             )
@@ -416,10 +435,10 @@ class CourseForumsGUI:
             try:
                 with transaction() as conn:
                     conn.execute(
-                        """INSERT INTO lms_discussion_forums
-                              (lms_course_id, topic, description, created_by)
+                        """INSERT INTO module_forums
+                              (module_code, topic, description, created_by)
                            VALUES (?, ?, ?, ?)""",
-                        (self.selected_lms_course_id, title, description, self.student_id),
+                        (self.selected_module_code, title, description, self.student_id),
                     )
                 log_activity(
                     self.student_id, self.student_id, 'student',
@@ -470,7 +489,7 @@ class CourseForumsGUI:
             try:
                 with transaction() as conn:
                     conn.execute(
-                        """INSERT INTO lms_discussion_posts
+                        """INSERT INTO module_forum_posts
                               (forum_id, parent_post_id, user_id, content)
                            VALUES (?, ?, ?, ?)""",
                         (self.selected_forum_id, parent_post_id, self.student_id, content),
@@ -508,7 +527,7 @@ class CourseForumsGUI:
         try:
             with transaction() as conn:
                 conn.execute(
-                    """UPDATE lms_discussion_posts
+                    """UPDATE module_forum_posts
                        SET likes_count = likes_count + 1
                        WHERE post_id = ?""",
                     (self.selected_post_id,),
@@ -523,7 +542,7 @@ class CourseForumsGUI:
 
     def _refresh_current(self):
         """Refresh the current forum and posts view."""
-        if self.selected_lms_course_id:
+        if self.selected_module_code:
             self._load_forums()
         if self.selected_forum_id:
             self._load_posts()

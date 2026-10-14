@@ -1,0 +1,1 @@
+"""Bakery shop services mixins."""

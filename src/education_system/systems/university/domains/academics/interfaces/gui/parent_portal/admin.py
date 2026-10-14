@@ -473,14 +473,12 @@ def show_create_parent_account_interface(self):
 
             # Get the created user ID
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            try:
-                cursor = conn.cursor()
-                cursor.execute('SELECT user_id FROM user_accounts WHERE username = ?', (username,))
-                user_result = cursor.fetchone()
+            cursor = conn.cursor()
+            cursor.execute('SELECT user_id FROM user_accounts WHERE username = ?', (username,))
+            user_result = cursor.fetchone()
 
-                if not user_result:
-                    messagebox.showerror(_t('gui.academics.parent_portal.admin.dialogs.error', default="Error"), _t('gui.academics.parent_portal.admin.dialogs.user_created_but_id_not_found', default="User created but ID not found."))
-            finally:
+            if not user_result:
+                messagebox.showerror(_t('gui.academics.parent_portal.admin.dialogs.error', default="Error"), _t('gui.academics.parent_portal.admin.dialogs.user_created_but_id_not_found', default="User created but ID not found."))
                 conn.close()
                 return
 
@@ -885,33 +883,31 @@ def export_parent_accounts_csv(self):
 
         # Connect to database
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-        try:
-            cursor = conn.cursor()
+        cursor = conn.cursor()
 
-            # Fetch all parent accounts with their associated children
-            cursor.execute('''
-                SELECT
-                    pa.parent_id,
-                    pa.first_name,
-                    pa.last_name,
-                    pa.email,
-                    pa.phone,
-                    pa.address,
-                    pa.emergency_contact,
-                    pa.registration_date,
-                    pa.two_factor_enabled,
-                    COUNT(DISTINCT pc.student_id) as child_count
-                FROM parent_accounts pa
-                LEFT JOIN parent_children pc ON pa.parent_id = pc.parent_id
-                GROUP BY pa.parent_id
-                ORDER BY pa.last_name, pa.first_name
-            ''')
+        # Fetch all parent accounts with their associated children
+        cursor.execute('''
+            SELECT
+                pa.parent_id,
+                pa.first_name,
+                pa.last_name,
+                pa.email,
+                pa.phone,
+                pa.address,
+                pa.emergency_contact,
+                pa.registration_date,
+                pa.two_factor_enabled,
+                COUNT(DISTINCT pc.student_id) as child_count
+            FROM parent_accounts pa
+            LEFT JOIN parent_children pc ON pa.parent_id = pc.parent_id
+            GROUP BY pa.parent_id
+            ORDER BY pa.last_name, pa.first_name
+        ''')
 
-            parent_data = cursor.fetchall()
+        parent_data = cursor.fetchall()
 
-            if not parent_data:
-                messagebox.showinfo(_t('gui.academics.parent_portal.admin.dialogs.no_data', default="No Data"), _t('gui.academics.parent_portal.admin.dialogs.no_parent_accounts_found_to_export', default="No parent accounts found to export."))
-        finally:
+        if not parent_data:
+            messagebox.showinfo(_t('gui.academics.parent_portal.admin.dialogs.no_data', default="No Data"), _t('gui.academics.parent_portal.admin.dialogs.no_parent_accounts_found_to_export', default="No parent accounts found to export."))
             conn.close()
             return
 

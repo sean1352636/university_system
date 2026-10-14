@@ -157,6 +157,7 @@ class PrintQueueManager:
                 cols.append("notes = ?")
                 params.append(notes)
             params.append(queue_id)
+            # db-audit: ignore[DBW001] - join over a code-controlled list
             cur = conn.execute(
                 f"UPDATE graduation_print_queue SET {', '.join(cols)} WHERE queue_id = ?",
                 params,

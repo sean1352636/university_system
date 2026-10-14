@@ -66,6 +66,22 @@ class LogDatabase:
                 )
             ''')
 
+            # Two modules ship a `CREATE TABLE IF NOT EXISTS logs` and they
+            # disagree: the GUI copy in shell/gui/logging/helpers.py has no
+            # role/details/hash, and on existing databases it is the one that
+            # won — so the CREATE above is a no-op and insert_log() below
+            # fails with "no such column". Add what is missing.
+            for column, decl in (
+                ("role", "TEXT"),
+                ("details", "TEXT"),
+                ("hash", "TEXT"),
+                ("session_id", "TEXT"),
+                ("created_at", "DATETIME"),
+            ):
+                if column not in {row[1] for row in cursor.execute("PRAGMA table_info(logs)")}:
+                    # db-audit: ignore[DBW001] - loop over a literal table
+                    cursor.execute(f"ALTER TABLE logs ADD COLUMN {column} {decl}")  # nosec B608 - literal names
+
             # Create indexes for better performance
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_logs_timestamp ON logs(timestamp)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_logs_user_id ON logs(user_id)')

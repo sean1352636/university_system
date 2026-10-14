@@ -96,16 +96,20 @@ def check_eligibility(student_id: str, conn=None) -> Dict[str, Any]:
                     "academic_year": award[2], "ratified_at": award[3],
                 }
 
-        prog = cur.execute(
-            f"""SELECT COUNT(DISTINCT sm.module_code),
-                       SUM(COALESCE(m.credits, 0)),
-                       {_GPA_CASE}
-                  FROM student_modules sm
-                  LEFT JOIN modules m ON sm.module_code = m.module_code
-                 WHERE sm.student_id = ?""", (student_id,)).fetchone()
-        report["modules_completed"] = int(prog[0] or 0)
-        report["credits_earned"] = float(prog[1] or 0)
-        report["current_gpa"] = float(prog[2] or 0.0)
+        # Earned, not enrolled. This used to COUNT every student_modules row
+        # and SUM every module's credits, so a student who had merely
+        # registered for six 15-credit modules audited as 90 credits earned
+        # with nothing marked. See services.degree_audit.progress.
+        from education_system.systems.university.domains.academics.domain.services.degree_audit.progress import (
+            earned_progress,
+        )
+        prog = earned_progress(conn, student_id)
+        report["modules_completed"] = prog["modules_completed"]
+        report["credits_earned"] = prog["credits_earned"]
+        report["current_gpa"] = prog["gpa"]
+        report["modules_enrolled"] = prog["modules_enrolled"]
+        report["credits_enrolled"] = prog["credits_enrolled"]
+        report["modules_graded"] = prog["modules_graded"]
     except Exception as exc:
         # Couldn't compute — flag it so callers can warn-and-allow rather than
         # hard-block on an infrastructure/data problem.

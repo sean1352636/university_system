@@ -16,6 +16,7 @@ from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.domains.academics.domain.course_planning.services.planning_service import PlanningService
 from education_system.systems.university.domains.assessment.domain.grading.grade_calculation.gpa import calculate_student_gpa
 from education_system.systems.university.infrastructure.activity_logger import log_activity
+import tkinter.simpledialog  # noqa: F401 - registers tk.simpledialog
 
 
 class _RecommendationsMixin:

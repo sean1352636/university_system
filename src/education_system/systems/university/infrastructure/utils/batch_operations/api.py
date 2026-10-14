@@ -34,7 +34,7 @@ class ApiMixin:
         self.api_app = Flask(__name__)
         self.setup_api_routes()
 
-        print(_t("shared.utils.batch_operations.starting_api_server", port=port))
+        print(_t("shared.utils.batch_operations.starting_api_server", port=port, default="Starting API Server {port}"))
         print(_t("shared.utils.batch_operations.available_endpoints"))
         print(_t("batch_ops.api.endpoint_import"))
         print(_t("batch_ops.api.endpoint_students"))

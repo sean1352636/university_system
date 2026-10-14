@@ -110,6 +110,7 @@ class AuditLogger:
         """Initialize audit trail tables."""
         # TABLE_NAME is a class constant, not user input, but use bracket quoting for consistency
         with get_connection(self.db_path) as conn:
+            # db-audit: ignore[DBW001] - string literal
             conn.execute(f'''
                 CREATE TABLE IF NOT EXISTS [{self.TABLE_NAME}] (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -128,18 +129,22 @@ class AuditLogger:
                     data_hash TEXT
                 )
             ''')
+            # db-audit: ignore[DBW001] - string literal
             conn.execute(f'''
                 CREATE INDEX IF NOT EXISTS idx_audit_trail_timestamp
                 ON [{self.TABLE_NAME}](timestamp DESC)
             ''')
+            # db-audit: ignore[DBW001] - string literal
             conn.execute(f'''
                 CREATE INDEX IF NOT EXISTS idx_audit_trail_user
                 ON [{self.TABLE_NAME}](user_id, timestamp DESC)
             ''')
+            # db-audit: ignore[DBW001] - string literal
             conn.execute(f'''
                 CREATE INDEX IF NOT EXISTS idx_audit_trail_resource
                 ON [{self.TABLE_NAME}](resource_type, resource_id)
             ''')
+            # db-audit: ignore[DBW001] - string literal
             conn.execute(f'''
                 CREATE INDEX IF NOT EXISTS idx_audit_trail_action
                 ON [{self.TABLE_NAME}](action, timestamp DESC)
@@ -252,6 +257,7 @@ class AuditLogger:
         )
 
         with get_connection(self.db_path) as conn:
+            # db-audit: ignore[DBW001] - string literal
             cursor = conn.execute(f'''
                 INSERT INTO [{self.TABLE_NAME}]
                 (timestamp, action, resource_type, resource_id, user_id, username,

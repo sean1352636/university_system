@@ -21,6 +21,21 @@ from education_system.systems.university.infrastructure.validation.validators im
 # Initialize logger
 logger = logging.getLogger(__name__)
 
+
+#: ``APP_ENV`` values in which a mock OTP provider may run. An unset
+#: ``APP_ENV`` reads as production, so the refusal below is the default.
+_MOCK_PROVIDER_ENVIRONMENTS = frozenset({"development", "dev", "local", "test", "testing"})
+
+
+def _mock_delivery_allowed() -> bool:
+    """True when writing an OTP to a local log instead of sending it is safe.
+
+    Read at call time so a process that sets ``APP_ENV`` after import still
+    gets the right answer.
+    """
+    return os.getenv("APP_ENV", "production").strip().lower() in _MOCK_PROVIDER_ENVIRONMENTS
+
+
 class EmailProvider(ABC):
     """Abstract base class for email providers"""
 
@@ -378,6 +393,27 @@ class MockEmailProvider(EmailProvider):
         self.log_file = log_file or str(paths.UNIVERSITY_TEMP_DIR / 'email_otp_log.txt')
 
     def send_otp(self, to_email: str, code: str, username: str = None) -> Dict:
+        """Log the OTP locally — refused outside development and test.
+
+        Writing a live user's code to a log file (and reporting success for a
+        message nobody received) is the same disclosure as returning it over
+        the API, so outside a declared dev/test environment this fails rather
+        than pretending to have sent anything.
+        """
+        if not _mock_delivery_allowed():
+            logger.error(
+                "Email OTP fell back to the mock provider outside development; "
+                "refusing to log a verification code in clear text. Configure "
+                "an SMTP provider or add the address to the whitelist."
+            )
+            return {
+                'success': False,
+                'provider': 'mock',
+                'error': 'Email OTP delivery is not configured',
+            }
+        return self._log_otp(to_email, code, username)
+
+    def _log_otp(self, to_email: str, code: str, username: str = None) -> Dict:
         """Mock send - logs to file instead of sending email"""
         try:
             from datetime import datetime

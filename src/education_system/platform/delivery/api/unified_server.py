@@ -161,8 +161,14 @@ def create_unified_app() -> Flask:
 
     _init_security(app)
 
-    from education_system.platform.governance.security.csrf import register_csrf_middleware
-    register_csrf_middleware(app)
+    # CSRF via the kernel wrapper rather than the governance module directly:
+    # it delegates to the same shared validator but scopes the check to
+    # cookie-authenticated, unsafe-method requests. A call carrying
+    # `Authorization: Bearer` is exempt — a browser will not attach that
+    # header cross-origin, so demanding a CSRF token would break every API
+    # client for no gain. The portal's write endpoints are covered either way.
+    from education_system.platform.delivery.api.middleware.csrf import register_csrf
+    register_csrf(app)
 
     # ── Shared auth ─────────────────────────────────────────────────────
     from education_system.platform.delivery.api.auth import auth_bp, init_auth
@@ -183,6 +189,10 @@ def create_unified_app() -> Flask:
     from education_system.platform.delivery.api.health import health_bp, init_health
     init_health(system_name="Education System (Unified)")
     app.register_blueprint(health_bp, url_prefix=f"/api/{API_VERSION}")
+
+    # Local administrative control (orderly shutdown from the portal).
+    from education_system.platform.delivery.api.admin_control import admin_control_bp
+    app.register_blueprint(admin_control_bp, url_prefix=f"/api/{API_VERSION}")
 
     # ── Metrics (Prometheus + enriched health) ───────────────────────
     from education_system.platform.delivery.api.metrics_routes import metrics_bp, init_metrics
@@ -212,6 +222,45 @@ def create_unified_app() -> Flask:
         logger.info("Registered journey routes under /api/%s/journey/", API_VERSION)
     except Exception as e:
         logger.warning("Failed to load journey routes (non-fatal): %s", e)
+
+    # ── Linked platform: learners, transfers, systems, events ────────────
+    try:
+        from education_system.platform.delivery.api.routes.learners_routes import (
+            learners_bp, init_learner_routes,
+        )
+        init_learner_routes()
+        app.register_blueprint(learners_bp, url_prefix=f"/api/{API_VERSION}")
+        logger.info("Registered linked-platform routes under /api/%s/"
+                    "{learners,transfers,progression,systems,events,tasks}",
+                    API_VERSION)
+    except Exception as e:
+        logger.warning("Failed to load linked-platform routes (non-fatal): %s", e)
+
+    # ── Notification preferences ─────────────────────────────────────────
+    try:
+        from education_system.platform.delivery.api.routes.notification_routes import (
+            notification_prefs_bp, init_notification_routes,
+        )
+        init_notification_routes()
+        app.register_blueprint(
+            notification_prefs_bp, url_prefix=f"/api/{API_VERSION}/notifications")
+        logger.info("Registered notification preference routes under "
+                    "/api/%s/notifications/", API_VERSION)
+    except Exception as e:
+        logger.warning("Failed to load notification routes (non-fatal): %s", e)
+
+    # ── Shared bus consumers (notifications, webhooks, calendar) ─────────
+    # Each system drains its own inbound events, but only while it runs. The
+    # API server drains the shared consumers for every system so a transfer
+    # into a system nobody has open still notifies its staff. The thread is
+    # named CrossSystemBusDrainer, so the test suite never starts it.
+    try:
+        from education_system.platform.integrations.external.bus_drainer import (
+            start_platform_drainer,
+        )
+        start_platform_drainer()
+    except Exception as e:
+        logger.warning("Platform bus drainer not started (non-fatal): %s", e)
 
     # ── Cross-system reporting warehouse ─────────────────────────────────
     try:
@@ -303,15 +352,22 @@ def create_unified_app() -> Flask:
             )
 
     # ── Web frontend (login + dashboard) ─────────────────────────────
+    # OpenAPI: the spec is generated from registry.iter_routes over this
+    # app, so it cannot describe a route that is not mounted or omit one
+    # that is. /api/v1/docs (Swagger UI) and /api/v1/openapi.json.
+    try:
+        from education_system.platform.delivery.api.openapi.ui import docs_bp
+        app.register_blueprint(docs_bp)
+        logger.info("Registered OpenAPI docs at /api/%s/docs", API_VERSION)
+    except Exception:
+        logger.warning("OpenAPI docs not registered", exc_info=True)
+
     from education_system.platform.delivery.api.web.routes import web_bp
     app.register_blueprint(web_bp)
 
-    # These HTML-only routes must not disappear when domain API registration
-    # is blocked by a pending university database migration.
-    from education_system.systems.university.interfaces.api.routes.web_routes import (
-        web_bp as university_web_bp,
-    )
-    app.register_blueprint(university_web_bp, name="university_web")
+    # The university HTML routes lived in university/shell/api, which was
+    # removed. The portal frontend is preserved at platform/webui/ and will
+    # be re-served as the university API is rebuilt module by module.
 
     # ── PWA support ──────────────────────────────────────────────────────
     from education_system.platform.delivery.api.web.pwa import pwa_bp
@@ -357,69 +413,21 @@ def create_unified_app() -> Flask:
         logger.warning("Failed to load GraphQL API in development mode: %s", e)
 
     # ── University system ───────────────────────────────────────────────
-    try:
-        from education_system.paths import ensure_university_directories as uni_ensure
-        from education_system.systems.university.infrastructure.database.schema_version import (
-            require_supported_schema as require_university_schema,
-        )
-
-        uni_ensure()
-        require_university_schema()
-
-        # Import all university blueprints and register them under /api/v1/university/
-        from education_system.systems.university.interfaces.api.routes import (
-            system_bp, auth_bp as uni_auth_bp, student_bp, module_bp,
-            enrollment_bp, grade_bp, finance_bp, attendance_bp, assignment_bp,
-            timetable_bp, course_bp, user_bp, dashboard_bp, housing_bp,
-            library_bp, health_bp, facility_bp, career_bp, research_bp,
-            admission_bp, alumni_bp, event_bp, dining_bp, notification_bp,
-            mentorship_bp, parking_bp, club_bp, security_bp, lost_found_bp,
-            scholarship_bp, study_group_bp, exam_bp, calendar_bp,
-            assessment_bp, financial_aid_bp, degree_bp, announcement_bp,
-            advising_bp, accommodation_bp, tutoring_bp, early_warning_bp,
-            chat_bp, hr_bp, helpdesk_bp, parent_bp, lms_bp, integrity_bp,
-            campus_bp, evaluation_bp, communication_bp, counseling_bp,
-            emergency_bp, virtual_classroom_bp, equipment_bp, election_bp,
-            document_bp, credential_bp, office_hours_bp, ta_bp, mfa_bp,
-            account_bp, docs_bp, operations_bp, student_lifecycle_bp,
-            institutional_bp,
-        )
-
-        _uni_bps = [
-            system_bp, student_bp, module_bp, enrollment_bp, grade_bp,
-            finance_bp, attendance_bp, assignment_bp, timetable_bp,
-            course_bp, user_bp, dashboard_bp, housing_bp, library_bp,
-            health_bp, facility_bp, career_bp, research_bp, admission_bp,
-            alumni_bp, event_bp, dining_bp, notification_bp, mentorship_bp,
-            parking_bp, club_bp, security_bp, lost_found_bp, scholarship_bp,
-            study_group_bp, exam_bp, calendar_bp, assessment_bp,
-            financial_aid_bp, degree_bp, announcement_bp, advising_bp,
-            accommodation_bp, tutoring_bp, early_warning_bp, chat_bp,
-            hr_bp, helpdesk_bp, parent_bp, lms_bp, integrity_bp, campus_bp,
-            evaluation_bp, communication_bp, counseling_bp, emergency_bp,
-            virtual_classroom_bp, equipment_bp, election_bp, document_bp,
-            credential_bp, office_hours_bp, ta_bp, mfa_bp, account_bp,
-            operations_bp, student_lifecycle_bp,
-            institutional_bp,
-        ]
-
-        for bp in _uni_bps:
-            new_prefix = _reprefix(bp.url_prefix, "university")
-            new_name = f"university_{bp.name}"
-            app.register_blueprint(bp, url_prefix=new_prefix, name=new_name)
-
-        logger.info("Registered university routes under /api/%s/university/", API_VERSION)
-    except Exception as e:
-        from education_system.systems.university.infrastructure.database.schema_version import (
-            UnsupportedSchemaError,
-        )
-        if isinstance(e, UnsupportedSchemaError):
-            raise
-        logger.error("Failed to load university system: %s", e)
+    # REMOVED. The university API (systems/university/shell/api) was deleted
+    # deliberately so it can be rebuilt module by module. Re-register each
+    # blueprint here as it is rewritten; keep the /api/v1/university/ prefix
+    # so the existing frontend keeps working per module.
+    #
+    # The shared helpers those routes used — platform/delivery/api/university/
+    # {auth,pagination,validators} — are intentionally still present: 128
+    # domain modules import them, and they are a library, not an API surface.
+    #
+    # Backup of the removed tree:
+    #   var/backups/maintenance/api-removal-20260908_204628/api-trees.tar.gz
 
     # ── Sixth-form (college) routes under /api/v1/sixthform/ ─────────
     try:
-        from education_system.systems.sixth_form.interfaces.api.routes import (
+        from education_system.api.sixth_form.routes import (
             academic_year_bp, students_bp, academics_bp, assessment_bp,
             finance_bp, governance_bp, pastoral_bp, progression_bp,
             reports_bp, staff_comms_bp, student_services_bp,
@@ -441,7 +449,7 @@ def create_unified_app() -> Flask:
 
     # ── Nursery (early years) routes under /api/v1/nursery/ ──────────
     try:
-        from education_system.systems.nursery.interfaces.api.routes import ALL_BLUEPRINTS as _nursery_bps
+        from education_system.api.nursery.routes import ALL_BLUEPRINTS as _nursery_bps
         for bp in _nursery_bps:
             new_prefix = _reprefix(bp.url_prefix, "nursery")
             new_name = f"nursery_{bp.name}"
@@ -453,7 +461,7 @@ def create_unified_app() -> Flask:
 
     # ── Primary-school routes under /api/v1/primary/ ─────────────────
     try:
-        from education_system.systems.primary.interfaces.api.routes import ALL_BLUEPRINTS as _primary_bps
+        from education_system.api.primary.routes import ALL_BLUEPRINTS as _primary_bps
         for bp in _primary_bps:
             new_prefix = _reprefix(bp.url_prefix, "primary")
             new_name = f"primary_{bp.name}"
@@ -465,7 +473,7 @@ def create_unified_app() -> Flask:
 
     # ── Secondary-school routes under /api/v1/school/ ────────────────
     try:
-        from education_system.systems.secondary.interfaces.api.routes import ALL_BLUEPRINTS as _school_bps
+        from education_system.api.secondary.routes import ALL_BLUEPRINTS as _school_bps
         for bp in _school_bps:
             new_prefix = _reprefix(bp.url_prefix, "school")
             new_name = f"school_{bp.name}"
@@ -493,6 +501,10 @@ def create_unified_app() -> Flask:
     @app.route("/api")
     @app.route(f"/api/{API_VERSION}")
     def index():
+        # All seven systems, from the mount table rather than a literal: the
+        # literal listed five, so FE college and apprenticeships were
+        # invisible here while being real systems with routes of their own.
+        from education_system.platform.delivery.api import registry as _api_registry
         return jsonify({
             "service": "Education System API",
             "version": API_VERSION,
@@ -501,30 +513,53 @@ def create_unified_app() -> Flask:
             "docs": f"/api/{API_VERSION}/docs",
             "graphql": f"/api/{API_VERSION}/graphql",
             "systems": {
-                "university": f"/api/{API_VERSION}/university/",
-                "sixth_form": f"/api/{API_VERSION}/sixthform/",
-                "secondary": f"/api/{API_VERSION}/school/",
-                "primary": f"/api/{API_VERSION}/primary/",
-                "nursery": f"/api/{API_VERSION}/nursery/",
+                key: f"{mount.prefix}/"
+                for key, mount in _api_registry.mounts_by_system().items()
             },
+            "registry": f"/api/{API_VERSION}/systems",
+            "learners": f"/api/{API_VERSION}/learners/<journey_id>",
+            "transfers": f"/api/{API_VERSION}/transfers",
+            "events": f"/api/{API_VERSION}/events",
         })
 
     # ── Error handlers ──────────────────────────────────────────────────
+    # One envelope for every failure: RFC 7807 problem+json, built by
+    # kernel/problems.py. Bodies carry type/title/status/detail plus a
+    # trace_id matching the request id, and a legacy "error" key while
+    # clients still read one.
+    from education_system.platform.delivery.api.kernel.problems import (
+        problem,
+        validation_problem,
+    )
+
+    @app.errorhandler(400)
+    def bad_request(e):
+        return problem(400, getattr(e, "description", None))
+
+    @app.errorhandler(401)
+    def unauthorized(e):
+        return problem(401, "Authentication is required.")
+
+    @app.errorhandler(403)
+    def forbidden(e):
+        return problem(403, "You may not access this resource.")
+
     @app.errorhandler(404)
     def not_found(e):
-        return jsonify({"error": "Not found"}), 404
+        return problem(404, "Not found")
+
+    @app.errorhandler(409)
+    def conflict(e):
+        return problem(409, getattr(e, "description", None))
 
     @app.errorhandler(413)
     def request_too_large(e):
         max_mb = app.config.get("MAX_CONTENT_LENGTH", 0) / (1024 * 1024)
-        return jsonify({
-            "error": "Request entity too large",
-            "message": f"Maximum request size is {max_mb:.0f} MB",
-        }), 413
+        return problem(413, f"Maximum request size is {max_mb:.0f} MB")
 
     @app.errorhandler(429)
     def rate_limited(e):
-        return jsonify({"error": "Rate limit exceeded"}), 429
+        return problem(429, "Rate limit exceeded")
 
     @app.errorhandler(500)
     def server_error(e):
@@ -534,7 +569,9 @@ def create_unified_app() -> Flask:
         # seeing a stack trace, SQL, path or token.
         cid = getattr(g, "request_id", None)
         logger.error("Unhandled 500 (request_id=%s): %s", cid, e, exc_info=True)
-        return jsonify({"error": "Internal server error", "correlation_id": cid}), 500
+        # Detail stays generic: the traceback goes to the protected log under
+        # the same id, so support can join the two without the client seeing it.
+        return problem(500, "Internal server error", correlation_id=cid)
 
     @app.errorhandler(Exception)
     def unhandled_exception(e):
@@ -545,7 +582,7 @@ def create_unified_app() -> Flask:
             return e
         cid = getattr(g, "request_id", None)
         logger.error("Uncaught exception (request_id=%s): %s", cid, e, exc_info=True)
-        return jsonify({"error": "Internal server error", "correlation_id": cid}), 500
+        return problem(500, "Internal server error", correlation_id=cid)
 
     # Payload validation errors
     from education_system.platform.delivery.api.request_validator import PayloadValidationError
@@ -589,12 +626,15 @@ def run_unified_api(host: str | None = None, port: int | None = None):
             "API_DEBUG=true is refused because APP_ENV is production. The "
             "debugger exposes stack traces and a remote console."
         )
+    # 0.0.0.0 means "bind every interface"; it is not an address a browser
+    # can usefully open, so the printed links use localhost instead.
+    shown = "localhost" if host in ("0.0.0.0", "::") else host
     print(f"\n  Education System API · {API_VERSION}")
-    print(f"  Server   http://{host}:{port}")
-    print(f"  Home     http://{host}:{port}/portal/")
-    print(f"  Login    http://{host}:{port}/web/login")
-    print(f"  Docs     http://{host}:{port}/api/{API_VERSION}/docs")
-    print(f"  Health   http://{host}:{port}/api/{API_VERSION}/health")
+    print(f"  Server   http://{shown}:{port}   (bound to {host})")
+    print(f"  Login    http://{shown}:{port}/")
+    print(f"  Home     http://{shown}:{port}/portal/   (after sign-in)")
+    print(f"  Docs     http://{shown}:{port}/api/{API_VERSION}/docs")
+    print(f"  Health   http://{shown}:{port}/api/{API_VERSION}/health")
     # Use socketio.run() when Socket.IO is available for proper async transport
     _socketio = app.extensions.get("socketio") if hasattr(app, "extensions") else None
     if _socketio is not None:

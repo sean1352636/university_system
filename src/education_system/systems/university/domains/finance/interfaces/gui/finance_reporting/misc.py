@@ -1,3 +1,4 @@
+from education_system.systems.university.shell.gui import report_view as _rv
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
@@ -1121,7 +1122,7 @@ def generate_comprehensive_budget_variance_report():
                  font=('Arial', 16, 'bold')).pack(pady=(0, 10))
 
         # Create scrolled text widget for report
-        report_text = ScrolledText(main_frame, wrap=tk.WORD, font=('Courier', 10))
+        report_text = _rv.TextReportView(main_frame, wrap=tk.WORD, font=('Courier', 10))
         report_text.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         # Build report content

@@ -21,7 +21,6 @@ to the top level.
 from __future__ import annotations
 
 import tkinter as tk
-from tkinter import messagebox
 from typing import Optional
 
 from education_system.systems.university.infrastructure.i18n import get_text as _
@@ -30,6 +29,9 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 # lives in ``main_gui.py`` and aggregates all mixin behaviour via
 # inheritance, so instantiating it here provides the full calendar UI.
 from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar.main_gui import CalendarGUI
+# Message boxes parented to the window that raised them, not the main
+# GUI — see _dialogs.
+from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar._dialogs import messagebox
 
 
 def launch_calendar_gui(auth_manager: Optional[object] = None) -> Optional[CalendarGUI]:

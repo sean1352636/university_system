@@ -96,6 +96,7 @@ def _on_accommodation_decided(**payload: Any) -> None:
                 sql_filter += " AND exam_id = ?"
                 params.append(int(payload["exam_id"]))
 
+            # db-audit: ignore[DBW001] - string literal
             conn.execute(
                 f"UPDATE exam_portal_attempts "
                 f"SET accommodation_notes = COALESCE(accommodation_notes, '') || ? "
@@ -103,6 +104,7 @@ def _on_accommodation_decided(**payload: Any) -> None:
                 (note + "; ", *params),
             )
             if extra_pct > 0:
+                # db-audit: ignore[DBW001] - string literal
                 conn.execute(
                     f"UPDATE exam_portal_attempts "
                     f"SET time_remaining = CAST("

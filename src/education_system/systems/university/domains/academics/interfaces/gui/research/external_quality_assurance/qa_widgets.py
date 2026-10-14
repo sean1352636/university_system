@@ -75,7 +75,7 @@ class EQAStatusStrip(ttk.Frame):
         try:
             self.after(self._poll_ms, self._tick)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _tick(self) -> None:
         if not self.winfo_exists():
@@ -143,17 +143,17 @@ def with_qa_context(func: Callable) -> Callable:
                 try:
                     ctx["b3_year"] = int(dash.b3_year.get())
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
                 try:
                     ctx["tef_year"] = int(dash.tef_year.get())
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
                 try:
                     uoa = dash.ref_uoa.get().strip()
                     if uoa:
                         ctx["uoa"] = uoa
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
                 app._last_academic_context = ctx
         except Exception:
             logger.exception("with_qa_context: failed to stamp context")

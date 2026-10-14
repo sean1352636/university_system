@@ -212,7 +212,7 @@ def _resolve_submitter_details(user):
                 email = mail
     except Exception:
         # DB not reachable — fall back to env-only details.
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
     if not full_name:
         full_name = username or env_user_id or ''
@@ -330,7 +330,7 @@ def insert_complaint(complaint, submitted_by=None):
                 subject=complaint.get('subject'),
             )
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return True
     except sqlite3.Error:
         logger.exception("Failed to insert complaint id=%s", complaint.get('id'))

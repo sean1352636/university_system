@@ -36,123 +36,137 @@ from education_system.systems.university.domains.pastoral.domain.services.studen
 logger = logging.getLogger(__name__)
 
 def get_user_notifications(user_id=None, unread_only=False):
-    """Get notifications for a user"""
+    """Get notifications for a user, from the mailbox the Hub reads.
+
+    Was a query against the retired ``notifications`` table, which is never
+    written to — so this returned nothing for everyone, and the callers that
+    depend on it (notably "Mark All Read") had nothing to act on.
+    """
     if not user_id:
         user_id = _auth_mod.auth.current_user['id'] if _auth_mod.auth and _auth_mod.auth.current_user else None
 
     if not user_id:
         raise ValueError("User ID required")
 
-    try:
-        conn = sqlite3.connect(SUPPORT_DB)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+    items = _get_recent_notifications(user_id, None, limit=50)
+    if unread_only:
+        items = [n for n in items if not n.get('is_read')]
+    return items
 
-        # Determine timestamp column name
-        cursor.execute("PRAGMA table_info(notifications)")
-        cols = [col[1] for col in cursor.fetchall()]
-        if 'created_datetime' in cols:
-            ts_col = 'created_datetime'
-        elif 'created_at' in cols:
-            ts_col = 'created_at'
-        elif 'created_date' in cols:
-            ts_col = 'created_date'
-        else:
-            ts_col = 'rowid'
-
-        query = '''
-        SELECT * FROM notifications
-        WHERE user_id = ?
-        AND (expires_at IS NULL OR expires_at > datetime('now'))
-        '''
-        params = [user_id]
-
-        if unread_only:
-            query += ' AND is_read = 0'
-
-        query += f' ORDER BY {ts_col} DESC'
-
-        cursor.execute(query, params)
-        notifications = [dict(row) for row in cursor.fetchall()]
-
-        conn.close()
-        return notifications
-
-    except Exception as e:
-        logger.error(f"Error getting user notifications: {e}")
-        return []
-
-# Add this method to the EnhancedStudentSupport class
 
 def mark_notification_read(notification_id, user_id=None):
-    """Mark a notification as read"""
-    if not user_id:
-        user_id = _auth_mod.auth.current_user['id'] if _auth_mod.auth and _auth_mod.auth.current_user else None
+    """Mark one inbox message read, through the same mailbox API as the Hub.
 
-    if not user_id:
-        raise ValueError("User ID required")
-
+    The standalone ``notifications`` table this used to update is retired and
+    never written to, so every call reported success against zero rows and
+    "Mark All Read" always said it had marked none.
+    """
     try:
-        conn = sqlite3.connect(SUPPORT_DB)
-        cursor = conn.cursor()
-
-        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-        cursor.execute('''
-        UPDATE notifications
-        SET is_read = 1, read_datetime = ?
-        WHERE notification_id = ? AND user_id = ?
-        ''', (timestamp, notification_id, user_id))
-
-        conn.commit()
-        conn.close()
-
-        return cursor.rowcount > 0
-
+        from education_system.systems.university.infrastructure.email.admin import (
+            CommunicationDashboard,
+        )
+        dashboard = CommunicationDashboard(auth=_auth_for_notifications(user_id))
+        return bool(dashboard.read_message(notification_id))
     except Exception as e:
         logger.error(f"Error marking notification as read: {e}")
         return False
 
-def _get_recent_notifications(user_id, cursor):
-    """Get recent notifications for user"""
-    # Check which timestamp column exists in the notifications table
-    cursor.execute("PRAGMA table_info(notifications)")
-    columns = [col[1] for col in cursor.fetchall()]
 
-    if 'created_datetime' in columns:
-        ts_col = 'created_datetime'
-    elif 'created_at' in columns:
-        ts_col = 'created_at'
-    elif 'created_date' in columns:
-        ts_col = 'created_date'
-    else:
-        ts_col = None
+def _get_recent_notifications(user_id, cursor, limit=10):
+    """Recent inbox items for the dashboard widget.
 
-    if ts_col:
-        cursor.execute(f'''
-        SELECT notification_id, title, message, notification_type, {ts_col}, is_read
-        FROM notifications
-        WHERE user_id = ?
-        AND (expires_at IS NULL OR expires_at > datetime('now'))
-        ORDER BY {ts_col} DESC
-        LIMIT 10
-        ''', (user_id,))
-    else:
-        cursor.execute('''
-        SELECT notification_id, title, message, notification_type, NULL, is_read
-        FROM notifications
-        WHERE user_id = ?
-        AND (expires_at IS NULL OR expires_at > datetime('now'))
-        LIMIT 10
-        ''', (user_id,))
+    Reads the user's mailbox through ``CommunicationDashboard`` — the same
+    source the Notifications Hub and the header bell use — rather than the
+    standalone ``notifications`` table, which the Hub redesign retired. That
+    table still exists but is never written to, so this widget reported "No
+    recent notifications" to every user while their mailbox held hundreds of
+    messages.
 
-    return [
-        dict(zip(
-            ['notification_id', 'title', 'message', 'type', 'created', 'is_read'],
-            row
-        ))
-        for row in cursor.fetchall()
-    ]
+    ``cursor`` is accepted for call-compatibility and no longer used.
+
+    Returns dicts shaped as before: ``notification_id``, ``title``,
+    ``message``, ``type``, ``created``, ``is_read``.
+    """
+    try:
+        from education_system.systems.university.infrastructure.email.admin import (
+            CommunicationDashboard,
+        )
+    except Exception:
+        logger.warning("CommunicationDashboard unavailable; "
+                       "dashboard notifications will be empty", exc_info=True)
+        return []
+
+    try:
+        dashboard = CommunicationDashboard(auth=_auth_for_notifications(user_id))
+        inbox = dashboard.get_inbox(page=1, limit=limit)
+    except Exception:
+        logger.warning("Could not read the inbox for user %s", user_id,
+                       exc_info=True)
+        return []
+
+    if not isinstance(inbox, dict):
+        return []
+
+    items = []
+    for m in (inbox.get("messages") or [])[:limit]:
+        if not isinstance(m, dict):
+            continue
+        items.append({
+            "notification_id": m.get("id") or m.get("message_id"),
+            # The widget shows the subject; fall back to the sender so a
+            # subject-less message is not rendered as a blank row.
+            "title": (m.get("subject") or m.get("title")
+                      or m.get("sender") or "Message"),
+            # get_inbox returns `content` (the messages.message column) and
+            # `sent_at`; the older key names guessed here were always empty,
+            # which showed as a blank timestamp beside every row.
+            "message": m.get("content") or m.get("body") or m.get("message") or "",
+            "type": m.get("message_type") or "message",
+            "created": (m.get("sent_at") or m.get("sent_datetime")
+                        or m.get("created_at") or ""),
+            "is_read": bool(m.get("is_read")),
+        })
+    return items
+
+
+def _auth_for_notifications(user_id):
+    """Auth for the mailbox of ``user_id`` — not of whoever is signed in.
+
+    This used to return the live session whenever one existed, ignoring the
+    id it was given. The two coincide when you are looking at your own
+    dashboard, so it looked right, but any call naming another user read the
+    signed-in user's mailbox instead and showed rows belonging to someone
+    else. The requested id wins; the live session is only used when it is
+    that same user (so its permissions and any extra state come along) or
+    when no id was given.
+    """
+    live = None
+    try:
+        candidate = getattr(_auth_mod, "auth", None)
+        if candidate is not None and getattr(candidate, "current_user", None):
+            live = candidate
+    except Exception:
+        logger.debug("no live auth session for notifications", exc_info=True)
+
+    if user_id is None:
+        return live
+
+    if live is not None:
+        live_id = (live.current_user or {}).get("id")
+        if str(live_id) == str(user_id):
+            return live
+
+    class _StandInAuth:
+        """Carries just the identity the mailbox query needs."""
+
+        def __init__(self, uid):
+            self.current_user = {"id": uid}
+
+        def check_permission(self, *_a, **_k):
+            return True
+
+    return _StandInAuth(user_id)
+
 
 def _create_ticket_notifications(ticket_id, student_id, assigned_to, action):
     """Create notifications for ticket events"""

@@ -118,7 +118,7 @@ def _lookup_housing_deposit(assignment_id: Any) -> float:
                 except Exception:
                     continue
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return 0.0
 
 def _housing_inspector_user_id() -> str | None:

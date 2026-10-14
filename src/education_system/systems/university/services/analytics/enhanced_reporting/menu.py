@@ -966,7 +966,7 @@ def show_performance_monitor():
                     table_name = table.replace('_', ' ').title()
                     print(f"📚 {table_name}: {count}")
                 except Exception:
-                    pass  # Table might not exist
+                    logger.debug("Suppressed exception", exc_info=True)
 
         finally:
             conn.close()
@@ -995,7 +995,7 @@ def show_performance_monitor():
             finally:
                 user_conn.close()
         except Exception:
-            pass  # users table may live in a different database
+            logger.debug("Suppressed exception", exc_info=True)
 
     except Exception as e:
         print(f"❌ Error gathering performance data: {str(e)}")

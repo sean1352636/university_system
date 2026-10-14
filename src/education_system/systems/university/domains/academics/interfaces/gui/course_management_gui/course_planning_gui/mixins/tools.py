@@ -1,6 +1,9 @@
 """Split from course_planning_gui.py — provides mixins assembled in
 course_planning_gui/__init__.py into the final CoursePlanningGUI class."""
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -189,7 +192,7 @@ class _ToolsMixin:
                 else:
                     self.progress_program_var.set(student_course)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         self.progress_program_entry.pack(side=tk.LEFT, padx=5)
 

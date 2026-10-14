@@ -21,7 +21,9 @@ CATEGORIES: list[tuple[str, list[str]]] = [
         "Parent Portal",
     ]),
     ("Academic Management", [
-        "Academic Year", "Calendar", "Courses", "Subjects & A-Levels",
+        # One entry, was two: "Calendar" is now a submenu of the
+        # academic-year menu, which is where term dates live.
+        "Academic Year & Calendar", "Courses", "Subjects & A-Levels",
         "Class Groups", "Timetable", "Timetable Optimiser", "Attendance",
         "Lesson Plans", "Cover", "Cover Agency",
         "Homework & Coursework", "Assignments",
@@ -37,8 +39,10 @@ CATEGORIES: list[tuple[str, list[str]]] = [
         "Quality Assurance", "SEF Builder",
     ]),
     ("UCAS & Careers", [
-        "UCAS Applications", "UCAS Workflow", "Personal Statements", "References",
-        "University Offers", "University Visits",
+        # One entry, was five: UCAS Applications, UCAS Workflow,
+        # Personal Statements, References and University Offers all
+        # describe one route and now share one menu.
+        "University & UCAS", "University Visits",
         "Apprenticeships", "Careers Guidance",
         "Destinations",
     ]),
@@ -113,128 +117,124 @@ def _submenu(category: str, items: list[str], *, auth=None) -> None:
             continue
         label = items[int(choice) - 1]
         logger.debug("Sixth-form CLI dispatch: %s / %s", category, label)
-        from education_system.systems.sixth_form.domain.learners.students import student_cli
-        from education_system.systems.sixth_form.domain.admissions.enrolments import enrolment_cli
-        from education_system.systems.sixth_form.domain.academics.courses import course_cli
-        from education_system.systems.sixth_form.domain.academics.subjects import subject_cli
-        from education_system.systems.sixth_form.domain.academics.class_groups import class_group_cli
-        from education_system.systems.sixth_form.domain.academics.timetable import timetable_cli
-        from education_system.systems.sixth_form.domain.academics.timetable_optimiser import timetable_optimiser_cli
-        from education_system.systems.sixth_form.domain.academics.attendance import attendance_cli
-        from education_system.systems.sixth_form.domain.academics.homework import homework_cli
-        from education_system.systems.sixth_form.domain.assessment.gradebook import gradebook_cli
-        from education_system.systems.sixth_form.domain.assessment.predicted_grades import predicted_grades_cli
-        from education_system.systems.sixth_form.domain.assessment.mock_exams import mock_exam_cli
-        from education_system.systems.sixth_form.domain.assessment.exam_entries import exam_entry_cli
-        from education_system.systems.sixth_form.domain.assessment.exam_results import exam_result_cli
-        from education_system.systems.sixth_form.domain.progression.ucas import ucas_cli
-        from education_system.systems.sixth_form.domain.progression.ucas_workflow import ucas_workflow_cli
-        from education_system.systems.sixth_form.domain.progression.personal_statements import personal_statement_cli
-        from education_system.systems.sixth_form.domain.progression.references import reference_cli
-        from education_system.systems.sixth_form.domain.progression.offers import offer_cli
-        from education_system.systems.sixth_form.domain.progression.apprenticeships import apprenticeship_cli
-        from education_system.systems.sixth_form.domain.progression.careers import careers_cli
-        from education_system.systems.sixth_form.domain.progression.university_visits import university_visits_cli
-        from education_system.systems.sixth_form.domain.progression.destinations import destinations_cli
-        from education_system.systems.sixth_form.domain.academics.epq import epq_cli
-        from education_system.systems.sixth_form.domain.progression.work_experience import work_experience_cli
-        from education_system.systems.sixth_form.domain.academics.room_booking import room_booking_cli
-        from education_system.systems.sixth_form.domain.pastoral.health.medical_records import medical_records_cli
-        from education_system.systems.sixth_form.domain.pastoral.tutor_groups import tutor_group_cli
-        from education_system.systems.sixth_form.domain.pastoral.behaviour import behaviour_cli
-        from education_system.systems.sixth_form.domain.safeguarding import safeguarding_cli
-        from education_system.systems.sixth_form.domain.pastoral.wellbeing import wellbeing_cli
-        from education_system.systems.sixth_form.domain.pastoral.student_wellbeing import student_wellbeing_cli
-        from education_system.systems.sixth_form.domain.safeguarding.prevent_duty import prevent_duty_cli
-        from education_system.systems.sixth_form.domain.pastoral.attendance_concerns import attendance_concerns_cli
-        from education_system.systems.sixth_form.domain.pastoral.absence_requests import absence_requests_cli
-        from education_system.systems.sixth_form.domain.academics.academic_year import academic_year_cli
-        from education_system.systems.sixth_form.domain.pastoral.accessibility import accessibility_cli
-        from education_system.systems.sixth_form.domain.operations.communications.activity_feed import activity_feed_cli
-        from education_system.systems.sixth_form.domain.learners.advanced_search import advanced_search_cli
-        from education_system.systems.sixth_form.domain.admissions import admissions_cli
-        from education_system.systems.sixth_form.domain.admissions.onboarding import onboarding_cli
-        from education_system.systems.sixth_form.domain.learners.bulk_operations import bulk_operations_cli
-        from education_system.systems.sixth_form.domain.learners.alumni import alumni_cli
-        from education_system.systems.sixth_form.domain.operations.communications.parent_portal import parent_portal_cli
-        from education_system.systems.sixth_form.domain.academics.calendar import calendar_cli
-        from education_system.systems.sixth_form.domain.academics.lesson_plans import lesson_plans_cli
-        from education_system.systems.sixth_form.domain.academics.cover import cover_cli
-        from education_system.systems.sixth_form.domain.academics.cover_agency import cover_agency_cli
-        from education_system.systems.sixth_form.domain.academics.assignments import assignments_cli
-        from education_system.systems.sixth_form.domain.academics.enrichment import enrichment_cli
-        from education_system.systems.sixth_form.domain.academics.library import library_cli
-        from education_system.systems.sixth_form.domain.academics.study_planner import study_planner_cli
-        from education_system.systems.sixth_form.domain.assessment.baseline_assessment import baseline_assessment_cli
-        from education_system.systems.sixth_form.domain.assessment.target_setting import target_setting_cli
-        from education_system.systems.sixth_form.domain.assessment.ilp import ilp_cli
-        from education_system.systems.sixth_form.domain.assessment.intervention_tracking import intervention_tracking_cli
-        from education_system.systems.sixth_form.domain.assessment.value_added import value_added_cli
-        from education_system.systems.sixth_form.domain.assessment.early_warning import early_warning_cli
-        from education_system.systems.sixth_form.domain.assessment.risk_analytics import risk_analytics_cli
-        from education_system.systems.sixth_form.domain.assessment.observations import observations_cli
-        from education_system.systems.sixth_form.domain.assessment.self_assessment import self_assessment_cli
-        from education_system.systems.sixth_form.domain.assessment.quality_assurance import quality_assurance_cli
-        from education_system.systems.sixth_form.domain.assessment.sef_builder import sef_builder_cli
-        from education_system.systems.sixth_form.domain.pastoral.send import send_cli
-        from education_system.systems.sixth_form.domain.pastoral.disciplinary import disciplinary_cli
-        from education_system.systems.sixth_form.domain.pastoral.student_support import student_support_cli
-        from education_system.systems.sixth_form.domain.pastoral.peer_mentoring import peer_mentoring_cli
-        from education_system.systems.sixth_form.domain.pastoral.health.first_aid import first_aid_cli
-        from education_system.systems.sixth_form.domain.pastoral.emergency import emergency_cli
-        from education_system.systems.sixth_form.domain.pastoral.equality_diversity import equality_diversity_cli
-        from education_system.systems.sixth_form.domain.pastoral.complaints import complaints_cli
-        from education_system.systems.sixth_form.domain.pastoral.feedback import feedback_cli
-        from education_system.systems.sixth_form.domain.pastoral.surveys import surveys_cli
-        from education_system.systems.sixth_form.domain.pastoral.student_council import student_council_cli
-        from education_system.systems.sixth_form.domain.pastoral.transport import transport_cli
-        from education_system.systems.sixth_form.domain.staff.staff_hr import staff_hr_cli
-        from education_system.systems.sixth_form.domain.staff.departments import departments_cli
-        from education_system.systems.sixth_form.domain.staff.staff_absence import staff_absence_cli
-        from education_system.systems.sixth_form.domain.staff.staff_wellbeing import staff_wellbeing_cli
-        from education_system.systems.sixth_form.domain.staff.recruitment import recruitment_cli
-        from education_system.systems.sixth_form.domain.staff.appraisals import appraisals_cli
-        from education_system.systems.sixth_form.domain.staff.cpd import cpd_cli
-        from education_system.systems.sixth_form.domain.staff.dbs_checks import dbs_checks_cli
-        from education_system.systems.sixth_form.domain.operations.visitors import visitors_cli
-        from education_system.systems.sixth_form.domain.operations.communications.announcements import announcements_cli
-        from education_system.systems.sixth_form.domain.operations.communications.notifications import notifications_cli
-        from education_system.systems.sixth_form.domain.operations.communications.letter_templates import letter_templates_cli
-        from education_system.systems.sixth_form.domain.operations.document_hub import document_hub_cli
-        from education_system.systems.sixth_form.domain.operations.attachments import attachments_cli
-        from education_system.systems.sixth_form.domain.governance.compliance.census_ilr import census_ilr_cli
-        from education_system.systems.sixth_form.domain.finance.expense_claims import expense_claims_cli
-        from education_system.systems.sixth_form.domain.finance.funding import funding_cli
-        from education_system.systems.sixth_form.domain.staff import staff_cli
-        from education_system.systems.sixth_form.domain.operations.communications.parent_contacts import parent_contacts_cli
-        from education_system.systems.sixth_form.domain.operations.communications.parents_evenings import parents_evenings_cli
-        from education_system.systems.sixth_form.domain.operations.communications.notices import notices_cli
-        from education_system.systems.sixth_form.domain.operations.communications.messages import messages_cli
-        from education_system.systems.sixth_form.domain.finance.fees import fees_cli
-        from education_system.systems.sixth_form.domain.finance.bursaries import bursaries_cli
-        from education_system.systems.sixth_form.domain.finance.trips import trips_cli
-        from education_system.systems.sixth_form.domain.finance.receipts import receipts_cli
-        from education_system.systems.sixth_form.domain.operations.reporting.attendance_report import attendance_report_cli
-        from education_system.systems.sixth_form.domain.operations.reporting.grades_report import grades_report_cli
-        from education_system.systems.sixth_form.domain.operations.reporting.progress import progress_cli
-        from education_system.systems.sixth_form.domain.operations.reporting.custom_export import custom_export_cli
-        from education_system.systems.sixth_form.domain.operations.reporting.kpi_dashboard import kpi_dashboard_cli
-        from education_system.systems.sixth_form.domain.operations.reporting.data_dashboard import data_dashboard_cli
-        from education_system.systems.sixth_form.domain.operations.reporting.progress_dashboard import progress_dashboard_cli
-        from education_system.systems.sixth_form.domain.operations.reporting.mobile_dashboard import mobile_dashboard_cli
-        from education_system.systems.sixth_form.domain.governance.audit.audit_reports import audit_reports_cli
-        from education_system.systems.sixth_form.domain.operations.reporting.data_export import data_export_cli
-        from education_system.systems.sixth_form.domain.governance.compliance import compliance_cli
-        from education_system.systems.sixth_form.domain.governance import governance_cli
-        from education_system.systems.sixth_form.domain.governance.policies import policies_cli
-        from education_system.systems.sixth_form.domain.governance.health_safety import health_safety_cli
-        from education_system.systems.sixth_form.domain.governance.assets import assets_cli
+        from education_system.systems.sixth_form.interfaces.cli.learners.students import student_cli
+        from education_system.systems.sixth_form.interfaces.cli.admissions.enrolments import enrolment_cli
+        from education_system.systems.sixth_form.interfaces.cli.academics.courses import course_cli
+        from education_system.systems.sixth_form.interfaces.cli.academics.subjects import subject_cli
+        from education_system.systems.sixth_form.interfaces.cli.academics.class_groups import class_group_cli
+        from education_system.systems.sixth_form.interfaces.cli.academics.timetable import timetable_cli
+        from education_system.systems.sixth_form.interfaces.cli.academics.timetable_optimiser import timetable_optimiser_cli
+        from education_system.systems.sixth_form.interfaces.cli.academics.attendance import attendance_cli
+        from education_system.systems.sixth_form.interfaces.cli.academics.homework import homework_cli
+        from education_system.systems.sixth_form.interfaces.cli.assessment.gradebook import gradebook_cli
+        from education_system.systems.sixth_form.interfaces.cli.assessment.predicted_grades import predicted_grades_cli
+        from education_system.systems.sixth_form.interfaces.cli.assessment.mock_exams import mock_exam_cli
+        from education_system.systems.sixth_form.interfaces.cli.assessment.exam_entries import exam_entry_cli
+        from education_system.systems.sixth_form.interfaces.cli.assessment.exam_results import exam_result_cli
+        from education_system.systems.sixth_form.domain.progression.university.cli import window as university_cli
+        from education_system.systems.sixth_form.interfaces.cli.progression.apprenticeships import apprenticeship_cli
+        from education_system.systems.sixth_form.interfaces.cli.progression.careers import careers_cli
+        from education_system.systems.sixth_form.interfaces.cli.progression.university_visits import university_visits_cli
+        from education_system.systems.sixth_form.interfaces.cli.progression.destinations import destinations_cli
+        from education_system.systems.sixth_form.interfaces.cli.academics.epq import epq_cli
+        from education_system.systems.sixth_form.interfaces.cli.progression.work_experience import work_experience_cli
+        from education_system.systems.sixth_form.interfaces.cli.academics.room_booking import room_booking_cli
+        from education_system.systems.sixth_form.interfaces.cli.pastoral.health.medical_records import medical_records_cli
+        from education_system.systems.sixth_form.interfaces.cli.pastoral.tutor_groups import tutor_group_cli
+        from education_system.systems.sixth_form.interfaces.cli.pastoral.behaviour import behaviour_cli
+        from education_system.systems.sixth_form.interfaces.cli.safeguarding import safeguarding_cli
+        from education_system.systems.sixth_form.interfaces.cli.pastoral.wellbeing import wellbeing_cli
+        from education_system.systems.sixth_form.interfaces.cli.pastoral.student_wellbeing import student_wellbeing_cli
+        from education_system.systems.sixth_form.interfaces.cli.safeguarding.prevent_duty import prevent_duty_cli
+        from education_system.systems.sixth_form.interfaces.cli.pastoral.attendance_concerns import attendance_concerns_cli
+        from education_system.systems.sixth_form.interfaces.cli.pastoral.absence_requests import absence_requests_cli
+        from education_system.systems.sixth_form.interfaces.cli.academics.academic_year import academic_year_cli
+        from education_system.systems.sixth_form.interfaces.cli.pastoral.accessibility import accessibility_cli
+        from education_system.systems.sixth_form.interfaces.cli.operations.communications.activity_feed import activity_feed_cli
+        from education_system.systems.sixth_form.interfaces.cli.learners.advanced_search import advanced_search_cli
+        from education_system.systems.sixth_form.interfaces.cli.admissions import admissions_cli
+        from education_system.systems.sixth_form.interfaces.cli.admissions.onboarding import onboarding_cli
+        from education_system.systems.sixth_form.interfaces.cli.learners.bulk_operations import bulk_operations_cli
+        from education_system.systems.sixth_form.interfaces.cli.learners.alumni import alumni_cli
+        from education_system.systems.sixth_form.interfaces.cli.operations.communications.parent_portal import parent_portal_cli
+        from education_system.systems.sixth_form.interfaces.cli.academics.calendar import calendar_cli
+        from education_system.systems.sixth_form.interfaces.cli.academics.lesson_plans import lesson_plans_cli
+        from education_system.systems.sixth_form.interfaces.cli.academics.cover import cover_cli
+        from education_system.systems.sixth_form.interfaces.cli.academics.cover_agency import cover_agency_cli
+        from education_system.systems.sixth_form.interfaces.cli.academics.assignments import assignments_cli
+        from education_system.systems.sixth_form.interfaces.cli.academics.enrichment import enrichment_cli
+        from education_system.systems.sixth_form.interfaces.cli.academics.library import library_cli
+        from education_system.systems.sixth_form.interfaces.cli.academics.study_planner import study_planner_cli
+        from education_system.systems.sixth_form.interfaces.cli.assessment.baseline_assessment import baseline_assessment_cli
+        from education_system.systems.sixth_form.interfaces.cli.assessment.target_setting import target_setting_cli
+        from education_system.systems.sixth_form.interfaces.cli.assessment.ilp import ilp_cli
+        from education_system.systems.sixth_form.interfaces.cli.assessment.intervention_tracking import intervention_tracking_cli
+        from education_system.systems.sixth_form.interfaces.cli.assessment.value_added import value_added_cli
+        from education_system.systems.sixth_form.interfaces.cli.assessment.early_warning import early_warning_cli
+        from education_system.systems.sixth_form.interfaces.cli.assessment.risk_analytics import risk_analytics_cli
+        from education_system.systems.sixth_form.interfaces.cli.assessment.observations import observations_cli
+        from education_system.systems.sixth_form.interfaces.cli.assessment.self_assessment import self_assessment_cli
+        from education_system.systems.sixth_form.interfaces.cli.assessment.quality_assurance import quality_assurance_cli
+        from education_system.systems.sixth_form.interfaces.cli.assessment.sef_builder import sef_builder_cli
+        from education_system.systems.sixth_form.interfaces.cli.pastoral.send import send_cli
+        from education_system.systems.sixth_form.interfaces.cli.pastoral.disciplinary import disciplinary_cli
+        from education_system.systems.sixth_form.interfaces.cli.pastoral.student_support import student_support_cli
+        from education_system.systems.sixth_form.interfaces.cli.pastoral.peer_mentoring import peer_mentoring_cli
+        from education_system.systems.sixth_form.interfaces.cli.pastoral.health.first_aid import first_aid_cli
+        from education_system.systems.sixth_form.interfaces.cli.pastoral.emergency import emergency_cli
+        from education_system.systems.sixth_form.interfaces.cli.pastoral.equality_diversity import equality_diversity_cli
+        from education_system.systems.sixth_form.interfaces.cli.pastoral.complaints import complaints_cli
+        from education_system.systems.sixth_form.interfaces.cli.pastoral.feedback import feedback_cli
+        from education_system.systems.sixth_form.interfaces.cli.pastoral.surveys import surveys_cli
+        from education_system.systems.sixth_form.interfaces.cli.pastoral.student_council import student_council_cli
+        from education_system.systems.sixth_form.interfaces.cli.pastoral.transport import transport_cli
+        from education_system.systems.sixth_form.interfaces.cli.staff.staff_hr import staff_hr_cli
+        from education_system.systems.sixth_form.interfaces.cli.staff.departments import departments_cli
+        from education_system.systems.sixth_form.interfaces.cli.staff.staff_absence import staff_absence_cli
+        from education_system.systems.sixth_form.interfaces.cli.staff.staff_wellbeing import staff_wellbeing_cli
+        from education_system.systems.sixth_form.interfaces.cli.staff.recruitment import recruitment_cli
+        from education_system.systems.sixth_form.interfaces.cli.staff.appraisals import appraisals_cli
+        from education_system.systems.sixth_form.interfaces.cli.staff.cpd import cpd_cli
+        from education_system.systems.sixth_form.interfaces.cli.staff.dbs_checks import dbs_checks_cli
+        from education_system.systems.sixth_form.interfaces.cli.operations.visitors import visitors_cli
+        from education_system.systems.sixth_form.interfaces.cli.operations.communications.announcements import announcements_cli
+        from education_system.systems.sixth_form.interfaces.cli.operations.communications.notifications import notifications_cli
+        from education_system.systems.sixth_form.interfaces.cli.operations.communications.letter_templates import letter_templates_cli
+        from education_system.systems.sixth_form.interfaces.cli.operations.document_hub import document_hub_cli
+        from education_system.systems.sixth_form.interfaces.cli.operations.attachments import attachments_cli
+        from education_system.systems.sixth_form.interfaces.cli.governance.compliance.census_ilr import census_ilr_cli
+        from education_system.systems.sixth_form.interfaces.cli.finance.expense_claims import expense_claims_cli
+        from education_system.systems.sixth_form.interfaces.cli.finance.funding import funding_cli
+        from education_system.systems.sixth_form.interfaces.cli.staff import staff_cli
+        from education_system.systems.sixth_form.interfaces.cli.operations.communications.parent_contacts import parent_contacts_cli
+        from education_system.systems.sixth_form.interfaces.cli.operations.communications.parents_evenings import parents_evenings_cli
+        from education_system.systems.sixth_form.interfaces.cli.operations.communications.notices import notices_cli
+        from education_system.systems.sixth_form.interfaces.cli.operations.communications.messages import messages_cli
+        from education_system.systems.sixth_form.interfaces.cli.finance.fees import fees_cli
+        from education_system.systems.sixth_form.interfaces.cli.finance.bursaries import bursaries_cli
+        from education_system.systems.sixth_form.interfaces.cli.finance.trips import trips_cli
+        from education_system.systems.sixth_form.interfaces.cli.finance.receipts import receipts_cli
+        from education_system.systems.sixth_form.interfaces.cli.operations.reporting.attendance_report import attendance_report_cli
+        from education_system.systems.sixth_form.interfaces.cli.operations.reporting.grades_report import grades_report_cli
+        from education_system.systems.sixth_form.interfaces.cli.operations.reporting.progress import progress_cli
+        from education_system.systems.sixth_form.interfaces.cli.operations.reporting.custom_export import custom_export_cli
+        from education_system.systems.sixth_form.interfaces.cli.operations.reporting.kpi_dashboard import kpi_dashboard_cli
+        from education_system.systems.sixth_form.interfaces.cli.operations.reporting.data_dashboard import data_dashboard_cli
+        from education_system.systems.sixth_form.interfaces.cli.operations.reporting.progress_dashboard import progress_dashboard_cli
+        from education_system.systems.sixth_form.interfaces.cli.operations.reporting.mobile_dashboard import mobile_dashboard_cli
+        from education_system.systems.sixth_form.interfaces.cli.governance.audit.audit_reports import audit_reports_cli
+        from education_system.systems.sixth_form.interfaces.cli.operations.reporting.data_export import data_export_cli
+        from education_system.systems.sixth_form.interfaces.cli.governance.compliance import compliance_cli
+        from education_system.systems.sixth_form.interfaces.cli.governance import governance_cli
+        from education_system.systems.sixth_form.interfaces.cli.governance.policies import policies_cli
+        from education_system.systems.sixth_form.interfaces.cli.governance.health_safety import health_safety_cli
+        from education_system.systems.sixth_form.interfaces.cli.governance.assets import assets_cli
         from education_system.platform.features.i18n.selector_cli import show_language_selector_cli
-        from education_system.systems.sixth_form.domain.governance.todo import todo_cli
-        from education_system.systems.sixth_form.domain.governance.user_management import user_management_cli
-        from education_system.systems.sixth_form.domain.governance.gdpr import gdpr_cli
-        from education_system.systems.sixth_form.domain.governance.risk_management import risk_management_cli
-        from education_system.systems.sixth_form.domain.governance.automation_rules import automation_rules_cli
+        from education_system.systems.sixth_form.interfaces.cli.governance.todo import todo_cli
+        from education_system.systems.sixth_form.interfaces.cli.governance.user_management import user_management_cli
+        from education_system.systems.sixth_form.interfaces.cli.governance.gdpr import gdpr_cli
+        from education_system.systems.sixth_form.interfaces.cli.governance.risk_management import risk_management_cli
+        from education_system.systems.sixth_form.interfaces.cli.governance.automation_rules import automation_rules_cli
         from education_system.systems.sixth_form.interfaces.cli import (
             change_password_cli, mfa_cli, user_accounts_cli, settings_cli, about_cli,
         )
@@ -267,11 +267,7 @@ def _submenu(category: str, items: list[str], *, auth=None) -> None:
                 or mock_exam_cli.dispatch(label)
                 or exam_entry_cli.dispatch(label)
                 or exam_result_cli.dispatch(label)
-                or ucas_cli.dispatch(label)
-                or ucas_workflow_cli.dispatch(label)
-                or personal_statement_cli.dispatch(label)
-                or reference_cli.dispatch(label)
-                or offer_cli.dispatch(label)
+                or university_cli.dispatch(label)
                 or apprenticeship_cli.dispatch(label)
                 or careers_cli.dispatch(label)
                 or university_visits_cli.dispatch(label)
@@ -461,21 +457,47 @@ def run_authenticated(auth) -> int:
 def run(user_info=None, role=None, shared_auth=None) -> int:
     """Launch the CLI for an already-authenticated session.
 
-    Called by `run.py` after the universal login succeeds. No per-system
+    Called by `python -m education_system` after the universal login succeeds. No per-system
     login is shown — `shared_auth.current_user` must already be set.
     """
     if shared_auth is None or not getattr(shared_auth, "current_user", None):
         logger.error("sixthform CLI invoked without a shared_auth session")
         raise RuntimeError(
-            "sixthform_system CLI must be launched via run.py — "
+            "sixthform_system CLI must be launched via python -m education_system — "
             "no standalone login is available."
         )
     cu = shared_auth.current_user or {}
     logger.info("Sixth-form CLI starting for user=%s role=%s",
                 cu.get("username"), role)
+
+    # The staff menu reaches the whole college. Parents get their own
+    # read-only menu covering just their linked children.
+    if str(role or "").lower() == "parent":
+        return _run_parent_portal(shared_auth, cu)
+
     return run_authenticated(shared_auth)
 
 
+def _run_parent_portal(shared_auth, current_user: dict) -> int:
+    """Run the parent-facing menu, or explain why it can't run."""
+    from education_system.systems.sixth_form.domain.operations.communications.parent_portal import (
+        parent_home_cli, parent_portal,
+    )
+
+    username = current_user.get("username", "")
+    account = parent_portal.account_for_username(username)
+    if account is None:
+        logger.warning("No parent-portal account for signed-in user '%s'", username)
+        print(f"\n  There is no parent portal record for '{username}' yet.\n")
+        print("  Please contact the college office so they can set up your")
+        print("  account and link your child's record.\n")
+        return 0
+
+    logger.info("Parent portal (CLI) starting for %s (account %s)",
+                username, account.account_id)
+    return parent_home_cli.run(shared_auth, account)
+
+
 if __name__ == "__main__":
-    print("Launch via: python run.py --cli  (then choose Sixth Form)")
+    print("Launch via: python -m education_system --cli  (then choose Sixth Form)")
     raise SystemExit(2)

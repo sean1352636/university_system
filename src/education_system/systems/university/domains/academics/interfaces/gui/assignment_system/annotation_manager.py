@@ -1,9 +1,14 @@
 """Annotation manager for inline commenting on student submissions"""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext, filedialog
+from tkinter import ttk, scrolledtext, filedialog
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 import json
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
@@ -344,7 +349,7 @@ class AnnotationManager:
             messagebox.showinfo(_t('gui.academics.assignment_system.annotation_manager.dialogs.no_templates', default="No Templates"), _t('gui.academics.assignment_system.annotation_manager.dialogs.no_annotation_templates_found_create_one_first', default="No annotation templates found. Create one first."))
             return
 
-        picker = tk.Toplevel(self.root)
+        picker = make_toplevel(self.root)
         picker.title(_t('gui.academics.assignment_system.annotation_manager.windows.select_annotation_template', default="Select Annotation Template"))
         picker.geometry("500x400")
         picker.transient(self.root)
@@ -382,7 +387,7 @@ class AnnotationManager:
                 conn.commit()
                 conn.close()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             picker.destroy()
 
         ttk.Button(picker, text=_t('gui.academics.assignment_system.annotation_manager.buttons.insert', default="Insert"), command=insert_selected).pack(pady=10)
@@ -488,7 +493,7 @@ class AnnotationManager:
         """Create a new annotation template via dialog"""
         self._ensure_tables()
 
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.academics.assignment_system.annotation_manager.windows.create_annotation_template', default="Create Annotation Template"))
         dialog.geometry("450x350")
         dialog.transient(self.root)
@@ -560,7 +565,7 @@ class AnnotationManager:
 
         _, name, text, category = row
 
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.academics.assignment_system.annotation_manager.windows.edit_annotation_template', default="Edit Annotation Template"))
         dialog.geometry("450x350")
         dialog.transient(self.root)

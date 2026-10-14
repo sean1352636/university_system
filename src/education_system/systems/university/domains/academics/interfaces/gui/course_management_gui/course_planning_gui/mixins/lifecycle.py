@@ -1,6 +1,9 @@
 """Split from course_planning_gui.py — provides mixins assembled in
 course_planning_gui/__init__.py into the final CoursePlanningGUI class."""
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -104,7 +107,7 @@ class _LifecycleMixin:
             try:
                 conn.close()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
     def _student_plans(self, force: bool = False):
         """Memoized list of the current student's plans for this screen.
@@ -184,7 +187,6 @@ class _LifecycleMixin:
             bottom_frame = ttk.Frame(self.window)
             bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
             ttk.Button(bottom_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.buttons.close', default="Close"), command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
-            ttk.Button(bottom_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.buttons.switch_to_cli', default="Switch to CLI"), command=self._switch_to_cli).pack(side=tk.LEFT, padx=5)
 
         # Main notebook with tabs
         self.notebook = ttk.Notebook(self.window)
@@ -296,29 +298,6 @@ class _LifecycleMixin:
                 "Y" if m.get("is_core") else "N",
             ))
 
-    def _switch_to_cli(self):
-        """Switch from GUI to Course Planning CLI."""
-        try:
-            from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.cli.course_planning_cli import display_course_planning_menu
-
-            # Hide GUI temporarily
-            target = self.window if self.window else self.root
-            target.withdraw()
-
-            import threading
-            def run_cli():
-                try:
-                    display_course_planning_menu()
-                except Exception as e:
-                    logging.error(f"CLI mode error: {e}")
-                finally:
-                    target.after(0, target.deiconify)
-
-            cli_thread = threading.Thread(target=run_cli, daemon=True)
-            cli_thread.start()
-
-        except Exception as e:
-            messagebox.showerror(_t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.dialogs.error', default="Error"), f"Failed to launch CLI: {e}")
 
     def _select_student_for_planning(self):
         """Show dialog for admin to select a student."""

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import logging
 import sqlite3
+from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608 - identifier validation
 
 logger = logging.getLogger(__name__)
 
@@ -147,6 +148,10 @@ class IncidentDB:
 
     @staticmethod
     def _has_column(conn, table, column):
+        # db-audit: ignore[DBW001] - parameter passed through a validator
+        # Identifiers cannot be parameterised, so they are validated instead.
+        table = validate_identifier(table)
+        column = validate_identifier(column)
         try:
             rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
             return any((r["name"] if isinstance(r, sqlite3.Row) else r[1]) == column
@@ -210,7 +215,7 @@ class IncidentDB:
                 description=report.get('description', ''),
             )
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Cross-domain: severe incidents open a cases_bus hs_incident
         # case so they inherit hearing scheduling, sanction routing,

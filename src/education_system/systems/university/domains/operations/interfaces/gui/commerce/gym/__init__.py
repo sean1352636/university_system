@@ -1,8 +1,13 @@
-"""Gym/Fitness Center GUI Module"""
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.interfaces.gui.gym`` (campus commerce plugin).
 
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.gym.gym_gui import (
-    GymGUI,
-    launch_gym_gui
-)
+A mirror, not an alias: an aliased package would resolve this package's
+submodules through the new ``__path__`` and load each one a second time.
+Submodules are aliased individually; this copies the package's names.
+"""
+# layout-shim: education_system.systems.university.plugins.campus_commerce.interfaces.gui.gym
+import importlib as _importlib
 
-__all__ = ['GymGUI', 'launch_gym_gui']
+_new = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.interfaces.gui.gym")
+globals().update({k: v for k, v in vars(_new).items()
+                  if not (k.startswith("__") and k.endswith("__"))})
+del _importlib, _new

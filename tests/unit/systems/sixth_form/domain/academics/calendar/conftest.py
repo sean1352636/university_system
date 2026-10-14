@@ -1,7 +1,10 @@
 """Shared fixture for the Sixth Form calendar tests.
 
 Points every calendar module at one temporary SQLite file so nothing
-touches the real ``sixthform.db``. The ``caldb`` fixture returns a
+touches the real ``sixthform.db``. The academic-year DB is isolated
+too: :mod:`calendar_terms` reads term dates and closures through it,
+so leaving it alone would have the tests reading — and the term
+fixture writing — the live year. The ``caldb`` fixture returns a
 small namespace with the path and a couple of seeded events the
 read-side tests share.
 """
@@ -13,6 +16,9 @@ from types import SimpleNamespace
 
 import pytest
 
+from education_system.systems.sixth_form.domain.academics.academic_year import (  # noqa: E501
+    academic_year as year_core,
+)
 from education_system.systems.sixth_form.domain.academics.calendar import (
     calendar as core,
     calendar_bookings as bookings,
@@ -43,6 +49,15 @@ def caldb(tmp_path, monkeypatch):
         monkeypatch.setattr(mod, "DB_PATH", db_path, raising=False)
         monkeypatch.setattr(mod, "_DB_READY", False, raising=False)
     core.init_db()
+
+    # calendar_terms asks the academic year about terms, breaks and
+    # closed days. Redirect it as well — its init_db() caches on the
+    # DB path, so the set must be cleared, not just the path.
+    monkeypatch.setattr(year_core, "DB_PATH",
+                        str(tmp_path / "academic_year.db"),
+                        raising=False)
+    monkeypatch.setattr(year_core, "_DB_READY", set(), raising=False)
+    year_core.init_db()
 
     today = _dt.date.today()
     return SimpleNamespace(

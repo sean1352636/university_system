@@ -15,7 +15,7 @@ from datetime import date
 from functools import partial
 
 from education_system.systems.apprenticeships import config
-from education_system.systems.apprenticeships.domain.apprentices import status as lifecycle
+from education_system.systems.apprenticeships.domain.apprentices import lifecycle
 from education_system.systems.apprenticeships.domain.apprentices.models import ApprenticeSummary
 from education_system.systems.apprenticeships.infrastructure.persistence.repositories import (
     staff_repository,
@@ -282,10 +282,19 @@ def _change_status(actor: Actor) -> None:
         reason = prompts.choose_value("Break reason", config.BREAK_REASONS)
     else:
         reason = prompts.ask("Reason", required=new_status in lifecycle.REASON_REQUIRED)
+    notes = None
+    if lifecycle.reason_options(new_status):
+        notes = prompts.ask("Details", required=reason == lifecycle.OTHER_REASON) or None
     effective = prompts.ask("Effective date (YYYY-MM-DD)", default=date.today().isoformat())
+    expected_return = last_day = None
+    if new_status == "Break in Learning":
+        expected_return = prompts.ask("Expected return (YYYY-MM-DD)") or None
+    elif new_status == "Withdrawn":
+        last_day = prompts.ask("Last day of learning (YYYY-MM-DD)", default=effective) or None
 
     updated = apprentice_service.change_status(
-        actor, apprentice_id, new_status, reason=reason or None, effective_date=effective
+        actor, apprentice_id, new_status, reason=reason or None, effective_date=effective,
+        notes=notes, expected_return=expected_return, last_activity_date=last_day,
     )
     prompts.ok(f"{updated.full_name} is now {updated.status}.")
     prompts.pause()

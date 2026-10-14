@@ -1,4 +1,5 @@
 """Budget manager utility methods"""
+from education_system.systems.university.shell.gui import report_view as _rv
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -17,7 +18,7 @@ class BudgetUtilsMixin:
         window.geometry("800x600")
         window.transient(self.root)
 
-        text_widget = ScrolledText(window, font=('Courier', 10))
+        text_widget = _rv.TextReportView(window, font=('Courier', 10))
         text_widget.pack(fill='both', expand=True, padx=10, pady=10)
         text_widget.insert('1.0', content)
 

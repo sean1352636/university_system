@@ -1,1 +1,0 @@
-"""Apprenticeships portals package."""

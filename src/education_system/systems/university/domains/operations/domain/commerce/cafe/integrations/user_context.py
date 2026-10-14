@@ -1,13 +1,11 @@
-from education_system.systems.university.domains.operations.domain.commerce.cafe import *  # noqa: F401,F403
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.domain.cafe.integrations.user_context`` (campus commerce plugin).
 
-def set_auth(auth_instance: Any) -> None:
-    """Set the global auth instance for cafe CLI."""
-    global auth
-    auth = auth_instance
-    if HAS_AUTH:
-        set_auth_instance(auth_instance)
-        try:
-            set_shared_auth(auth_instance)
-        except Exception as e:
-            logger.warning(f"Failed to set auth in shared_context: {e}")
+The old name *is* the new module object, so ``mock.patch`` and
+``monkeypatch`` targets still act on the real code. Delete once nothing
+imports the old path.
+"""
+# layout-shim: education_system.systems.university.plugins.campus_commerce.domain.cafe.integrations.user_context
+import importlib as _importlib
+import sys as _sys
 
+_sys.modules[__name__] = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.domain.cafe.integrations.user_context")

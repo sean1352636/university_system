@@ -1,233 +1,40 @@
 """Methods show_accommodations through _edit_selected_ta_permissions."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 from .. import admin_tools_manager_shared as _shared
 globals().update({name: value for name, value in _shared.__dict__.items() if not name.startswith("__")})
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
+from education_system.systems.university.domains.academics.interfaces.gui._field_pickers import attach_picker
 
 
 class AdminToolsManager:
     def show_accommodations(self):
-        """Manage student accessibility accommodations"""
+        """Open the Accessibility & Accommodation Tools GUI.
+
+        Accommodations used to be managed here as well, over
+        ``student_accommodations``. That made the assignment system a
+        second, disconnected place to grant them: the accessibility hub
+        already owned accessibility profiles, the request/approval
+        workflow, per-exam arrangements and assistive tech, so a student
+        could be approved there and still have nothing recorded here (or
+        the reverse). The general accommodations now live on that hub's
+        "General Accommodations" tab, and this button opens it.
+        """
         if not self._check_permission('manage_accommodations'):
-            messagebox.showerror(_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.dialogs.access_denied', default="Access Denied"), _t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.dialogs.you_do_not_have_permission_to_manage_accommodations', default="You do not have permission to manage accommodations."))
+            messagebox.showerror(
+                _t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.dialogs.access_denied', default="Access Denied"),
+                _t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.dialogs.you_do_not_have_permission_to_manage_accommodations', default="You do not have permission to manage accommodations."))
             return
 
-        self.gui.layout.clear_content_area()
-        content = self.gui.layout.content_area
+        from education_system.systems.university.domains.academics.interfaces.gui._cross_launchers import (
+            open_accessibility_gui,
+        )
+        open_accessibility_gui(self.root, getattr(self, 'auth', None))
 
-        title = ttk.Label(content, text=_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.labels.student_accommodations', default="Student Accommodations"), style='Title.TLabel')
-        title.pack(anchor='w', pady=(0, 20))
-
-        # Action buttons
-        btn_frame = ttk.Frame(content)
-        btn_frame.pack(fill='x', pady=(0, 15))
-
-        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.buttons.add_accommodation', default="Add Accommodation"), command=lambda: self.add_accommodation(None)).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.buttons.refresh', default="Refresh"), command=self.show_accommodations).pack(side='left', padx=5)
-
-        # Filter
-        filter_frame = ttk.LabelFrame(content, text=_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.labels.filters', default="Filters"), padding=10)
-        filter_frame.pack(fill='x', pady=(0, 15))
-
-        ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.labels.student_id', default="Student ID:")).pack(side='left', padx=(0, 5))
-        self.accom_student_var = tk.StringVar()
-        ttk.Entry(filter_frame, textvariable=self.accom_student_var, width=15).pack(side='left', padx=5)
-
-        ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.labels.active_only', default="Active Only:")).pack(side='left', padx=(15, 5))
-        self.accom_active_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(filter_frame, variable=self.accom_active_var).pack(side='left', padx=5)
-
-        ttk.Button(filter_frame, text=_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.buttons.search', default="Search"), command=self._load_accommodations).pack(side='left', padx=15)
-
-        # Accommodations treeview
-        accom_frame = ttk.Frame(content)
-        accom_frame.pack(fill='both', expand=True)
-
-        columns = ('ID', 'Student', 'Type', 'Details', 'Time Mult.', 'Active', 'Approved By', 'Expires')
-        self.accom_tree = ttk.Treeview(accom_frame, columns=columns, show='headings', height=14)
-
-        col_widths = {'ID': 40, 'Student': 90, 'Type': 110, 'Details': 180,
-                      'Time Mult.': 75, 'Active': 55, 'Approved By': 100, 'Expires': 100}
-        for col in columns:
-            self.accom_tree.heading(col, text=col)
-            self.accom_tree.column(col, width=col_widths.get(col, 100))
-
-        scrollbar = ttk.Scrollbar(accom_frame, orient='vertical', command=self.accom_tree.yview)
-        self.accom_tree.configure(yscrollcommand=scrollbar.set)
-        self.accom_tree.pack(side='left', fill='both', expand=True)
-        scrollbar.pack(side='right', fill='y')
-
-        # Double-click to edit
-        self.accom_tree.bind('<Double-1>', lambda e: self._on_accommodation_double_click())
-
-        # Bottom buttons
-        bottom_frame = ttk.Frame(content)
-        bottom_frame.pack(fill='x', pady=(10, 0))
-        ttk.Button(bottom_frame, text=_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.buttons.deactivate_selected', default="Deactivate Selected"), command=self._deactivate_accommodation).pack(side='left', padx=5)
-
-        self._load_accommodations()
-
-    def _load_accommodations(self):
-        """Load accommodations into treeview"""
-        for item in self.accom_tree.get_children():
-            self.accom_tree.delete(item)
-
-        try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-
-            query = '''
-                SELECT id, student_id, accommodation_type, details, time_multiplier,
-                       is_active, approved_by, expires_at
-                FROM student_accommodations WHERE 1=1
-            '''
-            params = []
-
-            student_filter = self.accom_student_var.get().strip()
-            if student_filter:
-                query += ' AND student_id = ?'
-                params.append(student_filter)
-
-            if self.accom_active_var.get():
-                query += ' AND is_active = 1'
-
-            query += ' ORDER BY created_at DESC LIMIT 200'
-
-            cursor.execute(query, params)
-            for row in cursor.fetchall():
-                display_row = list(row)
-                display_row[5] = 'Yes' if display_row[5] else 'No'
-                self.accom_tree.insert('', 'end', values=display_row)
-
-            conn.close()
-        except Exception as e:
-            messagebox.showerror(_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.dialogs.error', default="Error"), f"Failed to load accommodations: {e}")
-
-    def _on_accommodation_double_click(self):
-        """Handle double-click on accommodation row"""
-        selection = self.accom_tree.selection()
-        if selection:
-            values = self.accom_tree.item(selection[0], 'values')
-            if values:
-                self.add_accommodation(values[1])
-
-    def _deactivate_accommodation(self):
-        """Deactivate the selected accommodation"""
-        selection = self.accom_tree.selection()
-        if not selection:
-            messagebox.showwarning(_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.dialogs.no_accommodation_selected', default="No accommodation selected."))
-            return
-
-        values = self.accom_tree.item(selection[0], 'values')
-        accom_id = values[0]
-
-        if not messagebox.askyesno(_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.dialogs.confirm', default="Confirm"), f"Deactivate accommodation #{accom_id}?"):
-            return
-
-        try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            cursor.execute('UPDATE student_accommodations SET is_active = 0 WHERE id = ?', (accom_id,))
-            conn.commit()
-            conn.close()
-            messagebox.showinfo(_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.dialogs.success', default="Success"), _t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.dialogs.accommodation_deactivated', default="Accommodation deactivated."))
-            self._load_accommodations()
-        except Exception as e:
-            messagebox.showerror(_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.dialogs.error', default="Error"), f"Failed to deactivate: {e}")
-
-    def add_accommodation(self, student_id):
-        """Add accommodation for a student"""
-        if not self._check_permission('manage_accommodations'):
-            messagebox.showerror(_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.dialogs.access_denied', default="Access Denied"), _t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.dialogs.you_do_not_have_permission_to_manage_accommodations', default="You do not have permission to manage accommodations."))
-            return
-
-        dialog = tk.Toplevel(self.root)
-        dialog.title(_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.windows.add_student_accommodation', default="Add Student Accommodation"))
-        dialog.geometry("500x500")
-        dialog.transient(self.root)
-        dialog.grab_set()
-
-        main_frame = ttk.Frame(dialog, padding=20)
-        main_frame.pack(fill='both', expand=True)
-
-        ttk.Label(main_frame, text=_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.labels.add_accommodation', default="Add Accommodation"), style='Title.TLabel').pack(anchor='w', pady=(0, 15))
-
-        # Student ID
-        ttk.Label(main_frame, text=_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.labels.student_id', default="Student ID:")).pack(anchor='w', pady=(5, 2))
-        student_var = tk.StringVar(value=student_id or '')
-        ttk.Entry(main_frame, textvariable=student_var, width=40).pack(anchor='w')
-
-        # Accommodation type
-        ttk.Label(main_frame, text=_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.labels.accommodation_type', default="Accommodation Type:")).pack(anchor='w', pady=(10, 2))
-        type_var = tk.StringVar(value=_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.values.extended_time', default='extended_time'))
-        ttk.Combobox(main_frame, textvariable=type_var,
-                     values=['extended_time', 'alt_format', 'screen_reader', 'large_text', 'other'],
-                     state='readonly', width=37).pack(anchor='w')
-
-        # Details
-        ttk.Label(main_frame, text=_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.labels.details', default="Details:")).pack(anchor='w', pady=(10, 2))
-        details_text = scrolledtext.ScrolledText(main_frame, width=50, height=5)
-        details_text.pack(anchor='w')
-
-        # Time multiplier
-        ttk.Label(main_frame, text=_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.labels.time_multiplier_e_g_1_5_for_50_extra', default="Time Multiplier (e.g. 1.5 for 50% extra):")).pack(anchor='w', pady=(10, 2))
-        multiplier_var = tk.StringVar(value='1.0')
-        ttk.Entry(main_frame, textvariable=multiplier_var, width=10).pack(anchor='w')
-
-        # Expires at
-        ttk.Label(main_frame, text=_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.labels.expires_yyyy_mm_dd_leave_blank_for_no_expiry', default="Expires (YYYY-MM-DD, leave blank for no expiry):")).pack(anchor='w', pady=(10, 2))
-        expires_var = tk.StringVar()
-        ttk.Entry(main_frame, textvariable=expires_var, width=20).pack(anchor='w')
-
-        def save_accommodation():
-            sid = student_var.get().strip()
-            if not sid:
-                messagebox.showerror(_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.dialogs.error', default="Error"), _t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.dialogs.student_id_is_required', default="Student ID is required."), parent=dialog)
-                return
-
-            try:
-                time_mult = float(multiplier_var.get().strip())
-            except ValueError:
-                messagebox.showerror(_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.dialogs.error', default="Error"), _t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.dialogs.time_multiplier_must_be_a_number', default="Time multiplier must be a number."), parent=dialog)
-                return
-
-            expires = expires_var.get().strip() or None
-            if expires:
-                try:
-                    datetime.strptime(expires, '%Y-%m-%d')
-                except ValueError:
-                    messagebox.showerror(_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.dialogs.error', default="Error"), _t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.dialogs.expiry_date_must_be_yyyy_mm_dd', default="Expiry date must be YYYY-MM-DD."), parent=dialog)
-                    return
-
-            try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-                cursor = conn.cursor()
-
-                current_user = getattr(self.auth, 'current_user', {})
-                approved_by = current_user.get('username', 'unknown') if isinstance(current_user, dict) else 'unknown'
-
-                cursor.execute('''
-                    INSERT INTO student_accommodations
-                    (student_id, accommodation_type, details, time_multiplier, is_active, approved_by, expires_at)
-                    VALUES (?, ?, ?, ?, 1, ?, ?)
-                ''', (sid, type_var.get(), details_text.get('1.0', 'end').strip(),
-                      time_mult, approved_by, expires))
-
-                conn.commit()
-                conn.close()
-
-                messagebox.showinfo(_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.dialogs.success', default="Success"), _t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.dialogs.accommodation_added', default="Accommodation added."), parent=dialog)
-                dialog.destroy()
-                self.show_accommodations()
-
-            except Exception as e:
-                messagebox.showerror(_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.dialogs.error', default="Error"), f"Failed to add accommodation: {e}", parent=dialog)
-
-        btn_frame = ttk.Frame(main_frame)
-        btn_frame.pack(pady=15)
-        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.buttons.save', default="Save"), command=save_accommodation).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left', padx=5)
 
     def show_ta_management(self):
         """Unified TA/co-instructor management with assignments, permissions, and evaluation"""
@@ -283,7 +90,7 @@ class AdminToolsManager:
             conn.commit()
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _build_ta_assignments_tab(self, parent):
         """Build the TA assignments management tab"""
@@ -301,7 +108,8 @@ class AdminToolsManager:
 
         ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.labels.module', default="Module:")).pack(side='left', padx=(0, 5))
         self.ta_module_var = tk.StringVar()
-        ttk.Entry(filter_frame, textvariable=self.ta_module_var, width=15).pack(side='left', padx=5)
+        attach_picker(filter_frame, 'module', id_var=self.ta_module_var,
+                      width=28).pack(side='left', padx=5)
 
         ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.labels.role', default="Role:")).pack(side='left', padx=(15, 5))
         self.ta_role_var = tk.StringVar(value=_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_show_accommodations.values.all', default='all'))

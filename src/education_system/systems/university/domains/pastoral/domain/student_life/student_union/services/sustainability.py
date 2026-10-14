@@ -6,6 +6,9 @@ from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
 from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import union_context as ctx
 from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.union_context import auto_award_points
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.identity import (
+    current_student_id as _current_student_id,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -23,15 +26,13 @@ def manage_green_initiatives():
         cursor = conn.cursor()
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (ctx.auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, ctx.auth)
 
-        if not result:
+        if not student_id:
             print("No student record is associated with your account.")
             conn.close()
             return
 
-        student_id = result[0]
 
         while True:
             print("\n🌱 Green Initiatives")
@@ -83,7 +84,7 @@ def track_carbon_footprint(student_id, cursor, conn):
         # Get recent events to track
         cursor.execute('''
         SELECT e.event_id, e.event_name, c.club_name, e.event_date, e.current_attendees
-        FROM union_events e
+        FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e
         JOIN student_clubs c ON e.organizer_id = c.club_id
         WHERE e.event_date >= date('now', '-30 days')
         AND (c.president_id = ? OR c.treasurer_id = ? OR c.secretary_id = ?)
@@ -268,7 +269,7 @@ def waste_reduction_tracking(student_id, cursor, conn):
             # Log waste data
             cursor.execute('''
             SELECT e.event_id, e.event_name, e.event_date
-            FROM union_events e
+            FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e
             JOIN student_clubs c ON e.organizer_id = c.club_id
             WHERE e.event_date >= date('now', '-7 days')
             AND (c.president_id = ? OR c.treasurer_id = ? OR c.secretary_id = ?)
@@ -710,7 +711,7 @@ def green_certification_system(student_id, cursor, conn):
             SELECT c.club_name, AVG(st.sustainability_score) as avg_score,
                    COUNT(st.event_id) as events_tracked
             FROM student_clubs c
-            JOIN union_events e ON c.club_id = e.organizer_id
+            JOIN (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e ON c.club_id = e.organizer_id
             JOIN sustainability_tracking st ON e.event_id = st.event_id
             WHERE st.sustainability_score IS NOT NULL
             GROUP BY c.club_id, c.club_name

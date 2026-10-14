@@ -1,11 +1,11 @@
 """Per-system bootstrap and launcher functions, plus the dispatch table."""
 
 import logging
-import os
 import subprocess
 import sys
 
 from education_system.launcher.auth import init_shared_auth, gui_universal_login
+from education_system.launcher.environment import apply_launcher_env_defaults
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ def _init_university():
 
     # No per-university .env is loaded here: the path this used to build
     # (``education_system/post_18/university_system/.env``) has not existed
-    # since the ADR 0018 move, so the block never fired. run.py already loads
+    # since the ADR 0018 move, so the block never fired. python -m education_system already loads
     # the repository-root .env before any bootstrap runs.
 
     from education_system.paths import ensure_university_directories
@@ -83,6 +83,25 @@ def _init_university():
     except Exception as exc:
         logger.debug("Sixth-form intake drain skipped: %s", exc)
 
+    try:
+        from education_system.platform.integrations.external import cross_system_bus
+        from education_system.systems.university.services.bus import (
+            degree_apprenticeship_events,
+        )
+        degree_apprenticeship_events.register_consumers()
+        cross_system_bus.poll_and_dispatch("university")
+    except Exception as exc:
+        logger.debug("Degree-apprenticeship university intake skipped: %s", exc)
+
+    # Link students' own logins to their platform learner records, catching
+    # up accounts from before linking was automatic. (The university does
+    # not run ``_drain_progression``, which does this for the others.)
+    try:
+        from education_system.platform.cross_system import login_links
+        login_links.try_sync_all(systems=["university"])
+    except Exception as exc:
+        logger.debug("University login links not synced: %s", exc)
+
     # Keep draining in the background so cross-system events (safeguarding,
     # GDPR, parent linkage) reach the university while it's running.
     try:
@@ -106,7 +125,7 @@ def run_university_cli(user_info=None, role=None, shared_auth=None):
         lang = "en"
     init_i18n(lang)
     print(_("startup.starting_cli"))
-    from education_system.systems.university.interfaces.cli.shell.cli_main import main
+    from education_system.systems.university.shell.cli.cli_main import main
     main(user_info=user_info, role=role, shared_auth=shared_auth)
 
 
@@ -140,41 +159,18 @@ def run_university_gui(user_info=None, role=None, shared_auth=None):
                 uni_role = s["role"]
                 break
 
-    from education_system.systems.university.infrastructure.auth.core_utils.constants import PERMISSIONS
-    uni_permissions = list(PERMISSIONS.get(uni_role, []))
-
-    legacy_user_id = None
-    student_id = None
-    try:
-        from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
-        import sqlite3 as _sqlite3
-        _conn = _sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
-        _row = _conn.execute(
-            "SELECT id, student_id FROM users WHERE username = ?",
-            (user_info["username"],)
-        ).fetchone()
-        if _row:
-            legacy_user_id = _row[0]
-            student_id = _row[1]
-        _conn.close()
-    except Exception:
-        pass
-
-    effective_id = legacy_user_id or user_info["user_id"]
-    session_user = {
-        "id": effective_id,
-        "user_id": effective_id,
-        "shared_auth_id": user_info["user_id"],
-        "username": user_info["username"],
-        "display_name": user_info.get("display_name", user_info["username"]),
-        "role": uni_role,
-        "permissions": uni_permissions,
-        "password_reset_required": 0,
-        "student_id": student_id,
-        "email": user_info.get("email", ""),
-        "systems": user_info.get("systems", []),
-    }
-    from education_system.systems.university.interfaces.gui.shell.main.main_gui import init_gui
+    # Shared with the university CLI so the two interfaces cannot drift on how
+    # a shared-login session becomes a university user.
+    from education_system.systems.university.infrastructure.auth.session_user import (
+        build_session_user,
+    )
+    from education_system.systems.university.infrastructure.shared_context import (
+        get_auth as _get_uni_auth,
+    )
+    session_user = build_session_user(
+        user_info, uni_role, getattr(_get_uni_auth(), "permission_manager", None)
+    )
+    from education_system.systems.university.shell.gui.main.main_gui import init_gui
     app = init_gui(session_user=session_user)
     app.run()
 
@@ -202,11 +198,37 @@ _PROGRESSION_INTAKES = {
 # apprentice. Kept here rather than in each package's __init__ so importing a
 # system never drags the platform's cross-system stack in behind it.
 _PHASE_ADAPTERS = {
+    "nursery":
+        "education_system.systems.nursery.domain.learners.children.cross_system_adapter",
+    "primary":
+        "education_system.systems.primary.domain.learners.pupils.cross_system_adapter",
+    "secondary":
+        "education_system.systems.secondary.domain.admissions.cross_system_adapter",
+    "sixth_form":
+        "education_system.systems.sixth_form.domain.progression.cross_system_adapter",
     "apprenticeships":
-        "education_system.systems.apprenticeships.integrations.cross_system_adapter",
+        "education_system.systems.apprenticeships.infrastructure.integrations.cross_system_adapter",
     "fe_college":
         "education_system.systems.fe_college.services.cross_system_adapter",
+    "university":
+        "education_system.systems.university.domains.admissions.domain.cross_system_adapter",
 }
+
+
+def declare_phase_adapters():
+    """Tell the platform registry where every system's adapter lives.
+
+    Declaring imports nothing from the systems. The registry loads an
+    adapter the first time a route needs it, so the launched system can
+    reach the other end of a boundary — primary moving a pupil needs the
+    secondary adapter — without every system importing every other.
+    """
+    from education_system.platform.cross_system.adapters import registry
+    for key, module_path in _PHASE_ADAPTERS.items():
+        registry.declare(key, module_path)
+
+
+declare_phase_adapters()
 
 
 def _register_phase_adapter(system_key):
@@ -254,6 +276,22 @@ def _drain_progression(system_key):
             adapter_intake.drain(system_key)
         except Exception as exc:
             logger.debug("%s adapter intake skipped: %s", system_key, exc)
+    if system_key == "apprenticeships":
+        try:
+            from education_system.platform.integrations.external import cross_system_bus
+            from education_system.systems.apprenticeships.infrastructure.integrations import degree_events
+            degree_events.register_consumers()
+            cross_system_bus.poll_and_dispatch("apprenticeships")
+        except Exception as exc:
+            logger.debug("Degree academic projection drain skipped: %s", exc)
+    # Link learners' own logins to their platform learner records, catching
+    # up accounts and records from before linking was automatic. A system
+    # whose adapter does not pair logins is a no-op.
+    try:
+        from education_system.platform.cross_system import login_links
+        login_links.try_sync_all(systems=[system_key])
+    except Exception as exc:
+        logger.debug("%s login links not synced: %s", system_key, exc)
     # Promote the bus to a real-time backbone: a background thread keeps
     # draining while this system runs, so safeguarding / GDPR / parent
     # events propagate continuously rather than only at next launch.
@@ -271,7 +309,7 @@ def run_sixthform_cli(user_info=None, role=None, shared_auth=None):
     branding.set_system_name(SYSTEM_NAME)
     _drain_progression("sixth_form")
     _start_security_training_links()
-    from education_system.systems.sixth_form.cli_main import run
+    from education_system.systems.sixth_form.interfaces.cli.cli_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
 
@@ -281,7 +319,7 @@ def run_sixthform_gui(user_info=None, role=None, shared_auth=None):
     branding.set_system_name(SYSTEM_NAME)
     _drain_progression("sixth_form")
     _start_security_training_links()
-    from education_system.systems.sixth_form.gui_main import run
+    from education_system.systems.sixth_form.interfaces.gui.gui_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
 
@@ -331,7 +369,7 @@ def run_apprenticeships_cli(user_info=None, role=None, shared_auth=None):
     branding.set_system_name(SYSTEM_NAME)
     _drain_progression("apprenticeships")
     _start_security_training_links()
-    from education_system.systems.apprenticeships.cli_main import run
+    from education_system.systems.apprenticeships.interfaces.cli.shell import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
 
@@ -341,7 +379,7 @@ def run_apprenticeships_gui(user_info=None, role=None, shared_auth=None):
     branding.set_system_name(SYSTEM_NAME)
     _drain_progression("apprenticeships")
     _start_security_training_links()
-    from education_system.systems.apprenticeships.gui_main import run
+    from education_system.systems.apprenticeships.interfaces.gui.gui_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
 
@@ -386,13 +424,12 @@ def run_nursery_gui(user_info=None, role=None, shared_auth=None):
 # ── Shared ───────────────────────────────────────────────────────────────────
 
 def run_unified_api():
-    # The interactive launcher is a local/dev entry point. If the operator
-    # hasn't explicitly declared an environment, default to development so the
-    # server starts with the built-in localhost-only CORS fallback instead of
-    # refusing to boot. Real deployments set APP_ENV=production (and an explicit
-    # API_CORS_ORIGINS), which is left untouched here.
-    if not os.getenv("APP_ENV"):
-        os.environ["APP_ENV"] = "development"
+    # Normally already applied by launcher.main at import; repeated here because
+    # this function is also reachable by importing launcher.systems directly,
+    # and without a declared environment the server refuses to boot rather than
+    # falling back to localhost-only CORS. Idempotent, and never overrides an
+    # APP_ENV a real deployment has set.
+    apply_launcher_env_defaults()
     from education_system.platform.delivery.api.unified_server import run_unified_api as _run
     _run()
 

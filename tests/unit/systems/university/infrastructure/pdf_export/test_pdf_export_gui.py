@@ -46,7 +46,7 @@ class TestPDFExportGUI:
 
     def test_initialization(self, mock_tk, mock_root, mock_auth):
         """Test PDFExportGUI initialization."""
-        from education_system.systems.university.interfaces.gui.shell.pdf_export_gui import PDFExportGUI
+        from education_system.systems.university.shell.gui.pdf_export_gui import PDFExportGUI
 
         gui = PDFExportGUI(mock_root, mock_auth)
 
@@ -57,13 +57,13 @@ class TestPDFExportGUI:
 
     def test_show_export_window(self, mock_tk, mock_root, mock_auth):
         """Test showing the export window."""
-        from education_system.systems.university.interfaces.gui.shell.pdf_export_gui import PDFExportGUI
+        from education_system.systems.university.shell.gui.pdf_export_gui import PDFExportGUI
 
         gui = PDFExportGUI(mock_root, mock_auth)
 
         with patch.object(gui, '_create_widgets'), \
              patch.object(gui, '_load_preview'), \
-             patch('education_system.systems.university.interfaces.gui.shell.pdf_export_gui.tk.Toplevel') as mock_toplevel:
+             patch('education_system.systems.university.shell.gui.pdf_export_gui.tk.Toplevel') as mock_toplevel:
             mock_toplevel.return_value = MagicMock()
             gui.show_export_window()
 
@@ -73,7 +73,7 @@ class TestPDFExportGUI:
 
     def test_progress_callback(self, mock_tk, mock_root, mock_auth):
         """Test progress callback updates."""
-        from education_system.systems.university.interfaces.gui.shell.pdf_export_gui import PDFExportGUI
+        from education_system.systems.university.shell.gui.pdf_export_gui import PDFExportGUI
 
         gui = PDFExportGUI(mock_root, mock_auth)
 
@@ -88,7 +88,7 @@ class TestPDFExportGUI:
 
     def test_export_complete_handling(self, mock_tk, mock_root, mock_auth):
         """Test export completion handling."""
-        from education_system.systems.university.interfaces.gui.shell.pdf_export_gui import PDFExportGUI
+        from education_system.systems.university.shell.gui.pdf_export_gui import PDFExportGUI
 
         gui = PDFExportGUI(mock_root, mock_auth)
         gui.is_exporting = True
@@ -105,7 +105,7 @@ class TestPDFExportGUI:
 
     def test_export_failed_handling(self, mock_tk, mock_root, mock_auth):
         """Test export failure handling."""
-        from education_system.systems.university.interfaces.gui.shell.pdf_export_gui import PDFExportGUI
+        from education_system.systems.university.shell.gui.pdf_export_gui import PDFExportGUI
 
         gui = PDFExportGUI(mock_root, mock_auth)
         gui.is_exporting = True
@@ -124,9 +124,9 @@ class TestShowPDFExportGUIFunction:
     def test_show_pdf_export_gui_function(self):
         """Test the show_pdf_export_gui function."""
         with patch(
-            "education_system.systems.university.interfaces.gui.shell.pdf_export_gui.PDFExportGUI"
+            "education_system.systems.university.shell.gui.pdf_export_gui.PDFExportGUI"
         ) as mock_class:
-            from education_system.systems.university.interfaces.gui.shell.pdf_export_gui import (
+            from education_system.systems.university.shell.gui.pdf_export_gui import (
                 show_pdf_export_gui,
             )
 
@@ -166,7 +166,7 @@ class TestPDFExportGUIIntegration:
         with patch("tkinter.filedialog.asksaveasfilename") as mock_dialog:
             mock_dialog.return_value = "/path/to/output.pdf"
 
-            from education_system.systems.university.interfaces.gui.shell.pdf_export_gui import PDFExportGUI
+            from education_system.systems.university.shell.gui.pdf_export_gui import PDFExportGUI
 
             mock_root = MagicMock()
             gui = PDFExportGUI(mock_root)
@@ -181,7 +181,7 @@ class TestPDFExportGUIIntegration:
         with patch("tkinter.filedialog.asksaveasfilename") as mock_dialog:
             mock_dialog.return_value = ""  # Empty string = cancelled
 
-            from education_system.systems.university.interfaces.gui.shell.pdf_export_gui import PDFExportGUI
+            from education_system.systems.university.shell.gui.pdf_export_gui import PDFExportGUI
 
             mock_root = MagicMock()
             gui = PDFExportGUI(mock_root)
@@ -194,7 +194,7 @@ class TestPDFExportGUIIntegration:
 
     def test_close_window_when_not_exporting(self):
         """Test closing window when no export is running."""
-        from education_system.systems.university.interfaces.gui.shell.pdf_export_gui import PDFExportGUI
+        from education_system.systems.university.shell.gui.pdf_export_gui import PDFExportGUI
 
         mock_root = MagicMock()
         gui = PDFExportGUI(mock_root)
@@ -210,7 +210,7 @@ class TestPDFExportGUIIntegration:
     def test_close_window_when_exporting_cancelled(self):
         """Test closing window when export is running and user cancels."""
         with patch("tkinter.messagebox.askyesno", return_value=False):
-            from education_system.systems.university.interfaces.gui.shell.pdf_export_gui import PDFExportGUI
+            from education_system.systems.university.shell.gui.pdf_export_gui import PDFExportGUI
 
             mock_root = MagicMock()
             gui = PDFExportGUI(mock_root)
@@ -226,7 +226,7 @@ class TestPDFExportGUIIntegration:
     def test_close_window_when_exporting_confirmed(self):
         """Test closing window when export is running and user confirms."""
         with patch("tkinter.messagebox.askyesno", return_value=True):
-            from education_system.systems.university.interfaces.gui.shell.pdf_export_gui import PDFExportGUI
+            from education_system.systems.university.shell.gui.pdf_export_gui import PDFExportGUI
 
             mock_root = MagicMock()
             gui = PDFExportGUI(mock_root)
@@ -245,7 +245,7 @@ class TestPDFExportGUIValidation:
     def test_start_export_no_output_path(self):
         """Test starting export with no output path."""
         with patch("tkinter.messagebox.showerror") as mock_error:
-            from education_system.systems.university.interfaces.gui.shell.pdf_export_gui import PDFExportGUI
+            from education_system.systems.university.shell.gui.pdf_export_gui import PDFExportGUI
 
             mock_root = MagicMock()
             gui = PDFExportGUI(mock_root)
@@ -260,7 +260,7 @@ class TestPDFExportGUIValidation:
     def test_start_export_invalid_max_rows(self):
         """Test starting export with invalid max rows."""
         with patch("tkinter.messagebox.showerror") as mock_error:
-            from education_system.systems.university.interfaces.gui.shell.pdf_export_gui import PDFExportGUI
+            from education_system.systems.university.shell.gui.pdf_export_gui import PDFExportGUI
 
             mock_root = MagicMock()
             gui = PDFExportGUI(mock_root)
@@ -276,7 +276,7 @@ class TestPDFExportGUIValidation:
     def test_start_export_already_exporting(self):
         """Test starting export when one is already running."""
         with patch("tkinter.messagebox.showwarning") as mock_warning:
-            from education_system.systems.university.interfaces.gui.shell.pdf_export_gui import PDFExportGUI
+            from education_system.systems.university.shell.gui.pdf_export_gui import PDFExportGUI
 
             mock_root = MagicMock()
             gui = PDFExportGUI(mock_root)

@@ -8,6 +8,9 @@ from education_system.systems.university.domains.pastoral.domain.student_life.st
 from education_system.systems.university.domains.pastoral.interfaces.cli.student_union_events.context import auth
 from education_system.systems.university.domains.pastoral.domain.student_life.student_union.events.infrastructure.qr_codes import generate_qr_code
 from education_system.systems.university.domains.pastoral.interfaces.cli.student_union_events.context import auth
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.identity import (
+    current_student_id as _current_student_id,
+)
 
 def _manage_event_attendance_simple():
     """Manage event attendance for club events."""
@@ -21,14 +24,13 @@ def _manage_event_attendance_simple():
         conn = get_connection()
         cursor = conn.cursor()
 
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
-        if not result:
+        student_id = _current_student_id(cursor, auth)
+
+        if not student_id:
             print("No student record is associated with your account.")
             conn.close()
             return
 
-        student_id = result[0]
 
         cursor.execute('''
         SELECT c.club_id, c.club_name
@@ -45,7 +47,7 @@ def _manage_event_attendance_simple():
 
         cursor.execute('''
         SELECT e.event_id, e.event_name, e.event_date
-        FROM union_events e
+        FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e
         WHERE e.organizer_id IN (
             SELECT club_id FROM club_members WHERE student_id = ?
         )
@@ -76,7 +78,7 @@ def _manage_event_attendance_simple():
             return
 
         cursor.execute('''
-        SELECT COUNT(*) FROM union_events
+        SELECT COUNT(*) FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union')
         WHERE event_id = ? AND organizer_id IN (
             SELECT club_id FROM club_members WHERE student_id = ?
         )
@@ -142,21 +144,19 @@ def manage_event_attendance():
         cursor = conn.cursor()
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, auth)
 
-        if not result:
+        if not student_id:
             print("No student record is associated with your account.")
             conn.close()
             return
 
-        student_id = result[0]
 
         # Get events user can manage
         if auth.check_permission('manage_all_events'):
             cursor.execute('''
             SELECT e.event_id, e.event_name, c.club_name, e.event_date, e.status
-            FROM union_events e
+            FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e
             JOIN student_clubs c ON e.organizer_id = c.club_id
             WHERE e.event_date >= date('now', '-7 days')
             ORDER BY e.event_date DESC
@@ -164,7 +164,7 @@ def manage_event_attendance():
         else:
             cursor.execute('''
             SELECT e.event_id, e.event_name, c.club_name, e.event_date, e.status
-            FROM union_events e
+            FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e
             JOIN student_clubs c ON e.organizer_id = c.club_id
             WHERE (c.president_id = ? OR c.treasurer_id = ? OR c.secretary_id = ?)
             AND e.event_date >= date('now', '-7 days')

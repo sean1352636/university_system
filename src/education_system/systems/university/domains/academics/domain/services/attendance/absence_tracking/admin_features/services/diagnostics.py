@@ -112,6 +112,7 @@ class DiagnosticsService:
                   "student_modules", "instructor_modules", "users",
                   "abs_tracker_audit", "abs_tracker_trash"):
             try:
+                # db-audit: ignore[DBW001] - literal collection
                 n = self.ctx.db.cur.execute(
                     f"SELECT COUNT(*) FROM {t}").fetchone()[0]
                 stats.append((t, n, "ok"))

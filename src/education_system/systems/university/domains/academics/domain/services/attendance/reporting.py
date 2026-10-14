@@ -1,4 +1,7 @@
 """Reporting and report generation for attendance tracking."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 import datetime
 from datetime import timedelta
@@ -263,7 +266,7 @@ def generate_executive_summary_report(date_from=None, date_to=None, output_path=
             img = Image(viz_filename, width=500, height=375)
             elements.append(img)
         except Exception:
-            pass  # Skip if image can't be added
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Build PDF
         doc.build(elements)

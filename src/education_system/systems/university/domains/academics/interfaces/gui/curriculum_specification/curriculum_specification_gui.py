@@ -44,7 +44,7 @@ class CurriculumSpecificationGUI:
             from education_system.systems.university.domains.academics.interfaces.gui.research.external_quality_assurance.qa_widgets import EQAStatusStrip
             EQAStatusStrip(self.root).pack(fill=tk.X)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         notebook = ttk.Notebook(self.root)
         notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         self._build_programmes_tab(notebook)

@@ -377,7 +377,7 @@ def send_sms_notification(user_id: str, message: str):
     try:
         with get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT phone_number FROM students WHERE student_id = ?", (user_id,))
+            cursor.execute("SELECT phone FROM students WHERE student_id = ?", (user_id,))
             result = cursor.fetchone()
 
             if result and result[0]:

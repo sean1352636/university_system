@@ -1,1 +1,0 @@
-"""Sixth-form `tests` package."""

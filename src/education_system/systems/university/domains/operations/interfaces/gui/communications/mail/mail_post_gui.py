@@ -152,7 +152,7 @@ class MailPostGUI:
 
         ttk.Label(
             title_frame,
-            text=_t("mail.title", default="University Mail Services"),
+            text=_t("mail.title", default="===== MAIL ====="),
             font=('Arial', 18, 'bold')
         ).pack(side=tk.LEFT)
 

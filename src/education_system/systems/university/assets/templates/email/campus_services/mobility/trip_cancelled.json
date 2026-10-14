@@ -1,0 +1,60 @@
+{
+  "template_id": "trip_cancelled",
+  "category": "mobility",
+  "name": "Trip Cancelled",
+  "description": "Sent to every registered participant when a trip is deleted or cancelled",
+  "version": "1.0.0",
+  "subject": "{trip_name} has been cancelled",
+  "body_text": "Dear {participant_name},\n\nA trip you are registered for has been cancelled and will no longer take place.\n\n{separator}\nCANCELLED TRIP\n{separator}\nTrip:         {trip_name}\nDestination:  {destination}\nDates:        {trip_dates}\nCancelled on: {cancelled_date}\n\n{reason_line}\nYour registration has been closed. If you paid for this trip, the trips office will be in touch about a refund.\n\n{signature}",
+  "body_html": "<html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Trip Cancelled</title></head><body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'><div style='max-width: 640px; margin: 0 auto; padding: 20px;'><h2 style='color: #2c5282; border-bottom: 2px solid #2c5282; padding-bottom: 10px;'>Trip Cancelled</h2><p>Dear <strong>{participant_name}</strong>,</p><p>A trip you are registered for has been cancelled and will no longer take place.</p><h3 style='color: #2c5282; margin-bottom: 6px;'>Cancelled trip</h3><table style='width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #fff5f5; border: 1px solid #feb2b2; border-radius: 4px;'><tr><td style='padding: 10px 12px; color: #718096; width: 40%;'>Trip</td><td style='padding: 10px 12px;'><strong>{trip_name}</strong></td></tr><tr><td style='padding: 10px 12px; color: #718096;'>Destination</td><td style='padding: 10px 12px;'>{destination}</td></tr><tr><td style='padding: 10px 12px; color: #718096;'>Dates</td><td style='padding: 10px 12px;'>{trip_dates}</td></tr><tr><td style='padding: 10px 12px; color: #718096;'>Cancelled on</td><td style='padding: 10px 12px;'>{cancelled_date}</td></tr></table><p style='color: #718096;'>{reason_line}</p><p>Your registration has been closed. If you paid for this trip, the trips office will be in touch about a refund.</p><p style='color: #718096; font-size: 0.9em; font-style: italic;'>If you have any questions, contact the trips office.</p><p style='margin-top: 30px;'>{signature}</p></div></body></html>",
+  "variables": {
+    "participant_name": {
+      "type": "string",
+      "description": "Registered participant's name",
+      "required": true
+    },
+    "trip_name": {
+      "type": "string",
+      "description": "Name of the cancelled trip",
+      "required": true
+    },
+    "destination": {
+      "type": "string",
+      "description": "Trip destination",
+      "required": true
+    },
+    "trip_dates": {
+      "type": "string",
+      "description": "Trip dates, already formatted (a single date for single-day trips)",
+      "required": true
+    },
+    "cancelled_date": {
+      "type": "string",
+      "description": "When the trip was cancelled",
+      "required": true
+    },
+    "reason_line": {
+      "type": "string",
+      "description": "Why it was cancelled; omitted when no reason was given",
+      "required": false,
+      "default": ""
+    },
+    "separator": {
+      "type": "string",
+      "description": "Visual separator for the text version",
+      "required": false,
+      "default": "----------------------------------------------------------------------"
+    },
+    "signature": {
+      "type": "string",
+      "description": "Email signature; supplied by the renderer when omitted",
+      "required": false
+    }
+  },
+  "tags": [
+    "trip",
+    "cancellation",
+    "participant",
+    "mobility"
+  ]
+}

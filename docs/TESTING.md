@@ -1,8 +1,8 @@
 # Testing Guide
 
 This is the **top-level entry point** for running the Education
-System's test suite. The repository contains 450+ test files spread
-across the four subsystems and the shared infrastructure layer.
+System's test suite. The repository contains 800+ test files organized first
+by test scope and then by the production code that owns the behavior.
 
 For deeper, system-specific testing notes, see:
 
@@ -26,9 +26,8 @@ make test
 make test-all
 ```
 
-The venv used by the Makefile lives at `/home/seancatchpole989/venv/bin/`.
-If your venv is elsewhere, edit `VENV` at the top of the `Makefile` or
-invoke pytest directly.
+The Makefile uses the active `python` by default. Override it when needed, for
+example with `make test PYTHON=python3.12`.
 
 ---
 
@@ -41,13 +40,9 @@ invoke pytest directly.
 | `make test-cov` | Full suite with coverage report (term + HTML in `htmlcov/`) |
 | `make test-coverage` | Same as `test-cov` |
 | `make test-coverage-report` | Open the HTML coverage report in your browser |
-| `make test-shared` | Only the shared infrastructure tests (`education_system/shared/tests/`) |
-| `make test-university` | Only the university subsystem tests |
-| `make test-college` | Only the college subsystem tests |
-| `make test-secondary` | Only the secondary school subsystem tests |
-| `make test-primary` | Only the primary school subsystem tests |
-| `make test-integration` | Cross-system integration tests (`shared/tests/test_cross_system.py`) |
-| `make test-security` | Tests marked `@pytest.mark.security` only |
+| `make test-shared` | Platform unit tests (`tests/unit/platform/`) |
+| `make test-university` | University tests across unit, integration, contract, end-to-end, smoke, and performance scopes |
+| `make test-security` | Independent security tests plus university authentication and security units |
 | `make test-gui` | Tests marked `@pytest.mark.gui` only (mocked tkinter) |
 | `make test-auth` | Auth-infrastructure tests (auth core, password manager, MFA, sessions, security) |
 | `make check` | Lint + run the default test suite (CI gate) |
@@ -63,48 +58,31 @@ The project uses **pytest** with parallel execution via **pytest-xdist**
 **pytest-timeout**. Markers and other settings live in
 `pyproject.toml` under `[tool.pytest.ini_options]`.
 
-### Test paths
+### Test layout
 
-The default test discovery covers all five test roots:
-
-```
-education_system/shared/tests
-education_system/university_system/tests
-education_system/sixth_form/tests
-education_system/secondary/tests
-education_system/primary/tests
-```
-
-### University test layout (feature-first)
-
-`university_system/tests/` mirrors the source `modules/` tree — one folder
-per feature, holding CLI **and** GUI tests together. Interface type is a
-**marker**, not a directory:
+Default discovery starts at `tests/`. The first directory is the test scope;
+within a scope, directories mirror the owning source package:
 
 ```
-university_system/tests/
-├── core/            # cli/core utility tests
-├── domain/          # one folder per feature (finance, academics, health …)
-│   └── finance/     #   CLI + GUI tests co-located; GUI files carry pytest.mark.gui
-├── infrastructure/  # auth, database, email, security, validation
-├── services/        # cross-cutting services (was modules/services)
-├── shared/          # university-shared (analytics, gui widgets, utils)
-├── integration/     # cross-feature journeys, e2e, performance
-├── sal/             # the SAL subsystem suite
-├── scripts/         # tests for one-off maintenance scripts
-├── smoke/           # broad smoke tests
-└── _support/        # non-pytest helpers (report/runner scripts)
+tests/
+├── unit/             # isolated behavior, mirroring src/education_system/
+├── integration/      # multi-component and migration tests
+├── contract/         # executable API, plugin, portal, and boundary contracts
+├── end_to_end/       # browser and full user journeys
+├── smoke/            # broad startup and availability checks by system
+├── security/         # independent adversarial and fail-closed checks
+├── performance/      # benchmarks and Locust load scenarios
+└── fixtures/         # reusable fixture bundles; local conftest.py files stay scoped
 ```
 
-GUI tests declare `pytestmark = pytest.mark.gui` at module level, so
-`-m gui` / `-m "not gui"` select them reliably regardless of location.
-There are no `__init__.py` packages — discovery uses
-`--import-mode=importlib`.
+University units mirror the current package pillars at
+`tests/unit/systems/university/{application,domains,infrastructure,services,shell}`.
+Domain-owned API, CLI, and GUI tests live below that domain's `interfaces/`
+directory; application-wide interface tests live below `shell/`.
 
-A handful of import-heavy directories under `university_system/tests/domain/`
-and `.../infrastructure/email/gui` are excluded by `--ignore` flags in
-`addopts` so the fast suite never imports them. See `pyproject.toml` for
-the current list.
+Tests are not Python packages except for the small `tests.fixtures` support
+namespace. Discovery uses `--import-mode=importlib`, so duplicate test basenames
+can coexist safely.
 
 ### Markers
 
@@ -113,6 +91,9 @@ the current list.
 | `slow` | Long-running tests; excluded from `make test`, included in `make test-all` |
 | `integration` | Multi-component integration tests |
 | `unit` | Pure unit tests |
+| `contract` | Executable interface and boundary contracts |
+| `end_to_end` | Browser and full user journeys |
+| `smoke` | Broad startup and availability checks |
 | `gui` | Tests that require tkinter (mocked); excluded from `make test`, run via `make test-gui` |
 | `security` | Security-focused tests; run via `make test-security` |
 | `performance` | Performance benchmark tests |
@@ -121,12 +102,16 @@ Markers are **strict** (`--strict-markers`) — using an undeclared
 marker will fail the run, so register any new ones in `pyproject.toml`
 first.
 
-### conftest.py at the repo root
+### Shared fixtures
 
-The root `conftest.py` monkey-patches `threading.Thread.start` to
+The shared `tests/conftest.py` monkey-patches `threading.Thread.start` to
 suppress daemon threads (MaintenanceScheduler, LogProcessor, etc.) that
 otherwise cause CI timeouts. **Do not remove it** unless you have
 verified the underlying schedulers no longer auto-start at import time.
+
+It also loads `tests/fixtures/university.py`. Its autouse database and working
+directory behavior is conditional on university-owned paths, preserving
+isolation after those tests are separated across multiple top-level scopes.
 
 ---
 
@@ -137,22 +122,22 @@ invoke pytest directly for tighter feedback loops:
 
 ```bash
 # Single test file
-/home/seancatchpole989/venv/bin/pytest \
-    education_system/shared/tests/test_auth_core.py -v --timeout=60
+python -m pytest \
+    tests/unit/platform/identity/auth/test_auth_core.py -v --timeout=60
 
 # Single test class
-/home/seancatchpole989/venv/bin/pytest \
-    education_system/shared/tests/test_auth_core.py::TestPasswordPolicy -v
+python -m pytest \
+    tests/unit/platform/identity/auth/test_auth_core.py::TestPasswordPolicy -v
 
 # Single test method
-/home/seancatchpole989/venv/bin/pytest \
-    education_system/shared/tests/test_auth_core.py::TestPasswordPolicy::test_min_length -v
+python -m pytest \
+    tests/unit/platform/identity/auth/test_auth_core.py::TestPasswordPolicy::test_min_length -v
 
 # Filter by name (substring)
-/home/seancatchpole989/venv/bin/pytest -k "password" -v
+python -m pytest -k "password" -v
 
 # Filter by marker
-/home/seancatchpole989/venv/bin/pytest -m "security and not slow" -v
+python -m pytest -m "security and not slow" -v
 ```
 
 > **Tip:** disable parallelism with `-n0` when debugging a single
@@ -199,7 +184,7 @@ and venvs are excluded from the source tree.
 
 ## Adding new tests
 
-1. Place the test file under the matching subsystem's `tests/` directory.
+1. Choose the scope first, then mirror the owning source package below it.
 2. Name it `test_*.py`, classes `Test*`, functions `test_*`.
 3. Apply markers as needed (`@pytest.mark.slow`, `@pytest.mark.integration`, etc.).
 4. If the test needs a database, use a temporary SQLite file via the existing fixtures rather than the real `student_records.db` / `auth.db`.

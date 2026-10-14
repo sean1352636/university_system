@@ -23,6 +23,7 @@ from education_system.systems.university.domains.pastoral.domain.student_jobs.se
     SkillMatchingManager,
     PerformanceManager,
 )
+import tkinter.simpledialog  # noqa: F401 - registers tk.simpledialog
 
 
 class StudentJobsGUI:

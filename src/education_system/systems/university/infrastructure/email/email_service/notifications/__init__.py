@@ -8,6 +8,9 @@ from education_system.systems.university.infrastructure.email.email_service.noti
     send_assignment_notification,
     send_extension_notification,
     send_confirmation_email,
+    send_online_class_notification,
+    get_online_class_audience,
+    describe_online_class_changes,
 )
 from education_system.systems.university.infrastructure.email.email_service.notifications.helpdesk import (
     send_ticket_notification,

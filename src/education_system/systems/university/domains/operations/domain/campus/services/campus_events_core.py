@@ -24,10 +24,9 @@ def _add_to_academic_calendar(event_name, event_date, description, event_type, c
     try:
         with transaction() as conn:
             conn.execute('''
-                INSERT INTO academic_calendar_events (
-                    id, name, description, event_type,
-                    date, created_by, date_added, last_modified
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO unified_events (
+                    source_event_id, title, description, event_type, event_date, created_by, created_at, updated_at, source_type
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'academic_calendar')
             ''', (
                 str(uuid.uuid4()), event_name, description or '',
                 event_type, event_date, created_by or 'System',

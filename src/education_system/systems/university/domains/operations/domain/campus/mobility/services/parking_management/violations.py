@@ -21,7 +21,7 @@ def record_violation():
 
     if not auth.check_permission('record_violation'):
         logging.warning(f"User {auth.current_user['username']} attempted to record violation without permission")
-        print(_t("parking.auth.no_permission"))
+        print(_t("parking.auth.no_permission", default="No Permission."))
         return
 
     try:
@@ -34,7 +34,7 @@ def record_violation():
         # Get license plate
         license_plate = input("Enter vehicle license plate: ").upper()
         if not license_plate:
-            print(_t("parking.error.license_plate_required"))
+            print(_t("parking.error.license_plate_required", default="License Plate Required"))
             conn.close()
             return
 
@@ -78,7 +78,7 @@ def record_violation():
         # Get location
         location = input("Enter violation location: ")
         if not location:
-            print(_t("parking.error.location_required"))
+            print(_t("parking.error.location_required", default="Location Required"))
             conn.close()
             return
 
@@ -124,7 +124,7 @@ def record_violation():
 
         # Insert violation record
         cursor.execute(
-            'INSERT INTO parking_violations VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO parking_violations (violation_id, vehicle_id, license_plate, violation_type, violation_date, fine_amount, payment_status, location, officer_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
             (violation_id, vehicle_id, license_plate, violation_type, violation_date,
              fine_amount, payment_status, location, officer_id)
         )
@@ -150,7 +150,7 @@ def record_violation():
                           if auth and auth.current_user else None,
             )
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         print("\n" + _t("parking.msg.violation_recorded") + ":")
         print(f"Violation ID: {violation_id}")
@@ -185,7 +185,7 @@ def view_violations():
 
     if not (auth.check_permission('view_any_violation') or auth.check_permission('view_own_violation')):
         logging.warning(f"User {auth.current_user['username']} attempted to view violations without permission")
-        print(_t("parking.auth.no_permission"))
+        print(_t("parking.auth.no_permission", default="No Permission."))
         return
 
     try:
@@ -401,7 +401,7 @@ def update_violation():
 
     if not auth.check_permission('update_violation'):
         logging.warning(f"User {auth.current_user['username']} attempted to update violation without permission")
-        print(_t("parking.auth.no_permission"))
+        print(_t("parking.auth.no_permission", default="No Permission."))
         return
 
     # Backup before making changes
@@ -445,7 +445,7 @@ def update_violation():
             if option < 1 or option > 4:
                 raise ValueError
         except ValueError:
-            print(_t("common.invalid_option"))
+            print(_t("common.invalid_option", default="Invalid Option."))
             conn.close()
             return
 
@@ -533,7 +533,7 @@ def update_violation():
             # Update location
             new_location = input("Enter new location: ")
             if not new_location:
-                print(_t("parking.error.location_empty"))
+                print(_t("parking.error.location_empty", default="Location Empty"))
                 conn.close()
                 return
 
@@ -585,7 +585,7 @@ def delete_violation():
 
     if not auth.check_permission('delete_violation'):
         logging.warning(f"User {auth.current_user['username']} attempted to delete violation without permission")
-        print(_t("parking.auth.no_permission"))
+        print(_t("parking.auth.no_permission", default="No Permission."))
         return
 
     # Backup before making changes
@@ -620,7 +620,7 @@ def delete_violation():
         confirm = input("\nAre you sure you want to delete this violation? (y/n): ")
 
         if confirm.lower() != 'y':
-            print(_t("common.deletion_cancelled"))
+            print(_t("common.deletion_cancelled", default="Deletion Cancelled"))
             conn.close()
             return
 

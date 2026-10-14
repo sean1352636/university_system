@@ -5,6 +5,9 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 from .. import degree_audit_gui_shared as _shared
 globals().update({name: value for name, value in _shared.__dict__.items() if not name.startswith("__")})
 
+# Imported after the namespace splat so it cannot be shadowed.
+from .. import report_widgets as _report
+
 
 class DegreeAuditGUI:
     def update_progress(self):
@@ -107,7 +110,12 @@ class DegreeAuditGUI:
                   command=save_init).grid(row=3, column=0, columnspan=2, pady=20)
 
     def check_prerequisites(self):
-        """Check if student met prerequisites for a module using student_modules table"""
+        """Check whether a student has met a module's prerequisites.
+
+        Rendered as cards rather than a text dump, on the tab's scrolling
+        surface so a module with many prerequisites is readable rather than
+        clipped.
+        """
         try:
             student_id = self._student_id_from_label(self.prereq_student_entry.get())
             module_label = self.prereq_module_entry.get().strip()
@@ -122,88 +130,121 @@ class DegreeAuditGUI:
             with get_connection() as conn:
                 cursor = conn.cursor()
 
-                # Check if student exists
-                cursor.execute('SELECT student_id FROM students WHERE student_id = ?', (student_id,))
-                if not cursor.fetchone():
-                    messagebox.showerror(_("common.error"), f"Student {student_id} not found in database")
+                cursor.execute(
+                    'SELECT first_name, last_name FROM students WHERE student_id = ?',
+                    (student_id,))
+                student = cursor.fetchone()
+                if not student:
+                    messagebox.showerror(_("common.error"),
+                                         f"Student {student_id} not found in database")
                     return
+                student_name = f"{student[0] or ''} {student[1] or ''}".strip() or student_id
 
-                # Check if module exists in student_modules
                 cursor.execute('''
                     SELECT sm.module_code, sm.status, sm.grade, m.module_name, m.prerequisites
                     FROM student_modules sm
                     LEFT JOIN modules m ON sm.module_code = m.module_code
                     WHERE sm.student_id = ? AND sm.module_code = ?
                 ''', (student_id, module_code))
+                enrolment = cursor.fetchone()
 
-                module_enrollment = cursor.fetchone()
-
-                self.prereq_results_text.delete('1.0', tk.END)
-                self.prereq_results_text.insert(tk.END,
-                    f"PREREQUISITE CHECK - {module_code}\n")
-                self.prereq_results_text.insert(tk.END, "=" * 60 + "\n\n")
-                self.prereq_results_text.insert(tk.END,
-                    f"Student ID: {student_id}\n")
-                self.prereq_results_text.insert(tk.END,
-                    f"Module Code: {module_code}\n\n")
-
-                if module_enrollment:
-                    module_name = module_enrollment[3] or "Unknown Module"
-                    status = module_enrollment[1] or "Unknown"
-                    grade = module_enrollment[2] or "Not Graded"
-                    prerequisites = module_enrollment[4] or "None"
-
-                    self.prereq_results_text.insert(tk.END,
-                        f"Module Name: {module_name}\n")
-                    self.prereq_results_text.insert(tk.END,
-                        f"Enrollment Status: {status}\n")
-                    self.prereq_results_text.insert(tk.END,
-                        f"Current Grade: {grade}\n")
-                    self.prereq_results_text.insert(tk.END,
-                        f"Prerequisites: {prerequisites}\n\n")
-
-                    # Check if student has completed all prerequisites
+                rows = []
+                eligible = None
+                if enrolment:
+                    prerequisites = (enrolment[4] or "").strip()
                     if prerequisites and prerequisites.lower() != 'none':
-                        prereq_list = [p.strip() for p in prerequisites.split(',')]
-                        missing = []
-
-                        for prereq in prereq_list:
-                            cursor.execute('''
-                                SELECT grade, status
-                                FROM student_modules
-                                WHERE student_id = ? AND module_code = ?
-                            ''', (student_id, prereq))
-
-                            prereq_result = cursor.fetchone()
-                            if not prereq_result:
-                                missing.append(prereq)
-                            elif prereq_result[1] != 'Completed':
-                                missing.append(f"{prereq} (Not completed)")
-
-                        if missing:
-                            self.prereq_results_text.insert(tk.END,
-                                "STATUS: Not Eligible\n\n"
-                                "Missing Prerequisites:\n")
-                            for m in missing:
-                                self.prereq_results_text.insert(tk.END, f"  - {m}\n")
-                        else:
-                            self.prereq_results_text.insert(tk.END,
-                                "STATUS: Eligible\n\n"
-                                "All prerequisites have been met.\n")
+                        for prereq in [p.strip() for p in prerequisites.split(',') if p.strip()]:
+                            cursor.execute(
+                                'SELECT grade, status FROM student_modules '
+                                'WHERE student_id = ? AND module_code = ?',
+                                (student_id, prereq))
+                            got = cursor.fetchone()
+                            cursor.execute(
+                                'SELECT module_name FROM modules WHERE module_code = ?',
+                                (prereq,))
+                            name_row = cursor.fetchone()
+                            name = (name_row[0] if name_row else "") or "—"
+                            if not got:
+                                rows.append((prereq, name, "Not taken", "—", False))
+                            else:
+                                grade = got[0] or "Not graded"
+                                status = got[1] or "Unknown"
+                                met = str(status).strip().lower() in (
+                                    'completed', 'complete', 'passed', 'pass')
+                                rows.append((prereq, name, status, grade, met))
+                        eligible = all(r[4] for r in rows)
                     else:
-                        self.prereq_results_text.insert(tk.END,
-                            "STATUS: Eligible\n\n"
-                            "No prerequisites required for this module.\n")
-                else:
-                    self.prereq_results_text.insert(tk.END,
-                        f"ERROR: Module {module_code} not found in student's enrolled modules.\n\n"
-                        f"Student {student_id} is not enrolled in this module.\n")
+                        eligible = True
 
-                log_activity('check', 'prerequisite', module_code,
-                           {'student_id': student_id})
+            self._render_prereq_results(
+                student_id=student_id, student_name=student_name,
+                module_code=module_code, enrolment=enrolment,
+                rows=rows, eligible=eligible)
+
+            log_activity('check', 'prerequisite', module_code,
+                         {'student_id': student_id})
 
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Failed to check prerequisites: {e}")
+
+    def _render_prereq_results(self, *, student_id, student_name, module_code,
+                               enrolment, rows, eligible):
+        """Draw the prerequisite outcome onto the tab's scrolling surface."""
+        surface = self.prereq_results
+        _report.clear(surface)
+
+        if not enrolment:
+            _report.banner(surface, f"Prerequisite check — {module_code}",
+                           f"{student_name} ({student_id})", tone=_report.MUTED)
+            _report.verdict(
+                surface, False, "Not enrolled on this module",
+                f"{student_name} has no enrolment record for {module_code}, so "
+                f"there is nothing to check against.", neutral=True)
+            return
+
+        module_name = enrolment[3] or "Unknown module"
+        status = enrolment[1] or "Unknown"
+        grade = enrolment[2] or "Not graded"
+        prerequisites = (enrolment[4] or "").strip() or "None"
+
+        _report.banner(surface, f"{module_code} — {module_name}",
+                       f"{student_name} ({student_id})")
+
+        met_count = sum(1 for r in rows if r[4])
+        _report.stat_strip(surface, [
+            (len(rows), "Prerequisites"),
+            (met_count, "Met", _report.OK if met_count == len(rows) else _report.WARN),
+            (len(rows) - met_count, "Outstanding",
+             _report.BAD if met_count < len(rows) else _report.OK),
+        ])
+
+        body = _report.card(surface, "This module")
+        _report.kv_grid(body, [
+            ("Module", module_code),
+            ("Enrolment status", status),
+            ("Current grade", grade),
+            ("Declared prerequisites", prerequisites),
+        ])
+
+        if rows:
+            _report.card(surface, "Prerequisite modules", accent="#9b59b6")
+            _report.table(
+                surface,
+                ("Code", "Module", "Status", "Grade", "Met"),
+                [(c, n, st, g, "Yes" if ok else "No") for c, n, st, g, ok in rows],
+                widths={"Code": 100, "Module": 250, "Status": 110,
+                        "Grade": 90, "Met": 60})
+
+        if eligible:
+            _report.verdict(
+                surface, True, "Eligible",
+                "All prerequisites have been met."
+                if rows else "This module declares no prerequisites.")
+        else:
+            outstanding = [f"{c} ({n})" for c, n, _st, _g, ok in rows if not ok]
+            _report.verdict(
+                surface, False, "Not eligible",
+                "Outstanding: " + ", ".join(outstanding))
 
     def add_prerequisite(self):
         """Add a new prerequisite relationship"""

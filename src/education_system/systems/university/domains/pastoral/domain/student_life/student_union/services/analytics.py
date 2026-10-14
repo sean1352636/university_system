@@ -4,6 +4,9 @@ import logging
 
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
 from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import union_context as ctx
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.identity import (
+    current_student_id as _current_student_id,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +159,7 @@ def activity_correlation_analysis(cursor):
             COUNT(*) as attendance_count
         FROM students s
         JOIN unified_event_registrations er ON s.student_id = er.user_id
-        JOIN union_events e ON er.event_id = e.event_id
+        JOIN (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e ON er.event_id = e.event_id
         GROUP BY s.course, e.category
         HAVING COUNT(*) >= 3
         ORDER BY s.course, attendance_count DESC
@@ -185,14 +188,12 @@ def generate_personalized_recommendations(cursor):
     try:
 
         # Get current user's student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (ctx.auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, ctx.auth)
 
-        if not result:
+        if not student_id:
             print("No student record found.")
             return
 
-        student_id = result[0]
 
         print("\n🎯 Personalized Recommendations")
         print("=" * 40)
@@ -208,7 +209,7 @@ def generate_personalized_recommendations(cursor):
         LEFT JOIN club_members cm ON s.student_id = cm.student_id
         LEFT JOIN student_clubs c ON cm.club_id = c.club_id
         LEFT JOIN unified_event_registrations er ON s.student_id = er.user_id
-        LEFT JOIN union_events e ON er.event_id = e.event_id
+        LEFT JOIN (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e ON er.event_id = e.event_id
         WHERE s.student_id = ?
         ''', (student_id,))
 
@@ -253,7 +254,7 @@ def generate_personalized_recommendations(cursor):
 
             cursor.execute('''
             SELECT e.event_name, e.description, e.event_date, c.club_name
-            FROM union_events e
+            FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e
             JOIN student_clubs c ON e.organizer_id = c.club_id
             WHERE e.category IN (''' + placeholders + ''')
             AND e.event_date >= date('now')
@@ -322,7 +323,7 @@ def performance_benchmarking(cursor):
             AVG(e.current_attendees) as avg_event_attendance,
             COUNT(DISTINCT er.user_id) as unique_event_attendees
         FROM student_clubs c
-        LEFT JOIN union_events e ON c.club_id = e.organizer_id
+        LEFT JOIN (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union') e ON c.club_id = e.organizer_id
             AND e.event_date >= date('now', '-12 months')
         LEFT JOIN unified_event_registrations er ON e.event_id = er.event_id
         WHERE c.status = 'active'
@@ -372,7 +373,7 @@ def performance_benchmarking(cursor):
             AVG(current_attendees) as avg_attendance,
             AVG(CAST(current_attendees AS FLOAT) / CAST(max_attendees AS FLOAT)) as avg_fill_rate,
             MAX(current_attendees) as max_attendance
-        FROM union_events
+        FROM (SELECT event_id, title AS event_name, description, organizer_id, event_date, start_time, end_time, location, event_category AS category, max_capacity AS max_attendees, (SELECT COUNT(*) FROM unified_event_registrations ur WHERE ur.event_id = ue.event_id) AS current_attendees, status, created_at, start_time AS event_time FROM unified_events ue WHERE ue.source_type = 'union')
         WHERE event_date >= date('now', '-12 months')
         AND max_attendees > 0
         GROUP BY category
@@ -401,7 +402,7 @@ def performance_benchmarking(cursor):
         FROM students s
         JOIN (
             SELECT
-                student_id,
+                s2.student_id AS student_id,
                 COUNT(DISTINCT cm.club_id) as club_count,
                 COUNT(DISTINCT er.event_id) as event_count
             FROM students s2
@@ -421,7 +422,7 @@ def performance_benchmarking(cursor):
         FROM students s
         JOIN (
             SELECT
-                student_id,
+                s2.student_id AS student_id,
                 COUNT(DISTINCT cm.club_id) as club_count,
                 COUNT(DISTINCT er.event_id) as event_count
             FROM students s2
@@ -440,7 +441,12 @@ def performance_benchmarking(cursor):
             print("-" * 50)
 
             for segment in engagement_segments:
-                print(f"{segment[0]:<18} {segment[1]:<10} {segment[2]:<10.1f} {segment[3]:<10.1f}")
+                # An empty segment still comes back as a row (COUNT 0, AVG
+                # NULL) from the UNION, and formatting None as a float blew
+                # the whole screen up. Show it as a dash instead.
+                avg_clubs = f"{segment[2]:<10.1f}" if segment[2] is not None else f"{'-':<10}"
+                avg_events = f"{segment[3]:<10.1f}" if segment[3] is not None else f"{'-':<10}"
+                print(f"{segment[0]:<18} {segment[1]:<10} {avg_clubs} {avg_events}")
 
     except sqlite3.Error as e:
         logger.error("Database error: %s", e, exc_info=True)

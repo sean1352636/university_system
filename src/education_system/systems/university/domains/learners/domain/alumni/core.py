@@ -147,11 +147,26 @@ def setup_alumni_permissions():
             ]
         }
 
+        from education_system.systems.university.infrastructure.auth.core_utils.constants import (
+            ROLES,
+        )
+
         for role, perms in role_mappings.items():
             safe_execute(cursor, 'SELECT id FROM roles WHERE role_name = ?', (role,))
             role_result = cursor.fetchone()
             if not role_result:
-                continue
+                # Skipping here silently was how 'alumni' ended up with zero
+                # permissions: auth.db grants the role, but no roles row means
+                # every mapping below is dropped and this still reports success.
+                # Create the role instead so the grants can land.
+                safe_execute(cursor, '''
+                    INSERT INTO roles (role_name, description, created_at, updated_at)
+                    VALUES (?, ?, ?, ?)''',
+                    (role, ROLES.get(role, f'{role} role'), timestamp, timestamp))
+                safe_execute(cursor, 'SELECT id FROM roles WHERE role_name = ?', (role,))
+                role_result = cursor.fetchone()
+                if not role_result:
+                    continue
             role_id = role_result[0]
 
             for perm in perms:

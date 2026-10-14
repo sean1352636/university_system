@@ -5,7 +5,9 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 import os
 import shutil
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 from education_system import paths
@@ -23,7 +25,7 @@ class StudentActionsMixin:
                 return
 
             # Create dialog
-            dialog = tk.Toplevel(self.root)
+            dialog = make_toplevel(self.root)
             dialog.title(_t('gui.academics.assignment_system.group_manager.student_actions.windows.join_group', default="Join Group"))
             dialog.geometry("600x500")
             dialog.transient(self.root)
@@ -202,7 +204,7 @@ class StudentActionsMixin:
                 return
 
             # Create dialog
-            dialog = tk.Toplevel(self.root)
+            dialog = make_toplevel(self.root)
             dialog.title(_t('gui.academics.assignment_system.group_manager.student_actions.windows.create_new_group', default="Create New Group"))
             dialog.geometry("500x400")
             dialog.transient(self.root)
@@ -366,7 +368,7 @@ class StudentActionsMixin:
                 group_id = result[0]
 
             # Create dialog
-            dialog = tk.Toplevel(self.root)
+            dialog = make_toplevel(self.root)
             dialog.title(_t('gui.academics.assignment_system.group_manager.student_actions.windows.group_details', default="Group Details"))
             dialog.geometry("600x500")
             dialog.transient(self.root)
@@ -467,7 +469,7 @@ class StudentActionsMixin:
             role = result[0]
 
             # Create submission dialog
-            dialog = tk.Toplevel(self.root)
+            dialog = make_toplevel(self.root)
             dialog.title(_t('gui.academics.assignment_system.group_manager.student_actions.windows.submit_group_assignment', default="Submit Group Assignment"))
             dialog.geometry("550x450")
             dialog.transient(self.root)

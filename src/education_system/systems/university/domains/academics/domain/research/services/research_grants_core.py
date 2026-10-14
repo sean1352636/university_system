@@ -86,7 +86,7 @@ class ResearchProjectManager:
                         title=project_title,
                     )
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
             return project_id
         except Exception as e:
@@ -161,7 +161,7 @@ class GrantApplicationManager:
                     grant_period_end=grant_period_end or None,
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             return True
         except Exception as e:
             raise Exception(get_text("research.grants.errors.update_decision", "Error updating grant decision: {error}").format(error=e))

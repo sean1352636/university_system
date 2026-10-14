@@ -1,9 +1,13 @@
 """Methods _remove_ta_assignment through _send_ta_email."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 from .. import admin_tools_manager_shared as _shared
 globals().update({name: value for name, value in _shared.__dict__.items() if not name.startswith("__")})
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 
 
 class AdminToolsManager:
@@ -61,7 +65,7 @@ class AdminToolsManager:
 
         total_hours = sum(a[4] for a in assignments)
 
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(f"TA Workload - {user_id}")
         dialog.geometry("600x400")
         dialog.transient(self.root)
@@ -131,7 +135,7 @@ class AdminToolsManager:
             module_values.append(display)
             module_map[display] = m[0]
 
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_remove_ta_assignment.windows.assign_teaching_assistant', default="Assign Teaching Assistant"))
         dialog.geometry("480x550")
         dialog.transient(self.root)
@@ -262,7 +266,7 @@ class AdminToolsManager:
             messagebox.showerror(_t('gui.academics.assignment_system.admin_tools_manager_parts.admintoolsmanager_remove_ta_assignment.dialogs.error', default="Error"), f"Failed to load TA assignment: {e}")
             return
 
-        dialog = tk.Toplevel(self.root)
+        dialog = make_toplevel(self.root)
         dialog.title(f"Configure Permissions - TA #{ta_id}")
         dialog.geometry("480x500")
         dialog.transient(self.root)
@@ -378,4 +382,4 @@ class AdminToolsManager:
 
             send_email(recipient_email=email, subject=subject, body=body)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)

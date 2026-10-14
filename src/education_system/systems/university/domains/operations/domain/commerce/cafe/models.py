@@ -1,36 +1,11 @@
-from dataclasses import dataclass
-from datetime import datetime
-from typing import Optional
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.domain.cafe.models`` (campus commerce plugin).
 
-@dataclass(frozen=True)
-class MenuItem:
-    product_id: int
-    name: str
-    category: str
-    price: float
-    stock_quantity: int = 0
+The old name *is* the new module object, so ``mock.patch`` and
+``monkeypatch`` targets still act on the real code. Delete once nothing
+imports the old path.
+"""
+# layout-shim: education_system.systems.university.plugins.campus_commerce.domain.cafe.models
+import importlib as _importlib
+import sys as _sys
 
-@dataclass(frozen=True)
-class Order:
-    order_id: int
-    total_amount: float
-    status: str = "pending"
-
-@dataclass(frozen=True)
-class Reservation:
-    reservation_id: int
-    customer_name: str
-    reservation_time: datetime
-    party_size: int
-
-@dataclass(frozen=True)
-class Supplier:
-    supplier_id: int
-    name: str
-    email: str = ""
-
-@dataclass(frozen=True)
-class LoyaltyAccount:
-    account_id: int
-    customer_id: str
-    points: int = 0
+_sys.modules[__name__] = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.domain.cafe.models")

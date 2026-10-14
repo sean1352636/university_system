@@ -1,0 +1,11 @@
+{
+    "subject": "🧾 Housing payment receipt #$payment_id - £$amount",
+    "body": "Dear $student_name,\n\nThank you. We have received your housing payment. This email is your receipt — please keep it for your records.\n\n=== RECEIPT ===\nReceipt / Payment ID: $payment_id\nStudent ID: $student_id\nPayment Type: $payment_type\nAmount Paid: £$amount\nPayment Method: $payment_method\nPayment Date: $payment_date\nStatus: $status\nTransaction Reference: $transaction_reference\nProcessed By: $processed_by\n\n=== WHAT THIS COVERS ===\nBuilding: $building_name\nRoom Number: $room_number\nAssignment Reference: $assignment_id\n$period_line\n\n$finance_account_block\n\n=== RECORDED IN FINANCE ===\nThis payment has been posted to the university finance system against your student account, so it will appear in your finance statement and on the Housing Payment History screen.\nFinance Reference: $finance_reference\n\n=== QUESTIONS ABOUT THIS RECEIPT ===\nIf anything above is wrong, contact the Housing Office within 14 days quoting the receipt ID.\n\nHousing Office: housing@university.edu\nPhone: (555) 123-4567\nOffice Hours: Monday-Friday, 9:00 AM - 5:00 PM\n\nBest regards,\nUniversity Housing Administration\n\n$signature",
+    "variables": {
+        "period_line": {"default": ""},
+        "finance_account_block": {"default": ""},
+        "transaction_reference": {"default": "Not supplied"},
+        "finance_reference": {"default": "Pending"},
+        "status": {"default": "Completed"}
+    }
+}

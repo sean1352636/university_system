@@ -513,6 +513,20 @@ def render_template(template_name, template_vars):
     if 'signature' not in template_vars:
         template_vars['signature'] = config['email_signature']
 
+    # Same for the institution's name, so a template can say "Welcome to
+    # $institution_name" instead of hardcoding one university's name. Resolved
+    # from the admin Branding settings / UNIVERSITY_INSTITUTION_NAME / the
+    # institution settings file, so renaming the institution updates every
+    # email that uses the placeholder.
+    if 'institution_name' not in template_vars:
+        try:
+            from education_system.systems.university.infrastructure.institution_settings import (
+                get_institution_name,
+            )
+            template_vars['institution_name'] = get_institution_name()
+        except Exception as e:
+            log_event('warning', f"Could not resolve institution name for template: {e}")
+
     # Apply the defaults declared in the template's "variables" block for any
     # key the caller did not supply. Without this the declared defaults are
     # dead weight and an omitted optional var renders as a literal "{separator}"

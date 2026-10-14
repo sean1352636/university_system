@@ -29,6 +29,10 @@ from education_system.systems.university.domains.assessment.domain.grading.grade
     assessment_performance_summary,
     update_module_grade,
     analyze_overall_grade_trends,
+    calculate_assessment_statistics,
+    normalize_assessment_grades,
+    view_grade_distribution,
+    validate_grade_data_integrity,
 )
 
 from education_system.systems.university.domains.assessment.domain.grading.comparisons import (
@@ -242,6 +246,47 @@ def apply_grading_curve():
         print(f"Database error: {e}")
     except Exception as e:
         print(f"Error: {e}")
+
+def grade_curve_analysis_menu():
+    """Display the grade curve analysis menu and handle user choices"""
+    # Imported lazily: reports_parts reaches back into the grading package, which imports
+    # this module, so a module-level import would be circular.
+    from education_system.systems.university.domains.assessment.domain.grading.reports_parts.generate_statistical_report import generate_statistical_report
+    while True:
+        print("\nGrade Curve Analysis:")
+        print("1. Calculate Statistics for Assessment")
+        print("2. Normalize Grades for Assessment")
+        print("3. View Grade Distribution")
+        print("4. Apply Grading Curve")
+        print("5. Generate Statistical Report")
+        print("6. Validate Grade Data Integrity")
+        print("7. Return to Grade Menu")
+
+        choice = input("Enter your choice (1-7): ")
+
+        if choice == '1':
+            calculate_assessment_statistics()
+        elif choice == '2':
+            normalize_assessment_grades()
+        elif choice == '3':
+            view_grade_distribution()
+        elif choice == '4':
+            apply_grading_curve()
+        elif choice == '5':
+            generate_statistical_report()
+        elif choice == '6':
+            conn = get_connection()
+            try:
+                validate_grade_data_integrity(conn.cursor())
+            except sqlite3.Error as e:
+                print(f"Database error: {e}")
+            finally:
+                conn.close()
+        elif choice == '7':
+            print("Returning to grade menu...")
+            break
+        else:
+            print("Invalid choice. Please try again.")
 
 def performance_analysis_menu():
     """Display the performance analysis menu and handle user choices"""

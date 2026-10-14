@@ -163,7 +163,7 @@ class PlagiarismCheckerGUI:
         button_frame.pack(fill=tk.X)
 
         ttk.Button(button_frame, text=_t("common.select_all"), command=lambda: tree.selection_set(tree.get_children())).pack(side=tk.LEFT)
-        ttk.Button(button_frame, text=_t("common.deselect_all"), command=lambda: tree.selection_remove(tree.get_children())).pack(side=tk.LEFT, padx=(GuiConfig.PADDING_SMALL, 0))
+        ttk.Button(button_frame, text=_t("common.deselect_all", default="Deselect All"), command=lambda: tree.selection_remove(tree.get_children())).pack(side=tk.LEFT, padx=(GuiConfig.PADDING_SMALL, 0))
         ttk.Button(button_frame, text=_t("plagiarism.export_selected"), command=export_selected).pack(side=tk.RIGHT)
         ttk.Button(button_frame, text=_t("common.cancel"), command=export_dialog.destroy).pack(side=tk.RIGHT, padx=(0, GuiConfig.PADDING_SMALL))
 

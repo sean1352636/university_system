@@ -1,5 +1,5 @@
 """Thin coordinator for grade-management workflows."""
-from tkinter import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import messagebox
 
 from .grades.schema import init_basic_database, init_enhanced_grades_db
 from .grades.scale import (

@@ -1,6 +1,9 @@
 """Schedule change email notifications."""
 
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 import smtplib
 
@@ -406,7 +409,7 @@ def _notify_new_instructor_assignment(instructor_id: int, module_info: dict, sch
             if row:
                 student_count = row[0]
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
     try:
         variables = {

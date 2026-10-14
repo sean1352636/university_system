@@ -3,7 +3,9 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 import os
 import shutil
 import threading
@@ -133,7 +135,7 @@ class RubricManager:
             messagebox.showerror(_("common.error"), _("rubric.rubric_not_exists"))
             return
 
-        editor = tk.Toplevel(self.root)
+        editor = make_toplevel(self.root)
         editor.title(f"Edit Rubric - {record['name']}")
         editor.geometry("460x400")
         editor.transient(self.root)
@@ -232,7 +234,7 @@ class RubricManager:
     def show_rubric_editor(self):
         """Show rubric editor dialog"""
         try:
-            dialog = tk.Toplevel(self.root)
+            dialog = make_toplevel(self.root)
             dialog.title(_("rubric.rubric_editor"))
             dialog.geometry("800x600")
             dialog.transient(self.root)
@@ -352,7 +354,7 @@ class RubricManager:
                 )
 
         def open_criteria_dialog(existing=None, index=None):
-            dialog = tk.Toplevel(self.root)
+            dialog = make_toplevel(self.root)
             dialog.title(_("rubric.criterion") if existing is None else _("rubric.edit_criterion"))
             dialog.geometry("420x320")
             dialog.transient(self.root)

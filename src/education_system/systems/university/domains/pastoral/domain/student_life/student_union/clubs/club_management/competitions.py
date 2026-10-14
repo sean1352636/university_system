@@ -2,7 +2,13 @@ from education_system.systems.university.domains.pastoral.domain.student_life.st
     datetime, sqlite3, get_connection,
 )
 import education_system.systems.university.domains.pastoral.domain.student_life.student_union.clubs.club_management._imports as _state
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.calendar_bridge import (
+    mirror as _mirror_to_calendar,
+)
 import logging
+from education_system.systems.university.domains.pastoral.domain.student_life.student_union.identity import (
+    current_student_id as _current_student_id,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -20,15 +26,13 @@ def manage_interclub_competitions():
         cursor = conn.cursor()
 
         # Get student ID
-        cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
-        result = cursor.fetchone()
+        student_id = _current_student_id(cursor, auth)
 
-        if not result:
+        if not student_id:
             print("No student record is associated with your account.")
             conn.close()
             return
 
-        student_id = result[0]
 
         while True:
             print("\nInter-club Competitions")
@@ -411,6 +415,26 @@ def create_new_competition(student_id, cursor, conn):
 
         print(f"\nCompetition '{competition_name}' created successfully! ID: {competition_id}")
         print("Status set to 'registration_open'.")
+
+        if _mirror_to_calendar(
+            name=f"SU Competition: {competition_name}", kind="competition",
+            date_start=start_date or None, date_end=end_date or None,
+            description=description or f"{competition_type} inter-club competition",
+            created_by=student_id,
+            source_table="club_competitions", source_id=competition_id,
+            conn=conn,
+        ):
+            print("Added to the university academic calendar.")
+
+        if registration_deadline:
+            _mirror_to_calendar(
+                name=f"SU Competition entries close: {competition_name}",
+                kind="competition_deadline", date=registration_deadline,
+                description=f"Registration deadline for {competition_name}",
+                created_by=student_id,
+                source_table="club_competitions_deadline",
+                source_id=competition_id, conn=conn,
+            )
 
     except sqlite3.Error as e:
         print(f"Database error: {e}")

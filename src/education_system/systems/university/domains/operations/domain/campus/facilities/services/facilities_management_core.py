@@ -6,6 +6,9 @@ work orders, asset inventory, and space utilization analytics.
 """
 
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from datetime import datetime
 from typing import Any, Dict, List, Optional
@@ -98,7 +101,7 @@ class RoomManager:
                         if result:
                             building_name = result[0]
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
 
                 # Insert with both building_id and building for cross-compatibility
                 cursor.execute('''
@@ -536,6 +539,7 @@ class AssetManager:
             params.append(asset_id)
             with transaction() as conn:
                 cur = conn.cursor()
+                # db-audit: ignore[DBW001] - join over a code-controlled list
                 cur.execute(
                     f"UPDATE facility_assets SET {', '.join(fields)} "
                     "WHERE asset_id = ?", params)
@@ -771,6 +775,7 @@ class InspectionManager:
             params.append(inspection_id)
             with transaction() as conn:
                 cur = conn.cursor()
+                # db-audit: ignore[DBW001] - join over a code-controlled list
                 cur.execute(
                     f"UPDATE housing_inspections SET {', '.join(fields)} "
                     "WHERE inspection_id = ?", params)

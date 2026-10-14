@@ -128,6 +128,20 @@ class WebhookService:
         conn = self._conn()
         try:
             conn.executescript(_SCHEMA)
+            # Added after the table shipped, so an existing webhooks.db needs
+            # the ALTER; CREATE TABLE IF NOT EXISTS will not add it.
+            cols = {r["name"] for r in conn.execute(
+                "PRAGMA table_info(webhook_deliveries)").fetchall()}
+            if "bus_event_id" not in cols:
+                conn.execute(
+                    "ALTER TABLE webhook_deliveries ADD COLUMN bus_event_id TEXT")
+            # A bus event is dispatched once per running system, so the same
+            # event reaches the forwarder several times. One delivery per
+            # (subscription, event) is what the receiver should see.
+            conn.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_wh_delivery_bus_event "
+                "ON webhook_deliveries(subscription_id, event_type, bus_event_id) "
+                "WHERE bus_event_id IS NOT NULL")
             conn.commit()
         finally:
             conn.close()
@@ -210,16 +224,27 @@ class WebhookService:
         finally:
             conn.close()
 
-    def dispatch(self, event_type: str, payload: dict, system_key: str = "shared") -> int:
+    def dispatch(self, event_type: str, payload: dict, system_key: str = "shared",
+                 *, systems: list[str] | tuple[str, ...] | None = None,
+                 bus_event_id: str | None = None, process: bool = True) -> int:
         """Dispatch an event to all matching subscribers.
+
+        ``systems`` widens the match to subscriptions for any of those
+        systems (a cross-system event concerns both its source and its
+        target). ``bus_event_id`` makes the call idempotent: a second
+        dispatch of the same bus event queues nothing new. ``process=False``
+        queues without starting the delivery thread.
 
         Returns the number of deliveries queued.
         """
+        keys = sorted({k for k in (systems or (system_key,)) if k})
         conn = self._conn()
         try:
+            placeholders = ", ".join("?" * len(keys))
             subs = conn.execute(
-                "SELECT * FROM webhook_subscriptions WHERE is_active = 1 AND (system_key = ? OR system_key = 'all')",
-                (system_key,),
+                "SELECT * FROM webhook_subscriptions WHERE is_active = 1 "
+                f"AND (system_key IN ({placeholders}) OR system_key = 'all')",  # nosec B608
+                keys,
             ).fetchall()
 
             count = 0
@@ -228,20 +253,21 @@ class WebhookService:
                 if "*" not in event_types and event_type not in event_types:
                     continue
 
-                conn.execute(
-                    """INSERT INTO webhook_deliveries
-                       (subscription_id, event_type, payload, status)
-                       VALUES (?, ?, ?, 'pending')""",
-                    (sub["id"], event_type, json.dumps(payload, default=str)),
+                cursor = conn.execute(
+                    """INSERT OR IGNORE INTO webhook_deliveries
+                       (subscription_id, event_type, payload, status, bus_event_id)
+                       VALUES (?, ?, ?, 'pending', ?)""",
+                    (sub["id"], event_type, json.dumps(payload, default=str),
+                     bus_event_id),
                 )
-                count += 1
+                count += cursor.rowcount
 
             conn.commit()
         finally:
             conn.close()
 
         # Process deliveries in background
-        if count > 0:
+        if count > 0 and process:
             threading.Thread(target=self._process_pending, daemon=True).start()
 
         return count

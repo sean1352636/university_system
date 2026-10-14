@@ -39,8 +39,8 @@ def __getattr__(name: str):
         __getattr__("ParentPortal")
         return globals()["PARENT_PORTAL_AVAILABLE"]
     raise AttributeError(
-        f"module 'education_system.systems.university.domain."
-        f"academics.services' has no attribute {name!r}")
+        f"module 'education_system.systems.university.domains.academics."
+        f"domain.services' has no attribute {name!r}")
 
 
 __all__ = [

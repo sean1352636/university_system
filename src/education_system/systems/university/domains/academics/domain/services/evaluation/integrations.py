@@ -11,6 +11,9 @@ Integration service (features 34-38).
 """
 
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 import json
 from datetime import datetime
@@ -234,7 +237,7 @@ def emit(event: str, payload: dict, *,
                 try:
                     deliver(r["url"], payload, headers)
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
             delivered += 1
         conn.commit()
     return delivered

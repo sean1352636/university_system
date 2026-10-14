@@ -103,13 +103,32 @@ class DegreeAuditGUI:
         ttk.Button(schedule_frame, text=_("degree_audit.buttons.schedule_appointment"),
                   command=self.schedule_appointment).grid(row=5, column=0, columnspan=6, pady=10)
 
+        # Confirmation line for the notification emails. Delivery happens on a
+        # background thread, so without this the window gave no sign whether
+        # the student and advisor had actually been told.
+        self.appointment_email_status = ttk.Label(
+            schedule_frame, text="", foreground="#7f8c8d", wraplength=620,
+            justify=tk.LEFT)
+        self.appointment_email_status.grid(row=6, column=0, columnspan=6,
+                                           sticky=tk.W, padx=5, pady=(0, 6))
+
         # Appointments list
         list_frame = ttk.LabelFrame(tab, text=_("degree_audit.labels.scheduled_appointments"), padding="10")
         list_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
-        # Load appointments button
-        ttk.Button(list_frame, text=_("degree_audit.buttons.load_my_appointments"),
-                  command=self.load_appointments).pack(anchor=tk.W, pady=5)
+        # Load appointments buttons. "All appointments" is administrators
+        # only — everyone else sees just their own diary.
+        button_row = ttk.Frame(list_frame)
+        button_row.pack(anchor=tk.W, pady=5)
+        ttk.Button(button_row, text=_("degree_audit.buttons.load_my_appointments"),
+                  command=self.load_appointments).pack(side=tk.LEFT, padx=(0, 6))
+        if self._is_admin():
+            ttk.Button(button_row,
+                       text=_("degree_audit.buttons.load_all_appointments",
+                              default="View All Appointments"),
+                       command=self.load_all_appointments).pack(side=tk.LEFT, padx=6)
+        self.appointments_scope = ttk.Label(list_frame, text="", foreground="#7f8c8d")
+        self.appointments_scope.pack(anchor=tk.W, padx=4)
 
         columns = ('ID', 'Student', 'Advisor', 'Date', 'Time', 'Type', 'Topic', 'Status')
         column_translations = {
@@ -188,20 +207,26 @@ class DegreeAuditGUI:
             ('financial', _("degree_audit.checklist.financial_clearance"))
         ]
 
+        # Indicators, not checkboxes. These are audit outcomes rather than
+        # things anyone ticks, and as disabled ttk.Checkbuttons they rendered
+        # grey whether set or not — which is why the checklist looked
+        # permanently greyed out and unusable. A tick, a cross or an em dash
+        # (not assessed) reads at a glance and needs no interaction.
+        self._checklist_indicators = {}
         for i, (key, label) in enumerate(checklist_items):
-            var = tk.BooleanVar()
-            self.checklist_vars[key] = var
-            ttk.Checkbutton(checklist_frame, text=label, variable=var,
-                           state='disabled').grid(row=i//2, column=(i%2)*2,
-                                                 columnspan=2, sticky=tk.W, padx=20, pady=5)
+            self.checklist_vars[key] = tk.BooleanVar()
+            indicator = ttk.Label(checklist_frame, text=f"\u2014 {label}",
+                                  foreground="#95a5a6")
+            indicator._label = label
+            indicator.grid(row=i // 2, column=(i % 2) * 2, columnspan=2,
+                           sticky=tk.W, padx=20, pady=5)
+            self._checklist_indicators[key] = indicator
 
-        # Audit results display
-        results_frame = ttk.LabelFrame(tab, text=_("degree_audit.labels.audit_results"), padding="10")
-        results_frame.pack(fill=tk.BOTH, expand=True, pady=5)
-
-        self.grad_results_text = scrolledtext.ScrolledText(results_frame, wrap=tk.WORD,
-                                                           width=80, height=12)
-        self.grad_results_text.pack(fill=tk.BOTH, expand=True)
+        ttk.Label(checklist_frame,
+                  text="Set by Run Audit. Full results open in their own window.",
+                  foreground="#7f8c8d").grid(row=(len(checklist_items) + 1) // 2,
+                                             column=0, columnspan=4,
+                                             sticky=tk.W, padx=20, pady=(8, 0))
 
         # Approval frame
         approval_frame = ttk.Frame(tab)
@@ -231,7 +256,12 @@ class DegreeAuditGUI:
             command=self._open_ceremony_gui).pack(side=tk.LEFT, padx=6)
 
     def load_courses(self):
-        """Load all courses (CS/DS) into combo boxes"""
+        """Load every degree programme into the programme combo boxes.
+
+        A programme is a course that has modules tagged to it. This used to be
+        limited to CS and DS, so a student on any of the other programmes
+        could not pick their own course and the autofill never matched.
+        """
         try:
             with get_connection() as conn:
                 cursor = conn.cursor()
@@ -239,20 +269,26 @@ class DegreeAuditGUI:
                     SELECT id, code, name
                     FROM courses
                     WHERE LOWER(COALESCE(status, 'active')) = 'active'
-                      AND code IN ('CS', 'DS')
+                      AND code IN (SELECT DISTINCT course FROM modules
+                                   WHERE COALESCE(course, '') <> '')
                     ORDER BY name
                 ''')
 
                 courses = cursor.fetchall()
                 if not courses:
-                    print("No CS/DS courses found in database")
+                    print("No degree programmes found in database")
                     return
 
                 course_list = [f"{row[0]}: {row[1]} - {row[2]}" for row in courses]
 
-                # Update all combo boxes that need courses
-                self.whatif_program_combo['values'] = course_list
-                self.grad_program_combo['values'] = course_list
+                # Each combo belongs to a different tab, and no single window
+                # builds them all: Degree Audit has no graduation tab (that
+                # lives in the Graduation GUI), and the Graduation GUI builds
+                # only that tab. Fill whichever exist.
+                for name in ('whatif_program_combo', 'grad_program_combo'):
+                    combo = self.__dict__.get(name)
+                    if combo is not None:
+                        combo['values'] = course_list
 
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Failed to load courses: {e}")
@@ -299,29 +335,16 @@ class DegreeAuditGUI:
                 course = cursor.fetchone()
                 course_name = course[1] if course else course_code
 
-                # Calculate total credits from student_modules
-                cursor.execute('''
-                    SELECT
-                        COUNT(DISTINCT sm.module_code) as module_count,
-                        SUM(COALESCE(m.credits, 0)) as total_credits,
-                        AVG(
-                            CASE
-                                WHEN sm.grade = 'A' THEN 4.0
-                                WHEN sm.grade = 'B' THEN 3.0
-                                WHEN sm.grade = 'C' THEN 2.0
-                                WHEN sm.grade = 'D' THEN 1.0
-                                WHEN sm.grade = 'F' THEN 0.0
-                                ELSE NULL
-                            END
-                        ) as gpa
-                    FROM student_modules sm
-                    LEFT JOIN modules m ON sm.module_code = m.module_code
-                    WHERE sm.student_id = ?
-                ''', (student_id,))
-
-                progress_data = cursor.fetchone()
-                total_credits = progress_data[1] or 0
-                gpa = progress_data[2] or 0.0
+                # Credits *earned*, not credits enrolled on. The query here
+                # used to sum every enrolment's module credits, so a student
+                # with no marked work still showed a full year's credits.
+                from education_system.systems.university.domains.academics.domain.services.degree_audit.progress import (
+                    earned_progress,
+                    required_credits_for_course,
+                )
+                progress = earned_progress(conn, student_id)
+                total_credits = progress["credits_earned"]
+                gpa = progress["gpa"]
 
                 # Calculate enrollment year
                 enrollment_year = _("common.not_available")
@@ -332,8 +355,10 @@ class DegreeAuditGUI:
                     except (ValueError, TypeError):
                         pass
 
-                # Standard degree is typically 120 credits
-                credits_required = 120
+                # The course's own requirement rather than a hard-coded 120:
+                # a BSc here is 360 credits, so a fixed 120 reported completion
+                # at three times the real figure.
+                credits_required = required_credits_for_course(conn, course_code)
                 completion_pct = (total_credits / credits_required * 100) if credits_required > 0 else 0
 
                 # Calculate expected graduation (4 years from enrollment)
@@ -348,7 +373,14 @@ class DegreeAuditGUI:
 
                 # Update labels
                 self.progress_labels['Program'].config(text=f"{course_code} - {course_name}")
-                self.progress_labels['Credits Earned'].config(text=str(int(total_credits)))
+                # Show what is still only enrolled alongside it, so a genuine
+                # zero reads as "nothing marked yet" rather than missing data.
+                earned_text = str(int(total_credits))
+                if progress["credits_enrolled"] > total_credits:
+                    earned_text += (f"   ({int(progress['credits_enrolled'])} enrolled, "
+                                    f"{progress['modules_graded']} of "
+                                    f"{progress['modules_enrolled']} modules marked)")
+                self.progress_labels['Credits Earned'].config(text=earned_text)
                 self.progress_labels['Credits Required'].config(text=str(credits_required))
                 self.progress_labels['Current GPA'].config(text=f"{gpa:.2f}")
                 self.progress_labels['Completion %'].config(text=f"{completion_pct:.1f}%")
@@ -362,29 +394,22 @@ class DegreeAuditGUI:
             messagebox.showerror(_("common.error"), f"Failed to load progress: {e}")
 
     def load_requirements(self, student_id, course_code):
-        """Load student modules from student_modules table"""
+        """Load the student's modules with grades and credits.
+
+        Uses the same per-module rows as the summary above, so a module
+        marked in Grade Tracking (``module_grades``) shows its grade and
+        counts as completed here too, instead of 'Enrolled / Not Graded'.
+        """
         try:
             self.progress_tree.delete(*self.progress_tree.get_children())
 
+            from education_system.systems.university.domains.academics.domain.services.degree_audit.progress import (
+                module_progress,
+            )
+
             with get_connection() as conn:
-                cursor = conn.cursor()
-
-                # Get modules enrolled by student from student_modules
-                cursor.execute('''
-                    SELECT
-                        COALESCE(m.module_type, 'Standard') as module_type,
-                        COALESCE(sm.module_code, 'N/A') as module_code,
-                        COALESCE(m.module_name, 'Unknown Module') as module_name,
-                        COALESCE(m.credits, 0) as credits,
-                        COALESCE(sm.status, 'Enrolled') as status,
-                        COALESCE(sm.grade, 'Not Graded') as grade
-                    FROM student_modules sm
-                    LEFT JOIN modules m ON sm.module_code = m.module_code
-                    WHERE sm.student_id = ?
-                    ORDER BY m.module_type, sm.module_code
-                ''', (student_id,))
-
-                modules = cursor.fetchall()
+                modules = sorted(module_progress(conn, student_id),
+                                 key=lambda r: (r["module_type"], r["module_code"]))
 
                 if not modules:
                     self.progress_tree.insert('', tk.END, values=(
@@ -396,13 +421,15 @@ class DegreeAuditGUI:
                     ))
                 else:
                     for module in modules:
-                        # module: (module_type, module_code, module_name, credits, status, grade)
+                        status = module["status"]
+                        if module["earned"] and status.lower() == "enrolled":
+                            status = "Completed"
                         self.progress_tree.insert('', tk.END, values=(
-                            module[0],  # module_type (Requirement Type)
-                            f"{module[1]} - {module[2]}",  # module_code - module_name (Name)
-                            module[3],  # credits (Credits Required)
-                            module[4],  # status (Status)
-                            module[5]   # grade (Grade Required)
+                            module["module_type"],
+                            f"{module['module_code']} - {module['module_name']}",
+                            f"{module['credits']:g}",
+                            status,
+                            module["grade"] or "Not Graded",
                         ))
 
         except Exception as e:

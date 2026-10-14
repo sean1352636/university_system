@@ -2,7 +2,8 @@
 
 import tkinter as tk
 
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, filedialog
+from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking._dialogs import messagebox
 
 import tkinter.scrolledtext as scrolledtext
 
@@ -14,11 +15,9 @@ from pathlib import Path
 
 import csv
 
-import numpy as np
 
 import math
 
-from scipy import stats
 
 from datetime import datetime, timedelta
 
@@ -64,36 +63,17 @@ try:
 except ImportError:
     IMMUTABLE_AUDIT_AVAILABLE = False
 
-def require_grade_audit(**kwargs):
-    """Persist an immutable audit event or abort the grade transaction."""
-    if not IMMUTABLE_AUDIT_AVAILABLE or not safe_log_security_event(**kwargs):
+def require_grade_audit(conn=None, **kwargs):
+    """Persist an immutable audit event or abort the grade transaction.
+
+    Pass *conn* — the connection the grade was written on — so the audit
+    entry joins that transaction. Without it the audit opens a second
+    connection and blocks on the write lock the caller is still holding,
+    which fails every save with "database is locked".
+    """
+    if not IMMUTABLE_AUDIT_AVAILABLE or not safe_log_security_event(conn=conn, **kwargs):
         raise RuntimeError("Grade audit could not be persisted")
 
-try:
-    import pandas as pd
-except ImportError:
-    pd = None
-
-try:
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    import matplotlib
-    matplotlib.use('TkAgg')
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-except ImportError:
-    plt = None
-    sns = None
-    FigureCanvasTkAgg = None
-
-try:
-    from reportlab.lib.pagesizes import letter
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-    from reportlab.lib import colors
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib.units import inch
-except ImportError:
-    # ReportLab not available - PDF features will be disabled
-    SimpleDocTemplate = None
 
 try:
     from education_system.systems.university.infrastructure.database.db import get_connection

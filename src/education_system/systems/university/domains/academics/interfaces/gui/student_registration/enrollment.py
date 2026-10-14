@@ -8,9 +8,21 @@ student's current enrollment list.
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 from datetime import date
+import tkinter as tk
 from tkinter import ttk, messagebox
 
+from education_system.systems.university.domains.academics.interfaces.gui._section_picker import (
+    choose_section,
+)
+
 from education_system.systems.university.domains.academics.interfaces.gui.student_registration.common_imports import get_connection, logger
+from education_system.systems.university.services.bus.enrolment_bus import (
+    check_enrolment_eligibility,
+)
+from education_system.systems.university.services.bus.registration_calendar import (
+    classify_drop,
+    record_status_change,
+)
 
 
 def _send_lifecycle_email(template_name: str, student_id: str,
@@ -60,6 +72,60 @@ class EnrollmentMixin:
     """Mixin that adds enroll, drop, and enrollment-list capabilities."""
 
     # ------------------------------------------------------------------ #
+    #  Eligibility
+    # ------------------------------------------------------------------ #
+    def _picker_parent(self):
+        """A window to parent the section chooser on.
+
+        The portal is composed of mixins with no single agreed attribute for
+        its window, so take the first that exists and fall back to the default
+        root rather than failing the enrolment over a dialog parent.
+        """
+        for attr in ('window', 'root', 'parent', 'master'):
+            widget = getattr(self, attr, None)
+            if widget is not None:
+                return widget
+        return tk._default_root
+
+    def _confirm_eligibility_override(self, module_code, eligibility) -> bool:
+        """Report why enrolment is blocked; return True only to proceed anyway.
+
+        Students are refused outright. A privileged user (registry/admin
+        acting through the student picker) is offered an override, which is
+        logged with the reasons so the exception is auditable.
+        """
+        reasons = eligibility.reason()
+        if not getattr(self, 'is_privileged', False):
+            messagebox.showwarning(
+                _t('gui.academics.student_registration.enrollment.dialogs.enrolment_not_permitted',
+                   default="Enrolment not permitted"),
+                f"You cannot enrol in {module_code} yet.\n\n{reasons}",
+            )
+            logger.info(
+                "Enrolment blocked for %s in %s: %s",
+                self.student_id, module_code, reasons.replace("\n", "; "),
+            )
+            return False
+
+        proceed = messagebox.askyesno(
+            _t('gui.academics.student_registration.enrollment.dialogs.override_enrolment_rules',
+               default="Override enrolment rules?"),
+            f"{module_code} is blocked for {self.student_id}:\n\n{reasons}\n\n"
+            "Enrol anyway? The override will be recorded.",
+        )
+        if proceed:
+            logger.warning(
+                "Enrolment rules overridden by staff for %s in %s: %s",
+                self.student_id, module_code, reasons.replace("\n", "; "),
+            )
+        else:
+            logger.info(
+                "Enrolment blocked for %s in %s: %s",
+                self.student_id, module_code, reasons.replace("\n", "; "),
+            )
+        return proceed
+
+    # ------------------------------------------------------------------ #
     #  Enroll
     # ------------------------------------------------------------------ #
     def enroll_in_module(self, module_code):
@@ -67,8 +133,12 @@ class EnrollmentMixin:
         Enroll the current student in *module_code*.
 
         Validates:
+        - The identity is a real student record.
         - Student is not already enrolled.
-        - Module capacity has not been exceeded.
+        - No finance hold is active.
+        - Enrolment rules pass: prerequisites, co-requisites and capacity
+          (see ``services.bus.enrolment_bus``). Staff may override with an
+          audited confirmation; a student may not.
         """
         if not self.student_id:
             if getattr(self, 'is_privileged', False):
@@ -110,30 +180,17 @@ class EnrollmentMixin:
                 (self.student_id, module_code),
             )
             existing = cursor.fetchone()
-            if existing:
-                if existing[0] == 'Enrolled':
-                    messagebox.showwarning(
-                        _t('gui.academics.student_registration.enrollment.dialogs.already_enrolled', default="Already Enrolled"),
-                        f"You are already enrolled in {module_code}.",
-                    )
-                    conn.close()
-                    return
-                else:
-                    # Re-enroll: update existing row back to Enrolled
-                    enrollment_date = date.today().isoformat()
-                    cursor.execute(
-                        "UPDATE student_modules SET status = 'Enrolled', enrollment_date = ? "
-                        "WHERE student_id = ? AND module_code = ?",
-                        (enrollment_date, self.student_id, module_code),
-                    )
-                    conn.commit()
-                    conn.close()
-                    messagebox.showinfo(_t('gui.academics.student_registration.enrollment.dialogs.success', default="Success"), f"Re-enrolled in {module_code}.")
-                    if hasattr(self, '_refresh_enrollment_tree'):
-                        self._refresh_enrollment_tree()
-                    if hasattr(self, '_refresh_available_modules'):
-                        self._refresh_available_modules()
-                    return
+            if existing and existing[0] == 'Enrolled':
+                messagebox.showwarning(
+                    _t('gui.academics.student_registration.enrollment.dialogs.already_enrolled', default="Already Enrolled"),
+                    f"You are already enrolled in {module_code}.",
+                )
+                conn.close()
+                return
+            # A dropped row is re-activated further down rather than here:
+            # re-enrolling is still an enrolment, and used to skip the finance
+            # hold and every rule below by returning early.
+            previous_status = existing[0] if existing else None
 
             # Check module exists
             cursor.execute(
@@ -169,38 +226,79 @@ class EnrollmentMixin:
             except Exception as hold_err:
                 logger.warning("Hold check failed (proceeding): %s", hold_err)
 
-            # Capacity check (no limit if column doesn't exist)
-            max_capacity = None
-            if max_capacity:
-                cursor.execute(
-                    "SELECT COUNT(*) FROM student_modules "
-                    "WHERE module_code = ? AND status = 'Enrolled'",
-                    (module_code,),
+            # Eligibility gate — prerequisites, co-requisites and capacity.
+            # This replaces a dead capacity check (`max_capacity = None`
+            # followed by `if max_capacity:`) that could never fire, and adds
+            # the prerequisite enforcement that previously existed only on
+            # the advisory degree-audit screens. Staff acting on a student's
+            # behalf may override with an audited confirmation; a student
+            # cannot.
+            eligibility = check_enrolment_eligibility(
+                self.student_id, module_code, conn=conn,
+            )
+
+            # A module that runs in sections needs one chosen before the rest
+            # of the verdict means anything; re-check with the choice made.
+            section_id = None
+            if eligibility.needs_section and eligibility.sections:
+                section_id = choose_section(
+                    self._picker_parent(), module_code, eligibility.sections)
+                if section_id is None:
+                    conn.close()
+                    return
+                eligibility = check_enrolment_eligibility(
+                    self.student_id, module_code, section_id=section_id, conn=conn,
                 )
-                current_count = cursor.fetchone()[0]
-                if current_count >= max_capacity:
-                    messagebox.showwarning(
-                        _t('gui.academics.student_registration.enrollment.dialogs.module_full', default="Module Full"),
-                        f"Module {module_code} has reached its maximum capacity "
-                        f"({current_count}/{max_capacity}).",
-                    )
+
+            if not eligibility.ok:
+                if not self._confirm_eligibility_override(module_code, eligibility):
                     conn.close()
                     return
 
-            # Perform enrollment
+            # Perform enrollment: reactivate the dropped row if there is one,
+            # otherwise insert. Section is only written when one was chosen,
+            # so databases without the column are untouched.
             enrollment_date = date.today().isoformat()
-            cursor.execute(
-                "INSERT INTO student_modules "
-                "(student_id, module_code, status, enrollment_date) "
-                "VALUES (?, ?, 'Enrolled', ?)",
-                (self.student_id, module_code, enrollment_date),
-            )
+            if previous_status:
+                if section_id is None:
+                    cursor.execute(
+                        "UPDATE student_modules SET status = 'Enrolled', enrollment_date = ? "
+                        "WHERE student_id = ? AND module_code = ?",
+                        (enrollment_date, self.student_id, module_code),
+                    )
+                else:
+                    cursor.execute(
+                        "UPDATE student_modules SET status = 'Enrolled', "
+                        "enrollment_date = ?, section_id = ? "
+                        "WHERE student_id = ? AND module_code = ?",
+                        (enrollment_date, section_id, self.student_id, module_code),
+                    )
+            elif section_id is None:
+                cursor.execute(
+                    "INSERT INTO student_modules "
+                    "(student_id, module_code, status, enrollment_date) "
+                    "VALUES (?, ?, 'Enrolled', ?)",
+                    (self.student_id, module_code, enrollment_date),
+                )
+            else:
+                cursor.execute(
+                    "INSERT INTO student_modules "
+                    "(student_id, module_code, status, enrollment_date, section_id) "
+                    "VALUES (?, ?, 'Enrolled', ?, ?)",
+                    (self.student_id, module_code, enrollment_date, section_id),
+                )
             conn.commit()
+            record_status_change(
+                self.student_id, module_code, 'Enrolled',
+                from_status=previous_status, changed_by=self.student_id,
+                source='student_registration', verdict=eligibility.window, conn=conn,
+            )
             conn.close()
 
             messagebox.showinfo(
                 _t('gui.academics.student_registration.enrollment.dialogs.enrollment_successful', default="Enrollment Successful"),
-                f"You have been enrolled in {module_code}.",
+                f"You have been {'re-enrolled' if previous_status else 'enrolled'} "
+                f"in {module_code}.",
             )
             logger.info(
                 "Student %s enrolled in %s", self.student_id, module_code,
@@ -214,7 +312,7 @@ class EnrollmentMixin:
                     source="student_registration",
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Best-effort enrolment confirmation email.
             try:
@@ -259,10 +357,34 @@ class EnrollmentMixin:
                     _t('gui.academics.student_registration.enrollment.dialogs.error', default="Error"), _t('gui.academics.student_registration.enrollment.dialogs.no_student_id_found_please_log_in_again', default="No student ID found. Please log in again."))
             return
 
+        # What leaving the module means today depends on the calendar: a clean
+        # drop before the deadline, a transcript-visible withdrawal after it,
+        # or the formal process once the withdrawal deadline has passed.
+        verdict = classify_drop()
+        if not verdict["allowed"]:
+            messagebox.showwarning(
+                _t('gui.academics.student_registration.enrollment.dialogs.drop_deadline_passed',
+                   default="Deadline passed"),
+                f"{module_code} cannot be dropped here.\n\n{verdict['reason']}",
+            )
+            logger.info("Drop refused for %s in %s: %s",
+                        self.student_id, module_code, verdict["reason"])
+            return
+
+        new_status = verdict["status"]
+        confirm_lines = [f"Are you sure you want to drop module {module_code}?"]
+        if verdict["reason"]:
+            confirm_lines.append("")
+            confirm_lines.append(verdict["reason"])
+        confirm_lines.append("")
+        confirm_lines.append(
+            "This will appear on your transcript as a withdrawal."
+            if verdict["on_transcript"]
+            else "This action can be undone by re-enrolling."
+        )
         confirmed = messagebox.askyesno(
             _t('gui.academics.student_registration.enrollment.dialogs.confirm_drop', default="Confirm Drop"),
-            f"Are you sure you want to drop module {module_code}?\n"
-            "This action can be undone by re-enrolling.",
+            "\n".join(confirm_lines),
         )
         if not confirmed:
             return
@@ -271,19 +393,28 @@ class EnrollmentMixin:
             conn = get_connection()
             cursor = conn.cursor()
             cursor.execute(
-                "UPDATE student_modules SET status = 'Dropped' "
+                "UPDATE student_modules SET status = ? "
                 "WHERE student_id = ? AND module_code = ? AND status = 'Enrolled'",
-                (self.student_id, module_code),
+                (new_status, self.student_id, module_code),
             )
             conn.commit()
+            # Recorded with the deadline context, so "was this drop inside the
+            # window?" stays answerable after the dates are next edited.
+            record_status_change(
+                self.student_id, module_code, new_status,
+                from_status='Enrolled', changed_by=self.student_id,
+                source='student_registration', verdict=verdict, conn=conn,
+            )
             conn.close()
 
             messagebox.showinfo(
                 _t('gui.academics.student_registration.enrollment.dialogs.module_dropped', default="Module Dropped"),
-                f"You have dropped module {module_code}.",
+                f"You have {'withdrawn from' if verdict['on_transcript'] else 'dropped'} "
+                f"module {module_code}.",
             )
             logger.info(
-                "Student %s dropped %s", self.student_id, module_code,
+                "Student %s %s %s (%s)", self.student_id,
+                new_status.lower(), module_code, verdict["phase"],
             )
 
             # Best-effort withdrawal acknowledgement email.
@@ -297,9 +428,11 @@ class EnrollmentMixin:
                     'module_code':       module_code,
                     'module_name':       (mod_row[0] if mod_row else module_code),
                     'withdrawal_date':   date.today().isoformat(),
-                    'withdrawal_reason': '(self-service drop)',
+                    'withdrawal_reason': f'(self-service {new_status.lower()})',
                     'recorded_by':       'Student Tools',
-                    'transcript_status': '(see academic calendar for whether this shows on transcript)',
+                    'transcript_status': ('Appears on transcript as a withdrawal'
+                                          if verdict['on_transcript']
+                                          else 'Does not appear on the transcript'),
                 })
             except Exception:
                 logger.exception("withdrawal email dispatch failed")
@@ -412,9 +545,9 @@ class EnrollmentMixin:
             if hasattr(self, 'modules_tree'):
                 self._refresh_available_modules()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         try:
             if hasattr(self, 'enrollment_tree'):
                 self._refresh_enrollment_tree()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)

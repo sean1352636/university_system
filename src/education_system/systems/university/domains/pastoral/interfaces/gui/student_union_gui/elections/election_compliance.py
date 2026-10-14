@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog, filedialog
@@ -622,7 +626,7 @@ NEXT AUDIT: 2025-04-27"""
                 ''')
                 logs.extend(cursor.fetchall())
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Gather recent accessibility feedback
             try:
@@ -634,7 +638,7 @@ NEXT AUDIT: 2025-04-27"""
                 ''')
                 logs.extend(cursor.fetchall())
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Gather recent endorsements
             try:
@@ -646,7 +650,7 @@ NEXT AUDIT: 2025-04-27"""
                 ''')
                 logs.extend(cursor.fetchall())
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Sort all logs by timestamp descending
             logs.sort(key=lambda x: x[0] if x[0] else '', reverse=True)
@@ -1420,7 +1424,7 @@ Full audit available for independent verification"""
                 ''')
                 rows.extend(cursor.fetchall())
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Endorsements
             try:
@@ -1432,7 +1436,7 @@ Full audit available for independent verification"""
                 ''')
                 rows.extend(cursor.fetchall())
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Accessibility feedback
             try:
@@ -1444,7 +1448,7 @@ Full audit available for independent verification"""
                 ''')
                 rows.extend(cursor.fetchall())
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Sort by timestamp
             rows.sort(key=lambda x: x[0] if x[0] else '', reverse=True)

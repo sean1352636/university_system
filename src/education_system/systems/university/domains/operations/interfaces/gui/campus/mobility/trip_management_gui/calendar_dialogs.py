@@ -34,7 +34,7 @@ class CreateCalendarEventDialog(Dialog):
             cursor.execute('''
             SELECT t.id, t.trip_name, t.destination, t.start_date, t.end_date, t.status
             FROM trips t
-            LEFT JOIN academic_calendar_events tce ON t.id = tce.trip_id
+            LEFT JOIN (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') tce ON t.id = tce.trip_id
             WHERE tce.trip_id IS NULL AND t.status IN ('planning', 'open')
             ORDER BY t.start_date
             ''')

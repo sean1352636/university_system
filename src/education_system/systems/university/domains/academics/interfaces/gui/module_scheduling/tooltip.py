@@ -6,6 +6,9 @@ in stdlib Tk so each project re-rolls one of these — this is the smallest
 version that handles the lifecycle correctly (no leaked Toplevels when the
 user mouses out fast).
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 import tkinter as tk
 
@@ -42,7 +45,7 @@ class Tooltip:
             try:
                 self.widget.after_cancel(self._after_id)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             self._after_id = None
 
     def _show(self):
@@ -70,5 +73,5 @@ class Tooltip:
             try:
                 self._tip_window.destroy()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             self._tip_window = None

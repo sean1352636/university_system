@@ -12,6 +12,9 @@ stage/close/delete), Concerns, Events (audit trail), and Outcomes.
 """
 
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from typing import Optional
 
@@ -77,7 +80,7 @@ def _current_username(auth) -> str:
         if isinstance(user, dict):
             return user.get("username") or user.get("name") or "cli-user"
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     return "cli-user"
 
 
@@ -435,7 +438,7 @@ def run_ftp_menu(auth) -> None:
             print(f"  Total: {s['total']}   Open: {s['open']}   "
                   f"At Hearing: {s['hearing']}   High Risk: {s['high']}")
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         print("=" * 50)
         print("1. Cases")
         print("2. Concerns")

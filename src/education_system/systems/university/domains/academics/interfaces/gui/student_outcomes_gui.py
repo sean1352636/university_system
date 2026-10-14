@@ -55,14 +55,14 @@ class StudentOutcomesGUI:
         # Title
         title_lbl = ttk.Label(
             self.parent,
-            text=_t("Learning Outcomes"),
+            text=_t("Learning Outcomes", default="Learning outcomes"),
             font=("Arial", 16, "bold"),
         )
         title_lbl.pack(pady=(10, 5))
 
         # --- Summary statistics frame ---
         self.summary_frame = ttk.LabelFrame(
-            self.parent, text=_t("Summary"), padding=10
+            self.parent, text=_t("Summary", default="Summary"), padding=10
         )
         self.summary_frame.pack(fill=tk.X, padx=10, pady=(5, 10))
 
@@ -71,10 +71,10 @@ class StudentOutcomesGUI:
         stats_inner.pack(fill=tk.X)
 
         stat_defs = [
-            ("total", _t("Total Outcomes"), "#2196F3"),
-            ("achieved", _t("Achieved"), "#4CAF50"),
-            ("in_progress", _t("In Progress"), "#FF9800"),
-            ("not_started", _t("Not Started"), "#9E9E9E"),
+            ("total", _t("Total Outcomes", default="Total outcomes"), "#2196F3"),
+            ("achieved", _t("Achieved", default="Achieved"), "#4CAF50"),
+            ("in_progress", _t("In Progress", default="In progress"), "#FF9800"),
+            ("not_started", _t("Not Started", default="Not started"), "#9E9E9E"),
         ]
         for idx, (key, label_text, colour) in enumerate(stat_defs):
             frame = tk.Frame(stats_inner)
@@ -105,11 +105,11 @@ class StudentOutcomesGUI:
         )
 
         col_headings = {
-            "outcome_code": (_t("Outcome Code"), 110),
-            "category": (_t("Category"), 110),
-            "description": (_t("Description"), 300),
-            "achievement_level": (_t("Achievement Level"), 130),
-            "date_assessed": (_t("Date Assessed"), 120),
+            "outcome_code": (_t("Outcome Code", default="Outcome code"), 110),
+            "category": (_t("Category", default="Category"), 110),
+            "description": (_t("Description", default="Description"), 300),
+            "achievement_level": (_t("Achievement Level", default="Achievement level"), 130),
+            "date_assessed": (_t("Date Assessed", default="Date assessed"), 120),
         }
         for col, (heading, width) in col_headings.items():
             self.tree.heading(col, text=heading)
@@ -130,10 +130,10 @@ class StudentOutcomesGUI:
         btn_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
         ttk.Button(
-            btn_frame, text=_t("Refresh"), command=self.refresh_data
+            btn_frame, text=_t("Refresh", default="Refresh"), command=self.refresh_data
         ).pack(side=tk.LEFT, padx=5)
         ttk.Button(
-            btn_frame, text=_t("Export to CSV"), command=self._export_csv
+            btn_frame, text=_t("Export to CSV", default="Export to csv"), command=self._export_csv
         ).pack(side=tk.LEFT, padx=5)
 
         # Status / message label (used for error states)
@@ -151,7 +151,7 @@ class StudentOutcomesGUI:
         self.status_lbl.config(text="")
 
         if not self.student_id:
-            self.status_lbl.config(text=_t("No student ID available."))
+            self.status_lbl.config(text=_t("No student ID available.", default=""))
             self._update_summary(0, 0, 0, 0)
             return
 
@@ -167,7 +167,7 @@ class StudentOutcomesGUI:
             student = cursor.fetchone()
             if not student:
                 conn.close()
-                self.status_lbl.config(text=_t("Student record not found."))
+                self.status_lbl.config(text=_t("Student record not found.", default=""))
                 self._update_summary(0, 0, 0, 0)
                 return
 
@@ -201,7 +201,7 @@ class StudentOutcomesGUI:
                     else:
                         in_progress += 1
                 else:
-                    level_display = _t("Not assessed")
+                    level_display = _t("Not assessed", default="Not assessed")
                     not_started += 1
 
                 date_display = date_assessed if date_assessed else ""
@@ -215,15 +215,15 @@ class StudentOutcomesGUI:
         except sqlite3.OperationalError as exc:
             if "no such table" in str(exc).lower():
                 self.status_lbl.config(
-                    text=_t("Learning outcomes data not available")
+                    text=_t("Learning outcomes data not available", default="Learning outcomes data not available")
                 )
             else:
                 logger.exception("Database error loading outcomes")
-                self.status_lbl.config(text=_t("Database error occurred."))
+                self.status_lbl.config(text=_t("Database error occurred.", default=""))
             self._update_summary(0, 0, 0, 0)
         except Exception:
             logger.exception("Unexpected error loading outcomes")
-            self.status_lbl.config(text=_t("An error occurred loading data."))
+            self.status_lbl.config(text=_t("An error occurred loading data.", default=""))
             self._update_summary(0, 0, 0, 0)
 
     def _update_summary(self, total, achieved, in_progress, not_started):
@@ -241,14 +241,14 @@ class StudentOutcomesGUI:
         """Export displayed outcomes to a CSV file."""
         if not self.outcomes_data:
             messagebox.showinfo(
-                _t("Export"), _t("No data to export.")
+                _t("Export", default="Export"), _t("No data to export.", default="")
             )
             return
 
         path = filedialog.asksaveasfilename(
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
-            title=_t("Export Learning Outcomes"),
+            title=_t("Export Learning Outcomes", default="Export learning outcomes"),
         )
         if not path:
             return
@@ -262,10 +262,10 @@ class StudentOutcomesGUI:
                 ])
                 writer.writerows(self.outcomes_data)
             messagebox.showinfo(
-                _t("Export"), _t("Data exported successfully.")
+                _t("Export", default="Export"), _t("Data exported successfully.", default="")
             )
         except Exception:
             logger.exception("Export failed")
             messagebox.showerror(
-                _t("Export Error"), _t("Failed to export data.")
+                _t("Export Error", default="Export error"), _t("Failed to export data.", default="")
             )

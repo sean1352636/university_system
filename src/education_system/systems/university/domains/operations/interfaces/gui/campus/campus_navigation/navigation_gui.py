@@ -3,6 +3,9 @@ Campus Navigation GUI Interface
 
 Provides graphical interface for campus navigation with interactive map.
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -36,14 +39,14 @@ class NavigationGUI(
                     "Campus Navigation."),
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             raise PermissionError(
                 "Campus Navigation GUI requires an authenticated user")
 
         # Create main window or frame
         if parent is None:
             self.root = tk.Tk()
-            self.root.title(_t("navigation.title", default="Campus Navigation System"))
+            self.root.title(_t("navigation.title", default="===== NAVIGATION ====="))
             self.root.geometry("1200x800")
             self.is_standalone = True
             self.window = self.root
@@ -131,7 +134,7 @@ class NavigationGUI(
 
 def main():
     """Main entry point for GUI."""
-    from education_system.systems.university.interfaces.gui.shell.auth.launch_guard import (
+    from education_system.systems.university.shell.gui.auth.launch_guard import (
         require_launcher_auth,
     )
     if require_launcher_auth("Campus Navigation GUI") is None:

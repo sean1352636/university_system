@@ -190,7 +190,7 @@ class VehiclesMixin:
 
             # Insert vehicle
             cursor.execute('''
-            INSERT INTO vehicles VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO vehicles (vehicle_id, license_plate, make, model, year, color, vehicle_type, owner_id, registration_state) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 vehicle_id,
                 data['license_plate'],

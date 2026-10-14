@@ -9,6 +9,9 @@ Provides interface for:
 """
 
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -806,7 +809,7 @@ class EquipmentGUI:
                         hist = EquipmentManager.get_maintenance_history(eq['equipment_id'])
                         records.extend(hist)
                     except Exception:
-                        pass
+                        logger.debug("Suppressed exception", exc_info=True)
                 # Sort by scheduled_date descending
                 records.sort(key=lambda r: r.get('scheduled_date') or '', reverse=True)
 

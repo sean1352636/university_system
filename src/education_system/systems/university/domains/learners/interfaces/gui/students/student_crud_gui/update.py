@@ -9,7 +9,8 @@ import json
 import csv
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from datetime import datetime
-from education_system.systems.university.interfaces.gui.shell.main._tk_callback_filter import install_clean_close as _install_clean_close
+from education_system.platform.delivery.gui.tk_callback_filter import install_clean_close as _install_clean_close
+from education_system.platform.delivery.gui.window_sizing import fit as _fit_window
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import get_db_connection, get_connection, transaction
@@ -28,6 +29,7 @@ except ImportError:
     ACTIVITY_LOGGER_AVAILABLE = False
 
 from .widgets import _DOBPicker, _safe_set_combobox, _safe_entry_insert
+from .authorization import require_student_permission
 from .importers import _open_sixth_form_import_dialog, _open_bulk_csv_import_dialog
 from .sync.visa import _create_visa_record_for_new_student
 from .sync.atas import _resync_atas_after_module_change
@@ -39,10 +41,12 @@ from education_system.systems.university.services.student_provisioning import (
 
 def update_student_dialog(self, student_id):
     """Comprehensive update student dialog with full editing capabilities and random course assignment"""
+    if not require_student_permission(self, "update_any_student", "update"):
+        return
     dialog = tk.Toplevel(self.root)
     _install_clean_close(dialog)
     dialog.title(_t("student.update_student_title", student_id=student_id))
-    dialog.geometry("800x900")
+    _fit_window(dialog, "800x900", minsize=(640, 480))
     dialog.transient(self.root)
 
     # Make dialog visible before grabbing
@@ -65,6 +69,15 @@ def update_student_dialog(self, student_id):
         cursor = conn.cursor()
         cursor.execute('SELECT * FROM students WHERE student_id = ?', (student_id,))
         student = cursor.fetchone()
+        # SELECT * + positional indices is fragile (a column inserted mid-table
+        # shifts every index below it). Resolve new fields by name.
+        _col_index = {d[0]: i for i, d in enumerate(cursor.description or ())}
+
+        def _sval(column, default=''):
+            i = _col_index.get(column)
+            if i is None or student is None or i >= len(student):
+                return default
+            return student[i] if student[i] is not None else default
 
         if not student:
             messagebox.showerror(_t("common.error"), _t("student.student_not_found"))
@@ -155,22 +168,48 @@ def update_student_dialog(self, student_id):
         fields['dob'].grid(row=5, column=1, pady=5, padx=(10, 0))
         _safe_entry_insert(fields['dob'], student[7])
 
+        # Pronouns — free text, not a fixed list: the point is that the
+        # student says what they use.
+        ttk.Label(personal_frame,
+                  text=_t("student.pronouns_label", default="Pronouns:")).grid(
+            row=6, column=0, sticky=tk.W, pady=5)
+        fields['pronouns'] = ttk.Entry(personal_frame, width=30)
+        fields['pronouns'].grid(row=6, column=1, pady=5, padx=(10, 0))
+        _safe_entry_insert(fields['pronouns'], _sval('pronouns'))
+
+        # Emergency contact
+        ttk.Label(personal_frame,
+                  text=_t("student.emergency_contact_label",
+                          default="Emergency contact:")).grid(
+            row=7, column=0, sticky=tk.W, pady=5)
+        fields['emergency_contact'] = ttk.Entry(personal_frame, width=30)
+        fields['emergency_contact'].grid(row=7, column=1, pady=5, padx=(10, 0))
+        _safe_entry_insert(fields['emergency_contact'], _sval('emergency_contact'))
+        ttk.Label(personal_frame,
+                  text=_t("student.emergency_contact_hint",
+                          default="Name and how to reach them"),
+                  foreground="gray").grid(row=8, column=1, sticky=tk.W,
+                                          padx=(10, 0))
+
         # Academic Information
         academic_frame = ttk.LabelFrame(scrollable_frame, text=_t("student.academic_info"), padding=15)
         academic_frame.grid(row=3, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
 
-        # Course - Add random assignment option
+        # Course selection comes from the same live catalogue as create/CLI.
         ttk.Label(academic_frame, text=_t("student.course_label")).grid(row=0, column=0, sticky=tk.W, pady=5)
         course_frame = ttk.Frame(academic_frame)
         course_frame.grid(row=0, column=1, pady=5, padx=(10, 0), sticky=tk.W)
 
-        current_course_label = ttk.Label(course_frame, text=_t("student.current_course", course=student[9]), foreground="blue")
-        current_course_label.pack(side=tk.LEFT)
-
-        # Random course reassignment option
-        reassign_course_var = tk.BooleanVar()
-        ttk.Checkbutton(course_frame, text=_t("student.reassign_course_modules"),
-                       variable=reassign_course_var).pack(side=tk.LEFT, padx=(20, 0))
+        from education_system.systems.university.domains.academics.domain.services.admissions_selection import list_active_courses
+        course_choices = [row['code'] for row in list_active_courses()]
+        if student[9] and student[9] not in course_choices:
+            course_choices.insert(0, student[9])
+        course_var = tk.StringVar(value=student[9] or '')
+        course_picker = ttk.Combobox(
+            course_frame, textvariable=course_var, values=course_choices,
+            state='readonly', width=24,
+        )
+        course_picker.pack(side=tk.LEFT)
 
         # Email (read-only display)
         ttk.Label(academic_frame, text=_t("student.email_label")).grid(row=1, column=0, sticky=tk.W, pady=5)
@@ -215,10 +254,11 @@ def update_student_dialog(self, student_id):
         password_frame.grid(row=6, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
 
         password_var = tk.BooleanVar()
-        ttk.Checkbutton(password_frame, text=_t("student.update_password_auto"),
+        ttk.Checkbutton(password_frame, text="Send a single-use password setup link",
                        variable=password_var).pack(anchor=tk.W)
 
-        ttk.Label(password_frame, text=_t("student.password_note"),
+        ttk.Label(password_frame,
+                 text="The link is emailed to the student and expires after 30 minutes.",
                  foreground="gray").pack(anchor=tk.W, pady=(5, 0))
 
         def validate_update_form():
@@ -245,6 +285,8 @@ def update_student_dialog(self, student_id):
 
         def update_student():
             """Update student with form data and random course assignment if selected"""
+            if not require_student_permission(self, "update_any_student", "update"):
+                return
             update_conn = None
             try:
                 # Validate form
@@ -264,15 +306,14 @@ def update_student_dialog(self, student_id):
                 new_dob = fields['dob'].get().strip()
                 if not new_dob:
                     new_dob = None
+                # Empty clears the field rather than writing ''.
+                new_pronouns = fields['pronouns'].get().strip() or None
+                new_emergency = fields['emergency_contact'].get().strip() or None
 
                 # Determine new course
                 current_course = student[9]
-                if reassign_course_var.get():
-                    new_course = 'DS' if current_course == 'CS' else 'CS'
-                    course_changed = True
-                else:
-                    new_course = current_course
-                    course_changed = False
+                new_course = course_var.get().strip()
+                course_changed = new_course != current_course
 
                 # Calculate new age if DOB changed
                 if new_dob:
@@ -284,6 +325,43 @@ def update_student_dialog(self, student_id):
                 else:
                     new_age = None
 
+                from education_system.systems.university.application.student_lifecycle_service import StudentLifecycleService
+                actor = str((getattr(self.auth, 'current_user', {}) or {}).get('id', 'unknown'))
+                changes = {
+                    'title': new_title, 'first_name': new_first_name,
+                    'middle_name': new_middle_name, 'last_name': new_last_name,
+                    'gender': new_gender,
+                }
+                if new_dob:
+                    changes['dob'] = new_dob
+                if course_changed:
+                    changes['course'] = new_course
+                # Only send these when they actually changed, so the audit
+                # payload records a real edit rather than a no-op rewrite.
+                if new_pronouns != (_sval('pronouns') or None):
+                    changes['pronouns'] = new_pronouns
+                if new_emergency != (_sval('emergency_contact') or None):
+                    changes['emergency_contact'] = new_emergency
+                lifecycle = StudentLifecycleService()
+                lifecycle.update(
+                    str(student_id), changes, actor_id=actor,
+                    reason="Student records GUI update",
+                    idempotency_key=f"gui:update:{student_id}:{secrets.token_urlsafe(18)}",
+                )
+                if password_var.get():
+                    from education_system.systems.university.services.student_provisioning import send_student_activation
+                    send_student_activation(student[1])
+                messagebox.showinfo(
+                    _t("common.success"),
+                    _t("student.student_updated_success", student_id=student_id),
+                    parent=dialog,
+                )
+                if hasattr(self, 'view_students'):
+                    self.view_students()
+                self.refresh_advanced_search()
+                dialog.destroy()
+                return
+
                 # Create new database connection for update
                 update_conn = get_db_connection()
                 update_cursor = update_conn.cursor()
@@ -292,10 +370,12 @@ def update_student_dialog(self, student_id):
                 update_cursor.execute('''
                     UPDATE students
                     SET title = ?, first_name = ?, middle_name = ?, last_name = ?,
-                        gender = ?, dob = ?, age = ?, course = ?
+                        gender = ?, dob = ?, age = ?, course = ?,
+                        pronouns = ?, emergency_contact = ?
                     WHERE student_id = ?
                 ''', (new_title, new_first_name, new_middle_name, new_last_name,
-                      new_gender, new_dob, new_age, new_course, student_id))
+                      new_gender, new_dob, new_age, new_course,
+                      new_pronouns, new_emergency, student_id))
 
                 # Update user profile if exists
                 update_cursor.execute('SELECT id FROM users WHERE student_id = ?', (student_id,))
@@ -311,22 +391,13 @@ def update_student_dialog(self, student_id):
                         WHERE id = ?
                     ''', (new_first_name, new_last_name, timestamp, user_id))
 
-                    # Update password if requested
+                    # Send a single-use activation/reset link if requested.
                     if password_var.get():
-                        new_password = f"{new_first_name.lower()}123456"
-
-                        # Update password in user_accounts table
-                        import hashlib
-                        import secrets
-                        salt = secrets.token_hex(16)
-                        key = hashlib.pbkdf2_hmac('sha256', new_password.encode(), salt.encode(), 100000, dklen=64)
-                        password_hash = key.hex()
-
                         update_cursor.execute('''
                             UPDATE user_accounts
-                            SET password_hash = ?, salt = ?, updated_at = ?
+                            SET password_reset_required = 1, updated_at = ?
                             WHERE user_id = ?
-                        ''', (password_hash, salt, timestamp, user_id))
+                        ''', (timestamp, user_id))
 
                 # Handle course change — drop the old curriculum and enrol the
                 # student in the new course's full 18-module curriculum
@@ -363,6 +434,12 @@ def update_student_dialog(self, student_id):
                 # for them to return.
                 update_conn.commit()
 
+                if password_var.get():
+                    from education_system.systems.university.services.student_provisioning import (
+                        send_student_activation,
+                    )
+                    send_student_activation(student[1])
+
                 # ── Bus side effects, on fresh connections ──────────
                 # Only relevant when the course actually changed (which
                 # is when ``selected_modules`` and ``dropped_modules``
@@ -383,7 +460,7 @@ def update_student_dialog(self, student_id):
                         print(f"Note: could not sync enrolment fees: {exc}")
 
                     try:
-                        from education_system.systems.university.domains.operations.domain.commerce.textbooks.services.library_holds import (
+                        from education_system.systems.university.plugins.campus_commerce.domain.textbooks.services.library_holds import (
                             place_holds_for_enrolment,
                             release_holds_for_drop,
                         )
@@ -458,7 +535,7 @@ def update_student_dialog(self, student_id):
                 if course_changed:
                     success_msg += "\n" + _t("student.course_changed", old_course=student[9], new_course=new_course)
                 if password_var.get():
-                    success_msg += "\n" + _t("student.new_password", password=f"{new_first_name.lower()}123456")
+                    success_msg += "\nA single-use password setup link was sent to the student's email address."
 
                 messagebox.showinfo(_t("common.success"), success_msg)
 
@@ -513,7 +590,10 @@ def update_student_dialog(self, student_id):
         # Bind mousewheel
         def _on_mousewheel(event):
             canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        # Scope wheel handling to this canvas; global bindings leak into other
+        # dialogs and break predictable keyboard/pointer navigation.
+        canvas.bind("<Enter>", lambda _event: canvas.bind("<MouseWheel>", _on_mousewheel))
+        canvas.bind("<Leave>", lambda _event: canvas.unbind("<MouseWheel>"))
 
     except Exception as e:
         logging.exception("Failed to load student data for student_id=%s", student_id)

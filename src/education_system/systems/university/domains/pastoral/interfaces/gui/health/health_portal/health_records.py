@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -228,12 +232,50 @@ class HealthRecordsMixin:
                 status.config(text=f"Lookup failed: {e}")
                 return
 
-            try:
-                from education_system.systems.university.domains.pastoral.domain.health.records import (
-                    sixth_form_import as _sf_imp,
+            from education_system.systems.university.domains.pastoral.domain.health.records import (
+                sixth_form_import as _sf_imp,
+            )
+
+            # Health data is special-category: the sixth form's recorded
+            # handover consent is the authority for copying it, and this
+            # dialog used to have none. Ask before doing anything, so the
+            # operator sees the basis rather than discovering it in a log.
+            decision = _sf_imp.check_release(sf_sid)
+            lawful_basis = None
+            if not decision.allowed:
+                proceed = messagebox.askyesno(
+                    _t('gui.pastoral.health.health_portal.health_records.dialogs.no_handover_consent', default="No handover consent"),
+                    f"{decision.detail}.\n\n"
+                    "You may still copy the SAFETY-CRITICAL subset — "
+                    "allergies, active conditions and current medications "
+                    "— on the basis of the student's vital interests. "
+                    "Resolved conditions, blood group and GP details will "
+                    "NOT be copied.\n\n"
+                    "This decision is recorded against your account in the "
+                    "audit log. Proceed on vital interests?",
+                    parent=win,
                 )
+                if not proceed:
+                    status.config(
+                        text="Import cancelled — no handover consent on "
+                             "record.")
+                    return
+                lawful_basis = _sf_imp.VITAL_INTERESTS
+
+            try:
                 summary = _sf_imp.import_from_sixth_form(
-                    uni_student_id=dest_id, sf_student_id=sf_sid)
+                    uni_student_id=dest_id, sf_student_id=sf_sid,
+                    lawful_basis=lawful_basis,
+                    actor=getattr(self, "current_username", None),
+                    received_by="university health / wellbeing")
+            except _sf_imp.MedicalHandoverRefused as refused:
+                messagebox.showerror(
+                    _t('gui.pastoral.health.health_portal.health_records.dialogs.import_refused', default="Import refused"),
+                    f"The sixth form has not released this student's "
+                    f"medical record:\n\n{refused}",
+                    parent=win,
+                )
+                return
             except Exception as e:
                 messagebox.showerror(
                     _t('gui.pastoral.health.health_portal.health_records.dialogs.import_failed', default="Import failed"),
@@ -246,18 +288,23 @@ class HealthRecordsMixin:
             self.log_audit_event(
                 'sixth_form_medical_import', 'medical_info', dest_id)
 
+            withheld_line = (
+                "\nWithheld           : " + "; ".join(summary.withheld)
+                if summary.withheld else "")
             messagebox.showinfo(
                 _t('gui.pastoral.health.health_portal.health_records.dialogs.import_complete', default="Import complete"),
                 "Medical record imported from sixth form.\n\n"
                 f"University student : {dest_id}\n"
-                f"Sixth-form student : {sf_sid}\n\n"
+                f"Sixth-form student : {sf_sid}\n"
+                f"Lawful basis       : {summary.basis} ({summary.scope})\n\n"
                 f"medical_info row   : "
                 f"{'written' if summary.medical_info_written else 'no source data'}\n"
                 f"Conditions written : {summary.conditions_written}\n"
                 f"Medications        : {summary.medications_written}"
                 "  (flattened into medical_info.medications)\n"
                 f"Allergies          : {summary.allergies_written}"
-                "  (flattened into medical_info.allergies)",
+                "  (flattened into medical_info.allergies)"
+                f"{withheld_line}",
                 parent=win,
             )
 
@@ -268,7 +315,7 @@ class HealthRecordsMixin:
                         and not self.hr_student_id.get()):
                     self.hr_student_id.set(dest_id)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             win.destroy()
 

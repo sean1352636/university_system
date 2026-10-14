@@ -153,20 +153,34 @@ def _dispatch_local_cli(label: str) -> bool:
     return bool(mod.dispatch(label))
 
 
-# Nursery menu label -> dotted module path for the "System" category features
-# (account/auth/settings/about). The four shared ones live under
-# ``modules.shared.cli``; MFA and User Management are domain modules. Each
-# exposes ``dispatch(label, auth=...)`` and is imported lazily.
+# Nursery menu label -> fully-qualified module path for the "System" category
+# features (account/auth/settings/about). Each exposes
+# ``dispatch(label, auth=...)`` and is imported lazily.
+#
+# These were relative fragments interpolated into
+# ``education_system.systems.nursery.__init__.<path>``, which is not an
+# importable module path — every entry raised ModuleNotFoundError, so the
+# whole System category was dead. Absolute paths, verified against the tree.
 _SYSTEM_CLI: dict[str, str] = {
     # Email / Messaging lives here (not in _LOCAL_CLI) because it needs the
     # signed-in ``auth`` to drive its Cross-System Email option.
-    "Email / Messaging":          "domain.email_centre.email_centre_cli",
-    "Change Password":            "shared.cli.change_password_cli",
-    "Multi-Factor Authentication": "domain.mfa.mfa_cli",
-    "User Accounts":              "shared.cli.user_accounts_cli",
-    "User Management":            "domain.user_management.user_management_cli",
-    "Settings":                   "shared.cli.settings_cli",
-    "About":                      "shared.cli.about_cli",
+    "Email / Messaging":
+        "education_system.systems.nursery.domain.operations.communications"
+        ".email_centre.email_centre_cli",
+    # Change Password is now the shared platform flow, not a nursery copy.
+    "Change Password":
+        "education_system.platform.delivery.cli.change_password_cli",
+    "Multi-Factor Authentication":
+        "education_system.systems.nursery.interfaces.cli.governance.mfa.mfa_cli",
+    "User Accounts":
+        "education_system.systems.nursery.interfaces.cli.user_accounts_cli",
+    "User Management":
+        "education_system.systems.nursery.domain.governance.user_management"
+        ".user_management_cli",
+    "Settings":
+        "education_system.systems.nursery.interfaces.cli.settings_cli",
+    "About":
+        "education_system.systems.nursery.interfaces.cli.about_cli",
 }
 
 
@@ -176,8 +190,7 @@ def _dispatch_system_cli(label: str, auth=None) -> bool:
     if module_path is None:
         return False
     import importlib
-    mod = importlib.import_module(
-        f"education_system.systems.nursery.__init__.{module_path}")
+    mod = importlib.import_module(module_path)
     logger.debug("Nursery CLI dispatch (system): %s -> %s", label, module_path)
     return bool(mod.dispatch(label, auth=auth))
 
@@ -284,7 +297,7 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
     if shared_auth is None or not getattr(shared_auth, "current_user", None):
         logger.error("nursery CLI invoked without a shared_auth session")
         raise RuntimeError(
-            "nursery_system CLI must be launched via run.py — "
+            "nursery_system CLI must be launched via python -m education_system — "
             "no standalone login is available."
         )
     cu = shared_auth.current_user or {}
@@ -296,5 +309,5 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
 
 
 if __name__ == "__main__":
-    print("Launch via: python run.py --cli  (then choose Nursery)")
+    print("Launch via: python -m education_system --cli  (then choose Nursery)")
     raise SystemExit(2)

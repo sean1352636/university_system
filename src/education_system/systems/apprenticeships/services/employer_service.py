@@ -20,6 +20,7 @@ from typing import Any
 
 from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.domain.apprentices.models import ValidationError
+from education_system.systems.apprenticeships.domain.employers import contacts as contact_rules
 from education_system.systems.apprenticeships.domain.employers import models
 from education_system.systems.apprenticeships.domain.employers.models import (
     Employer,
@@ -520,6 +521,17 @@ def _validate_workplace(payload: dict[str, Any], *, existing: Workplace | None) 
     return data
 
 
+def validate_contact_payload(
+    payload: dict[str, Any], *, existing: EmployerManager | None
+) -> dict[str, Any]:
+    """Normalise a contact payload the way add/update_manager do.
+
+    Public so the contacts screen's service can reuse the same rules
+    without reaching into this module's privates.
+    """
+    return _validate_manager(payload, existing=existing)
+
+
 def _validate_manager(
     payload: dict[str, Any], *, existing: EmployerManager | None
 ) -> dict[str, Any]:
@@ -537,6 +549,8 @@ def _validate_manager(
         data["is_primary"] = 1 if _as_bool(payload.get("is_primary")) else 0
     if "active" in payload:
         data["active"] = 1 if _as_bool(payload.get("active")) else 0
+    if "contact_role" in payload:
+        data["contact_role"] = contact_rules.validate_contact_role(payload.get("contact_role"))
 
     return data
 

@@ -2,6 +2,9 @@ from __future__ import annotations
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import get_connection, sqlite3
 from education_system.systems.university.infrastructure.i18n import get_text as _t, init_i18n
+from education_system.systems.university.infrastructure.database.schemas.students_table import ensure_students_table
+from education_system.systems.university.infrastructure.database.schemas.modules_table import ensure_modules_table
+from education_system.systems.university.infrastructure.database.schemas.modules_table import ensure_student_modules_table
 
 # Initialize i18n
 init_i18n()
@@ -15,56 +18,13 @@ def init_grade_system_db():
         print(_t("schemas.initializing", name="grade system"))
 
         # Create students table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS students (
-            student_id TEXT PRIMARY KEY,
-            first_name TEXT NOT NULL,
-            middle_name TEXT,
-            last_name TEXT NOT NULL,
-            course TEXT NOT NULL,
-            email_address TEXT,
-            title TEXT,
-            gender TEXT,
-            dob TEXT,
-            age INTEGER,
-            registration_datetime TEXT,
-            enrollment_date TEXT DEFAULT (date('now')),
-            status TEXT DEFAULT 'Active',
-            grade_level TEXT,
-            journey_id TEXT
-        )
-        ''')
+        ensure_students_table(cursor)
 
         # Create modules table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS modules (
-            module_code TEXT PRIMARY KEY,
-            module_name TEXT NOT NULL,
-            module_type TEXT,
-            credits INTEGER DEFAULT 1,
-            description TEXT,
-            course TEXT,
-            semester TEXT,
-            year INTEGER
-        )
-        ''')
+        ensure_modules_table(cursor)
 
         # Create student_modules table (enrollment)
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS student_modules (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id TEXT,
-            module_code TEXT,
-            module_name TEXT,
-            module_type TEXT DEFAULT 'Standard',
-            enrollment_date TEXT DEFAULT CURRENT_TIMESTAMP,
-            grade TEXT,
-            completion_date TEXT,
-            status TEXT DEFAULT 'Enrolled',
-            FOREIGN KEY (student_id) REFERENCES students (student_id),
-            FOREIGN KEY (module_code) REFERENCES modules (module_code)
-        )
-        ''')
+        ensure_student_modules_table(cursor)
 
         conn.commit()
         conn.close()

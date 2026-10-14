@@ -17,6 +17,33 @@ ALLOWED_PURPOSES = {
     "legal_obligation",
     "student_request",
     "quality_audit",
+    # A receiving setting reading a transition handover to plan the
+    # learner's provision before they arrive.
+    "transition_planning",
+}
+
+# Handover keys grouped by who needs them on arrival. These are key names
+# from cross_system.handover specs, spelled out rather than imported:
+# governance sits beneath the cross-system layer and must not depend on it.
+_HANDOVER_SEND = {
+    "send_support", "send_provision", "access_arrangements",
+    "communication_needs", "support_referral", "current_interventions",
+    "support_plan", "reasonable_adjustments",
+}
+_HANDOVER_MEDICAL = {"medical_alerts", "medical_requirements"}
+_HANDOVER_PASTORAL = {
+    "attendance_behaviour", "support_indicators", "current_interventions",
+    "support_plan",
+}
+_HANDOVER_ADMISSIONS = {
+    "reference", "references", "employer_reference", "bursary_indicators",
+    "support_indicators", "attendance_behaviour",
+}
+# What a class teacher needs on day one: allergies, and how to teach the
+# learner. Not the diagnosis or the plan behind it.
+_HANDOVER_CLASSROOM = {
+    "medical_alerts", "reasonable_adjustments", "access_arrangements",
+    "communication_needs",
 }
 
 FIELD_POLICIES = {
@@ -32,7 +59,46 @@ FIELD_POLICIES = {
         "safeguarding": {"*"},
         "superadmin": {"*"},
     },
+    # Transition handovers, read at the receiving (or sending) setting.
+    # Routine keys are not gated here: any party to the transition sees
+    # them. These sets cover the SENSITIVE keys, plus the RESTRICTED
+    # safeguarding_reference, which only "*" roles can see.
+    "handover": {
+        "senco": _HANDOVER_SEND | _HANDOVER_MEDICAL,
+        "send_coordinator": _HANDOVER_SEND | _HANDOVER_MEDICAL,
+        "learning_support": set(_HANDOVER_SEND),
+        "nurse": set(_HANDOVER_MEDICAL),
+        "health_admin": set(_HANDOVER_MEDICAL),
+        "clinician": set(_HANDOVER_MEDICAL),
+        "pastoral": _HANDOVER_PASTORAL | {"medical_alerts"},
+        "head_of_year": set(_HANDOVER_PASTORAL),
+        "teacher": set(_HANDOVER_CLASSROOM),
+        "admissions": set(_HANDOVER_ADMISSIONS),
+        # Admins see every consent-dependent key but not the
+        # safeguarding pointer. Only a designated lead can see that.
+        "admin": (_HANDOVER_SEND | _HANDOVER_MEDICAL | _HANDOVER_PASTORAL
+                  | _HANDOVER_ADMISSIONS),
+        "dsl": {"*"},
+        "safeguarding": {"*"},
+        "superadmin": {"*"},
+    },
 }
+
+
+def partition_fields(domain: str, actor_role: str, fields: Iterable[str]
+                     ) -> tuple[frozenset[str], frozenset[str]]:
+    """Split ``fields`` into (permitted, refused) by role policy alone.
+
+    Pure: no purpose check, no break-glass and no audit row. It lets a
+    caller that wants the *allowed subset* ask authorize_sensitive_fields
+    about each half, rather than being denied everything because one field
+    was out of reach.
+    """
+    requested = frozenset(fields)
+    allowed = FIELD_POLICIES.get(domain, {}).get(actor_role.lower(), set())
+    if "*" in allowed:
+        return requested, frozenset()
+    return requested & allowed, requested - allowed
 
 
 @dataclass(frozen=True, slots=True)
@@ -228,6 +294,7 @@ __all__ = [
     "AccessDecision",
     "approve_break_glass",
     "authorize_sensitive_fields",
+    "partition_fields",
     "request_break_glass",
     "review_break_glass",
 ]

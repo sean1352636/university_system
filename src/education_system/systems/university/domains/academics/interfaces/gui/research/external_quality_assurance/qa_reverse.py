@@ -24,7 +24,7 @@ def _ensure_dashboard(app) -> Optional[object]:
                 dash.window.lift()
                 return dash
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
     fn = getattr(app, "show_qa_dashboard_gui", None)
     if callable(fn):
         try:
@@ -44,7 +44,7 @@ def snapshot_cohort_to_b3(app, cohort_year: int,
         try:
             dash.set_focus(framework="OfS", year=cohort_year)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
     return n
 
 
@@ -62,7 +62,7 @@ def send_output_to_impact_case(app, output_id: int, case_id: int) -> bool:
                 if uoa:
                     dash.set_focus(framework="REF", uoa=uoa)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
     return ok
 
 
@@ -74,7 +74,7 @@ def promote_alert_to_milestone(app, alert: dict) -> int:
         try:
             dash.set_focus(framework="OfS")
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
     return mid
 
 

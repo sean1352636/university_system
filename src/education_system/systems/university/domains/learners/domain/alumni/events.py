@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
 from education_system.systems.university.infrastructure.email import send_event_invitation
@@ -159,7 +163,7 @@ def view_events():
        try:
            conn.close()
        except Exception:
-           pass
+           logger.debug("Suppressed exception", exc_info=True)
 
 
 def search_events(cursor):

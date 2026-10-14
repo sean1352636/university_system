@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
@@ -99,7 +103,7 @@ def send_report_to_admin(report_title, report_content, parent_window=None):
             messagebox.showinfo(_t('gui.finance.finance_reporting.reports_tab.dialogs.success', default="Success"), _t('gui.finance.finance_reporting.reports_tab.dialogs.report_sent_to_admin_logged_in_email_log', default="Report sent to admin (logged in email_log)."))
             return True
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
 
     if not HAS_EMAIL:
         messagebox.showerror(_t('gui.finance.finance_reporting.reports_tab.dialogs.error', default="Error"), _t('gui.finance.finance_reporting.reports_tab.dialogs.email_system_not_available', default="Email system not available"))

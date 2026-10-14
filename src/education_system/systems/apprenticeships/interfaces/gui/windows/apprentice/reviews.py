@@ -43,10 +43,11 @@ _REVIEW_COLUMNS = (
 
 _TARGET_COLUMNS = (
     ("due", "Due", 120),
-    ("description", "Target", 480),
-    ("ksbs", "KSBs", 140),
-    ("status", "Status", 140),
-    ("outcome", "Outcome", 260),
+    ("description", "Target", 420),
+    ("owner", "Owner", 100),
+    ("ksbs", "KSBs", 120),
+    ("status", "Status", 130),
+    ("outcome", "Outcome", 240),
 )
 
 _STATUS_TAGS = {
@@ -134,7 +135,8 @@ def render(gui) -> None:
     target_table = widgets.DataTable(box, _TARGET_COLUMNS, height=min(8, len(targets)))
     target_table.populate(
         targets,
-        lambda t: (t.due_date, t.description, t.ksb_codes, t.status, t.outcome_note),
+        lambda t: (t.due_date, t.description, t.owner, t.ksb_codes, t.status,
+                   t.outcome_note),
         identity=lambda t: t.target_id,
         tag=lambda t: "Red" if t.is_overdue else None,
         noun="target",
@@ -203,7 +205,8 @@ def _detail(gui, review_id: int) -> None:
         targets = widgets.DataTable(box, _TARGET_COLUMNS, height=min(6, len(review.targets)))
         targets.populate(
             review.targets,
-            lambda t: (t.due_date, t.description, t.ksb_codes, t.status, t.outcome_note),
+            lambda t: (t.due_date, t.description, t.owner, t.ksb_codes, t.status,
+                   t.outcome_note),
             identity=lambda t: t.target_id,
             tag=lambda t: "Red" if t.is_overdue else ("Green" if t.status == "Met" else None),
             noun="target",

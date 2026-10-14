@@ -1,4 +1,7 @@
 """Extracted class implementation."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from .. import election_gui_shared as _shared
 globals().update({name: value for name, value in _shared.__dict__.items() if not name.startswith("__")})
@@ -50,7 +53,7 @@ class App:
                             or cu.get('username', ''),
                 }
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         return None
 
     def _show_no_auth(self):

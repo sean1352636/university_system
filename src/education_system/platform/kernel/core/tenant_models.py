@@ -320,6 +320,56 @@ def get_tenant_users(
         conn.close()
 
 
+class AmbiguousTenantError(ValueError):
+    """The user belongs to several tenants and named none of them."""
+
+
+class TenantMembershipError(ValueError):
+    """The user asked for a tenant they do not belong to."""
+
+
+def resolve_login_tenant(
+    user_id: int,
+    requested: str | None = None,
+    db_path: str | None = None,
+) -> Optional["Tenant"]:
+    """Decide which tenant a login should be scoped to.
+
+    The tenant middleware resolves a request's tenant *only* from an
+    authenticated claim, so a token without one cannot pass a deployment
+    running ``MULTI_TENANT_REQUIRED=true``. This is the lookup that puts the
+    claim there, and the policy is deliberately narrow — it never picks on the
+    user's behalf when the answer is genuinely ambiguous:
+
+    * no membership   -> ``None``. Single-tenant installs are unaffected and
+      keep issuing tokens with no claim, exactly as before.
+    * *requested* given -> it must be one of the user's own tenants, by slug or
+      id; anything else raises :class:`TenantMembershipError`. A client cannot
+      widen its own scope by asking.
+    * one membership  -> that tenant. Unambiguous, so no policy is invented.
+    * several, none requested -> :class:`AmbiguousTenantError`. The caller must
+      ask the user which one; guessing here would silently scope a session to
+      the wrong institution.
+    """
+    tenants = get_user_tenants(user_id, active_only=True, db_path=db_path)
+    if not tenants:
+        return None
+    if requested:
+        wanted = str(requested).strip().lower()
+        for tenant in tenants:
+            if wanted in (str(tenant.slug).lower(), str(tenant.id)):
+                return tenant
+        raise TenantMembershipError(
+            f"User {user_id} is not a member of tenant {requested!r}"
+        )
+    if len(tenants) == 1:
+        return tenants[0]
+    raise AmbiguousTenantError(
+        f"User {user_id} belongs to {len(tenants)} tenants; the login must "
+        "name one (slugs: " + ", ".join(sorted(t.slug for t in tenants)) + ")"
+    )
+
+
 def get_user_tenants(
     user_id: int,
     active_only: bool = True,

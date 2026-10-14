@@ -1,4 +1,7 @@
 """Methods _edit_request through _on_card_select."""
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -315,7 +318,7 @@ class AdminToolsGUI:
                     self.cards_tree.insert("", tk.END, values=values, tags=(status,))
 
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _on_card_select(self, event):
         """Handle card selection."""
@@ -369,4 +372,4 @@ Created: {row[11]}
                         self.buildings_entry.insert(0, buildings)
 
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)

@@ -376,8 +376,8 @@ if __name__ == '__main__':
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
 
-    print(_t("email.scheduler.starting"))
-    print(_t("email.scheduler.press_ctrl_c"))
+    print(_t("email.scheduler.starting", default="Starting"))
+    print(_t("email.scheduler.press_ctrl_c", default="Press Ctrl C"))
     print("-" * 50)
 
     run_scheduler()

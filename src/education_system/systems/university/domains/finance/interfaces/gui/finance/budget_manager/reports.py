@@ -1,4 +1,5 @@
 """Budget reports and analytics"""
+from education_system.systems.university.shell.gui import report_view as _rv
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -44,7 +45,7 @@ class BudgetReportsMixin:
         report_frame = ttk.LabelFrame(tab, text=_t('gui.finance.finance.budget_manager.reports.labels.report_output', default="Report Output"), padding="10")
         report_frame.pack(fill=tk.BOTH, expand=True)
 
-        self.budget_report_text = ScrolledText(report_frame, wrap=tk.WORD,
+        self.budget_report_text = _rv.TextReportView(report_frame, wrap=tk.WORD,
                                               width=100, height=25, font=('Courier', 10))
         self.budget_report_text.pack(fill=tk.BOTH, expand=True)
 
@@ -60,7 +61,7 @@ class BudgetReportsMixin:
         window.minsize(600, 400)
 
         # Report text area
-        text = ScrolledText(window, wrap=tk.WORD, font=('Courier', 10))
+        text = _rv.TextReportView(window, wrap=tk.WORD, font=('Courier', 10))
         text.pack(fill=tk.BOTH, expand=True, padx=10, pady=(10, 5))
         text.insert(tk.END, report_content)
         text.config(state=tk.DISABLED)
@@ -113,7 +114,7 @@ class BudgetReportsMixin:
                     admin_email = row['email'] if hasattr(row, 'keys') else row[0]
                 conn.close()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             if not admin_email:
                 admin_email = 'admin@university.edu'

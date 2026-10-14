@@ -13,6 +13,9 @@ Window matches the project convention: 1400x900, minsize 1200x800.
 """
 
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -43,6 +46,7 @@ from education_system.systems.university.domains.academics.domain.services.degre
 from education_system.systems.university.domains.academics.domain.services.degree_audit.graduation_eligibility import (
     check_eligibility,
 )
+from education_system.systems.university.domains.academics.interfaces.gui._field_pickers import academic_year_values, attach_combo, attach_picker, recent_years
 
 
 class GraduationCeremonyGUI:
@@ -53,7 +57,7 @@ class GraduationCeremonyGUI:
         try:
             initialize_degree_audit_database()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         # Allow embedding in workspace Frame.
         if parent is not None and not hasattr(parent, "wm_title"):
@@ -107,6 +111,11 @@ class GraduationCeremonyGUI:
         # The self-service "My Graduation" tab is only for logged-in students.
         if self._is_student():
             self._build_student_tab()
+        # Eligibility comes first: a student is audited, then awarded, then
+        # invited to a ceremony. The audit used to live in the Degree Audit
+        # GUI alongside four advising tabs, so the graduation pipeline was
+        # split across two screens that shared no navigation.
+        self._build_eligibility_tab()
         self._build_ceremonies_tab()
         self._build_rsvp_tab()
         self._build_gown_tab()
@@ -170,7 +179,7 @@ class GraduationCeremonyGUI:
                 for child in self.window.winfo_children():
                     child.destroy()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _is_student(self) -> bool:
         """True only when the signed-in user's role is 'student'.
@@ -315,7 +324,7 @@ class GraduationCeremonyGUI:
                 try:
                     w.config(state="disabled")
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
     def _reload_student_tab(self):
         """Populate the self-service tab from the student's own records."""
@@ -488,6 +497,50 @@ class GraduationCeremonyGUI:
         messagebox.showinfo(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.gown_order_paid', default="Gown order paid"), msg)
 
     # =============================================================== Tab 1
+    def _build_eligibility_tab(self):
+        """Graduation Audit — is this student eligible to graduate.
+
+        Hosted from the Degree Audit GUI rather than reimplemented: the
+        audit rules, checklist and report already live there and are used
+        by advisers too. Built headless into this frame, the same way
+        Course Management embeds that GUI.
+        """
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text=_t(
+            'gui.academics.course_management_gui.graduation_ceremony.tabs.eligibility',
+            default="0. Eligibility"))
+        try:
+            from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.degree_audit_gui import (
+                DegreeAuditGUI,
+            )
+            audit = object.__new__(DegreeAuditGUI)
+            audit.root = self.window
+            audit.auth = getattr(self, "auth", None)
+            try:
+                from education_system.systems.university.domains.academics.domain.services.degree_audit.degree_audit_core import (
+                    initialize_degree_audit_database,
+                )
+                initialize_degree_audit_database()
+            except Exception:
+                logger.debug("degree audit db init skipped", exc_info=True)
+
+            # Only the graduation tab. The other four (progress,
+            # prerequisites, what-if, advising) are advising tools and stay
+            # in Degree Audit.
+            audit.notebook = ttk.Notebook(tab)
+            audit.notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+            audit.create_graduation_tab()
+            try:
+                audit.load_courses()
+            except Exception:
+                logger.debug("degree audit load_courses skipped", exc_info=True)
+            self._eligibility_gui = audit
+        except Exception as exc:
+            logger.exception("Could not embed the graduation audit")
+            ttk.Label(tab, justify="center", padding=30,
+                      text=("The graduation audit could not be loaded.\n\n"
+                            f"{exc}")).pack(expand=True)
+
     def _build_ceremonies_tab(self):
         tab = ttk.Frame(self.notebook, padding=10)
         self.notebook.add(tab, text=_t('gui.academics.course_management_gui.graduation_ceremony.tabs.value_1_ceremonies', default="1. Ceremonies"))
@@ -623,14 +676,14 @@ class GraduationCeremonyGUI:
         try:
             self._cer_deadline.delete(0, tk.END)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _set_date_widget(self, widget, value):
         """Set a date widget (tkcalendar DateEntry or plain Entry) from a string."""
         try:
             widget.delete(0, tk.END)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         if not value:
             return
         if _HAS_TKCALENDAR and isinstance(widget, DateEntry):
@@ -638,11 +691,11 @@ class GraduationCeremonyGUI:
                 widget.set_date(value)
                 return
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
         try:
             widget.insert(0, value)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     def _set_venue(self, value):
         value = (value or '').strip()
@@ -798,7 +851,7 @@ class GraduationCeremonyGUI:
         form.pack(fill=tk.X)
 
         ttk.Label(form, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky="e", padx=6, pady=4)
-        self.rsvp_sid = ttk.Entry(form, width=18)
+        self.rsvp_sid = attach_picker(form, 'student', width=32)
         self.rsvp_sid.grid(row=0, column=1, sticky="w", padx=6)
 
         ttk.Label(form, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.status', default="Status:")).grid(row=0, column=2, sticky="e", padx=6)
@@ -925,7 +978,7 @@ class GraduationCeremonyGUI:
         form.pack(fill=tk.X)
 
         ttk.Label(form, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky="e", padx=6, pady=4)
-        self.gown_sid = ttk.Entry(form, width=18)
+        self.gown_sid = attach_picker(form, 'student', width=32)
         self.gown_sid.grid(row=0, column=1, sticky="w", padx=6)
 
         ttk.Label(form, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.gown_size', default="Gown size:")).grid(row=0, column=2, sticky="e", padx=6)
@@ -1274,11 +1327,11 @@ class GraduationCeremonyGUI:
         package.pack(fill=tk.X)
 
         ttk.Label(package, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky="e", padx=6, pady=4)
-        self.rec_sid = ttk.Entry(package, width=14)
+        self.rec_sid = attach_picker(package, 'student', width=30)
         self.rec_sid.grid(row=0, column=1, sticky="w", padx=6)
 
         ttk.Label(package, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.course_award', default="Course / award:")).grid(row=0, column=2, sticky="e", padx=6)
-        self.rec_course = ttk.Entry(package, width=28)
+        self.rec_course = attach_picker(package, 'course', width=30)
         self.rec_course.grid(row=0, column=3, sticky="w", padx=6)
 
         ttk.Label(package, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.classification', default="Classification:")).grid(row=0, column=4, sticky="e", padx=6)
@@ -1291,12 +1344,13 @@ class GraduationCeremonyGUI:
         self.rec_class.grid(row=0, column=5, sticky="w", padx=6)
 
         ttk.Label(package, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.academic_year', default="Academic year:")).grid(row=1, column=0, sticky="e", padx=6)
-        self.rec_year = ttk.Entry(package, width=14)
+        self.rec_year = attach_combo(package, academic_year_values(), width=12)
+        self.rec_year.set(academic_year_values()[2])
         self.rec_year.grid(row=1, column=1, sticky="w", padx=6)
 
         ttk.Label(package, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.grad_year', default="Grad. year:")).grid(row=1, column=2, sticky="e", padx=6)
-        self.rec_grad_year = ttk.Entry(package, width=8)
-        self.rec_grad_year.insert(0, str(datetime.now().year))
+        self.rec_grad_year = attach_combo(package, recent_years(ahead=5, back=2), width=8)
+        self.rec_grad_year.set(str(datetime.now().year))
         self.rec_grad_year.grid(row=1, column=3, sticky="w", padx=6)
 
         ttk.Button(package, text=_t('gui.academics.course_management_gui.graduation_ceremony.buttons.issue_full_conferral_package', default="🎁 Issue full conferral package"),
@@ -1334,7 +1388,7 @@ class GraduationCeremonyGUI:
         token.pack(fill=tk.X, pady=(8, 0))
 
         ttk.Label(token, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky="e", padx=6, pady=4)
-        self.tok_sid = ttk.Entry(token, width=14)
+        self.tok_sid = attach_picker(token, 'student', width=30)
         self.tok_sid.grid(row=0, column=1, sticky="w", padx=6)
 
         ttk.Label(token, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.employer_name', default="Employer name:")).grid(row=0, column=2, sticky="e", padx=6)

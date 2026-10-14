@@ -386,7 +386,7 @@ class ChaptersMixin:
 
         def admin_manage_chapters(self):
             """Admin controls for managing chapters"""
-            if not self.has_permission('admin') and not self.has_permission('manage_alumni'):
+            if not self.has_permission('manage_alumni'):
                 messagebox.showerror(_t('gui.learners.alumni.chapters.dialogs.permission_denied', default="Permission Denied"),
                                    _t('gui.learners.alumni.chapters.dialogs.you_don_t_have_permission_to_manage_chapters', default="You don't have permission to manage chapters."))
                 return

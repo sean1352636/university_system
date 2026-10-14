@@ -2,7 +2,8 @@
 
 import tkinter as tk
 
-from tkinter import ttk, messagebox, scrolledtext, filedialog
+from tkinter import ttk, scrolledtext, filedialog
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
 
 import json
 

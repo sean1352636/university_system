@@ -20,10 +20,15 @@ import tkinter as tk
 logger = logging.getLogger(__name__)
 
 
+def _has_session(auth) -> bool:
+    """True when ``auth`` carries a logged-in user the inbox can key off."""
+    return isinstance(getattr(auth, "current_user", None), dict)
+
+
 class NotificationsGUI:
     """Unread-inbox Hub window (bell button target)."""
 
-    def __init__(self, parent=None, on_unread_change=None):
+    def __init__(self, parent=None, on_unread_change=None, auth=None):
         # ``on_unread_change`` lets the caller (the shell) re-count as soon as
         # something is read here, rather than waiting for its 60s poll.
         self._on_unread_change = on_unread_change
@@ -32,11 +37,19 @@ class NotificationsGUI:
         self.window.geometry("1060x700")
         self.window.minsize(860, 550)
 
-        try:
-            from education_system.systems.university.infrastructure.shared_context import get_auth
-            self.auth = get_auth()
-        except Exception:
-            self.auth = None
+        # Prefer the auth session the caller is already holding. Nothing in the
+        # GUI login path populates ``shared_context``, so ``get_auth()`` either
+        # raises or hands back an instance that was never logged in - which is
+        # why the Hub reported "Must be logged in to view inbox" while the
+        # caller's own badge count (read straight off its ``auth``) was correct.
+        self.auth = auth if _has_session(auth) else None
+        if self.auth is None:
+            try:
+                from education_system.systems.university.infrastructure.shared_context import get_auth
+                fallback = get_auth()
+            except Exception:
+                fallback = None
+            self.auth = fallback if _has_session(fallback) else (auth or fallback)
 
         self._panel = None
         self._build_ui()
@@ -85,6 +98,6 @@ class NotificationsGUI:
             self._panel.refresh()
 
 
-def launch_notifications_gui(parent=None):
+def launch_notifications_gui(parent=None, auth=None):
     """Convenience launcher matching the pattern used by other domain GUIs."""
-    return NotificationsGUI(parent=parent)
+    return NotificationsGUI(parent=parent, auth=auth)

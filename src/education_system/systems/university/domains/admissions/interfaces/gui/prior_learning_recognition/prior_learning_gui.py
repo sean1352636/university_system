@@ -24,7 +24,7 @@ class PriorLearningGUI:
             try:
                 self.root.minsize(1200, 800)
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             self._owns_window = True
 
         try:

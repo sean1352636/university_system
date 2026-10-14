@@ -10,6 +10,9 @@ Provides interface for:
 """
 
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -654,7 +657,7 @@ class TravelGUI:
                     if req:
                         status = req.get('status', 'registered').replace('_', ' ').title()
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
 
             self.conf_tree.insert('', tk.END, values=(
                 c.get('registration_id'),
@@ -1166,9 +1169,6 @@ class TravelGUI:
             ))
 
 
-# Add simpledialog import for potential future use
-try:
-    from tkinter import simpledialog
-    tk.simpledialog = simpledialog
-except ImportError:
-    pass
+# ``tk.simpledialog`` is only an attribute once the submodule is
+# imported; this registers it without patching the tkinter module.
+import tkinter.simpledialog  # noqa: F401,E402

@@ -1,4 +1,5 @@
 """Report menu analysis and monthly revenue trend report."""
+from education_system.systems.university.shell.gui import report_view as _rv
 
 import sys
 import io
@@ -32,10 +33,6 @@ class ReportsMixin:
                     ('gui_verify_fix', 'Database Verification'),
                     ('gui_check_required_packages', 'Check Packages'),
                     ('gui_setup_collection_workflows', 'Setup Workflows'),
-                    ('gui_setup_email_config', 'Email Config'),
-                    ('gui_setup_sms_config', 'SMS Config'),
-                    ('gui_test_email_service', 'Test Email'),
-                    ('gui_test_sms_service', 'Test SMS'),
                 ],
                 'Database Operations': [
                     ('initialize_database', 'Initialize Database'),
@@ -92,7 +89,7 @@ class ReportsMixin:
             result_window.title(_("finance_gui.settings.admin_menu_analysis_title"))
             result_window.geometry("700x500")
 
-            text_widget = ScrolledText(result_window, font=('Courier', 10), wrap='word')
+            text_widget = _rv.TextReportView(result_window, font=('Courier', 10), wrap='word')
             text_widget.pack(fill='both', expand=True, padx=10, pady=10)
             text_widget.insert('1.0', report)
             text_widget.config(state='disabled')
@@ -204,7 +201,7 @@ class ReportsMixin:
             result_window.title(_("finance_gui.settings.reports_menu_analysis_title"))
             result_window.geometry("700x600")
 
-            text_widget = ScrolledText(result_window, font=('Courier', 10), wrap='word')
+            text_widget = _rv.TextReportView(result_window, font=('Courier', 10), wrap='word')
             text_widget.pack(fill='both', expand=True, padx=10, pady=10)
             text_widget.insert('1.0', report)
             text_widget.config(state='disabled')

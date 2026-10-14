@@ -1,31 +1,13 @@
-"""Shop management GUI package — public API.
+"""Moved to ``education_system.systems.university.plugins.campus_commerce.interfaces.gui.shop_management_gui`` (campus commerce plugin).
 
-Aggregates the package's main app class (``UniversityShopGUI``) and the
-high-level entry points (``run_gui_mode``, ``run_cli_mode``,
-``integrate_gui_with_main``) so the canonical import is:
-
-    from education_system.systems.university.domains.operations.interfaces.gui.commerce.shop_management_gui \\
-        import UniversityShopGUI, run_gui_mode
-
-Sub-area dialogs (discount editor, product/inventory/order/report managers,
-auth helper, email notifications, utils) live in sibling modules — import
-those directly when you need them, e.g.::
-
-    from .discount_manager import DiscountEditDialog
-
-This is the canonical aggregator, not a deprecated shim.
+A mirror, not an alias: an aliased package would resolve this package's
+submodules through the new ``__path__`` and load each one a second time.
+Submodules are aliased individually; this copies the package's names.
 """
+# layout-shim: education_system.systems.university.plugins.campus_commerce.interfaces.gui.shop_management_gui
+import importlib as _importlib
 
-from education_system.systems.university.domains.operations.interfaces.gui.commerce.shop_management_gui.main_gui import (
-    UniversityShopGUI,
-    integrate_gui_with_main,
-    run_cli_mode,
-    run_gui_mode,
-)
-
-__all__ = [
-    "UniversityShopGUI",
-    "run_gui_mode",
-    "run_cli_mode",
-    "integrate_gui_with_main",
-]
+_new = _importlib.import_module("education_system.systems.university.plugins.campus_commerce.interfaces.gui.shop_management_gui")
+globals().update({k: v for k, v in vars(_new).items()
+                  if not (k.startswith("__") and k.endswith("__"))})
+del _importlib, _new

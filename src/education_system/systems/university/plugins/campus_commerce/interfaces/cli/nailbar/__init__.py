@@ -1,0 +1,1 @@
+"""Nail Bar CLI interface."""

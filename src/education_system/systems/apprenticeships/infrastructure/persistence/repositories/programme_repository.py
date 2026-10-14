@@ -4,22 +4,40 @@ from __future__ import annotations
 
 from typing import Any
 
+from education_system.systems.apprenticeships.domain.programmes.curriculum import (
+    ProgrammeModule,
+)
 from education_system.systems.apprenticeships.domain.programmes.models import (
     KSB,
     OccupationalDuty,
     Programme,
 )
+from education_system.systems.apprenticeships.domain.programmes.versions import version_key
 from education_system.systems.apprenticeships.infrastructure.persistence.repositories.base import (
     QueryBuilder,
     col,
     connect,
     init_db,
+    to_float,
     to_int,
 )
 
 _FIELDS = (
     "reference", "title", "level", "funding_band", "duration_months",
     "epa_methods", "sector", "description", "status",
+    "version", "supersedes_programme_id",
+)
+
+_MODULE_FIELDS = (
+    "programme_id", "stage", "position", "title", "description", "ksb_codes",
+    "planned_hours",
+)
+
+# Copied verbatim when a new version is cut. Status, version and the
+# supersedes link are set by clone_version, not copied.
+_CLONED_FIELDS = (
+    "reference", "title", "level", "funding_band", "duration_months",
+    "epa_methods", "sector", "description",
 )
 
 _KSB_FIELDS = ("programme_id", "code", "ksb_type", "description", "duty_ref")
@@ -64,6 +82,23 @@ def _map(row: Any) -> Programme:
         status=col(row, "status", "Draft"),
         created_at=col(row, "created_at", ""),
         updated_at=col(row, "updated_at", ""),
+        version=col(row, "version") or "1.0",
+        supersedes_programme_id=col(row, "supersedes_programme_id"),
+    )
+
+
+def _map_module(row: Any) -> ProgrammeModule:
+    return ProgrammeModule(
+        module_id=row["module_id"],
+        programme_id=row["programme_id"],
+        title=row["title"],
+        stage=col(row, "stage", "Year 1"),
+        position=to_int(col(row, "position"), 1),
+        description=col(row, "description"),
+        ksb_codes=col(row, "ksb_codes"),
+        planned_hours=to_float(col(row, "planned_hours")),
+        created_at=col(row, "created_at", ""),
+        updated_at=col(row, "updated_at", ""),
     )
 
 
@@ -104,20 +139,42 @@ def get_by_reference(reference: str) -> Programme | None:
     """Find a standard by its published reference, such as ``ST0119``.
 
     Matched case-insensitively: references are stored upper-cased, but
-    this is what the duplicate check calls, and it must not depend on the
-    caller having normalised the value first.
+    this must not depend on the caller having normalised the value
+    first. Every version of a standard shares its reference, so this
+    returns the one to use now: the Active version if there is one,
+    otherwise the newest.
     """
+    versions = list_versions(reference)
+    if not versions:
+        return None
+    active = [p for p in versions if p.status == "Active"]
+    return (active or versions)[-1]
+
+
+def get_by_reference_and_version(reference: str, version: str) -> Programme | None:
     init_db()
     with connect() as conn:
         row = conn.execute(
-            "SELECT * FROM programmes WHERE UPPER(reference) = UPPER(?)", (reference,)
+            "SELECT * FROM programmes WHERE UPPER(reference) = UPPER(?) AND version = ?",
+            (reference, version),
         ).fetchone()
     return _map(row) if row else None
+
+
+def list_versions(reference: str) -> list[Programme]:
+    """Every version of one standard, oldest first (1.9 before 1.10)."""
+    init_db()
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT * FROM programmes WHERE UPPER(reference) = UPPER(?)", (reference,)
+        ).fetchall()
+    return sorted((_map(r) for r in rows), key=lambda p: (version_key(p.version), p.programme_id))
 
 
 def list_all(
     *,
     status: str | None = None,
+    statuses: list[str] | tuple[str, ...] | None = None,
     level: int | None = None,
     search: str | None = None,
     active_only: bool = False,
@@ -126,6 +183,7 @@ def list_all(
     init_db()
     qb = QueryBuilder()
     qb.add_if(status, "status = ?", status)
+    qb.add_in("status", list(statuses) if statuses else None)
     qb.add_if(level, "level = ?", level)
     if active_only:
         qb.add("status = 'Active'")
@@ -134,9 +192,12 @@ def list_all(
         qb.add("(reference LIKE ? OR title LIKE ? OR sector LIKE ?)", term, term, term)
     with connect() as conn:
         rows = conn.execute(
-            f"SELECT * FROM programmes {qb.where} ORDER BY level, title", qb.args
+            f"SELECT * FROM programmes {qb.where} ORDER BY level, title, reference", qb.args
         ).fetchall()
-    return [_map(r) for r in rows]
+    return sorted(
+        (_map(r) for r in rows),
+        key=lambda p: (p.level, p.title, p.reference, version_key(p.version)),
+    )
 
 
 def count_apprentices(programme_id: int) -> int:
@@ -325,3 +386,138 @@ def delete_duty(duty_id: int) -> None:
     init_db()
     with connect() as conn:
         conn.execute("DELETE FROM occupational_duties WHERE duty_id = ?", (duty_id,))
+
+
+# ── Curriculum modules ──────────────────────────────────────────────
+
+def list_modules(programme_id: int) -> list[ProgrammeModule]:
+    """A standard's modules in stored order; see curriculum.ordered for delivery order."""
+    init_db()
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT * FROM programme_modules WHERE programme_id = ? "
+            "ORDER BY position, module_id",
+            (programme_id,),
+        ).fetchall()
+    return [_map_module(r) for r in rows]
+
+
+def get_module(module_id: int) -> ProgrammeModule | None:
+    init_db()
+    with connect() as conn:
+        row = conn.execute(
+            "SELECT * FROM programme_modules WHERE module_id = ?", (module_id,)
+        ).fetchone()
+    return _map_module(row) if row else None
+
+
+def create_module(payload: dict[str, Any]) -> int:
+    init_db()
+    columns = [f for f in _MODULE_FIELDS if f in payload]
+    placeholders = ", ".join("?" for _ in columns)
+    with connect() as conn:
+        cur = conn.execute(
+            f"INSERT INTO programme_modules ({', '.join(columns)}) VALUES ({placeholders})",
+            [payload[c] for c in columns],
+        )
+        return int(cur.lastrowid)
+
+
+def update_module(module_id: int, payload: dict[str, Any]) -> None:
+    init_db()
+    columns = [f for f in _MODULE_FIELDS if f in payload]
+    if not columns:
+        return
+    assignments = ", ".join(f"{c} = ?" for c in columns)
+    with connect() as conn:
+        conn.execute(
+            f"UPDATE programme_modules SET {assignments}, updated_at = datetime('now') "
+            "WHERE module_id = ?",
+            [*(payload[c] for c in columns), module_id],
+        )
+
+
+def delete_module(module_id: int) -> None:
+    """Remove a module. Objectives already applied from it stay on the plans."""
+    init_db()
+    with connect() as conn:
+        conn.execute("DELETE FROM programme_modules WHERE module_id = ?", (module_id,))
+
+
+# ── Curriculum applied to apprentices ───────────────────────────────
+
+def applied_module_ids(apprentice_id: int) -> set[int]:
+    """Modules already applied to this apprentice's learning plan."""
+    init_db()
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT module_id FROM curriculum_applications WHERE apprentice_id = ?",
+            (apprentice_id,),
+        ).fetchall()
+    return {int(r["module_id"]) for r in rows}
+
+
+def record_application(
+    *,
+    apprentice_id: int,
+    module_id: int,
+    objective_id: int | None,
+    item_id: int | None,
+    applied_by: str,
+) -> None:
+    """Note that a module is on an apprentice's plan. A repeat is ignored."""
+    init_db()
+    with connect() as conn:
+        conn.execute(
+            """INSERT OR IGNORE INTO curriculum_applications
+                   (apprentice_id, module_id, objective_id, item_id, applied_by)
+               VALUES (?, ?, ?, ?, ?)""",
+            (apprentice_id, module_id, objective_id, item_id, applied_by),
+        )
+
+
+# ── Versions ────────────────────────────────────────────────────────
+
+def clone_version(source_id: int, *, version: str, status: str) -> int:
+    """Cut a new version of a standard, and supersede the old one.
+
+    One transaction: the new row, its KSBs, duties and curriculum
+    modules, and the old row's move to 'Superseded' all land together
+    or not at all — a half-made version would leave a standard with no
+    KSBs, or two live versions.
+    """
+    init_db()
+    fields = ", ".join(_CLONED_FIELDS)
+    with connect() as conn:
+        cur = conn.execute(
+            f"""INSERT INTO programmes ({fields}, status, version, supersedes_programme_id)
+                SELECT {fields}, ?, ?, programme_id FROM programmes
+                 WHERE programme_id = ?""",  # noqa: S608 - fixed column list
+            (status, version, source_id),
+        )
+        new_id = int(cur.lastrowid)
+        conn.execute(
+            """INSERT INTO programme_ksbs (programme_id, code, ksb_type, description, duty_ref)
+               SELECT ?, code, ksb_type, description, duty_ref
+                 FROM programme_ksbs WHERE programme_id = ?""",
+            (new_id, source_id),
+        )
+        conn.execute(
+            """INSERT INTO occupational_duties (programme_id, code, description)
+               SELECT ?, code, description FROM occupational_duties WHERE programme_id = ?""",
+            (new_id, source_id),
+        )
+        conn.execute(
+            """INSERT INTO programme_modules
+                   (programme_id, stage, position, title, description, ksb_codes,
+                    planned_hours)
+               SELECT ?, stage, position, title, description, ksb_codes, planned_hours
+                 FROM programme_modules WHERE programme_id = ?""",
+            (new_id, source_id),
+        )
+        conn.execute(
+            "UPDATE programmes SET status = 'Superseded', updated_at = datetime('now') "
+            "WHERE programme_id = ?",
+            (source_id,),
+        )
+        return new_id

@@ -71,6 +71,7 @@ def init_admissions_crm_system_db():
                 ).fetchall()
             }
             if column not in columns:
+                # db-audit: ignore[DBW001] - loop over a literal table
                 cursor.execute(
                     f"ALTER TABLE admission_applications "
                     f"ADD COLUMN {column} {definition}"

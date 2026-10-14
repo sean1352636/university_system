@@ -127,12 +127,14 @@ class StudentTab(ttk.Frame):
         # Button frame
         btn_frame = ttk.Frame(self)
         btn_frame.pack(fill="x", padx=10, pady=5)
-        ttk.Button(btn_frame, text="Add Student", command=self.add_student).pack(side="left", padx=2)
-        ttk.Button(btn_frame, text="Update", command=self.update_student).pack(side="left", padx=2)
-        ttk.Button(btn_frame, text="Delete", command=self.delete_student).pack(side="left", padx=2)
         ttk.Button(btn_frame, text="Clear Form", command=self.clear_form).pack(side="left", padx=2)
         ttk.Button(btn_frame, text="Refresh", command=self.refresh).pack(side="left", padx=2)
         ttk.Button(btn_frame, text="Submit as APL evidence", command=self.submit_as_apl).pack(side="left", padx=2)
+        ttk.Label(
+            btn_frame,
+            text="Student records are managed in Student Records — this tab is read-only.",
+            foreground="#666",
+        ).pack(side="left", padx=(12, 2))
 
         # Search
         search_frame = ttk.Frame(self)
@@ -175,58 +177,6 @@ class StudentTab(ttk.Frame):
             messagebox.showerror("Invalid Input", "Year must be an integer and GPA must be a number.")
             return None
 
-    def add_student(self):
-        data = self.get_form_data()
-        if not data:
-            return
-        if not all([data["student_id"], data["first_name"], data["last_name"], data["email"], data["course"]]):
-            messagebox.showerror("Missing Fields", "Please fill in all required fields.")
-            return
-        try:
-            self.db.execute("""
-                INSERT INTO students (student_id, first_name, last_name, email_address, course, year_of_study, gpa)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, tuple(data.values()))
-            messagebox.showinfo("Success", "Student added successfully.")
-            self.clear_form()
-            self.refresh()
-        except sqlite3.IntegrityError:
-            messagebox.showerror("Error", "A student with this Student ID already exists.")
-
-    def update_student(self):
-        selected = self.tree.selection()
-        if not selected:
-            messagebox.showwarning("No Selection", "Please select a student to update.")
-            return
-        data = self.get_form_data()
-        if not data:
-            return
-        student_pk = self.tree.item(selected[0])["values"][0]
-        # Cascade-delete student applications first since canonical
-        # `students` is keyed by TEXT student_id, with no FK to
-        # applications.student_id (the canonical schema isn't enforcing
-        # ON DELETE CASCADE here).
-        self.db.execute("DELETE FROM applications WHERE student_id=?", (student_pk,))
-        self.db.execute("""
-            UPDATE students SET student_id=?, first_name=?, last_name=?, email_address=?,
-                course=?, year_of_study=?, gpa=? WHERE student_id=?
-        """, (*data.values(), student_pk))
-        messagebox.showinfo("Success", "Student updated.")
-        self.refresh()
-
-    def delete_student(self):
-        selected = self.tree.selection()
-        if not selected:
-            messagebox.showwarning("No Selection", "Please select a student to delete.")
-            return
-        if not messagebox.askyesno("Confirm", "Delete this student and all their applications?"):
-            return
-        student_pk = self.tree.item(selected[0])["values"][0]
-        self.db.execute("DELETE FROM applications WHERE student_id=?", (student_pk,))
-        self.db.execute("DELETE FROM students WHERE student_id=?", (student_pk,))
-        self.refresh()
-        self.clear_form()
-
     def clear_form(self):
         for entry in self.entries.values():
             entry.delete(0, tk.END)
@@ -258,7 +208,7 @@ class StudentTab(ttk.Frame):
             if row:
                 employer = row[0] or employer
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         try:
             from education_system.systems.university.domains.admissions.domain.prior_learning_recognition.services.prior_learning_service import (
                 PriorLearningService,
@@ -815,7 +765,7 @@ class ApplicationTab(ttk.Frame):
                 try:
                     display[5] = display[5][:10]
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
             self.tree.insert("", "end", values=display)
 
 
@@ -1107,7 +1057,7 @@ class ApprenticeshipApp(tk.Tk):
             try:
                 self.db.close()
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
             try:
                 self._host.destroy()
             except tk.TclError:

@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.domains.pastoral.interfaces.gui.internship_management._imports import (
     messagebox, scrolledtext, tk, ttk, sqlite3, get_connection,
@@ -525,6 +529,16 @@ CV Filename: {app_data[5]}
         except sqlite3.Error as e:
             messagebox.showerror(_t('gui.pastoral.internship_management.admin_applications.dialogs.database_error', default="Database Error"), f"Error loading application for review: {e}")
 
+    def _notify_application_status(self, app_details, new_status, feedback):
+        """Email the student about an application status change."""
+        if not app_details:
+            return
+        try:
+            from education_system.systems.university.infrastructure.email.email_service import send_internship_notification
+            send_internship_notification(app_details[0], app_details[1], new_status, feedback)
+        except Exception as e:
+            logger.warning(f"Failed to send internship status notification: {e}")
+
     def update_application_status(self, app_id, dialog, parent_window=None):
         """Update application status and feedback"""
         conn = None
@@ -562,6 +576,9 @@ CV Filename: {app_data[5]}
                     conn.commit()
                     conn.close()
                     conn = None
+                    # The status change is already committed, so notify before
+                    # handing off to the placement dialog (which returns early).
+                    self._notify_application_status(app_details, new_status, feedback)
                     # Create placement dialog
                     self.create_placement_dialog(app_details[0], app_details[1], dialog)
                     return
@@ -571,13 +588,7 @@ CV Filename: {app_data[5]}
             conn = None
 
             # Send internship status notification automatically
-            if app_details:
-                try:
-                    from education_system.systems.university.infrastructure.email.email_service import send_internship_notification
-                    send_internship_notification(app_details[0], app_details[1], new_status, feedback)
-                except Exception as e:
-                    import logging
-                    logging.warning(f"Failed to send internship status notification: {e}")
+            self._notify_application_status(app_details, new_status, feedback)
 
             messagebox.showinfo(_t('gui.pastoral.internship_management.admin_applications.dialogs.success', default="Success"), f"Application status updated to: {new_status}")
 
@@ -593,7 +604,7 @@ CV Filename: {app_data[5]}
                 try:
                     conn.close()
                 except Exception:
-                    pass
+                    logger.debug("Suppressed exception", exc_info=True)
             messagebox.showerror(_t('gui.pastoral.internship_management.admin_applications.dialogs.database_error', default="Database Error"), f"Error updating application: {e}")
 
     def create_placement_dialog(self, student_id, internship_id, parent_dialog):

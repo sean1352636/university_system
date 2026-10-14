@@ -66,6 +66,7 @@ class IntegrationMixin:
                 if submissions:
                     submission_ids = [s['id'] for s in submissions]
                     placeholders = ','.join('?' * len(submission_ids))
+                    # db-audit: ignore[DBW001] - join of placeholders
                     cursor.execute(f'''
                         SELECT * FROM ai_detector_results
                         WHERE submission_id IN ({placeholders})
@@ -147,6 +148,7 @@ class IntegrationMixin:
             # Get submissions to sync
             if submission_ids:
                 placeholders = ','.join('?' * len(submission_ids))
+                # db-audit: ignore[DBW001] - join of placeholders
                 cursor.execute(f'''
                     SELECT * FROM ai_detector_submissions WHERE id IN ({placeholders})
                 ''', submission_ids)

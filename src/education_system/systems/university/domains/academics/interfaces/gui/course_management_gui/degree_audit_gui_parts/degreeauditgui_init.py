@@ -3,6 +3,9 @@
 from .. import degree_audit_gui_shared as _shared
 globals().update({name: value for name, value in _shared.__dict__.items() if not name.startswith("__")})
 
+# Imported after the namespace splat so it cannot be shadowed.
+from .. import report_widgets as _report
+
 
 class DegreeAuditGUI:
     def __init__(self, parent, auth: UserAuth):
@@ -99,6 +102,11 @@ class DegreeAuditGUI:
                                  duration, appointment_type, topic, notes):
         """Send appointment confirmation to both student and advisor.
 
+        Returns ``{"sent": [...], "skipped": [...], "failed": [...]}`` so the
+        caller can tell the user which notifications actually went out. It
+        used to swallow every outcome, so a missing address and a delivered
+        email looked identical from the GUI.
+
         Delivery goes through the shared email system's template loader using
         the templates registered in ``templates/email_template_mapping.json``
         (``appointment_student`` / ``appointment_advisor`` →
@@ -139,18 +147,27 @@ class DegreeAuditGUI:
             "notes":            notes or "(no additional notes)",
         }
 
-        def _send(template_name, recipient_email):
+        # Report what actually happened so the window can confirm it, rather
+        # than the caller assuming both emails went out.
+        sent, skipped, failed = [], [], []
+
+        def _send(template_name, recipient_email, who):
             if not recipient_email:
+                skipped.append(who)
                 return
             try:
                 send_template_email(template_name, recipient_email, template_vars)
+                sent.append(f"{who} ({recipient_email})")
             except Exception as e:  # noqa: BLE001 - best-effort delivery
                 print(f"Could not send advising email '{template_name}': {e}")
+                failed.append(f"{who}: {e}")
 
-        if stu:
-            _send("appointment_student", stu[0])
-        if adv:
-            _send("appointment_advisor", adv[0])
+        _send("appointment_student", stu[0] if stu else None, "the student")
+        _send("appointment_advisor", adv[0] if adv else None, "the advisor")
+
+        if failed and not sent:
+            raise RuntimeError("; ".join(failed))
+        return {"sent": sent, "skipped": skipped, "failed": failed}
 
     def create_widgets(self):
         """Create all GUI widgets"""
@@ -158,11 +175,8 @@ class DegreeAuditGUI:
         main_frame = ttk.Frame(self.root, padding="10")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Close button frame - pack FIRST to reserve space at bottom
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(10, 0))
-        ttk.Button(button_frame, text=_("common.close_window"),
-                  command=self.root.destroy).pack(pady=5)
 
         # Title
         title = ttk.Label(main_frame, text=_("degree_audit.title"),
@@ -173,12 +187,15 @@ class DegreeAuditGUI:
         self.notebook = ttk.Notebook(main_frame)
         self.notebook.pack(fill=tk.BOTH, expand=True)
 
-        # Create tabs
+        # Create tabs. Degree Audit is advising: progress, prerequisites,
+        # what-if planning and appointments. The graduation audit moved to
+        # the Graduation GUI, which owns eligibility through to certificate;
+        # create_graduation_tab() stays defined because that GUI builds it
+        # from a headless instance of this class.
         self.create_progress_tab()
         self.create_prerequisites_tab()
         self.create_whatif_tab()
         self.create_advising_tab()
-        self.create_graduation_tab()
 
     def create_progress_tab(self):
         """Create Degree Progress tracking tab"""
@@ -293,17 +310,18 @@ class DegreeAuditGUI:
         ttk.Button(check_frame, text=_("degree_audit.buttons.check_prerequisites"),
                   command=self.check_prerequisites).grid(row=0, column=2, rowspan=2, padx=10, pady=5)
 
-        # Results display
-        results_frame = ttk.LabelFrame(tab, text=_("degree_audit.labels.prerequisite_check_results"), padding="10")
-        results_frame.pack(fill=tk.BOTH, expand=True, pady=5)
-
-        self.prereq_results_text = scrolledtext.ScrolledText(results_frame, wrap=tk.WORD,
-                                                             width=80, height=12)
-        self.prereq_results_text.pack(fill=tk.BOTH, expand=True)
-
-        # Add prerequisite frame
+        # "Add new prerequisite" is packed first, against the bottom, so the
+        # results area below can grow without pushing the form off-screen —
+        # which is what clipped the old fixed-height text box.
         add_frame = ttk.LabelFrame(tab, text=_("degree_audit.labels.add_new_prerequisite"), padding="10")
-        add_frame.pack(fill=tk.X, pady=5)
+        add_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=5)
+
+        # Results display: cards on a scrolling canvas rather than a fixed
+        # 12-line text box that clipped anything longer.
+        results_frame = ttk.LabelFrame(tab, text=_("degree_audit.labels.prerequisite_check_results"), padding="6")
+        results_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+        self.prereq_results = _report.scrollable(results_frame)
+        self._prereq_placeholder()
 
         ttk.Label(add_frame, text=_("degree_audit.labels.course")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
         self.prereq_course_entry = ttk.Entry(add_frame, width=25)
@@ -319,6 +337,16 @@ class DegreeAuditGUI:
 
         ttk.Button(add_frame, text=_("degree_audit.buttons.add_prerequisite"),
                   command=self.add_prerequisite).grid(row=0, column=6, padx=10, pady=5)
+
+    def _prereq_placeholder(self):
+        """Empty state for the prerequisite results area."""
+        _report.clear(self.prereq_results)
+        body = _report.card(self.prereq_results, accent=_report.MUTED)
+        tk.Label(body,
+                 text="Select a student and one of their modules, then click "
+                      "Check Prerequisites.",
+                 bg=_report.CARD, fg=_report.MUTED,
+                 font=(_report.FONT, 9)).pack(anchor="w")
 
     def create_whatif_tab(self):
         """Create What-If Scenarios tab"""
@@ -372,10 +400,11 @@ class DegreeAuditGUI:
         ttk.Button(button_frame, text=_("degree_audit.buttons.analyze"),
                   command=self.analyze_whatif).pack(side=tk.LEFT, padx=5)
 
-        # Analysis results
+        # Saved scenarios list. The analysis itself opens in its own window
+        # (see analyze_whatif) rather than filling a text box down here.
         results_frame = ttk.LabelFrame(tab, text=_("degree_audit.labels.scenario_analysis_results"), padding="10")
         results_frame.pack(fill=tk.BOTH, expand=True, pady=5)
-
-        self.whatif_results_text = scrolledtext.ScrolledText(results_frame, wrap=tk.WORD,
-                                                             width=80, height=15)
-        self.whatif_results_text.pack(fill=tk.BOTH, expand=True)
+        ttk.Label(results_frame,
+                  text="Choose a student and a target course, then click Analyze. "
+                       "The comparison opens in its own window.",
+                  foreground="#7f8c8d").pack(anchor=tk.W, padx=4, pady=6)

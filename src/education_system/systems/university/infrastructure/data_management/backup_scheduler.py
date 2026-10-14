@@ -30,7 +30,7 @@ class BackupScheduler:
     def __init__(self, backup_dir: Optional[str] = None):
         from education_system import paths
 
-        self.backup_dir = Path(backup_dir) if backup_dir else Path(paths.UNIVERSITY_DATA_DIR) / 'backups'
+        self.backup_dir = Path(backup_dir) if backup_dir else Path(paths.UNIVERSITY_BACKUP_DATABASE_DIR)
         self.backup_dir.mkdir(parents=True, exist_ok=True)
 
         # Retention settings (days to keep backups)

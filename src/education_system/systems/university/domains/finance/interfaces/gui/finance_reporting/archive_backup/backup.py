@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.domains.finance.interfaces.gui.finance_reporting.archive_backup._imports import (
     tk, ttk, messagebox, filedialog, scrolledtext, ScrolledText, datetime, paths, _,
@@ -12,15 +16,15 @@ def create_database_backup(self, parent_window):
         import shutil
 
         # Get database path
-        db_path = paths.DEFAULT_DB_PATH
+        db_path = paths.UNIVERSITY_DEFAULT_DB_PATH
 
         # Create backup filename with timestamp
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         backup_filename = f"finance_backup_{timestamp}.db"
-        backup_path = paths.BACKUP_FINANCE_DIR / backup_filename
+        backup_path = paths.UNIVERSITY_BACKUP_FINANCE_DIR / backup_filename
 
         # Ensure backup directory exists
-        paths.BACKUP_FINANCE_DIR.mkdir(parents=True, exist_ok=True)
+        paths.UNIVERSITY_BACKUP_FINANCE_DIR.mkdir(parents=True, exist_ok=True)
 
         # Create progress dialog
         progress_window = tk.Toplevel(parent_window)
@@ -79,7 +83,7 @@ def create_database_backup(self, parent_window):
             log_activity('backup', 'database',
                        details={'backup_file': backup_filename, 'size': backup_size})
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     except Exception as e:
         messagebox.showerror(_t('gui.finance.finance_reporting.archive_backup.backup.dialogs.error', default="Error"),
@@ -118,7 +122,7 @@ def run_enhanced_backup_system(self):
     location_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.archive_backup.backup.labels.backup_location', default="Backup Location"), padding="10")
     location_frame.pack(fill=tk.X, pady=(0, 10))
 
-    self.backup_location = tk.StringVar(value=str(paths.BACKUP_FINANCE_DIR / ""))
+    self.backup_location = tk.StringVar(value=str(paths.UNIVERSITY_BACKUP_FINANCE_DIR / ""))
     location_entry_frame = ttk.Frame(location_frame)
     location_entry_frame.pack(fill=tk.X)
 

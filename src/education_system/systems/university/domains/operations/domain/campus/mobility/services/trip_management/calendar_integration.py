@@ -1,5 +1,108 @@
+import uuid
+
 from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management._common import sqlite3, get_text, logging, datetime, timedelta
 from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management.database import safe_db_operation
+
+# Calendar rows written for trips carry this event_type so the scheduling
+# GUIs and ``get_events_by_date_range(..., 'Trip')`` pick them up.
+TRIP_EVENT_TYPE = 'Trip'
+
+
+def _trip_event_fields(trip_name, destination, cost):
+    """Shared name/description for a trip's calendar event."""
+    name = get_text("mobility.trip_management.calendar.event_name", "Trip: {trip_name}").format(trip_name=trip_name)
+    description = get_text(
+        "mobility.trip_management.calendar.event_description",
+        "Destination: {destination}; Cost: £{cost:.2f}",
+    ).format(destination=destination, cost=cost or 0)
+    return name[:255], description
+
+
+def sync_trip_calendar_event(conn, trip_id, *, trip_name, destination,
+                             start_date, end_date, cost=None, created_by=None):
+    """Create or refresh the calendar event for ``trip_id``.
+
+    Runs on the caller's connection so the event is written in the same
+    transaction as the trip itself — a trip is never persisted without its
+    calendar entry, and never leaves a stray entry behind if the write fails.
+    Returns the event id, or ``None`` when the calendar table is unavailable.
+    """
+    name, description = _trip_event_fields(trip_name, destination, cost)
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    cursor = conn.cursor()
+
+    try:
+        row = cursor.execute(
+            "SELECT id FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') WHERE trip_id = ? LIMIT 1",
+            (trip_id,),
+        ).fetchone()
+
+        if row:
+            event_id = row[0]
+            cursor.execute(
+                "UPDATE unified_events "
+                "SET title = ?, event_date = ?, start_datetime = ?, end_datetime = ?, "
+                "    description = ?, event_type = ?, updated_at = ? "
+                "WHERE source_type = 'academic_calendar' AND source_event_id = ?",
+                (name, start_date, start_date, end_date, description,
+                 TRIP_EVENT_TYPE, now, event_id),
+            )
+            action = 'updated'
+        else:
+            event_id = str(uuid.uuid4())
+            cursor.execute(
+                "INSERT INTO unified_events "
+                "(source_event_id, title, event_date, start_datetime, end_datetime, description, event_type, created_at, updated_at, created_by, trip_id, source_type) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'academic_calendar')",
+                (event_id, name, start_date, start_date, end_date, description,
+                 TRIP_EVENT_TYPE, now, now, created_by, trip_id),
+            )
+            action = 'created'
+    except sqlite3.Error as e:
+        logging.warning(
+            "Could not sync calendar event for trip %s: %s", trip_id, e,
+        )
+        return None
+
+    _publish_calendar_changed(event_id, action, start_date)
+    return event_id
+
+
+def remove_trip_calendar_event(conn, trip_id):
+    """Drop the calendar event(s) for a deleted trip. Returns rows removed."""
+    try:
+        cursor = conn.cursor()
+        rows = cursor.execute(
+            "SELECT id, date_start FROM (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') WHERE trip_id = ?",
+            (trip_id,),
+        ).fetchall()
+        if not rows:
+            return 0
+        cursor.execute(
+            "DELETE FROM unified_events WHERE source_type = 'academic_calendar' AND (trip_id = ?)", (trip_id,)
+        )
+    except sqlite3.Error as e:
+        logging.warning(
+            "Could not remove calendar event for trip %s: %s", trip_id, e,
+        )
+        return 0
+
+    for event_id, date_start in rows:
+        _publish_calendar_changed(event_id, 'deleted', date_start)
+    return len(rows)
+
+
+def _publish_calendar_changed(event_id, action, date):
+    """Notify calendar subscribers; never fatal to the trip operation."""
+    try:
+        from education_system.systems.university.infrastructure.event_bus import (
+            publish, EVENT_CALENDAR_CHANGED,
+        )
+        publish(EVENT_CALENDAR_CHANGED, event_id=event_id,
+                event_type=TRIP_EVENT_TYPE, action=action, date=date)
+    except Exception:
+        logging.debug("Failed to publish calendar-changed for event_id=%s",
+                      event_id, exc_info=True)
 
 
 def create_trip_calendar_event(calendar_manager):
@@ -11,7 +114,7 @@ def create_trip_calendar_event(calendar_manager):
         cursor.execute('''
         SELECT t.id, t.trip_name, t.destination, t.start_date, t.end_date, t.status
         FROM trips t
-        LEFT JOIN academic_calendar_events tce ON t.id = tce.trip_id
+        LEFT JOIN (SELECT source_event_id AS id, title AS name, event_date AS date, start_datetime AS date_start, end_datetime AS date_end, description, event_type, created_at AS date_added, updated_at AS last_modified, created_by, start_time, end_time, location, audience, assignment_id, trip_id, organizer_name AS organizer, participants, status, country_code, region, is_active FROM unified_events uev WHERE uev.source_type = 'academic_calendar') tce ON t.id = tce.trip_id
         WHERE tce.trip_id IS NULL AND t.status IN ('planning', 'open')
         ORDER BY t.start_date
         ''')

@@ -149,7 +149,7 @@ def open_case(
                         action="held_for_misconduct",
                         case_id=new_id, source="cases_bus")
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
         except Exception as exc:
             logger.warning("submission-hold for AM failed: %s", exc)
 
@@ -445,7 +445,7 @@ def schedule_hearing(
             )
             return out
     except Exception:
-        pass  # soft-fail open
+        logger.debug("Suppressed exception", exc_info=True)
 
     try:
         import uuid
@@ -460,10 +460,9 @@ def schedule_hearing(
             descr_bits.append(f"Location: {location or 'TBD'}")
             descr_bits.append(f"Duration: {duration_minutes}m")
             conn.execute(
-                "INSERT INTO academic_calendar_events "
-                "(id, name, date, description, event_type, "
-                " date_added, last_modified, created_by) "
-                "VALUES (?, ?, ?, ?, 'hearing', ?, ?, ?)",
+                "INSERT INTO unified_events "
+                "(source_event_id, title, event_date, description, event_type, created_at, updated_at, created_by, source_type) "
+                "VALUES (?, ?, ?, ?, 'hearing', ?, ?, ?, 'academic_calendar')",
                 (event_id,
                  f"{kind} hearing — case #{case_id}",
                  when[:10],
@@ -480,7 +479,7 @@ def schedule_hearing(
                     event_type="hearing", action="created",
                     date=when[:10])
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
     except Exception as exc:
         out["ok"] = False
         out["reason"] = str(exc)

@@ -422,8 +422,25 @@ class InternshipsBrowseMixin:
             student_id = result[0]
 
             # Check eligibility for internship
-            if not self.check_student_eligibility(student_id):
+            eligible, eligibility_info = self.check_student_eligibility(student_id)
+            if not eligible:
                 conn.close()
+                if isinstance(eligibility_info, dict):
+                    reasons = []
+                    if not eligibility_info.get('gpa_meets_requirement', True):
+                        reasons.append(
+                            f"Your GPA is {eligibility_info.get('current_gpa')}, "
+                            f"but {eligibility_info.get('min_gpa_required')} is required."
+                        )
+                    if eligibility_info.get('missing_courses'):
+                        reasons.append(
+                            "Missing required courses: "
+                            + ", ".join(eligibility_info['missing_courses'])
+                        )
+                    detail = "\n".join(reasons) or _t('gui.pastoral.internship_management.internships.dialogs.you_do_not_meet_the_academic_requirements_for_this_internship', default="You do not meet the academic requirements for this internship.")
+                else:
+                    detail = str(eligibility_info)
+                messagebox.showerror(_t('gui.pastoral.internship_management.internships.dialogs.not_eligible', default="Not Eligible"), detail)
                 return
 
             # Check if already applied

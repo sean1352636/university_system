@@ -137,7 +137,11 @@ class TemplatesMixin:
                 instructions = template_data.get('instructions_template', '')
 
                 due_date_str = input("Due date (YYYY-MM-DD HH:MM): ")
-                due_date = datetime.strptime(due_date_str, "%Y-%m-%d %H:%M")
+                try:
+                    due_date = datetime.strptime(due_date_str, "%Y-%m-%d %H:%M")
+                except ValueError as e:
+                    print(f"Invalid date format: {e}")
+                    return
 
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -157,8 +161,6 @@ class TemplatesMixin:
 
         except (ValueError, IndexError):
             print("Invalid selection.")
-        except ValueError as e:
-            print(f"Invalid date format: {e}")
 
     # API methods
 

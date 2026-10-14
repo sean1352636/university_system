@@ -293,7 +293,7 @@ class EnhancedAuth:
                     for s in active_sessions
                 ]
             except Exception:
-                pass
+                logger.debug("Suppressed exception", exc_info=True)
 
             # Combine sessions and tokens
             all_sessions = sessions + [

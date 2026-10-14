@@ -45,9 +45,9 @@ def _handover_from_event(consumer_system: str, journey_id: str,
     The approved handover itself is deliberately *not* on the bus — see
     ``transitions.approve_handover``, which keeps SEND and medical detail
     out of long-lived, broadly readable bus rows. What arrives here is the
-    event payload; a caller that needs the full handover reads it back
-    with ``transitions.get_handover`` using the transition id carried
-    below.
+    event payload. A caller that needs the handover reads it back with
+    ``transitions.get_handover_for`` (role- and purpose-gated, and
+    audited), using the transition id carried below.
     """
     return HandoverRequest(
         journey_id=journey_id,

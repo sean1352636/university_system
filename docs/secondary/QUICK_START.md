@@ -44,7 +44,7 @@ python -c "import education_system.secondary_school; print('OK')"
 ### Option A: Launch the GUI
 
 ```bash
-python run.py --school --gui
+python -m education_system --school --gui
 ```
 
 This opens the tkinter-based desktop application with a scrollable sidebar listing all 51 modules.
@@ -52,7 +52,7 @@ This opens the tkinter-based desktop application with a scrollable sidebar listi
 ### Option B: Launch the CLI
 
 ```bash
-python run.py --school --cli
+python -m education_system --school --cli
 ```
 
 This starts the command-line interface for headless operation.
@@ -60,7 +60,7 @@ This starts the command-line interface for headless operation.
 ### Option C: Universal Login (All Systems)
 
 ```bash
-python run.py
+python -m education_system
 ```
 
 This launches the shared universal login window. After authenticating, select the Secondary School system to enter.

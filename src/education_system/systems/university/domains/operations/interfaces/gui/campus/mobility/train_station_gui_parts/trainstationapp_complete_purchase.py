@@ -353,7 +353,7 @@ class TrainStationApp:
             conn = self.db.get_connection()
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT id FROM unified_refunds WHERE source_type = 'train' AND reference_type = 'ticket' AND reference_id = ?
+                SELECT refund_id FROM unified_refunds WHERE source_type = 'train' AND reference_type = 'ticket' AND reference_id = ?
             """, (ticket_number,))
             existing_refund = cursor.fetchone()
             conn.close()

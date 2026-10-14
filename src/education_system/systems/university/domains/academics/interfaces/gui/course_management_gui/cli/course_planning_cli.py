@@ -53,23 +53,6 @@ def set_auth(auth_instance: Any) -> None:
     auth = auth_instance
 
 
-def _switch_to_planning_gui() -> None:
-    """Switch from CLI to Course Planning GUI."""
-    try:
-        import tkinter as tk
-        from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.course_planning_gui import CoursePlanningGUI
-        print("\nLaunching Course Planning GUI...")
-        root = tk.Tk()
-        root.title(_t('gui.academics.course_management_gui.cli.course_planning_cli.windows.course_planning_assistant', default="Course Planning Assistant"))
-        root.geometry("1400x900")
-        app = CoursePlanningGUI(root, auth=auth)
-        root.mainloop()
-    except ImportError as e:
-        print(f"\nCourse Planning GUI not available: {e}")
-        input("Press Enter to continue...")
-    except Exception as e:
-        print(f"\nError launching GUI: {e}")
-        input("Press Enter to continue...")
 
 
 def display_course_planning_menu() -> None:
@@ -127,7 +110,6 @@ def display_course_planning_menu() -> None:
             add_option("[Admin] Manage Course Offerings", "manage_offerings")
             add_option("[Admin] View Student Plans", "view_student_plans")
 
-        add_option("Switch to GUI", "switch_to_gui")
 
         print(f"  {option_num}. Back to Main Menu")
         print("=" * 70)
@@ -172,9 +154,6 @@ def display_course_planning_menu() -> None:
                     manage_offerings_menu()
                 elif option_key == "view_student_plans":
                     view_student_plans_admin_menu()
-                elif option_key == "switch_to_gui":
-                    _switch_to_planning_gui()
-                    return  # Exit CLI after launching GUI
             except Exception as e:
                 logger.error(f"Error in course planning menu: {e}")
                 print(f"\nError: {e}")

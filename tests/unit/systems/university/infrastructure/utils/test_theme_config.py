@@ -11,7 +11,7 @@ pytestmark = pytest.mark.gui
 import pytest
 import tkinter as tk
 from tkinter import ttk
-from education_system.systems.university.interfaces.gui.shell.theme_config import ThemeManager, get_theme_manager
+from education_system.systems.university.shell.gui.theme_config import ThemeManager, get_theme_manager
 
 
 @pytest.fixture

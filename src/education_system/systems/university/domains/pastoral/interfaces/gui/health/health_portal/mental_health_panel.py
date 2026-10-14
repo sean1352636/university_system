@@ -24,6 +24,9 @@ The panel exposes the seven CLI actions:
     * Track Wellness Progress           -> WellnessService.get_comprehensive_wellness_report /
                                            analyze_wellness_patterns
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -59,7 +62,7 @@ class MentalHealthWellnessPanel:
                 self._is_student = current.get("role") == "student"
                 self._default_student_id = str(current.get("id") or "")
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
         self._build()
 

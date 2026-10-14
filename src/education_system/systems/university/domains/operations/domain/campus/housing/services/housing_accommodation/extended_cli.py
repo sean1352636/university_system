@@ -1147,9 +1147,16 @@ def display_contracts_menu() -> None:
 
 
 def _contracts_upload() -> None:
-    asg_id = _prompt("Assignment ID")
+    # housing_contract_documents carries the same assignment foreign key as
+    # the checklist and guest-pass tables, so pick rather than type.
+    asg = _pick_assignment(active_only=False)
+    if not asg:
+        return
+    asg_id = asg['assignment_id']
+    print(f"Resident: {asg['student_name']} ({asg['student_id']}) - "
+          f"Room {asg['room_number']}, {asg['building_name']}")
     path = _prompt("Path to file")
-    if not asg_id or not path:
+    if not path:
         return
     if not Path(path).is_file():
         print("File not found.")
@@ -1205,9 +1212,14 @@ def display_checklists_menu() -> None:
 
 
 def _checklist_create(template: str) -> None:
-    asg_id = _prompt("Assignment ID")
-    if not asg_id:
+    # Same reason as _guests_new: housing_checklists has a foreign key onto
+    # housing_assignments, so a hand-typed id could only fail obscurely.
+    asg = _pick_assignment(active_only=(template == 'move-in'))
+    if not asg:
         return
+    asg_id = asg['assignment_id']
+    print(f"Resident: {asg['student_name']} ({asg['student_id']}) - "
+          f"Room {asg['room_number']}, {asg['building_name']}")
     cid = extras.create_checklist(asg_id, template)
     if cid:
         log_activity(f"CLI checklist {cid} ({template}) created for {asg_id}")
@@ -1305,9 +1317,17 @@ def _guests_list(status: str | None) -> None:
 
 
 def _guests_new() -> None:
-    asg_id = _prompt("Assignment ID (resident)")
+    # Pick from the live assignments rather than asking the operator to type
+    # an id: a mistyped id used to hit the housing_guest_passes foreign key
+    # and surface as a bare IntegrityError with nothing to act on.
+    asg = _pick_assignment(active_only=True)
+    if not asg:
+        return
+    asg_id = asg['assignment_id']
+    print(f"Resident: {asg['student_name']} ({asg['student_id']}) - "
+          f"Room {asg['room_number']}, {asg['building_name']}")
     guest_name = _prompt("Guest name")
-    if not asg_id or not guest_name:
+    if not guest_name:
         return
     relation = _prompt("Relation (optional)") or None
     id_type = _prompt("ID type (optional)") or None

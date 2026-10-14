@@ -1,19 +1,13 @@
-"""Shared church-management dependencies."""
+"""Moved to ``education_system.systems.university.plugins.community_services.interfaces.gui.church_management`` (community services plugin).
 
-import html
+A mirror, not an alias: an aliased package would resolve this package's
+submodules through the new ``__path__`` and load each one a second time.
+Submodules are aliased individually; this copies the package's names.
+"""
+# layout-shim: education_system.systems.university.plugins.community_services.interfaces.gui.church_management
+import importlib as _importlib
 
-import tkinter as tk
-
-from tkinter import ttk, messagebox, simpledialog, filedialog
-
-from datetime import datetime, timedelta
-
-import json
-
-import random
-
-import logging
-
-from education_system.systems.university.infrastructure.i18n import get_text as _t
-
-logger = logging.getLogger(__name__)
+_new = _importlib.import_module("education_system.systems.university.plugins.community_services.interfaces.gui.church_management")
+globals().update({k: v for k, v in vars(_new).items()
+                  if not (k.startswith("__") and k.endswith("__"))})
+del _importlib, _new

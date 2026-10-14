@@ -3,7 +3,9 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import make_toplevel
 import os
 import shutil
 import threading
@@ -295,7 +297,7 @@ class MaintenanceManager:
 
     def view_system_logs(self):
         """View system logs"""
-        log_window = tk.Toplevel(self.root)
+        log_window = make_toplevel(self.root)
         log_window.title(_t('gui.academics.assignment_system.maintenance.windows.system_logs', default="System Logs"))
         log_window.geometry("800x600")
 
@@ -533,7 +535,7 @@ class MaintenanceManager:
             return
 
         # Create progress window
-        cleanup_window = tk.Toplevel(self.root)
+        cleanup_window = make_toplevel(self.root)
         cleanup_window.title(_t('gui.academics.assignment_system.maintenance.windows.data_cleanup', default="Data Cleanup"))
         cleanup_window.geometry("400x300")
         cleanup_window.transient(self.root)
@@ -725,7 +727,7 @@ class MaintenanceManager:
         backup_type = self.backup_type_var.get()
 
         # Create progress dialog
-        progress_window = tk.Toplevel(self.root)
+        progress_window = make_toplevel(self.root)
         progress_window.title(_t('gui.academics.assignment_system.maintenance.windows.creating_backup', default="Creating Backup"))
         progress_window.geometry("500x200")
         progress_window.transient(self.root)

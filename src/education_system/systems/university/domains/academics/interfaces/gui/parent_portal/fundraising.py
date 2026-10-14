@@ -1,4 +1,8 @@
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
@@ -79,7 +83,7 @@ class DonationDialog:
                 campaigns = [row[0] for row in cursor.fetchall()]
             conn.close()
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
         campaign_combo['values'] = campaigns if campaigns else ['General Fund']
         if campaign_combo['values']:
             campaign_combo.current(0)
@@ -127,19 +131,19 @@ def donate_to_campaign(self):
     dialog = DonationDialog(self.root, self.children)
     if dialog.result:
         campaign, amount, child = dialog.result
-        messagebox.showinfo(_t("common.success"), _t("parent.fundraising.donation_thank_you", amount=f"{amount:.2f}", campaign=campaign))
+        messagebox.showinfo(_t("common.success"), _t("parent.fundraising.donation_thank_you", amount=f"{amount:.2f}", campaign=campaign, default="Donation Thank You {amount} {campaign}"))
 ParentPortalGUI.donate_to_campaign = donate_to_campaign
 
 def show_fundraising_interface(self):
     """Show fundraising interface"""
     self.clear_content()
-    self.update_status(_t("parent.fundraising.title"))
+    self.update_status(_t("parent.fundraising.title", default="===== FUNDRAISING ====="))
 
-    title = ttk.Label(self.content_frame, text=_t("parent.fundraising.campaigns_title"), style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t("parent.fundraising.campaigns_title", default="===== CAMPAIGNS ====="), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     # Active campaigns
-    campaigns_frame = ttk.LabelFrame(self.content_frame, text=_t("parent.fundraising.active_campaigns"), padding=15)
+    campaigns_frame = ttk.LabelFrame(self.content_frame, text=_t("parent.fundraising.active_campaigns", default="Active Campaigns"), padding=15)
     campaigns_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     try:
@@ -172,48 +176,48 @@ def show_fundraising_interface(self):
                     goal = float(campaign[1]) if campaign[1] else 0
                     current = float(campaign[2]) if campaign[2] else 0
                     progress = (current / goal * 100) if goal > 0 else 0
-                    ttk.Label(camp_frame, text=_t("parent.fundraising.goal_progress", goal=f"{goal:.2f}", current=f"{current:.2f}", progress=f"{progress:.1f}"),
+                    ttk.Label(camp_frame, text=_t("parent.fundraising.goal_progress", goal=f"{goal:.2f}", current=f"{current:.2f}", progress=f"{progress:.1f}", default="Goal Progress {current} {goal} {progress}"),
                              font=('Arial', 10, 'bold')).pack(anchor='w')
-                    end_date = campaign[3] or _t("parent.fundraising.not_set")
-                    ttk.Label(camp_frame, text=_t("parent.fundraising.ends_date", date=end_date),
+                    end_date = campaign[3] or _t("parent.fundraising.not_set", default="Not Set")
+                    ttk.Label(camp_frame, text=_t("parent.fundraising.ends_date", date=end_date, default="Ends Date {date}"),
                              font=('Arial', 9)).pack(anchor='w')
                     if campaign[4]:
                         ttk.Label(camp_frame, text=campaign[4], wraplength=600).pack(anchor='w', pady=3)
 
-                    ttk.Button(camp_frame, text=_t("parent.fundraising.contribute"),
+                    ttk.Button(camp_frame, text=_t("parent.fundraising.contribute", default="Contribute"),
                               command=lambda c=camp_name: self.contribute_to_fundraiser(c)).pack(anchor='e', pady=5)
             else:
-                ttk.Label(campaigns_frame, text=_t("parent.fundraising.no_active_campaigns"),
+                ttk.Label(campaigns_frame, text=_t("parent.fundraising.no_active_campaigns", default="No Active Campaigns."),
                          font=('Arial', 11)).pack(pady=50)
         else:
-            ttk.Label(campaigns_frame, text=_t("parent.fundraising.system_not_configured"),
+            ttk.Label(campaigns_frame, text=_t("parent.fundraising.system_not_configured", default="System Not Configured"),
                      font=('Arial', 11)).pack(pady=20)
 
         conn.close()
 
     except Exception as e:
-        ttk.Label(campaigns_frame, text=_t("parent.fundraising.error_loading", error=str(e)),
+        ttk.Label(campaigns_frame, text=_t("parent.fundraising.error_loading", error=str(e), default="Error Loading. {error}"),
                  font=('Arial', 10)).pack(pady=20)
 ParentPortalGUI.show_fundraising_interface = show_fundraising_interface
 
 def contribute_to_fundraiser(self, campaign_name):
     """Contribute to a fundraiser"""
-    amount = simpledialog.askfloat(_t("parent.fundraising.contribute"), _t("parent.fundraising.enter_amount", campaign=campaign_name))
+    amount = simpledialog.askfloat(_t("parent.fundraising.contribute", default="Contribute"), _t("parent.fundraising.enter_amount", campaign=campaign_name, default="Enter Amount:  {campaign}"))
     if amount:
-        messagebox.showinfo(_t("parent.fundraising.thank_you_title"),
-                           _t("parent.fundraising.contribution_thank_you", amount=f"{amount:.2f}", campaign=campaign_name))
+        messagebox.showinfo(_t("parent.fundraising.thank_you_title", default="===== THANK YOU ====="),
+                           _t("parent.fundraising.contribution_thank_you", amount=f"{amount:.2f}", campaign=campaign_name, default="Contribution Thank You {amount} {campaign}"))
 ParentPortalGUI.contribute_to_fundraiser = contribute_to_fundraiser
 
 def show_donations_history(self):
     """Show history of donations made by the parent"""
     self.clear_content()
-    self.update_status(_t("parent.fundraising.my_donations"))
+    self.update_status(_t("parent.fundraising.my_donations", default="My Donations"))
 
-    title = ttk.Label(self.content_frame, text=_t("parent.fundraising.donation_history"), style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t("parent.fundraising.donation_history", default="Donation History"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     # Donations display frame
-    donations_frame = ttk.LabelFrame(self.content_frame, text=_t("parent.fundraising.your_donations"), padding=15)
+    donations_frame = ttk.LabelFrame(self.content_frame, text=_t("parent.fundraising.your_donations", default="Your Donations"), padding=15)
     donations_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     try:
@@ -250,8 +254,8 @@ def show_donations_history(self):
 
                 tree.heading("Amount", text=_t("common.amount"))
                 tree.heading("Date", text=_t("common.date"))
-                tree.heading("Campaign", text=_t("parent.fundraising.campaign"))
-                tree.heading("Payment Method", text=_t("parent.fundraising.payment_method"))
+                tree.heading("Campaign", text=_t("parent.fundraising.campaign", default="Campaign"))
+                tree.heading("Payment Method", text=_t("parent.fundraising.payment_method", default="Payment Method"))
                 tree.heading("Type", text=_t("common.type"))
 
                 tree.column("Amount", width=100)
@@ -287,26 +291,26 @@ def show_donations_history(self):
                 summary_frame = ttk.Frame(self.content_frame)
                 summary_frame.pack(fill=tk.X, padx=20, pady=10)
 
-                ttk.Label(summary_frame, text=_t("parent.fundraising.total_donations", total=f"{total_donated:.2f}"),
+                ttk.Label(summary_frame, text=_t("parent.fundraising.total_donations", total=f"{total_donated:.2f}", default="Total Donations {total}"),
                          font=('Arial', 12, 'bold')).pack(side=tk.LEFT)
-                ttk.Label(summary_frame, text=_t("parent.fundraising.donation_count", count=len(donations)),
+                ttk.Label(summary_frame, text=_t("parent.fundraising.donation_count", count=len(donations), default="Donation Count {count}"),
                          font=('Arial', 10)).pack(side=tk.LEFT)
             else:
-                ttk.Label(donations_frame, text=_t("parent.fundraising.no_donations_found"),
+                ttk.Label(donations_frame, text=_t("parent.fundraising.no_donations_found", default="No Donations Found."),
                          font=('Arial', 11)).pack(pady=50)
-                ttk.Label(donations_frame, text=_t("parent.fundraising.make_donation_hint"),
+                ttk.Label(donations_frame, text=_t("parent.fundraising.make_donation_hint", default="Make Donation Hint"),
                          font=('Arial', 9, 'italic')).pack()
         else:
-            ttk.Label(donations_frame, text=_t("parent.fundraising.donation_system_not_configured"),
+            ttk.Label(donations_frame, text=_t("parent.fundraising.donation_system_not_configured", default="Donation System Not Configured"),
                      font=('Arial', 11)).pack(pady=50)
 
         conn.close()
 
     except Exception as e:
-        ttk.Label(donations_frame, text=_t("parent.fundraising.error_loading_donations", error=str(e)),
+        ttk.Label(donations_frame, text=_t("parent.fundraising.error_loading_donations", error=str(e), default="Error Loading Donations. {error}"),
                  font=('Arial', 10)).pack(pady=20)
 
     # Back button
-    ttk.Button(self.content_frame, text=_t("parent.fundraising.back_to_financial"),
+    ttk.Button(self.content_frame, text=_t("parent.fundraising.back_to_financial", default="Back To Financial"),
               command=self.show_financial_menu).pack(pady=10)
 ParentPortalGUI.show_donations_history = show_donations_history

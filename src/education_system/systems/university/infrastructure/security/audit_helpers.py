@@ -59,6 +59,7 @@ def safe_log_security_event(
     session_id: Optional[str] = None,
     *,
     required: bool = False,
+    conn: Optional[Any] = None,
 ) -> bool:
     """
     Log a security event to the immutable audit log.
@@ -77,6 +78,12 @@ def safe_log_security_event(
         ip_address: Client IP address
         user_agent: Client user agent string
         session_id: Session identifier
+        conn: An open connection whose transaction the audit write should
+            join. Pass this whenever the caller has already written on that
+            connection: SQLite allows one writer, so letting the audit open
+            its own transaction deadlocks against the caller's uncommitted
+            change. Sharing it also makes the record and its audit entry
+            commit together.
         required: When True (the correct choice on any mutation path), a write
             failure raises :class:`AuditWriteError` so the caller's transaction
             can roll back. When False, the failure is still alerted but the
@@ -103,6 +110,7 @@ def safe_log_security_event(
             ip_address=ip_address,
             user_agent=user_agent,
             session_id=session_id,
+            conn=conn,
         )
         return True
 

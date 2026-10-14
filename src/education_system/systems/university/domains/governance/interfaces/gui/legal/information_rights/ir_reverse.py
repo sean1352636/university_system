@@ -27,7 +27,7 @@ def _ensure_window(app) -> Optional[object]:
                 win.root.lift()
                 return win
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
     fn = getattr(app, "show_information_rights_gui", None)
     if callable(fn):
         try:
@@ -69,7 +69,7 @@ def log_sar_for_student(app, student_id: str | int,
         try:
             win.set_focus(reference=ref, tab="detail")
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
     return ref
 
 
@@ -103,7 +103,7 @@ def log_foi_from_audit_event(app, requester_name: str,
         try:
             win.set_focus(reference=ref, tab="detail")
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
     return ref
 
 
@@ -139,7 +139,7 @@ def log_communication_to_request(app, reference: str,
         try:
             win.set_focus(reference=reference, tab="detail")
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
     return True
 
 

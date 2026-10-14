@@ -2,19 +2,20 @@
 
 Apprenticeships only — `fe_college` has no interfaces.
 
-Four interface trees are laid out under
-`education_system/systems/apprenticeships/interfaces/`. Two are built,
-two are scaffolding.
+Two interface trees live under
+`education_system/systems/apprenticeships/interfaces/`, both built.
 
 | Tree | State |
 |---|---|
-| `cli/` | Built — 14 command modules, five role menus |
-| `gui/` | Built — 45 windows across five roles |
-| `api/` | Scaffolding — 24 empty modules, nothing imports them |
-| `portals/` | Scaffolding — 38 empty modules, nothing imports them |
+| `cli/` | Built — 35 command modules, five role menus |
+| `gui/` | Built — 59 window modules: five role packages, `system/`, and 20 `shared/` screens |
+
+The HTTP routes live outside the package, in
+`src/education_system/api/apprenticeships/`, and answer 501 until each
+is backed by a service. There is no web portal.
 
 See [`cli.md`](cli.md) and [`gui.md`](gui.md) for each in detail, and
-[`api.md`](api.md) for what the API tree would take.
+[`api.md`](api.md) for what the API would take.
 
 ## One menu tree, two renderings
 
@@ -66,7 +67,7 @@ switch.request_exit()
 
 ## One toolkit each, not one per module
 
-At forty-five windows and fourteen command modules, copying the Treeview
+At sixty windows and thirty-five command modules, copying the Treeview
 wiring, the modal scaffolding and the "catch ValidationError, show a
 messagebox" dance into every file would be the dominant cost. So:
 
@@ -105,9 +106,10 @@ because it has exactly one place it can take effect: date format
 desktop idle timeout. A setting a screen would quietly ignore is worse
 than no setting, so nothing else is offered.
 
-## Scaffolding
+## No placeholders
 
-`api/` and `portals/` are directory shape agreed up front: a docstring
-per module, no route registration, no imports. Apprenticeships is
-therefore absent from the unified REST API and from the web portal.
-Filling them is new work with its own design decisions, not wiring.
+`tests/unit/systems/apprenticeships/test_layout.py` fails on a
+docstring-only module or a star re-export anywhere in the package. The
+`interfaces/portals/` tree that used to hold 38 empty modules was
+removed in September 2026; a portal is new work with its own design
+decisions, and gets written up here before it is stubbed.

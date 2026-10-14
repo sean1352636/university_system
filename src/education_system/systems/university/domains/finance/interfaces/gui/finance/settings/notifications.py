@@ -1,4 +1,5 @@
 """Notification configuration, templates, email/SMS setup, and system info."""
+from education_system.systems.university.shell.gui import report_view as _rv
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -16,13 +17,22 @@ from education_system.systems.university.infrastructure.database.db import get_c
 
 from education_system.systems.university.domains.finance.interfaces.gui.finance.common_imports import (
     enhanced_notification_system,
-    setup_email_config,
-    setup_sms_config,
-    test_email_service,
-    test_sms_service,
 )
 
 from education_system.systems.university.domains.finance.interfaces.gui.finance.settings.currency import SUPPORTED_CURRENCIES
+
+
+def _communication_settings_removed(*_args, **_kwargs):
+    """Fail closed for stale callers after configuration moved out of finance."""
+    raise RuntimeError("Email and SMS configuration is managed in shared system settings")
+
+
+# Retain private call compatibility for old plugins without advertising or
+# displaying these duplicate controls in the finance GUI.
+setup_email_config = _communication_settings_removed
+setup_sms_config = _communication_settings_removed
+test_email_service = _communication_settings_removed
+test_sms_service = _communication_settings_removed
 
 
 class NotificationsMixin:
@@ -290,7 +300,7 @@ class NotificationsMixin:
             output = mystdout.getvalue()
             sys.stdout = old_stdout
 
-            text_widget = ScrolledText(dialog, height=25, width=70, font=('Courier', 10))
+            text_widget = _rv.TextReportView(dialog, height=25, width=70, font=('Courier', 10))
             text_widget.pack(fill='both', expand=True, padx=10, pady=10)
             text_widget.insert('1.0', output)
 

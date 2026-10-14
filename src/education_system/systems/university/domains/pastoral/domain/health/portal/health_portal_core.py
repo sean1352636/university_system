@@ -65,7 +65,7 @@ except ImportError:
 from education_system.systems.university.domains.pastoral.domain.health.records.data_purge  import update_retention_policy, archive_old_data, data_purge_menu, view_purgeable_data, purge_expired_data, retention_compliance_report, compliance_monitoring, data_retention_management, view_retention_policies, custom_data_purge
 from education_system.systems.university.domains.pastoral.domain.health.records.quality_assurance  import generate_quality_metrics_report, clinical_quality_indicators, quality_assurance_menu, data_quality_metrics, show_quality_metrics
 from education_system.systems.university.domains.pastoral.domain.health.records.backup_export  import export_vaccination_records, export_appointment_data, export_lab_results, export_custom_dataset, restore_from_backup, manage_backup_schedule, backup_recovery_menu, create_database_backup, view_backup_history, export_data_menu, export_health_records, bulk_import_records
-from education_system.systems.university.domains.pastoral.domain.health.appointments.appointment_booking  import manage_provider_schedules, add_provider_schedule, view_provider_schedules, show_upcoming_appointments, provider_dashboard, todays_schedule, manage_screening_schedules, create_screening_schedule, schedule_screening_appointment, manage_provider_time_off, schedule_templates, provider_availability_report, update_provider_schedule, provider_statistics, schedule_appointment, view_appointments, update_appointment_status, generate_provider_utilization_report, generate_appointment_schedule_report, generate_provider_performance_report, show_appointment_utilization_stats, analyze_provider_workload
+from education_system.systems.university.domains.pastoral.domain.health.appointments.appointment_booking  import manage_provider_schedules, add_provider_schedule, view_provider_schedules, show_upcoming_appointments, provider_dashboard, todays_schedule, manage_screening_schedules, create_screening_schedule, schedule_screening_appointment, manage_provider_time_off, schedule_templates, provider_availability_report, update_provider_schedule, provider_statistics, schedule_appointment, view_appointments, update_appointment, update_appointment_status, generate_provider_utilization_report, generate_appointment_schedule_report, generate_provider_performance_report, show_appointment_utilization_stats, analyze_provider_workload
 from education_system.systems.university.domains.pastoral.domain.health.records.admin.advisories import add_health_advisory, view_health_advisories
 from education_system.systems.university.domains.pastoral.domain.health.records.admin.permissions import manage_health_records_enhanced, setup_health_permissions
 from education_system.systems.university.domains.pastoral.domain.health.records.analytics.population import generate_population_health_report, show_population_health_metrics, generate_student_health_summary
@@ -709,235 +709,185 @@ def display_health_portal_menu(auth=None):
             auth.logout()
             return auth
 
-        print(f"\n===== {get_text('health.title', default='Enhanced University Health Portal')} =====")
-        print(get_text('health.logged_in', default='Logged in as: {username} ({role})').format(username=auth.current_user['username'], role=auth.current_user['role']))
+        # ── Build the categories ────────────────────────────────────────
+        # This menu used to print all ~46 actions as one flat numbered list,
+        # which ran off the screen and made the numbering shift as soon as a
+        # permission changed. It is now grouped the same way the main
+        # university CLI is: pick a category, then pick an action inside it,
+        # with 0 to go back. A category with nothing in it (because the user
+        # lacks the permissions) is never shown at all.
+        can = auth.check_permission
+        role = auth.current_user.get('role', '')
 
-        # Display menu options based on user role/permissions
-        menu_options = []
+        categories = []
 
-        # Health Records section (enhanced)
-        if auth.check_permission('manage_health_records') or auth.check_permission('view_own_health_record') or auth.check_permission('view_any_health_record'):
-            print("\n📋 Health Records & Clinical Data:")
+        def category(title, items):
+            """Register *title* if any of its items survived the permission filter."""
+            live = [entry for entry in items if entry]
+            if live:
+                categories.append({'title': title, 'items': live})
 
-            if auth.check_permission('manage_health_records'):
-                print(f"{len(menu_options) + 1}. Manage Health Records")
-                # FIX: Use direct function reference instead of lambda
-                menu_options.append(("Manage Health Records", manage_health_records_enhanced))
+        def item(label, action, allowed=True):
+            return (label, action) if allowed else None
 
-            if auth.check_permission('view_any_health_record') or auth.check_permission('view_own_health_record'):
-                print(f"{len(menu_options) + 1}. View Health Records")
-                menu_options.append(("View Health Records", view_health_records))
+        category("📋 Health Records & Clinical Data", [
+            item("Manage Health Records", manage_health_records_enhanced,
+                 can('manage_health_records')),
+            item("View Health Records", view_health_records,
+                 can('view_any_health_record') or can('view_own_health_record')),
+            item("Personal Health Dashboard", student_health_dashboard,
+                 role == 'student'),
+            item("Allergy Management", manage_allergies),
+            item("Prescription Management", manage_prescriptions),
+            item("Vital Signs Management", manage_vital_signs),
+            item("Lab Results Management", manage_lab_results),
+        ] if (can('manage_health_records') or can('view_own_health_record')
+              or can('view_any_health_record')) else [])
 
-            print(f"{len(menu_options) + 1}. Allergy Management")
-            menu_options.append(("Allergy Management", manage_allergies))
+        category("🩺 Providers & Referrals", [
+            item("Provider Dashboard", provider_dashboard),
+            item("Provider Schedule Management", manage_provider_schedules),
+            item("Referral Management", manage_referrals),
+        ] if can('manage_health_records') else [])
 
-            print(f"{len(menu_options) + 1}. Prescription Management")
-            menu_options.append(("Prescription Management", manage_prescriptions))
+        category("📅 Appointments & Scheduling", [
+            item("Schedule Appointment", schedule_appointment,
+                 can('schedule_health_appointment') or can('manage_health_appointments')),
+            item("View Appointments", view_appointments,
+                 can('view_own_appointments') or can('manage_health_appointments')),
+            item("Update Appointment", update_appointment,
+                 can('manage_health_appointments')),
+            item("Update Appointment Status", update_appointment_status,
+                 can('view_own_appointments') or can('manage_health_appointments')),
+        ])
 
-            print(f"{len(menu_options) + 1}. Vital Signs Management")
-            menu_options.append(("Vital Signs Management", manage_vital_signs))
+        category("💉 Vaccinations & Immunizations", [
+            item("Record Vaccination", record_vaccination, can('manage_vaccinations')),
+            item("View Vaccination Records", view_vaccinations,
+                 can('view_own_vaccinations') or can('manage_vaccinations')
+                 or can('view_any_health_record')),
+            item("Verify Vaccination Record", verify_vaccination, can('manage_vaccinations')),
+        ])
 
-            print(f"{len(menu_options) + 1}. Lab Results Management")
-            menu_options.append(("Lab Results Management", manage_lab_results))
+        category("🏥 Care Plans & Clinical Management", [
+            item("Care Plan Management", manage_care_plans),
+            item("Health Risk Assessment", health_risk_assessment),
+        ] if can('manage_health_records') else [])
 
-        # Provider-specific menus
-        if auth.check_permission('manage_health_records'):
-            print(f"{len(menu_options) + 1}. Provider Dashboard")
-            menu_options.append(("Provider Dashboard", provider_dashboard))
+        category("🚨 Emergency & Safety", [
+            item("Emergency Contact Management", manage_emergency_contacts),
+            item("Disease Surveillance System", disease_surveillance_system,
+                 can('issue_health_advisories')),
+        ])
 
-            print(f"{len(menu_options) + 1}. Provider Schedule Management")
-            menu_options.append(("Provider Schedule Management", manage_provider_schedules))
+        category("📢 Health Advisories & Communications", [
+            item("Add Health Advisory", add_health_advisory, can('issue_health_advisories')),
+            item("View Health Advisories", view_health_advisories,
+                 can('view_health_advisories') or can('issue_health_advisories')),
+        ])
 
-            print(f"{len(menu_options) + 1}. Referral Management")
-            menu_options.append(("Referral Management", manage_referrals))
+        category("🌟 Wellness & Prevention", [
+            item("Wellness Programs", wellness_programs),
+            item("Health Resources", view_health_resources, can('view_health_resources')),
+        ])
 
-        # Student-specific menu
-        if auth.current_user['role'] == 'student':
-            print(f"{len(menu_options) + 1}. Personal Health Dashboard")
-            menu_options.append(("Personal Health Dashboard", student_health_dashboard))
+        category("🧠 Mental Health & Wellness", [
+            item("Schedule Counseling Appointment", _launch_wellness_cli),
+            item("Wellness Check-in", _launch_wellness_cli),
+            item("Peer Support Matching", _launch_wellness_cli),
+            item("Mindfulness & Meditation Resources", _launch_wellness_cli),
+            item("Crisis Hotline Information", lambda auth: _display_crisis_hotline_info()),
+            item("View Counselor Profiles", _launch_wellness_cli),
+            item("Track Wellness Progress", _launch_wellness_cli),
+        ])
 
-        # Appointments section
-        if auth.check_permission('manage_health_appointments') or auth.check_permission('schedule_health_appointment') or auth.check_permission('view_own_appointments'):
-            print("\n📅 Appointments & Scheduling:")
+        category("💳 Insurance & Financial", [
+            item("View Insurance Information", view_insurance_info),
+            item("Update Insurance Information", update_insurance_info),
+        ] if (can('view_own_health_record')
+              or role in ('admin', 'health_provider')) else [])
 
-            if auth.check_permission('schedule_health_appointment') or auth.check_permission('manage_health_appointments'):
-                print(f"{len(menu_options) + 1}. Schedule Appointment")
-                menu_options.append(("Schedule Appointment", schedule_appointment))
+        category("📊 Analytics & Reporting", [
+            item("Health Analytics Dashboard", health_analytics_dashboard,
+                 can('view_any_health_record')),
+            item("Generate Health Report", generate_health_report,
+                 can('view_any_health_record')),
+            item("Quality Assurance", quality_assurance_menu,
+                 can('view_any_health_record')),
+            item("Screening Schedule Management", manage_screening_schedules,
+                 can('manage_health_records')),
+            item("Enhanced Record Templates", enhanced_health_record_templates,
+                 can('manage_health_records')),
+        ])
 
-            if auth.check_permission('view_own_appointments') or auth.check_permission('manage_health_appointments'):
-                print(f"{len(menu_options) + 1}. View Appointments")
-                menu_options.append(("View Appointments", view_appointments))
+        category("🔒 Data Management & Security", [
+            item("Data Retention Management", data_retention_management),
+            item("Security Audit", security_audit_menu),
+            item("Advanced Security Management", advanced_security_menu),
+            item("Integration Management", integration_management),
+            item("System Backup & Recovery", backup_recovery_menu),
+        ] if role == 'admin' else [])
 
-            if auth.check_permission('cancel_own_appointment') or auth.check_permission('manage_health_appointments'):
-                print(f"{len(menu_options) + 1}. Update Appointment Status")
-                menu_options.append(("Update Appointment Status", update_appointment_status))
+        category("🦷 Health Services", [
+            item("Dental Clinic", lambda auth: _launch_dentist_cli()),
+        ])
 
-        # Vaccinations section
-        if auth.check_permission('manage_vaccinations') or auth.check_permission('view_own_vaccinations') or auth.check_permission('verify_vaccinations'):
-            print("\n💉 Vaccinations & Immunizations:")
+        # ── Top level: the categories ───────────────────────────────────
+        print(f"\n{'=' * 70}")
+        print(get_text('health.title',
+                       default='Enhanced University Health Portal').center(70))
+        print('=' * 70)
+        print(get_text('health.logged_in', default='Logged in as: {username} ({role})').format(
+            username=auth.current_user['username'], role=auth.current_user['role']))
+        print('-' * 70)
 
-            if auth.check_permission('manage_vaccinations'):
-                print(f"{len(menu_options) + 1}. Record Vaccination")
-                menu_options.append(("Record Vaccination", record_vaccination))
+        for number, group in enumerate(categories, 1):
+            print(f"  {number:>2}. {group['title']}  ({len(group['items'])})")
+        print(f"\n   0. {get_text('health.menu.return_main', default='Return to Main System')}")
+        print('=' * 70)
 
-            if auth.check_permission('view_own_vaccinations') or auth.check_permission('manage_vaccinations') or auth.check_permission('view_any_health_record'):
-                print(f"{len(menu_options) + 1}. View Vaccination Records")
-                menu_options.append(("View Vaccination Records", view_vaccinations))
+        chosen = input(f"\n{get_text('health.prompt.choice', default='Enter your choice')} "
+                       f"(0-{len(categories)}): ").strip()
 
-            if auth.check_permission('verify_vaccinations'):
-                print(f"{len(menu_options) + 1}. Verify Vaccination Record")
-                menu_options.append(("Verify Vaccination Record", verify_vaccination))
+        if chosen in ('0', ''):
+            print(get_text('health.returning', default='Returning to main system...'))
+            return auth
 
-        # Care Plans & Clinical Management
-        if auth.check_permission('manage_health_records'):
-            print("\n🏥 Care Plans & Clinical Management:")
+        if not (chosen.isdigit() and 1 <= int(chosen) <= len(categories)):
+            print(get_text('health.invalid_choice', default='Invalid choice. Please try again.'))
+            continue
 
-            print(f"{len(menu_options) + 1}. Care Plan Management")
-            menu_options.append(("Care Plan Management", manage_care_plans))
+        group = categories[int(chosen) - 1]
 
-            print(f"{len(menu_options) + 1}. Health Risk Assessment")
-            menu_options.append(("Health Risk Assessment", health_risk_assessment))
+        # ── Second level: stay in the category until the user goes back ──
+        while True:
+            print(f"\n{'=' * 70}")
+            print(group['title'].center(70))
+            print('=' * 70)
+            for number, (label, _action) in enumerate(group['items'], 1):
+                print(f"  {number:>2}. {label}")
+            print(f"\n   0. {get_text('health.menu.back', default='Back to Health Portal Menu')}")
+            print('=' * 70)
 
-        # Emergency & Safety
-        print("\n🚨 Emergency & Safety:")
+            picked = input(f"\n{get_text('health.prompt.choice', default='Enter your choice')} "
+                           f"(0-{len(group['items'])}): ").strip()
 
-        print(f"{len(menu_options) + 1}. Emergency Contact Management")
-        menu_options.append(("Emergency Contact Management", manage_emergency_contacts))
+            if picked in ('0', ''):
+                break
 
-        if auth.check_permission('issue_health_advisories'):
-            print(f"{len(menu_options) + 1}. Disease Surveillance System")
-            menu_options.append(("Disease Surveillance System", disease_surveillance_system))
-
-        # Health Advisory section
-        if auth.check_permission('issue_health_advisories') or auth.check_permission('view_health_advisories'):
-            print("\n📢 Health Advisories & Communications:")
-
-            if auth.check_permission('issue_health_advisories'):
-                print(f"{len(menu_options) + 1}. Add Health Advisory")
-                menu_options.append(("Add Health Advisory", add_health_advisory))
-
-            if auth.check_permission('view_health_advisories') or auth.check_permission('issue_health_advisories'):
-                print(f"{len(menu_options) + 1}. View Health Advisories")
-                menu_options.append(("View Health Advisories", view_health_advisories))
-
-        # Wellness & Prevention (including Mental Health)
-        print("\n🌟 Wellness & Prevention:")
-
-        print(f"{len(menu_options) + 1}. Wellness Programs")
-        menu_options.append(("Wellness Programs", wellness_programs))
-
-        if auth.check_permission('view_health_resources'):
-            print(f"{len(menu_options) + 1}. Health Resources")
-            menu_options.append(("Health Resources", view_health_resources))
-
-        # Mental Health & Wellness Options
-        print("\n🧠 Mental Health & Wellness:")
-
-        print(f"{len(menu_options) + 1}. Schedule Counseling Appointment")
-        menu_options.append(("Schedule Counseling Appointment", _launch_wellness_cli))
-
-        print(f"{len(menu_options) + 1}. Wellness Check-in")
-        menu_options.append(("Wellness Check-in", _launch_wellness_cli))
-
-        print(f"{len(menu_options) + 1}. Peer Support Matching")
-        menu_options.append(("Peer Support Matching", _launch_wellness_cli))
-
-        print(f"{len(menu_options) + 1}. Mindfulness & Meditation Resources")
-        menu_options.append(("Mindfulness & Meditation", _launch_wellness_cli))
-
-        print(f"{len(menu_options) + 1}. Crisis Hotline Information")
-        menu_options.append(("Crisis Hotline Information", lambda auth: _display_crisis_hotline_info()))
-
-        print(f"{len(menu_options) + 1}. View Counselor Profiles")
-        menu_options.append(("View Counselor Profiles", _launch_wellness_cli))
-
-        print(f"{len(menu_options) + 1}. Track Wellness Progress")
-        menu_options.append(("Track Wellness Progress", _launch_wellness_cli))
-
-        # Insurance Information section
-        if auth.check_permission('update_insurance_info') or auth.current_user['role'] in ['admin', 'health_provider']:
-            print("\n💳 Insurance & Financial:")
-
-            print(f"{len(menu_options) + 1}. View Insurance Information")
-            menu_options.append(("View Insurance Information", view_insurance_info))
-
-            print(f"{len(menu_options) + 1}. Update Insurance Information")
-            menu_options.append(("Update Insurance Information", update_insurance_info))
-
-        # Analytics & Reporting
-        if auth.check_permission('view_any_health_record'):
-            print("\n📊 Analytics & Reporting:")
-
-            print(f"{len(menu_options) + 1}. Health Analytics Dashboard")
-            menu_options.append(("Health Analytics Dashboard", health_analytics_dashboard))
-
-            print(f"{len(menu_options) + 1}. Generate Health Report")
-            menu_options.append(("Generate Health Report", generate_health_report))
-
-            print(f"{len(menu_options) + 1}. Quality Assurance")
-            menu_options.append(("Quality Assurance", quality_assurance_menu))
-
-        # Screening Management
-        if auth.check_permission('manage_health_records'):
-            print(f"{len(menu_options) + 1}. Screening Schedule Management")
-            menu_options.append(("Screening Schedule Management", manage_screening_schedules))
-
-            print(f"{len(menu_options) + 1}. Enhanced Record Templates")
-            menu_options.append(("Enhanced Record Templates", enhanced_health_record_templates))
-
-        # Data Management & Security
-        if auth.current_user['role'] in ['admin']:
-            print("\n🔒 Data Management & Security:")
-
-            print(f"{len(menu_options) + 1}. Data Retention Management")
-            menu_options.append(("Data Retention Management", data_retention_management))
-
-            print(f"{len(menu_options) + 1}. Security Audit")
-            menu_options.append(("Security Audit", security_audit_menu))
-
-            print(f"{len(menu_options) + 1}. Advanced Security Management")
-            menu_options.append(("Advanced Security Management", advanced_security_menu))
-
-            print(f"{len(menu_options) + 1}. Integration Management")
-            menu_options.append(("Integration Management", integration_management))
-
-            print(f"{len(menu_options) + 1}. System Backup & Recovery")
-            menu_options.append(("System Backup & Recovery", backup_recovery_menu))
-
-        # Health Services
-        print("\n🦷 Health Services:")
-        print(f"{len(menu_options) + 1}. Dental Clinic")
-        menu_options.append(("Dental Clinic", lambda auth: _launch_dentist_cli()))
-
-        # Main menu options
-        print(f"\n⚙️ {get_text('health.system_options', default='System Options')}:")
-        print(f"{len(menu_options) + 1}. {get_text('health.menu.language', default='Language')}")
-        print(f"{len(menu_options) + 2}. {get_text('health.menu.return_main', default='Return to Main System')}")
-        print(f"{len(menu_options) + 3}. {get_text('health.menu.logout', default='Logout')}")
-
-        # Get user choice
-        choice = input(f"\n{get_text('health.prompt.choice', default='Enter your choice')}: ")
-
-        try:
-            choice_idx = int(choice) - 1
-            if 0 <= choice_idx < len(menu_options):
-                # Call the selected function - FIX: All functions now accept auth parameter
-                menu_options[choice_idx][1](auth)
-            elif choice_idx == len(menu_options):
-                # Language selection
-                display_language_menu_option()
-            elif choice_idx == len(menu_options) + 1:
-                # Return to main system
-                print(get_text('health.returning', default='Returning to main system...'))
-                return auth
-            elif choice_idx == len(menu_options) + 2:
-                # Logout
-                auth.logout()
-                print(get_text('health.logged_out', default='Logged out successfully.'))
-                return auth
-            else:
+            if not (picked.isdigit() and 1 <= int(picked) <= len(group['items'])):
                 print(get_text('health.invalid_choice', default='Invalid choice. Please try again.'))
-        except ValueError:
-            print(get_text('health.invalid_input', default='Invalid input. Please enter a number.'))
+                continue
 
-        input(get_text('health.press_enter', default='\nPress Enter to continue...'))
+            label, action = group['items'][int(picked) - 1]
+            try:
+                action(auth)
+            except Exception as exc:
+                # One failing action must not drop the operator out of the
+                # portal — report it and stay on the menu.
+                logging.getLogger(__name__).exception(
+                    "Health portal action %r failed", label)
+                print(get_text('health.action_failed',
+                               default='Error running this option: ') + str(exc))
+
+            input(get_text('health.press_enter', default='\nPress Enter to continue...'))

@@ -32,6 +32,13 @@ _PHONE_RE = re.compile(r"^[0-9 +()\-]{6,20}$")
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 _DOB_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
+# Where a pupil stands on the school roll. ``applicant`` is a Year 7 place
+# held for a pupil arriving through a cross-system transfer; ``left`` is a
+# pupil who has moved on — kept, never deleted, so attendance history,
+# statutory returns and the audit trail survive the move.
+ON_ROLL = "on_roll"
+ROLL_STATUSES = ("applicant", ON_ROLL, "left")
+
 
 @dataclass
 class Pupil:
@@ -46,6 +53,10 @@ class Pupil:
     parent_name: str | None
     parent_phone: str | None
     send_status: str | None
+    roll_status: str = ON_ROLL
+    journey_id: str | None = None
+    left_date: str | None = None
+    exit_reason: str | None = None
 
     @property
     def full_name(self) -> str:
@@ -65,9 +76,32 @@ CREATE TABLE IF NOT EXISTS pupils (
     parent_name     TEXT,
     parent_phone    TEXT,
     send_status     TEXT,
-    created_at      TEXT DEFAULT (datetime('now'))
+    created_at      TEXT DEFAULT (datetime('now')),
+    roll_status     TEXT NOT NULL DEFAULT 'on_roll',
+    journey_id      TEXT,
+    left_date       TEXT,
+    exit_reason     TEXT
 );
 """
+
+# Columns added after the table first shipped; existing databases gain them
+# on the next init_db().
+_ADDED_COLUMNS = (
+    ("roll_status", "TEXT NOT NULL DEFAULT 'on_roll'"),
+    ("journey_id", "TEXT"),
+    ("left_date", "TEXT"),
+    ("exit_reason", "TEXT"),
+)
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    have = {row[1] for row in conn.execute("PRAGMA table_info(pupils)")}
+    for name, decl in _ADDED_COLUMNS:
+        if name not in have:
+            conn.execute(f"ALTER TABLE pupils ADD COLUMN {name} {decl}")  # nosec B608 - constant
+    conn.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS ux_secondary_pupils_journey "
+        "ON pupils(journey_id) WHERE journey_id IS NOT NULL")
 
 
 class ValidationError(ValueError):
@@ -92,6 +126,7 @@ def init_db() -> None:
     try:
         with _connect() as conn:
             conn.executescript(_SCHEMA)
+            _migrate(conn)
     except sqlite3.Error:
         logger.exception("Failed to initialise secondary pupils DB at %s", DB_PATH)
         raise
@@ -100,6 +135,7 @@ def init_db() -> None:
 
 
 def _row(r: sqlite3.Row) -> Pupil:
+    keys = r.keys()
     return Pupil(
         pupil_id=r["pupil_id"],
         first_name=r["first_name"],
@@ -112,6 +148,10 @@ def _row(r: sqlite3.Row) -> Pupil:
         parent_name=r["parent_name"],
         parent_phone=r["parent_phone"],
         send_status=r["send_status"],
+        roll_status=(r["roll_status"] if "roll_status" in keys else None) or ON_ROLL,
+        journey_id=r["journey_id"] if "journey_id" in keys else None,
+        left_date=r["left_date"] if "left_date" in keys else None,
+        exit_reason=r["exit_reason"] if "exit_reason" in keys else None,
     )
 
 
@@ -174,10 +214,17 @@ def _validate(data: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
-def create_pupil(data: dict[str, Any]) -> Pupil:
+def create_pupil(data: dict[str, Any], *, roll_status: str = ON_ROLL,
+                 journey_id: str | None = None) -> Pupil:
+    """Create a pupil. ``roll_status='applicant'`` holds a place for a pupil
+    arriving through a cross-system transfer; ``journey_id`` stamps the
+    canonical journey so a redelivered transfer finds this row."""
     init_db()
     logger.debug("create_pupil called with fields: %s",
                  sorted(k for k, v in data.items() if v not in (None, "")))
+    if roll_status not in ROLL_STATUSES:
+        raise ValidationError(
+            f"Roll status must be one of {', '.join(ROLL_STATUSES)}")
     try:
         payload = _validate(data)
     except ValidationError as e:
@@ -192,14 +239,14 @@ def create_pupil(data: dict[str, Any]) -> Pupil:
                 INSERT INTO pupils (
                     pupil_id, first_name, last_name, year_group, form_group,
                     date_of_birth, email, phone, parent_name, parent_phone,
-                    send_status
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    send_status, roll_status, journey_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (pid, payload["first_name"], payload["last_name"],
                  payload["year_group"], payload["form_group"],
                  payload["date_of_birth"], email, payload["phone"],
                  payload["parent_name"], payload["parent_phone"],
-                 payload["send_status"]),
+                 payload["send_status"], roll_status, journey_id),
             )
             conn.commit()
     except sqlite3.IntegrityError as e:
@@ -225,6 +272,11 @@ def create_pupil(data: dict[str, Any]) -> Pupil:
     except Exception:
         logger.debug("Journey registration skipped for pupil %s",
                      pupil.pupil_id, exc_info=True)
+    # A login named after this pupil (made before the pupil record) is
+    # linked now that the journey exists. Best-effort, never raises.
+    from education_system.platform.cross_system import login_links
+    for name in (pupil.pupil_id, getattr(pupil, "email", None)):
+        login_links.try_sync_username(name)
     return pupil
 
 
@@ -244,12 +296,50 @@ def get_pupil(pupil_id: str) -> Pupil | None:
     return _row(row)
 
 
-def list_pupils() -> list[Pupil]:
+def find_by_journey(journey_id: str) -> Pupil | None:
+    """The pupil stamped with a canonical journey, whatever their roll status."""
+    if not journey_id:
+        return None
     init_db()
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT * FROM pupils WHERE journey_id = ?", (journey_id,)
+        ).fetchone()
+    return _row(row) if row is not None else None
+
+
+def set_roll_status(pupil_id: str, roll_status: str, *,
+                    left_date: str | None = None,
+                    exit_reason: str | None = None) -> Pupil:
+    """Move a pupil on or off roll. Never deletes the row."""
+    if roll_status not in ROLL_STATUSES:
+        raise ValidationError(
+            f"Roll status must be one of {', '.join(ROLL_STATUSES)}")
+    init_db()
+    with _connect() as conn:
+        cur = conn.execute(
+            "UPDATE pupils SET roll_status = ?, left_date = ?, exit_reason = ? "
+            "WHERE pupil_id = ?",
+            (roll_status, left_date if roll_status == "left" else None,
+             exit_reason if roll_status == "left" else None, pupil_id))
+        if cur.rowcount == 0:
+            raise ValidationError(f"No pupil with id {pupil_id}")
+        conn.commit()
+    pupil = get_pupil(pupil_id)
+    assert pupil is not None
+    logger.info("Pupil %s roll status -> %s", pupil_id, roll_status)
+    return pupil
+
+
+def list_pupils(*, include_off_roll: bool = False) -> list[Pupil]:
+    """Pupils on roll. ``include_off_roll`` adds applicants and leavers."""
+    init_db()
+    where = "" if include_off_roll else "WHERE roll_status = 'on_roll' "
     try:
         with _connect() as conn:
             rows = conn.execute(
-                "SELECT * FROM pupils ORDER BY year_group, last_name, first_name"
+                f"SELECT * FROM pupils {where}"  # nosec B608 - constant fragment
+                "ORDER BY year_group, last_name, first_name"
             ).fetchall()
     except sqlite3.Error:
         logger.exception("list_pupils failed")
@@ -258,22 +348,24 @@ def list_pupils() -> list[Pupil]:
     return [_row(r) for r in rows]
 
 
-def search_pupils(query: str) -> list[Pupil]:
+def search_pupils(query: str, *, include_off_roll: bool = False) -> list[Pupil]:
     init_db()
     raw = (query or "").strip()
     q = f"%{raw}%"
+    roll = "" if include_off_roll else "AND roll_status = 'on_roll' "
     try:
         with _connect() as conn:
             rows = conn.execute(
-                """
+                f"""
                 SELECT * FROM pupils
-                WHERE pupil_id LIKE ?
+                WHERE (pupil_id LIKE ?
                    OR first_name LIKE ?
                    OR last_name LIKE ?
                    OR email LIKE ?
-                   OR form_group LIKE ?
+                   OR form_group LIKE ?)
+                {roll}
                 ORDER BY year_group, last_name, first_name
-                """,
+                """,  # nosec B608 - constant fragment
                 (q, q, q, q, q),
             ).fetchall()
     except sqlite3.Error:
@@ -302,11 +394,20 @@ def advanced_search(filters: dict[str, Any]) -> list[Pupil]:
       dob_to          -- ISO date inclusive upper bound
       has_phone       -- "yes" | "no"
       has_parent      -- "yes" | "no"
+      roll_status     -- one of ROLL_STATUSES, or "any" (default on roll)
       sort_by         -- key in _ADV_SORTS (default "year")
     """
     init_db()
     where: list[str] = []
     params: list[Any] = []
+
+    roll = (filters.get("roll_status") or ON_ROLL).strip().lower()
+    if roll != "any":
+        if roll not in ROLL_STATUSES:
+            raise ValidationError(
+                f"roll_status must be one of {', '.join(ROLL_STATUSES)} or 'any'")
+        where.append("roll_status = ?")
+        params.append(roll)
 
     def like(field: str, value: str) -> None:
         where.append(f"{field} LIKE ?")

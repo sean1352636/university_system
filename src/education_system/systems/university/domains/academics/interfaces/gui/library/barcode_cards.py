@@ -93,15 +93,11 @@ except ImportError:
     FINANCE_ACCOUNT_AVAILABLE = False
     print("Warning: Student finance account integration not available")
 
-# Import matplotlib for library finance charts
-try:
-    import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-    from matplotlib.figure import Figure
-    MATPLOTLIB_AVAILABLE = True
-except ImportError:
-    MATPLOTLIB_AVAILABLE = False
-    print("Warning: Matplotlib not available for library finance charts")
+# Matplotlib is imported lazily by finance_shared, the one module in this
+# package whose names are actually read (by the two chart dialogs under
+# finance_parts/). This module carried an identical eager copy of that import
+# and never used any of it — importing matplotlib.pyplot costs ~1.3s and was
+# paid by anything that touched the library package at all.
 
 # Import email service for library finance notifications
 try:
@@ -117,6 +113,9 @@ _AUDIT_LOG_COLUMNS_CACHE: Optional[List[str]] = None
 _STUDENT_COLUMNS_CACHE: Optional[List[str]] = None
 
 from education_system.systems.university.domains.academics.interfaces.gui.library.base import LibraryGUI
+
+from education_system.systems.university.domains.academics.interfaces.gui.library._pickers import attach_picker
+
 
 def show_barcode_generator(self):
     """Show barcode generator interface"""
@@ -155,81 +154,113 @@ def show_barcode_generator(self):
     # Generate button
     ttk.Button(main_frame, text=_t('gui.academics.library.barcode_cards.buttons.generate_barcodes', default="Generate Barcodes"), command=self.generate_barcodes).pack(pady=10)
 
-    # Results area
+    # Results: a real table. The old ScrolledText printed four lines per
+    # book with a rule between them, so a full-catalogue run was hundreds
+    # of lines you could not sort, and nothing showed which books were
+    # missing a barcode without reading every entry.
     results_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.library.barcode_cards.labels.results', default="Results"))
     results_frame.pack(fill=tk.BOTH, expand=True)
 
-    self.barcode_results = ScrolledText(results_frame, height=8)
-    self.barcode_results.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+    columns = ('Book ID', 'Title', 'Author', 'Barcode')
+    self.barcode_tree = ttk.Treeview(results_frame, columns=columns,
+                                     show='headings', height=8)
+    for col, width in (('Book ID', 130), ('Title', 200),
+                       ('Author', 150), ('Barcode', 140)):
+        self.barcode_tree.heading(col, text=col)
+        self.barcode_tree.column(col, width=width)
+    self.barcode_tree.tag_configure('missing', foreground='#c0392b')
+    self.barcode_tree.tag_configure('odd', background='#f7f9fb')
+
+    tree_scroll = ttk.Scrollbar(results_frame, orient=tk.VERTICAL,
+                                command=self.barcode_tree.yview)
+    self.barcode_tree.configure(yscrollcommand=tree_scroll.set)
+    self.barcode_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5, 0), pady=5)
+    tree_scroll.pack(side=tk.RIGHT, fill=tk.Y, pady=5)
+
+    self.barcode_summary = ttk.Label(main_frame, text="", font=('Arial', 10, 'bold'))
+    self.barcode_summary.pack(pady=(8, 0))
 
     ttk.Button(main_frame, text=_("common.close"), command=dialog.destroy).pack(pady=10)
 
 def generate_barcodes(self):
-    """Generate barcodes based on selected options"""
+    """Generate barcode labels for the selected books.
+
+    Book details are fetched in a single query. The previous version
+    opened a fresh connection *per book* inside the loop, so an
+    "All Books" run over a real catalogue meant one connection and one
+    round trip per title.
+    """
     try:
         barcode_type = self.barcode_type.get()
         book_ids = []
 
-        if barcode_type == "single" or barcode_type == "multiple":
+        if barcode_type in ("single", "multiple"):
             input_text = self.barcode_input.get("1.0", tk.END).strip()
             if input_text:
                 book_ids = [bid.strip() for bid in input_text.split(',') if bid.strip()]
-        elif barcode_type == "all":
-            if ORIGINAL_LIBRARY_AVAILABLE:
-                conn = get_db_connection()
-                if conn:
-                    cursor = conn.cursor()
-                    cursor.execute('SELECT book_id FROM books ORDER BY book_id')
-                    book_ids = [row[0] for row in cursor.fetchall()]
-                    conn.close()
-            else:
-                book_ids = ["B10001", "B10002", "B10003"]  # Demo data
 
-        if not book_ids:
+        for item in self.barcode_tree.get_children():
+            self.barcode_tree.delete(item)
+
+        rows = []
+        if ORIGINAL_LIBRARY_AVAILABLE:
+            conn = get_db_connection()
+            if conn:
+                try:
+                    cursor = conn.cursor()
+                    if barcode_type == "all":
+                        cursor.execute(
+                            'SELECT book_id, title, author, barcode FROM books '
+                            'ORDER BY title COLLATE NOCASE')
+                        rows = cursor.fetchall()
+                    elif book_ids:
+                        placeholders = ",".join("?" * len(book_ids))
+                        cursor.execute(
+                            'SELECT book_id, title, author, barcode FROM books '
+                            f'WHERE book_id IN ({placeholders}) '
+                            'ORDER BY title COLLATE NOCASE', book_ids)
+                        rows = cursor.fetchall()
+                finally:
+                    conn.close()
+        else:
+            rows = [(bid, "Demo Book", "Demo Author", f"LIB{bid}")
+                    for bid in (book_ids or ["B10001", "B10002", "B10003"])]
+
+        if barcode_type != "all" and not book_ids:
             messagebox.showwarning(_("common.warning"), _t('gui.academics.library.barcode_cards.dialogs.please_enter_book_ids_or_select_all_books', default="Please enter book IDs or select 'All Books'"))
             return
 
-        # Generate barcode labels
-        self.barcode_results.delete("1.0", tk.END)
-        self.barcode_results.insert(tk.END, f"Generating barcodes for {len(book_ids)} books...\n\n")
+        found_ids = {str(r[0]) for r in rows}
+        missing = [bid for bid in book_ids if bid not in found_ids]
 
-        generated_count = 0
+        for i, (book_id, title, author, barcode) in enumerate(rows):
+            tags = ['odd'] if i % 2 else []
+            if not barcode:
+                tags.append('missing')
+            self.barcode_tree.insert('', tk.END, tags=tags, values=(
+                book_id, title or '', author or '',
+                barcode or 'Not generated'))
 
-        for book_id in book_ids:
-            # Get book info
-            if ORIGINAL_LIBRARY_AVAILABLE:
-                conn = get_db_connection()
-                if conn:
-                    cursor = conn.cursor()
-                    cursor.execute('SELECT title, author, barcode FROM books WHERE book_id = ?', (book_id,))
-                    book_info = cursor.fetchone()
-                    conn.close()
+        # Books the operator asked for that do not exist used to vanish
+        # silently — the loop simply skipped a row it could not find.
+        for book_id in missing:
+            self.barcode_tree.insert('', tk.END, tags=['missing'], values=(
+                book_id, 'Not found', '', '—'))
 
-                    if book_info:
-                        title, author, barcode = book_info
-                        self.barcode_results.insert(tk.END, f"Book ID: {book_id}\n")
-                        self.barcode_results.insert(tk.END, f"Title: {title}\n")
-                        self.barcode_results.insert(tk.END, f"Author: {author}\n")
-                        self.barcode_results.insert(tk.END, f"Barcode: {barcode or 'Not generated'}\n")
-                        self.barcode_results.insert(tk.END, "-" * 30 + "\n\n")
-                        generated_count += 1
-            else:
-                # Demo mode
-                self.barcode_results.insert(tk.END, f"Book ID: {book_id}\n")
-                self.barcode_results.insert(tk.END, "Title: Demo Book\n")
-                self.barcode_results.insert(tk.END, "Author: Demo Author\n")
-                self.barcode_results.insert(tk.END, f"Barcode: LIB{book_id}\n")
-                self.barcode_results.insert(tk.END, "-" * 30 + "\n\n")
-                generated_count += 1
+        without = sum(1 for r in rows if not r[3])
+        summary = f"{len(rows)} book(s) listed"
+        if without:
+            summary += f"  ·  {without} without a barcode"
+        if missing:
+            summary += f"  ·  {len(missing)} not found"
+        self.barcode_summary.config(
+            text=summary, foreground='#c0392b' if (without or missing) else '#27ae60')
 
-        self.barcode_results.insert(tk.END, f"✅ Generated {generated_count} barcode labels\n")
-
-        # Log the action
         log_audit_event(get_current_user_id(),
-                       f"Generated {generated_count} barcode labels",
-                       "books")
+                        f"Generated {len(rows)} barcode labels",
+                        "books")
 
-    except tk.TclError as e:
+    except (tk.TclError, sqlite3.Error, DatabaseError) as e:
         messagebox.showerror(_("common.error"), f"Error generating barcodes: {str(e)}")
 
 def show_barcode_scanner(self):
@@ -342,10 +373,10 @@ def show_library_cards_generator(self):
     selection_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.library.barcode_cards.labels.select_user', default="Select User"))
     selection_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Label(selection_frame, text=_t('gui.academics.library.barcode_cards.labels.user_id_or_username', default="User ID or Username:")).pack(side=tk.LEFT, padx=5)
+    ttk.Label(selection_frame, text=_t('gui.academics.library.barcode_cards.labels.user', default="User:")).pack(side=tk.LEFT, padx=5)
     user_var = tk.StringVar()
-    user_entry = ttk.Entry(selection_frame, textvariable=user_var, width=30)
-    user_entry.pack(side=tk.LEFT, padx=5)
+    user_picker = attach_picker(selection_frame, "user", width=44)
+    user_picker.pack(side=tk.LEFT, padx=5)
 
     # Card preview frame
     preview_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.library.barcode_cards.labels.card_preview', default="Card Preview"))
@@ -356,9 +387,10 @@ def show_library_cards_generator(self):
 
     def generate_card():
         try:
-            user_id = user_var.get().strip()
+            user_id = user_picker.get()
+            user_var.set(user_id)
             if not user_id:
-                messagebox.showwarning(_("common.warning"), _t('gui.academics.library.barcode_cards.dialogs.please_enter_a_user_id_or_username', default="Please enter a user ID or username"))
+                messagebox.showwarning(_("common.warning"), _t('gui.academics.library.barcode_cards.dialogs.please_select_a_user', default="Please select a user"))
                 return
 
             # Get user info
@@ -452,9 +484,9 @@ def generate_library_card_gui(self):
     search_frame = ttk.LabelFrame(card_window, text=_t('gui.academics.library.barcode_cards.labels.find_student', default="Find Student"), padding=10)
     search_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Label(search_frame, text=_t('gui.academics.library.barcode_cards.labels.student_id', default="Student ID:")).pack(side=tk.LEFT, padx=5)
-    student_id_entry = ttk.Entry(search_frame, width=30)
-    student_id_entry.pack(side=tk.LEFT, padx=5)
+    ttk.Label(search_frame, text=_t('gui.academics.library.barcode_cards.labels.student', default="Student:")).pack(side=tk.LEFT, padx=5)
+    student_picker = attach_picker(search_frame, "student", width=46)
+    student_picker.pack(side=tk.LEFT, padx=5)
 
     # Card preview
     preview_frame = ttk.LabelFrame(card_window, text=_t('gui.academics.library.barcode_cards.labels.card_preview', default="Card Preview"), padding=10)
@@ -464,9 +496,9 @@ def generate_library_card_gui(self):
     preview_text.pack(fill=tk.BOTH, expand=True)
 
     def generate_card():
-        student_id = student_id_entry.get().strip()
+        student_id = student_picker.get()
         if not student_id:
-            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.barcode_cards.dialogs.please_enter_a_student_id', default="Please enter a student ID"))
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.barcode_cards.dialogs.please_select_a_student', default="Please select a student"))
             return
 
         try:
@@ -563,7 +595,7 @@ For assistance, contact: library@university.edu
         file_path = filedialog.asksaveasfilename(
             defaultextension=".txt",
             filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
-            initialfile=f"library_card_{student_id_entry.get()}.txt"
+            initialfile=f"library_card_{student_picker.get()}.txt"
         )
 
         if file_path:

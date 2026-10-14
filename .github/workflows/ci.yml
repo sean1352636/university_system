@@ -59,6 +59,8 @@ jobs:
           python -m pip install -e . --no-deps
       - name: Architecture and complexity
         run: python tools/university/check_architecture.py
+      - name: Layout ratchet
+        run: python tools/check_layout.py
       - name: Ruff core
         run: >-
           ruff check
@@ -79,7 +81,8 @@ jobs:
       - name: API, migration, plugin and accessibility contracts
         run: >-
           CI_STRICT_SKIPS=1 pytest
-          tests/unit/systems/university/contracts
+          tests/contract/university
+          tests/contract/platform
           tests/integration/migrations/test_university_canonical_migration.py
           tests/integration/migrations/test_university_transactional_outbox_migration.py
           tests/integration/migrations/test_admissions_policy_consumer_migration.py
@@ -142,7 +145,7 @@ jobs:
           python -m pip install -e ".[test]" pytest-playwright axe-playwright-python
           playwright install --with-deps chromium
       - name: Run browser and WCAG checks
-        run: pytest tests/unit/systems/university/browser -n 0 --browser chromium
+        run: pytest tests/end_to_end/university/browser -n 0 --browser chromium
 
   # ── Security scanning ─────────────────────────────────────────────────────
   security:
@@ -323,7 +326,7 @@ jobs:
           tests/unit/systems/university/infrastructure/core
           tests/unit/systems/university/infrastructure/database
           tests/unit/systems/university/infrastructure/utils
-          tests/unit/systems/university/integration
+          tests/integration/systems/university
           -m "not gui and not slow" -n 0 --timeout=120
 
   # GUI tests need a display and must run serially: parallel Tk workers sharing
@@ -349,6 +352,10 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements-dev.lock
           python -m pip install -e . --no-deps
+      # University GUI code lives in twelve places since the slice migration: the
+      # system-wide shell plus each domain's own adapter. The --cov flags are built
+      # from the tree rather than listed, so adding a domain cannot leave this
+      # measuring nothing -- which is what a single stale path did silently.
       - name: Run all university GUI tests
         run: >-
           xvfb-run -a
@@ -357,7 +364,9 @@ jobs:
           -m gui -n 0 --timeout=180
           --strict-markers --strict-config
           --import-mode=importlib
-          --cov=src/education_system/systems/university/interfaces/gui
+          $(printf ' --cov=%s'
+          src/education_system/systems/university/shell/gui
+          src/education_system/systems/university/domains/*/interfaces/gui)
           --cov-branch
           --cov-report=xml:coverage-university-gui.xml
           --cov-fail-under=0.1
@@ -500,11 +509,12 @@ jobs:
         run: >-
           xvfb-run -a
           pytest tests/unit/platform tests/unit/systems/university
+          tests/integration/platform tests/integration/systems/university
           -m "slow or integration" -n 0 --timeout=180
       - name: Enforce performance regression budgets
         run: >-
           xvfb-run -a
-          pytest tests/unit/systems/university/integration/test_performance_benchmarks.py
+          pytest tests/performance/benchmarks/test_performance_benchmarks.py
           -m performance -n 0 --timeout=180
 
   # ── Single required gate: green only if every required job passes ─────────

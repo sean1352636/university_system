@@ -18,7 +18,7 @@ class SecurityAndDocumentsMixin:
             print("This function is only available for parent accounts.")
             return
 
-        if not self.auth.check_permission('manage_documents'):
+        if not self.auth.check_permission('upload_documents'):
             print("You don't have permission to manage documents.")
             return
 
@@ -167,7 +167,7 @@ class SecurityAndDocumentsMixin:
             print("This function is only available for parent accounts.")
             return
 
-        if not self.auth.check_permission('manage_pickup_auth'):
+        if not self.auth.check_permission('set_pickup_permissions'):
             print("You don't have permission to manage pickup authorization.")
             return
 
@@ -308,7 +308,7 @@ class SecurityAndDocumentsMixin:
             print("This function is only available for parent accounts.")
             return
 
-        if not self.auth.check_permission('manage_photo_permissions'):
+        if not self.auth.check_permission('manage_parent_settings'):
             print("You don't have permission to manage photo permissions.")
             return
 

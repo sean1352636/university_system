@@ -38,7 +38,8 @@ REGISTER_COLUMNS = (
     ("apprentice", "Apprentice", 220),
     ("mark", "Mark", 110),
     ("hours", "Off-the-job hours", 130, "e"),
-    ("notes", "Notes", 380),
+    ("reason", "Absence reason", 160),
+    ("notes", "Notes", 300),
 )
 
 
@@ -172,7 +173,9 @@ def _session_form(gui, session_id: int | None) -> None:
         if not ok or existing is None:
             return
 
-    programmes = programme_service.list_programmes(gui.actor, active_only=True)
+    # Superseded versions still have apprentices to teach, so they stay
+    # schedulable; only new enrolments are limited to Active ones.
+    programmes = programme_service.list_programmes(gui.actor, in_delivery=True)
     labels = {f"{p.programme_id} — {p.title}": p.programme_id for p in programmes}
     current = next(
         (
@@ -256,7 +259,7 @@ def _register(gui, session_id: int) -> None:
         table = widgets.DataTable(frame, REGISTER_COLUMNS, height=16)
         table.populate(
             marks,
-            lambda m: (m.apprentice_name, m.status, m.otj_hours, m.notes),
+            lambda m: (m.apprentice_name, m.status, m.otj_hours, m.absence_reason, m.notes),
             identity=lambda m: m.apprentice_id,
             tag=lambda m: "Green" if m.earned_hours else None,
             noun="mark",
@@ -306,6 +309,10 @@ def _mark_form(gui, session, apprentice_id: int | None) -> None:
         {"key": "otj_hours", "label": "Off-the-job hours",
          "help": f"Blank uses the session default ({session.otj_hours:,.1f}h present, "
                  f"half that for late). An absence earns nothing either way."},
+        {"key": "absence_reason", "label": "Absence reason", "kind": "combo",
+         "options": ["", *config.ABSENCE_REASONS], "value": "",
+         "help": "Absent or Excused only. Excused needs a real reason; Absent left "
+                 "blank is recorded as \"No reason given\"."},
         {"key": "notes", "label": "Notes", "kind": "text"},
     ]
 
@@ -318,6 +325,7 @@ def _mark_form(gui, session, apprentice_id: int | None) -> None:
             status=values["status"],
             otj_hours=_hours_or_none(values["otj_hours"]),
             notes=values["notes"],
+            absence_reason=values.get("absence_reason") or None,
         )
 
     dialog = widgets.FormDialog(gui.root, "Mark register", fields, save)

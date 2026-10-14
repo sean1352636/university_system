@@ -37,6 +37,9 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 import logging
 import re
 import tkinter as tk
+# Message boxes parented to the window that raised them, not the main
+# GUI — see _dialogs.
+from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar._dialogs import messagebox
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +113,8 @@ def show_event_attendees(event_id, parent=None):
     if not event_id:
         return
     import sqlite3
-    from tkinter import ttk, messagebox
+    from tkinter import ttk
+    from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar._dialogs import messagebox
     from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
     bare, _src = _normalise_event_id(event_id)
@@ -158,7 +162,7 @@ def show_event_attendees(event_id, parent=None):
         try:
             win.transient(parent)
         except Exception:
-            pass
+            logger.debug("Suppressed exception", exc_info=True)
 
     header = tk.Frame(win, bg="#2c3e50", height=44)
     header.pack(fill="x")
@@ -320,7 +324,7 @@ def append_to_menu(menu: tk.Menu, items):
     try:
         menu.add_separator()
     except Exception:
-        pass
+        logger.debug("Suppressed exception", exc_info=True)
     for label, cmd in items:
         try:
             menu.add_command(label=label, command=cmd)

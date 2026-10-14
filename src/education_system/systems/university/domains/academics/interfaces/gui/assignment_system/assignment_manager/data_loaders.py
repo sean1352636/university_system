@@ -3,7 +3,8 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, filedialog
+from education_system.systems.university.domains.academics.interfaces.gui.assignment_system._dialogs import messagebox
 import csv
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 
