@@ -16,7 +16,6 @@ from pathlib import Path
 import matplotlib
 from education_system import paths
 matplotlib.use('TkAgg')
-import numpy as np
 
 # Import auth instance management from user_authentication
 try:

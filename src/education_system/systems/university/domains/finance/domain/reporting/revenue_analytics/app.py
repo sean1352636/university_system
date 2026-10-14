@@ -2,21 +2,15 @@ from education_system.systems.university.infrastructure.database.db import sqlit
 from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 import os
 import csv
-import numpy as np
 from datetime import datetime, timedelta
 import json
 import hashlib
 import hmac
-import requests
 import smtplib
 import ssl
 import threading
-import schedule
 import time
 import warnings
-from sklearn.ensemble import IsolationForest
-from sklearn.preprocessing import StandardScaler
-import joblib
 from cryptography.fernet import Fernet
 import logging
 from flask import Flask, request, jsonify

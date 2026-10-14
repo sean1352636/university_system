@@ -1,6 +1,5 @@
 from education_system.systems.university.infrastructure.database.db import get_connection
 from datetime import datetime
-import numpy as np
 
 from education_system.systems.university.domains.finance.domain.reporting.revenue_analytics.app import auth
 

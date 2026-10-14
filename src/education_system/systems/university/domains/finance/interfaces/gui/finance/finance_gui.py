@@ -14,15 +14,11 @@ import os
 from education_system.systems.university.infrastructure.i18n import get_text as _, init_i18n
 init_i18n()
 import csv
-import numpy as np
 from datetime import datetime, timedelta
 import json
 import threading
 import warnings
 from pathlib import Path
-from sklearn.ensemble import IsolationForest
-from sklearn.preprocessing import StandardScaler
-import joblib
 from cryptography.fernet import Fernet
 import logging
 from io import BytesIO

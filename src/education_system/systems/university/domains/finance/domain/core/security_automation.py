@@ -1,21 +1,15 @@
 from education_system.systems.university.infrastructure.database.db import sqlite3
 import os
 import csv
-import numpy as np
 from datetime import datetime, timedelta
 import json
 import hashlib
 import hmac
-import requests
 import smtplib
 import ssl
 import threading
-import schedule
 import time
 import warnings
-from sklearn.ensemble import IsolationForest
-from sklearn.preprocessing import StandardScaler
-import joblib
 from cryptography.fernet import Fernet
 import logging
 from flask import Flask, request, jsonify
@@ -457,6 +451,13 @@ def detect_payment_fraud():
             payment_ids.append(payment_id)
 
         # Run isolation forest for anomaly detection
+        # Lazy: scikit-learn and numpy cost ~10s to import and this is the
+        # only caller in the finance domain, so the finance GUI must not pay
+        # for them at open time.
+        import numpy as np
+        from sklearn.ensemble import IsolationForest
+        from sklearn.preprocessing import StandardScaler
+
         X = np.array(features)
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X)

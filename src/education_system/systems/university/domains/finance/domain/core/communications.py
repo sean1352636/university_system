@@ -4,7 +4,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
 import ssl
-import requests
 
 from education_system.systems.university.domains.finance.domain.core.finance_context import get_connection
 from education_system.systems.university.infrastructure.i18n import get_text
