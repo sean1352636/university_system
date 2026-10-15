@@ -242,163 +242,19 @@ class CollectionsManager:
 
 
     def manage_agencies(self):
-        """Manage collection agencies"""
-        # Create agencies management dialog
-        agencies_dialog = tk.Toplevel(self.root)
-        agencies_dialog.title(_("finance_gui.compliance.manage_agencies_title"))
-        agencies_dialog.geometry("900x600")
-        agencies_dialog.transient(self.root)
+        """Manage collection agencies (real ``collection_agencies`` rows).
 
-        ttk.Label(agencies_dialog, text=_("finance_gui.compliance.agencies_management_header"),
-                 font=('TkDefaultFont', 14, 'bold')).pack(pady=10)
-
-        # Control buttons
-        controls_frame = ttk.Frame(agencies_dialog)
-        controls_frame.pack(fill='x', padx=10, pady=5)
-
-        ttk.Button(controls_frame, text=_("finance_gui.compliance.btn_add_agency"), command=lambda: self.add_agency(agencies_tree)).pack(side='left', padx=5)
-        ttk.Button(controls_frame, text=_("finance_gui.compliance.btn_edit_agency"), command=lambda: self.edit_agency(agencies_tree)).pack(side='left', padx=5)
-        ttk.Button(controls_frame, text=_("finance_gui.compliance.btn_remove_agency"), command=lambda: self.remove_agency(agencies_tree)).pack(side='left', padx=5)
-        ttk.Button(controls_frame, text=_("finance_gui.compliance.btn_refresh"), command=lambda: self.load_agencies(agencies_tree)).pack(side='left', padx=5)
-
-        # Agencies list
-        list_frame = ttk.Frame(agencies_dialog)
-        list_frame.pack(fill='both', expand=True, padx=10, pady=5)
-
-        agencies_tree = ttk.Treeview(list_frame,
-                                    columns=('ID', 'Name', 'Contact', 'Email', 'Phone', 'Commission', 'Status'),
-                                    show='headings', height=20)
-
-        agencies_tree.heading('ID', text=_("finance_gui.compliance.column_agency_id"))
-        agencies_tree.heading('Name', text=_("finance_gui.compliance.column_agency_name"))
-        agencies_tree.heading('Contact', text=_("finance_gui.compliance.column_contact"))
-        agencies_tree.heading('Email', text=_("finance_gui.compliance.column_email"))
-        agencies_tree.heading('Phone', text=_("finance_gui.compliance.column_phone"))
-        agencies_tree.heading('Commission', text=_("finance_gui.compliance.column_commission"))
-        agencies_tree.heading('Status', text=_("finance_gui.compliance.column_status"))
-
-        agencies_tree.column('ID', width=80)
-        agencies_tree.column('Name', width=150)
-        agencies_tree.column('Contact', width=120)
-        agencies_tree.column('Email', width=150)
-        agencies_tree.column('Phone', width=120)
-        agencies_tree.column('Commission', width=100)
-        agencies_tree.column('Status', width=80)
-
-        # Scrollbar
-        scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=agencies_tree.yview)
-        agencies_tree.configure(yscrollcommand=scrollbar.set)
-
-        agencies_tree.pack(side='left', fill='both', expand=True)
-        scrollbar.pack(side='right', fill='y')
-
-        # Load initial data
-        self.load_agencies(agencies_tree)
-
-        # Close button
-        ttk.Button(agencies_dialog, text=_("finance_gui.buttons.close"), command=agencies_dialog.destroy).pack(pady=10)
-
-
-    def add_agency(self, tree):
-        """Add new collection agency"""
-        add_dialog = tk.Toplevel()
-        add_dialog.title(_("finance_gui.compliance.add_agency_title"))
-        add_dialog.geometry("500x400")
-        add_dialog.transient(tree.winfo_toplevel())
-        add_dialog.grab_set()
-
-        ttk.Label(add_dialog, text=_("finance_gui.compliance.add_agency_header"), font=('TkDefaultFont', 12, 'bold')).pack(pady=10)
-
-        form_frame = ttk.Frame(add_dialog, padding=20)
-        form_frame.pack(fill='both', expand=True)
-
-        fields = {}
-        label_keys = ['agency_name_label', 'contact_person_label', 'email_label', 'phone_label', 'commission_label']
-        field_names = ['Agency Name', 'Contact Person', 'Email', 'Phone', 'Commission %']
-        for i, (key, field_name) in enumerate(zip(label_keys, field_names)):
-            ttk.Label(form_frame, text=f"{_('finance_gui.compliance.' + key)}:").grid(row=i, column=0, sticky='w', pady=5, padx=5)
-            fields[field_name] = ttk.Entry(form_frame, width=30)
-            fields[field_name].grid(row=i, column=1, pady=5, padx=5)
-
-        ttk.Label(form_frame, text=_("finance_gui.compliance.status_label")).grid(row=len(field_names), column=0, sticky='w', pady=5, padx=5)
-        status_var = tk.StringVar(value=_("finance_gui.compliance.status_active"))
-        status_combo = ttk.Combobox(form_frame, textvariable=status_var, values=[_("finance_gui.compliance.status_active"), _("finance_gui.compliance.status_inactive")], width=28, state='readonly')
-        status_combo.grid(row=len(field_names), column=1, pady=5, padx=5)
-
-        def save_agency():
-            name = fields['Agency Name'].get().strip()
-            if not name:
-                messagebox.showwarning(_("finance_gui.compliance.name_required_title"), _("finance_gui.compliance.name_required"), parent=add_dialog)
-                return
-
-            try:
-                commission = float(fields['Commission %'].get() or '0')
-                if commission < 0 or commission > 100:
-                    raise ValueError(_("finance_gui.compliance.invalid_commission"))
-            except ValueError as e:
-                messagebox.showwarning(_("finance_gui.compliance.invalid_commission_title"), str(e), parent=add_dialog)
-                return
-
-            # Add to tree (in real implementation, save to database)
-            agency_id = f"AG{len(tree.get_children()) + 1:03d}"
-            tree.insert('', 'end', values=(
-                agency_id,
-                name,
-                fields['Contact Person'].get(),
-                fields['Email'].get(),
-                fields['Phone'].get(),
-                f"{commission}%",
-                status_var.get()
-            ))
-
-            messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.compliance.agency_added").format(name=name), parent=add_dialog)
-            add_dialog.destroy()
-
-        button_frame = ttk.Frame(add_dialog)
-        button_frame.pack(pady=10)
-        ttk.Button(button_frame, text=_("finance_gui.compliance.btn_save"), command=save_agency).pack(side='left', padx=5)
-        ttk.Button(button_frame, text=_("finance_gui.buttons.cancel"), command=add_dialog.destroy).pack(side='left', padx=5)
-
-
-    def edit_agency(self, tree):
-        """Edit selected agency"""
-        selection = tree.selection()
-        if not selection:
-            messagebox.showwarning(_("finance_gui.messages.no_selection"), _("finance_gui.compliance.no_selection_edit"))
-            return
-
-        values = tree.item(selection[0], 'values')
-        messagebox.showinfo(_("finance_gui.compliance.edit_agency_title"), _("finance_gui.compliance.editing_agency").format(name=values[1]))
-
-
-    def remove_agency(self, tree):
-        """Remove selected agency"""
-        selection = tree.selection()
-        if not selection:
-            messagebox.showwarning(_("finance_gui.messages.no_selection"), _("finance_gui.compliance.no_selection_remove"))
-            return
-
-        values = tree.item(selection[0], 'values')
-        if messagebox.askyesno(_("finance_gui.compliance.confirm_remove_title"), _("finance_gui.compliance.confirm_remove_message").format(name=values[1])):
-            tree.delete(selection[0])
-            messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.compliance.agency_removed"))
-
-
-    def load_agencies(self, tree):
-        """Load agencies from database"""
-        # Clear existing items
-        for item in tree.get_children():
-            tree.delete(item)
-
-        # Sample data (in real implementation, load from database)
-        sample_agencies = [
-            ('AG001', 'Premier Collections Ltd', 'John Smith', 'j.smith@premier.com', '020 7123 4567', '15%', 'Active'),
-            ('AG002', 'Swift Recovery Services', 'Jane Doe', 'jane@swiftrecovery.co.uk', '0161 234 5678', '12.5%', 'Active'),
-            ('AG003', 'National Debt Solutions', 'Bob Johnson', 'b.johnson@nds.com', '0131 345 6789', '20%', 'Inactive'),
-        ]
-
-        for agency in sample_agencies:
-            tree.insert('', 'end', values=agency)
+        The previous dialog showed three hard-coded sample agencies and only
+        edited its own Treeview. It now lives in ``agencies_dialog.py`` on
+        the same agencies API the collections CLI uses.
+        """
+        from education_system.systems.university.domains.finance.interfaces.gui.finance.agencies_dialog import (
+            open_manage_agencies,
+        )
+        try:
+            open_manage_agencies(self.root, on_change=self.refresh_collections)
+        except Exception as e:
+            messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.compliance.failed_manage_agencies").format(error=e))
 
 
     def track_collections(self):
